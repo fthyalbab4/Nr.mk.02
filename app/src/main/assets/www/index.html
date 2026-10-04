@@ -36520,6 +36520,155 @@ const createEngineHTML = (projectData) => {
                 Object.assign(s1, s2, { id: s1.id, name: s1.name });
             }
         };
+        window.sprite_add = (fname, imgnumb = 1, removeback = false, smooth = false, xorig = 0, yorig = 0) => {
+            const id = 'spr_dyn_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const img = new Image();
+            img.src = fname;
+            const spr = {
+                id: id, name: id,
+                ox: Number(xorig) || 0, oy: Number(yorig) || 0,
+                xorigin: Number(xorig) || 0, yorigin: Number(yorig) || 0,
+                frameCount: Number(imgnumb) || 1,
+                fw: 32, fh: 32, width: 32, height: 32,
+                image: img, frames: [img],
+                bboxMode: 0, bLeft: 0, bTop: 0, bRight: 31, bBottom: 31,
+                precise: false, isDynamic: true
+            };
+            img.onload = () => {
+                spr.fw = Math.floor(img.width / spr.frameCount) || img.width;
+                spr.fh = img.height;
+                spr.width = spr.fw; spr.height = spr.fh;
+                spr.bRight = spr.fw - 1; spr.bBottom = spr.fh - 1;
+            };
+            if (typeof SPRITE_METADATA !== 'undefined') SPRITE_METADATA[id] = spr;
+            if (window.assets && window.assets.sprites) window.assets.sprites[id] = spr;
+            return id;
+        };
+        window.sprite_replace = (ind, fname, imgnumb = 1, removeback = false, smooth = false, xorig = 0, yorig = 0) => {
+            const s = _getSprite(ind);
+            if (!s) return window.sprite_add(fname, imgnumb, removeback, smooth, xorig, yorig);
+            const img = new Image();
+            img.src = fname;
+            s.ox = Number(xorig) || 0; s.oy = Number(yorig) || 0;
+            s.xorigin = s.ox; s.yorigin = s.oy;
+            s.frameCount = Number(imgnumb) || 1;
+            s.image = img; s.frames = [img];
+            img.onload = () => {
+                s.fw = Math.floor(img.width / s.frameCount) || img.width;
+                s.fh = img.height;
+                s.width = s.fw; s.height = s.fh;
+                s.bRight = s.fw - 1; s.bBottom = s.fh - 1;
+            };
+            return ind;
+        };
+        window.sprite_create_from_surface = (surf, x = 0, y = 0, w = 32, h = 32, removeback = false, smooth = false, xorig = 0, yorig = 0) => {
+            const canvas = typeof surf === 'object' && surf.canvas ? surf.canvas : (document.getElementById(surf) || surf);
+            const id = 'spr_surf_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            let frameImg = new Image();
+            if (canvas && canvas.getContext) {
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = w; cropCanvas.height = h;
+                const ctx = cropCanvas.getContext('2d');
+                ctx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+                frameImg.src = cropCanvas.toDataURL();
+            }
+            const spr = {
+                id: id, name: id,
+                ox: Number(xorig) || 0, oy: Number(yorig) || 0,
+                xorigin: Number(xorig) || 0, yorigin: Number(yorig) || 0,
+                frameCount: 1, fw: w, fh: h, width: w, height: h,
+                image: frameImg, frames: [frameImg],
+                bboxMode: 0, bLeft: 0, bTop: 0, bRight: w - 1, bBottom: h - 1,
+                precise: false, isDynamic: true
+            };
+            if (typeof SPRITE_METADATA !== 'undefined') SPRITE_METADATA[id] = spr;
+            if (window.assets && window.assets.sprites) window.assets.sprites[id] = spr;
+            return id;
+        };
+        window.sprite_add_from_surface = (ind, surf, x = 0, y = 0, w = 32, h = 32, removeback = false, smooth = false) => {
+            const s = _getSprite(ind);
+            if (!s) return;
+            const canvas = typeof surf === 'object' && surf.canvas ? surf.canvas : (document.getElementById(surf) || surf);
+            if (canvas && canvas.getContext) {
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = w; cropCanvas.height = h;
+                const ctx = cropCanvas.getContext('2d');
+                ctx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+                const frameImg = new Image();
+                frameImg.src = cropCanvas.toDataURL();
+                if (!Array.isArray(s.frames)) s.frames = s.image ? [s.image] : [];
+                s.frames.push(frameImg);
+                s.frameCount = s.frames.length;
+            }
+        };
+        window.sprite_delete = (ind) => {
+            const s = _getSprite(ind);
+            if (!s) return;
+            if (typeof SPRITE_METADATA !== 'undefined') delete SPRITE_METADATA[s.id];
+            if (window.assets && window.assets.sprites) delete window.assets.sprites[s.id];
+        };
+        window.sprite_set_alpha_from_sprite = (ind, spr) => {
+            const s1 = _getSprite(ind);
+            const s2 = _getSprite(spr);
+            if (!s1 || !s2 || !s1.image || !s2.image) return;
+            const w = s1.fw || s1.width || 32;
+            const h = s1.fh || s1.height || 32;
+            const c1 = document.createElement('canvas'); c1.width = w; c1.height = h;
+            const ctx1 = c1.getContext('2d'); ctx1.drawImage(s1.image, 0, 0, w, h);
+            const imgData1 = ctx1.getImageData(0, 0, w, h);
+            const c2 = document.createElement('canvas'); c2.width = w; c2.height = h;
+            const ctx2 = c2.getContext('2d'); ctx2.drawImage(s2.image, 0, 0, w, h);
+            const imgData2 = ctx2.getImageData(0, 0, w, h);
+            for (let i = 0; i < imgData1.data.length; i += 4) {
+                imgData1.data[i + 3] = imgData2.data[i + 3];
+            }
+            ctx1.putImageData(imgData1, 0, 0);
+            const newImg = new Image(); newImg.src = c1.toDataURL();
+            s1.image = newImg; if (s1.frames) s1.frames[0] = newImg;
+        };
+        window.sprite_save = (ind, subimg = 0, fname = 'sprite.png') => {
+            const s = _getSprite(ind);
+            if (!s || !s.image) return false;
+            try {
+                const w = s.fw || s.width || 32; const h = s.fh || s.height || 32;
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d'); ctx.drawImage(s.image, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a'); a.href = dataUrl; a.download = fname; a.click();
+                return true;
+            } catch (e) { return false; }
+        };
+        window.sprite_save_strip = (ind, fname = 'sprite_strip.png') => {
+            const s = _getSprite(ind);
+            if (!s) return false;
+            const frames = (s.frames && s.frames.length) ? s.frames : (s.image ? [s.image] : []);
+            if (!frames.length) return false;
+            try {
+                const w = s.fw || s.width || 32; const h = s.fh || s.height || 32;
+                const stripCanvas = document.createElement('canvas');
+                stripCanvas.width = w * frames.length; stripCanvas.height = h;
+                const ctx = stripCanvas.getContext('2d');
+                frames.forEach((img, i) => { ctx.drawImage(img, i * w, 0, w, h); });
+                const a = document.createElement('a'); a.href = stripCanvas.toDataURL('image/png'); a.download = fname; a.click();
+                return true;
+            } catch (e) { return false; }
+        };
+        window.sprite_get_texture = (ind, subimg = 0) => {
+            const s = _getSprite(ind);
+            return s ? (s.frames && s.frames[subimg] ? s.frames[subimg] : s.image) : null;
+        };
+        window.sprite_get_uvs = (ind, subimg = 0) => {
+            const s = _getSprite(ind);
+            if (!s) return [0, 0, 1, 1, 0, 0, 16, 16];
+            const w = s.fw || s.width || 16; const h = s.fh || s.height || 16;
+            const ox = s.ox ?? s.xorigin ?? 0; const oy = s.oy ?? s.yorigin ?? 0;
+            return [0, 0, 1, 1, ox, oy, w, h];
+        };
+        window.sprite_get_tpref = (ind, subimg = 0) => {
+            return { id: ind, subimg: subimg };
+        };
+        window.sprite_flush = (ind) => true;
+        window.sprite_prefetch = (ind) => true;
         // --- GENERIC GAME OBJECT CLASS ---
     class SpatialHash {
         constructor(cellSize = 64) {
@@ -36663,27 +36812,37 @@ const createEngineHTML = (projectData) => {
                 configurable: true, enumerable: true
             });
 
+            // --- Helper for accurate Bounding Box computation ---
+            this._getBBoxCalc = () => {
+                const sprKey = (this.mask_index !== undefined && this.mask_index !== -1) ? this.mask_index : (this.currentSpriteId || this.sprite_index);
+                const meta = typeof _getSprite === 'function' ? _getSprite(sprKey) : (SPRITE_METADATA[sprKey] || null);
+                const xsc = (this.image_xscale !== undefined) ? Number(this.image_xscale) : 1;
+                const ysc = (this.image_yscale !== undefined) ? Number(this.image_yscale) : 1;
+                const ox = meta ? (meta.ox ?? meta.xorigin ?? 0) : 0;
+                const oy = meta ? (meta.oy ?? meta.yorigin ?? 0) : 0;
+                const bL = meta ? (meta.bLeft ?? meta.bboxLeft ?? 0) : 0;
+                const bR = meta ? (meta.bRight ?? meta.bboxRight ?? ((meta.fw || meta.width || this.w || 16) - 1)) : (this.w - 1);
+                const bT = meta ? (meta.bTop ?? meta.bboxTop ?? 0) : 0;
+                const bB = meta ? (meta.bBottom ?? meta.bboxBottom ?? ((meta.fh || meta.height || this.h || 16) - 1)) : (this.h - 1);
+
+                const x1 = this.x + (bL - ox) * xsc;
+                const x2 = this.x + (bR - ox) * xsc;
+                const y1 = this.y + (bT - oy) * ysc;
+                const y2 = this.y + (bB - oy) * ysc;
+
+                return {
+                    left: Math.floor(Math.min(x1, x2)),
+                    right: Math.floor(Math.max(x1, x2)),
+                    top: Math.floor(Math.min(y1, y2)),
+                    bottom: Math.floor(Math.max(y1, y2))
+                };
+            };
+
             // --- Bounding Box Getters ---
-            Object.defineProperty(this, 'bbox_left', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bLeft !== undefined) return Math.round(this.x + meta.bLeft);
-                return Math.round(this.x);
-            }});
-            Object.defineProperty(this, 'bbox_top', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bTop !== undefined) return Math.round(this.y + meta.bTop);
-                return Math.round(this.y);
-            }});
-            Object.defineProperty(this, 'bbox_right', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bRight !== undefined) return Math.round(this.x + meta.bRight);
-                return Math.round(this.x + this.w - 1);
-            }});
-            Object.defineProperty(this, 'bbox_bottom', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bBottom !== undefined) return Math.round(this.y + meta.bBottom);
-                return Math.round(this.y + this.h - 1);
-            }});
+            Object.defineProperty(this, 'bbox_left', { get: () => this._getBBoxCalc().left });
+            Object.defineProperty(this, 'bbox_top', { get: () => this._getBBoxCalc().top });
+            Object.defineProperty(this, 'bbox_right', { get: () => this._getBBoxCalc().right });
+            Object.defineProperty(this, 'bbox_bottom', { get: () => this._getBBoxCalc().bottom });
             Object.defineProperty(this, 'sprite_width', {
                 get: () => {
                     const meta = _getSprite(this.currentSpriteId || this.sprite_index);
