@@ -1,0 +1,8 @@
+{
+  "name": "NOR Maker",
+  "description": "Imported from GitHub: MahmoudMMorsy/NM.Maker.0..1.0",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
