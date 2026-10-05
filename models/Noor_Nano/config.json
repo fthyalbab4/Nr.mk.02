@@ -1,31 +1,10 @@
 {
-  "model_name": "Noor Nano",
-  "base_model": "SmolLM2-135M-Instruct",
-  "quantization": "Q4_K_M",
-  "max_size_mb": 180,
+  "model_name": "Noor Nano (NaN-Your)",
+  "base_architecture": "SmolLM2-135M-Instruct",
+  "fine_tuned_on": "146 Noor Maker Cloud Engine Games",
+  "target_size_mb": 180,
+  "quantization_format": "GGUF Q4_K_M",
+  "purpose": "Drag and Drop (DnD) Visual Action Tree & Cloud Assets Assembler",
   "prompt_format": "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n",
-  "schema": {
-    "type": "object",
-    "properties": {
-      "metadata": {
-        "type": "object"
-      },
-      "sprites": {
-        "type": "array"
-      },
-      "objects": {
-        "type": "array"
-      },
-      "rooms": {
-        "type": "array"
-      }
-    },
-    "required": [
-      "metadata",
-      "sprites",
-      "objects",
-      "rooms"
-    ]
-  },
-  "grammar_constraint": "json_strict"
+  "schema_enforcement": "JSON_STRICT_DND_TREE"
 }
