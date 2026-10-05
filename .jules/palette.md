@@ -1,0 +1,3 @@
+## 2026-10-05 - WebView Dialog & Icon Button ARIA Accessibility
+**Learning:** Embedded WebViews in Android apps often host complex overlay modals (such as game cloud browsers). Without proper `role="dialog"`, `aria-modal="true"`, and `aria-label` attributes on icon-only close buttons (`✕`) and dynamic card buttons, screen readers cannot properly announce modal controls or give meaningful labels for action buttons.
+**Action:** Always provide explicit `aria-label` attributes for icon-only action buttons and search/filter inputs in modal overlays, and mark modal containers with `role="dialog"` and `aria-modal="true"`.

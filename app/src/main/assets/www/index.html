@@ -154266,7 +154266,7 @@ button, input, textarea, select {
     <div id="root"></div>
 
 
-<div id="gmk-cloud-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; font-family:system-ui,-apple-system,sans-serif;" dir="rtl">
+<div id="gmk-cloud-modal" role="dialog" aria-modal="true" aria-label="سحابة ألعاب GameMaker" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; font-family:system-ui,-apple-system,sans-serif;" dir="rtl">
   <div style="background:#f4f3ef; border:2px solid #fff; box-shadow:0 10px 30px rgba(0,0,0,0.4); border-radius:10px; width:92%; max-width:820px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;">
     <!-- Title Bar -->
     <div style="background:linear-gradient(90deg, #1e3a8a, #3b82f6); color:#fff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; user-select:none;">
@@ -154274,15 +154274,15 @@ button, input, textarea, select {
         <span>☁️</span>
         <span>سحابة ألعاب GameMaker 8 و GM82 (146 لعبة ومثال مباشر)</span>
       </div>
-      <button id="gmk-cloud-close-btn" style="background:#ef4444; border:none; color:#fff; font-weight:bold; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+      <button id="gmk-cloud-close-btn" aria-label="إغلاق السحابة" title="إغلاق" style="background:#ef4444; border:none; color:#fff; font-weight:bold; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
     </div>
 
     <!-- Filter & Search Controls -->
     <div style="padding:12px 16px; background:#e5e7eb; border-bottom:1px solid #d1d5db; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
       <div style="flex:1; min-width:200px; position:relative;">
-        <input id="gmk-cloud-search" type="text" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
       </div>
-      <select id="gmk-cloud-category" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
+      <select id="gmk-cloud-category" aria-label="تصنيف الألعاب" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
         <option value="ALL">جميع الأقسام (146 لعبة)</option>
         <option value="Platformer & Adventure">منصات ومغامرات (Platformer)</option>
         <option value="Shooter & Action">تصويب وأكشن (Shooter)</option>
@@ -154399,7 +154399,7 @@ button, input, textarea, select {
           <div style="font-weight:bold; font-size:13px; color:#111827; margin-bottom:4px; word-break:break-word; direction:ltr; text-align:right;">${item.title}</div>
           <div style="font-size:11px; color:#6b7280; margin-bottom:8px;">${item.category}</div>
         </div>
-        <button style="width:100%; padding:6px 0; background:#2563eb; color:#ffffff; border:none; border-radius:4px; font-weight:bold; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:background 0.2s;">
+        <button aria-label="تشغيل ${item.title} في المحرك" style="width:100%; padding:6px 0; background:#2563eb; color:#ffffff; border:none; border-radius:4px; font-weight:bold; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:background 0.2s;">
           <span>تشغيل في المحرك ▶</span>
         </button>
       `;
