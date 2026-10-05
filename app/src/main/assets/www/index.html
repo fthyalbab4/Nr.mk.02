@@ -31995,11 +31995,16 @@ const createEngineHTML = (projectData) => {
         }
 
         if (blendCol !== 0xFFFFFF && blendCol !== -1) {
-            const offscreen = document.createElement('canvas');
+            if (!window._tintCanvas) {
+                window._tintCanvas = document.createElement('canvas');
+            }
+            const offscreen = window._tintCanvas;
             offscreen.width = frameW;
             offscreen.height = frameH;
             const oCtx = offscreen.getContext('2d');
             if (oCtx) {
+                oCtx.globalCompositeOperation = 'source-over';
+                oCtx.clearRect(0, 0, frameW, frameH);
                 oCtx.drawImage(frameImg, sx, sy, frameW, frameH, 0, 0, frameW, frameH);
                 oCtx.globalCompositeOperation = 'source-atop';
                 const r = (blendCol >> 16) & 0xFF;
@@ -34113,8 +34118,15 @@ const createEngineHTML = (projectData) => {
     const _ds_maps = {}; let _ds_map_id = 0;
     window.ds_map_create  = () => { const id=_ds_map_id++; _ds_maps[id]={}; return id; };
     window.ds_map_set     = (id,k,v) => { if(_ds_maps[id]) _ds_maps[id][k]=v; };
+    window.ds_map_add     = (id,k,v) => { if(_ds_maps[id] && !(k in _ds_maps[id])) { _ds_maps[id][k]=v; return true; } return false; };
+    window.ds_map_replace = (id,k,v) => { if(_ds_maps[id]) { _ds_maps[id][k]=v; return true; } return false; };
     window.ds_map_find_value = (id,k) => _ds_maps[id]?.[k]??0;
     window.ds_map_exists  = (id,k) => !!(id in _ds_maps && k in _ds_maps[id]);
+    window.ds_map_delete  = (id,k) => { if(_ds_maps[id]) delete _ds_maps[id][k]; };
+    window.ds_map_clear   = (id) => { if(_ds_maps[id]) _ds_maps[id]={}; };
+    window.ds_map_size    = (id) => _ds_maps[id] ? Object.keys(_ds_maps[id]).length : 0;
+    window.ds_map_find_first = (id) => { const keys = _ds_maps[id] ? Object.keys(_ds_maps[id]) : []; return keys.length > 0 ? keys[0] : 0; };
+    window.ds_map_find_next = (id,k) => { const keys = _ds_maps[id] ? Object.keys(_ds_maps[id]) : []; const idx = keys.indexOf(k); return (idx !== -1 && idx + 1 < keys.length) ? keys[idx + 1] : 0; };
     window.ds_map_destroy = (id) => { delete _ds_maps[id]; };
 
 
