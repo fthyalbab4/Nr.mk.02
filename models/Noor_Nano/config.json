@@ -1,0 +1,31 @@
+{
+  "model_name": "Noor Nano",
+  "base_model": "SmolLM2-135M-Instruct",
+  "quantization": "Q4_K_M",
+  "max_size_mb": 180,
+  "prompt_format": "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "metadata": {
+        "type": "object"
+      },
+      "sprites": {
+        "type": "array"
+      },
+      "objects": {
+        "type": "array"
+      },
+      "rooms": {
+        "type": "array"
+      }
+    },
+    "required": [
+      "metadata",
+      "sprites",
+      "objects",
+      "rooms"
+    ]
+  },
+  "grammar_constraint": "json_strict"
+}
