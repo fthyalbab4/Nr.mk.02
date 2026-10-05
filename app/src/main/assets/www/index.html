@@ -30565,7 +30565,7 @@ const createEngineHTML = (projectData) => {
                      leftPressed: false, rightPressed: false },
             gamepad: { connected: false, axes: [0,0,0,0], buttons: new Array(20).fill(false),
                        buttonsPressed: new Array(20).fill(false) },
-            touch: { left: false, right: false, up: false, action: false },
+            touch: { left: false, right: false, up: false, down: false, action: false, jump: false, attack: false },
             check: function(k) { return !!(this.keys[k]); },
             checkJump: function() { return this.check('ArrowUp') || this.check('Space') || this.check('KeyZ') || this.gamepad.buttons[0]; },
             checkLeft: function() { return this.check('ArrowLeft') || (this.gamepad.axes[0] < -0.4) || this.gamepad.buttons[14]; },
@@ -30900,18 +30900,29 @@ const createEngineHTML = (projectData) => {
                 Input.touch.left = false;
                 Input.touch.right = false;
                 Input.touch.up = false;
+                Input.touch.down = false;
                 Input.touch.action = false;
+                Input.touch.jump = false;
+                Input.touch.attack = false;
 
                 if (down) {
                     Array.from(e.touches).forEach(t => {
                         const tx = (t.clientX - rect.left) / rect.width;
                         const ty = (t.clientY - rect.top)  / rect.height;
-                        if (tx < 0.4) { // Left zone = directional
-                            if (tx < 0.15) Input.touch.left = true;
-                            else if (tx > 0.25) Input.touch.right = true;
-                            if (ty < 0.4) Input.touch.up = true;
-                        } else if (tx > 0.6) { // Right zone = action/jump
+                        if (tx < 0.45) { // Left half = Directional Touch / D-Pad
+                            if (tx < 0.18) Input.touch.left = true;
+                            else if (tx > 0.24) Input.touch.right = true;
+
+                            if (ty < 0.45) Input.touch.up = true;
+                            else if (ty > 0.55) Input.touch.down = true;
+                        } else if (tx > 0.55) { // Right half = Action / Jump / Attack Buttons
                             Input.touch.action = true;
+                            if (ty < 0.6) {
+                                Input.touch.jump = true;
+                                Input.touch.up = true;
+                            } else {
+                                Input.touch.attack = true;
+                            }
                         }
                     });
                 }
@@ -30919,8 +30930,11 @@ const createEngineHTML = (projectData) => {
                 Input.syncKey('ArrowLeft', Input.touch.left);
                 Input.syncKey('ArrowRight', Input.touch.right);
                 Input.syncKey('ArrowUp', Input.touch.up);
-                Input.syncKey('Space', Input.touch.action);
-                Input.syncKey('KeyZ', Input.touch.action);
+                Input.syncKey('ArrowDown', Input.touch.down);
+                Input.syncKey('Space', Input.touch.action || Input.touch.jump);
+                Input.syncKey('KeyZ', Input.touch.action || Input.touch.jump);
+                Input.syncKey('KeyX', Input.touch.attack);
+                Input.syncKey('Control', Input.touch.attack);
             };
             canvas.addEventListener('touchstart',  e => { canvas.focus(); handleTouch(e, true); },  {passive:false});
             canvas.addEventListener('touchmove',   e => handleTouch(e, true),  {passive:false});
@@ -39305,7 +39319,56 @@ const createEngineHTML = (projectData) => {
         }
 
         // Render UI
-        function renderUI() {
+
+        // Render Virtual On-Screen Touch Gamepad for Mobile & Touch Devices
+        function renderVirtualTouchControls() {
+            if (!('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.SHOW_VIRTUAL_PAD)) return;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            const cw = canvas.width;
+            const ch = canvas.height;
+
+            ctx.save();
+            ctx.globalAlpha = 0.45;
+
+            // D-Pad Base (Bottom-Left)
+            const dpadCenterX = Math.min(100, cw * 0.18);
+            const dpadCenterY = ch - Math.min(100, ch * 0.22);
+            const dpadSize = Math.min(36, cw * 0.08);
+
+            // Left
+            ctx.fillStyle = Input.touch.left ? '#00ffff' : '#111827';
+            ctx.fillRect(dpadCenterX - dpadSize * 2, dpadCenterY - dpadSize / 2, dpadSize, dpadSize);
+            // Right
+            ctx.fillStyle = Input.touch.right ? '#00ffff' : '#111827';
+            ctx.fillRect(dpadCenterX + dpadSize, dpadCenterY - dpadSize / 2, dpadSize, dpadSize);
+            // Up
+            ctx.fillStyle = Input.touch.up ? '#00ffff' : '#111827';
+            ctx.fillRect(dpadCenterX - dpadSize / 2, dpadCenterY - dpadSize * 2, dpadSize, dpadSize);
+            // Down
+            ctx.fillStyle = Input.touch.down ? '#00ffff' : '#111827';
+            ctx.fillRect(dpadCenterX - dpadSize / 2, dpadCenterY + dpadSize, dpadSize, dpadSize);
+
+            // Action Buttons (Bottom-Right)
+            const btnJumpX = cw - Math.min(80, cw * 0.16);
+            const btnJumpY = ch - Math.min(100, ch * 0.22);
+            const btnAttackX = cw - Math.min(130, cw * 0.26);
+            const btnAttackY = ch - Math.min(60, ch * 0.14);
+            const btnR = Math.min(22, cw * 0.05);
+
+            // Jump / Button A
+            ctx.fillStyle = (Input.touch.action || Input.touch.jump) ? '#22c55e' : '#1f2937';
+            ctx.beginPath(); ctx.arc(btnJumpX, btnJumpY, btnR, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+
+            // Attack / Button B
+            ctx.fillStyle = Input.touch.attack ? '#ef4444' : '#1f2937';
+            ctx.beginPath(); ctx.arc(btnAttackX, btnAttackY, btnR, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+
+            ctx.restore();
+        }
+
+function renderUI() {
             if (!window.GAME_DATA.uiMenus) return;
             const qMult = window.renderingScaleMultiplier || 1;
             const logicalScale = (window.currentScale || 1) / qMult;
@@ -39367,7 +39430,7 @@ const createEngineHTML = (projectData) => {
                 });
             });
         }
-        renderUI();
+        renderUI(); renderVirtualTouchControls();
         gm82RuntimeCore.endFrame(Number.isFinite(timestamp) ? timestamp : performance.now());
         Input.clearFrameState();
         } catch(loopErr) {
