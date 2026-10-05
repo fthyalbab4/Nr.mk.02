@@ -1,7 +1,13 @@
 {
   "model_name": "Noor Nano (NaN-Your)",
   "base_architecture": "SmolLM2-135M-Instruct",
-  "fine_tuned_on": "146 Noor Maker Cloud Engine Games",
+  "fine_tuned_on": "146 GameMaker Cloud Catalog Games",
+  "phases_completed": [
+    "Phase 1: Scraping",
+    "Phase 2: Mechanics Categorization",
+    "Phase 3: QLoRA SFT",
+    "Phase 4: Graduation & GGUF Export"
+  ],
   "target_size_mb": 180,
   "quantization_format": "GGUF Q4_K_M",
   "purpose": "Drag and Drop (DnD) Visual Action Tree & Cloud Assets Assembler",
