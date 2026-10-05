@@ -1,16 +1,33 @@
 {
   "model_name": "Noor Nano (NaN-Your)",
-  "base_architecture": "SmolLM2-135M-Instruct",
+  "version": "2.0-dual",
+  "modes": {
+    "internal_rules": {
+      "enabled": true,
+      "description": "Pure Python/JS rule-based DnD schema generator. Works offline, no GPU, no model file required. Primary production mode.",
+      "entry": "noor_nano_rules.py / noor_nano.js"
+    },
+    "external_gguf": {
+      "enabled": true,
+      "description": "Optional external GGUF model import. Falls back to internal_rules if model missing, invalid, or no inference backend.",
+      "default_path": "models/Noor_Nano/noor_nano_q4.gguf",
+      "supported_formats": ["GGUF Q4_K_M", "GGUF Q4_0", "GGUF Q5_K_M"],
+      "fallback": "internal_rules"
+    }
+  },
+  "base_architecture": "SmolLM2-135M-Instruct (optional external)",
   "fine_tuned_on": "146 GameMaker Cloud Catalog Games",
   "phases_completed": [
     "Phase 1: Scraping",
     "Phase 2: Mechanics Categorization",
-    "Phase 3: QLoRA SFT",
-    "Phase 4: Graduation & GGUF Export"
+    "Phase 3: QLoRA SFT (optional)",
+    "Phase 4: Graduation & GGUF Export (optional)",
+    "Phase 5: Dual Mode (Rules + GGUF Import)"
   ],
   "target_size_mb": 180,
   "quantization_format": "GGUF Q4_K_M",
   "purpose": "Drag and Drop (DnD) Visual Action Tree & Cloud Assets Assembler",
   "prompt_format": "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n",
-  "schema_enforcement": "JSON_STRICT_DND_TREE"
+  "schema_enforcement": "JSON_STRICT_DND_TREE",
+  "cloud_catalog": "app/src/main/assets/www/data/gmk_cloud_catalog.json"
 }
