@@ -3292,6 +3292,37 @@ double gml_draw_set_circle_precision(double prec) {
     return 1.0;
 }
 
+double gml_ds_grid_set_region(double id, double x1, double y1, double x2, double y2, double val) {
+    int gid = (int)id;
+    if (gid < 0 || gid >= g_grid_count || !g_grids[gid].data) return 0;
+    int ix1 = (int)x1, iy1 = (int)y1, ix2 = (int)x2, iy2 = (int)y2;
+    if (ix1 < 0) ix1 = 0; if (iy1 < 0) iy1 = 0;
+    if (ix2 >= g_grids[gid].w) ix2 = g_grids[gid].w - 1;
+    if (iy2 >= g_grids[gid].h) iy2 = g_grids[gid].h - 1;
+    for (int y = iy1; y <= iy2; y++) {
+        for (int x = ix1; x <= ix2; x++) {
+            g_grids[gid].data[y * g_grids[gid].w + x] = val;
+        }
+    }
+    return 1.0;
+}
+
+double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2) {
+    int gid = (int)id;
+    if (gid < 0 || gid >= g_grid_count || !g_grids[gid].data) return 0;
+    int ix1 = (int)x1, iy1 = (int)y1, ix2 = (int)x2, iy2 = (int)y2;
+    if (ix1 < 0) ix1 = 0; if (iy1 < 0) iy1 = 0;
+    if (ix2 >= g_grids[gid].w) ix2 = g_grids[gid].w - 1;
+    if (iy2 >= g_grids[gid].h) iy2 = g_grids[gid].h - 1;
+    double sum = 0.0;
+    for (int y = iy1; y <= iy2; y++) {
+        for (int x = ix1; x <= ix2; x++) {
+            sum += g_grids[gid].data[y * g_grids[gid].w + x];
+        }
+    }
+    return sum;
+}
+
 int gml_script_find(const char *name) {
     if (!g_scripts || !name) return -1;
     return gm82_script_find(g_scripts, name);
