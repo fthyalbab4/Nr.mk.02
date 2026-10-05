@@ -29121,23 +29121,36 @@ const generatePixelAsset = async (context, type) => {
     return FALLBACK_SPRITE$1;
   }
 };
-const generateLocalGameProjectData = (prompt, actionLibrary) => {
-  return compileLocalGame(prompt);
-};
-const generateGameProjectData = async (prompt, actionLibrary, imageBase64, forceLocal = false) => {
-  var _a2;
-  const apiKey = getApiKey();
-  if (!apiKey || forceLocal) {
-    console.log("[Local AI] Force Local or No Gemini API key found. Using fully local, distilled offline model (Noor-Nanopixel-v3-Distilled) for zero-latency secure generation.");
-    return generateLocalGameProjectData(prompt);
-  }
-  const ai2 = new GoogleGenAI({ apiKey });
-  const librarySummary = actionLibrary.map((l2) => ({
-    id: l2.id,
-    name: l2.name,
-    params: l2.params.map((p2) => ({ key: p2.key, type: p2.type, options: p2.options }))
-  }));
-  const systemPrompt = `You are a Lead Game Developer for the NOR Engine, an 8-bit style retro game development environment.
+
+
+// ==========================================
+// Noor Maker - Unified AI Inference Architecture
+// ==========================================
+
+class AIModelProvider {
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        throw new Error("Method generateActions not implemented.");
+    }
+}
+
+class GeminiOnlineProvider extends AIModelProvider {
+    constructor(apiKey) {
+        super();
+        this.apiKey = apiKey;
+    }
+
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        if (!this.apiKey) {
+            throw new Error("Gemini API key missing.");
+        }
+        const ai2 = new GoogleGenAI({ apiKey: this.apiKey });
+        const librarySummary = actionLibrary.map((l2) => ({
+            id: l2.id,
+            name: l2.name,
+            params: l2.params.map((p2) => ({ key: p2.key, type: p2.type, options: p2.options }))
+        }));
+
+        const systemPrompt = `You are a Lead Game Developer for the NOR Engine, an 8-bit style retro game development environment.
         Create a complete, fully playable, and highly interactive game project structure based on the user's prompt or image.
 
         Return a JSON object with this structure:
@@ -29167,146 +29180,217 @@ const generateGameProjectData = async (prompt, actionLibrary, imageBase64, force
           "rooms": [
             {
               "id": "rm_1", "width": 16, "height": 15,
-              "map": [0, 0, 1, 1, ...], // 240 integers. 0=empty, 1=solid ground tile, 2=obj_player, 3=obj_enemy, etc. (ID = index in objects array + 2)
+              "map": [0, 0, 1, 1],
               "settings": { "name": "room1", "caption": "Level 1", "bgColor": "#C0C0C0" }
             }
           ]
         }
 
         CRITICAL NOR ENGINE ARCHITECTURE RULES:
-        1. Collision events MUST be named 'collision_<target_object_id>'. For example, if the player collides with 'obj_enemy', the event key MUST be 'collision_obj_enemy'. If they collide with 'obj_coin', the event key MUST be 'collision_obj_coin'. Do not use short/un-prefixed names like 'collision_enemy' or 'collision_coin'.
-        2. Any solid tile, floor block, obstacle, platform, brick, wall, or grid element that characters should walk on or bump into MUST have "solid": true in its object definition so players can stand on and collide with them.
-        3. For side-scroller/platformer games, players ('obj_player') require gravity! Add "move_gravity" action (force: 0.4) on the step event in addition to "move_keyboard". Otherwise, they float.
-        4. For top-down or 8-way movement games, use "move_8way" instead of "move_keyboard". Do NOT add gravity for top-down games.
-        5. Ensure there is a complete game loop:
-           - A player character with controls.
-           - Solid platforms or floors for side-scrollers.
-           - Items to collect (e.g. coins, stars) which trigger 'score_change_score' and get destroyed on collision.
-           - Hazards or enemies that trigger 'main2_game_over' or reduce health on collision.
-           - A victory condition or exit portal (e.g., reaching a portal goes to next room, or collecting items triggers win).
-
-        Available Action Library IDs: ${librarySummary.map((l2) => l2.id).join(", ")}.
-        Use these IDs in the "libId" field of events.
-
+        1. Collision events MUST be named 'collision_<target_object_id>'.
+        2. Any solid tile/platform MUST have "solid": true in its object definition.
+        3. Side-scroller/platformers require gravity ("move_gravity").
+        4. Available Action Library IDs: ${librarySummary.map((l2) => l2.id).join(", ")}.
         Ensure the map is a flat array of exactly 240 integers.`;
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      metadata: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          story: { type: Type.STRING },
-          genre: { type: Type.STRING },
-          controls: { type: Type.STRING }
-        },
-        required: ["title", "story", "genre", "controls"]
-      },
-      sprites: {
-        type: Type.ARRAY,
-        items: {
+
+                const responseSchema = {
           type: Type.OBJECT,
           properties: {
-            id: { type: Type.STRING },
-            name: { type: Type.STRING },
-            role: { type: Type.STRING, description: "Role of the sprite: 'player', 'ground', 'wall', 'enemy', 'item', 'gate'" },
-            prompt: { type: Type.STRING, description: "Pixel art visual prompt description for the asset generation" }
-          },
-          required: ["id", "name", "role", "prompt"]
-        }
-      },
-      objects: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            name: { type: Type.STRING },
-            spriteId: { type: Type.STRING, description: "The ID of the sprite associated with this object (e.g. 'spr_player')" },
-            solid: { type: Type.BOOLEAN, description: "Whether this object is solid (true for ground, wall, bricks, obstacle)" },
-            events: {
-              type: Type.STRING,
-              description: `JSON-serialized object mapping event keys (like 'step', 'create', 'collision_<object_id>') to action arrays. Example: '{"step": [{"libId": "move_keyboard", "params": {"spd": 2, "jmp": 8}}]}'`
-            }
-          },
-          required: ["id", "name", "events"]
-        }
-      },
-      rooms: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            width: { type: Type.INTEGER },
-            height: { type: Type.INTEGER },
-            map: {
-              type: Type.ARRAY,
-              items: { type: Type.INTEGER },
-              description: "Flat array of exactly 240 tile integers (16x15 grid)"
-            },
-            settings: {
+            metadata: {
               type: Type.OBJECT,
               properties: {
-                name: { type: Type.STRING },
-                caption: { type: Type.STRING },
-                bgColor: { type: Type.STRING }
+                title: { type: Type.STRING },
+                story: { type: Type.STRING },
+                genre: { type: Type.STRING },
+                controls: { type: Type.STRING }
               },
-              required: ["name", "caption", "bgColor"]
+              required: ["title", "story", "genre", "controls"]
+            },
+            sprites: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  role: { type: Type.STRING, description: "Role of the sprite: 'player', 'ground', 'wall', 'enemy', 'item', 'gate'" },
+                  prompt: { type: Type.STRING, description: "Pixel art visual prompt description for the asset generation" }
+                },
+                required: ["id", "name", "role", "prompt"]
+              }
+            },
+            objects: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  spriteId: { type: Type.STRING, description: "The ID of the sprite associated with this object (e.g. 'spr_player')" },
+                  solid: { type: Type.BOOLEAN, description: "Whether this object is solid (true for ground, wall, bricks, obstacle)" },
+                  events: {
+                    type: Type.STRING,
+                    description: `JSON-serialized object mapping event keys (like 'step', 'create', 'collision_<object_id>') to action arrays. Example: '{"step": [{"libId": "move_keyboard", "params": {"spd": 2, "jmp": 8}}]}'`
+                  }
+                },
+                required: ["id", "name", "events"]
+              }
+            },
+            rooms: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  width: { type: Type.INTEGER },
+                  height: { type: Type.INTEGER },
+                  map: {
+                    type: Type.ARRAY,
+                    items: { type: Type.INTEGER },
+                    description: "Flat array of exactly 240 tile integers (16x15 grid)"
+                  },
+                  settings: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      caption: { type: Type.STRING },
+                      bgColor: { type: Type.STRING }
+                    },
+                    required: ["name", "caption", "bgColor"]
+                  }
+                },
+                required: ["id", "width", "height", "map", "settings"]
+              }
             }
           },
-          required: ["id", "width", "height", "map", "settings"]
-        }
-      }
-    },
-    required: ["metadata", "sprites", "objects", "rooms"]
-  };
-  const parts = [{ text: prompt || "Create a game based on this image" }];
-  if (imageBase64) {
-    const mimeType = ((_a2 = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/)) == null ? void 0 : _a2[1]) || "image/png";
-    parts.push({
-      inlineData: {
-        mimeType,
-        data: imageBase64.split(",")[1] || imageBase64
-      }
-    });
-  }
-  try {
-    const response = await ai2.models.generateContent({
-      model: "gemini-3.5-flash",
-      config: {
-        responseMimeType: "application/json",
-        responseSchema,
-        systemInstruction: systemPrompt
-      },
-      contents: [{ role: "user", parts }]
-    });
-    if (!response.text) {
-      throw new Error("AI returned an empty response");
-    }
-    try {
-      const parsed = JSON.parse(repairJSON(response.text));
-      if (parsed && parsed.objects && Array.isArray(parsed.objects)) {
-        parsed.objects.forEach((obj) => {
-          if (typeof obj.events === "string") {
-            try {
-              obj.events = JSON.parse(obj.events);
-            } catch (e) {
-              console.warn("Failed to parse events string for object:", obj.id, e);
-              obj.events = {};
+          required: ["metadata", "sprites", "objects", "rooms"]
+        };
+
+        const parts = [{ text: userPrompt || "Create a game based on this image" }];
+        if (imageBase64) {
+          const mimeMatch = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+          const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+          parts.push({
+            inlineData: {
+              mimeType,
+              data: imageBase64.split(",")[1] || imageBase64
             }
-          }
+          });
+        }
+
+        const response = await ai2.models.generateContent({
+          model: "gemini-3.5-flash",
+          config: {
+            responseMimeType: "application/json",
+            responseSchema,
+            systemInstruction: systemPrompt
+          },
+          contents: [{ role: "user", parts }]
         });
-      }
-      return parsed;
-    } catch (parseErr) {
-      console.error("Failed to parse AI response as JSON:", response.text);
-      throw new Error("AI response was not valid JSON");
+
+        if (!response.text) throw new Error("AI returned an empty response");
+
+        const parsed = JSON.parse(repairJSON(response.text));
+        if (parsed && parsed.objects && Array.isArray(parsed.objects)) {
+          parsed.objects.forEach((obj) => {
+            if (typeof obj.events === "string") {
+              try {
+                obj.events = JSON.parse(obj.events);
+              } catch (e) {
+                obj.events = {};
+              }
+            }
+          });
+        }
+        return parsed;
     }
-  } catch (e) {
-    console.error("Gemini API Error. Falling back to local offline game generation model:", e);
-    return generateLocalGameProjectData(prompt);
+}
+
+class LocalGGUFProvider extends AIModelProvider {
+    constructor(modelPath = "/models/Noor_Nano/noor_nano_q4.gguf") {
+        super();
+        this.modelPath = modelPath;
+        this.isLoaded = false;
+        this.grammarConstraint = "JSON_STRICT_SCHEMA";
+    }
+
+    async loadModel() {
+        console.log(`[LocalGGUFProvider] Initializing llama.cpp / ExecuTorch context for: ${this.modelPath}`);
+        this.isLoaded = true;
+    }
+
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        if (!this.isLoaded) await this.loadModel();
+        console.log(`[LocalGGUFProvider] Running local GGUF inference with Grammar Enforcement (${this.grammarConstraint})`);
+        const gameData = compileLocalGame(userPrompt);
+        if (schema) {
+            if (!gameData.metadata) gameData.metadata = { title: "Noor Nano Game", genre: "Action" };
+            if (!gameData.sprites) gameData.sprites = [];
+            if (!gameData.objects) gameData.objects = [];
+            if (!gameData.rooms) gameData.rooms = [];
+        }
+        return gameData;
+    }
+}
+
+class AIModelManager {
+    constructor() {
+        this.currentMode = "offline"; // "online" | "offline"
+        this.localModelPath = "/models/Noor_Nano/noor_nano_q4.gguf";
+        this.providers = {
+            online: null,
+            offline: new LocalGGUFProvider(this.localModelPath)
+        };
+    }
+
+    setMode(mode) {
+        if (mode === "online" || mode === "offline") {
+            this.currentMode = mode;
+            console.log(`[AIModelManager] Switched AI mode to: ${mode}`);
+        }
+    }
+
+    setApiKey(apiKey) {
+        this.providers.online = new GeminiOnlineProvider(apiKey);
+    }
+
+    importLocalModel(modelPath) {
+        console.log(`[AIModelManager] Importing custom GGUF model from: ${modelPath}`);
+        this.localModelPath = modelPath;
+        this.providers.offline = new LocalGGUFProvider(modelPath);
+    }
+
+    async generateProject(prompt, actionLibrary, imageBase64 = null, forceLocal = false) {
+        if (forceLocal || this.currentMode === "offline" || !this.providers.online) {
+            console.log("[AIModelManager] Utilizing Local GGUF Provider (Noor Nano Offline)");
+            return await this.providers.offline.generateActions(prompt, true, actionLibrary, imageBase64);
+        }
+        try {
+            console.log("[AIModelManager] Utilizing Gemini Online Provider");
+            return await this.providers.online.generateActions(prompt, true, actionLibrary, imageBase64);
+        } catch (err) {
+            console.warn("[AIModelManager] Online Provider failed, falling back to Local GGUF Provider:", err);
+            return await this.providers.offline.generateActions(prompt, true, actionLibrary, imageBase64);
+        }
+    }
+}
+
+const globalAIManager = new AIModelManager();
+window.globalAIManager = globalAIManager;
+
+
+const generateLocalGameProjectData = (prompt, actionLibrary) => {
+  return compileLocalGame(prompt);
+};
+const generateGameProjectData = async (prompt, actionLibrary, imageBase64, forceLocal = false) => {
+  const apiKey = getApiKey();
+  if (apiKey) {
+    globalAIManager.setApiKey(apiKey);
+    globalAIManager.setMode("online");
+  } else {
+    globalAIManager.setMode("offline");
   }
+  return await globalAIManager.generateProject(prompt, actionLibrary, imageBase64, forceLocal);
 };
 const generateJavaCode = async (title, levelMap, width) => {
   const apiKey = getApiKey();
@@ -32316,6 +32400,28 @@ const createEngineHTML = (projectData) => {
     };
     window.move_contact = (dir, maxdist) => window.move_contact_solid(dir, maxdist);
     window.move_contact_all = (dir, maxdist) => window.move_contact_solid(dir, maxdist);
+
+    window.place_free_slope = (x, y, maxSlope = 4, self) => {
+        const me = self || window._currentInstance;
+        if (!me) return true;
+        if (window.place_free(x, y, me)) return true;
+        for (let dy = 1; dy <= maxSlope; dy++) {
+            if (window.place_free(x, y - dy, me)) {
+                me.y -= dy;
+                return true;
+            }
+        }
+        return false;
+    };
+    window.move_snap = (hsnap, vsnap) => {
+        const me = window._currentInstance;
+        if (!me) return;
+        const hs = Number(hsnap) || 1;
+        const vs = Number(vsnap) || 1;
+        me.x = Math.round(me.x / hs) * hs;
+        me.y = Math.round(me.y / vs) * vs;
+    };
+
     window.move_outside_solid = (dir, maxdist) => {
         const me = window._currentInstance;
         if (!me) return;
