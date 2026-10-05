@@ -30431,7 +30431,6 @@ const createEngineHTML = (projectData) => {
     <\/script>
     <link href="./fonts/press-start-2p.css" rel="stylesheet">
     <style>
-        <style>
         body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; overflow:hidden; user-select:none; touch-action:none; }
         canvas { position: relative; z-index: 10; image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain; background: #000; }
         #loading { position:absolute; color:#4ade80; font-family:monospace; font-weight:bold; font-size:12px; text-align:center; z-index: 100; letter-spacing:1px; }
@@ -31162,7 +31161,7 @@ const createEngineHTML = (projectData) => {
                 source.start(0);
 
                 if (!_gm82_active_sounds[name]) _gm82_active_sounds[name] = [];
-                const soundItem = { source, gain, loop };
+                const soundItem = { source, gain, loop, startCtxTime: GM82Audio.ctx.currentTime };
                 _gm82_active_sounds[name].push(soundItem);
 
                 source.onended = () => {
@@ -31279,7 +31278,16 @@ const createEngineHTML = (projectData) => {
             } catch(e) {}
         }
     };
-    window.audio_sound_get_track_position = (s) => 0;
+    window.audio_sound_get_track_position = (s) => {
+        if (_gm82_active_sounds && _gm82_active_sounds[s] && _gm82_active_sounds[s].length > 0) {
+            const item = _gm82_active_sounds[s][_gm82_active_sounds[s].length - 1];
+            if (item && item.startCtxTime && typeof GM82Audio !== 'undefined' && GM82Audio.ctx) {
+                const rate = (item.source && item.source.playbackRate) ? item.source.playbackRate.value : 1.0;
+                return Math.max(0, (GM82Audio.ctx.currentTime - item.startCtxTime) * rate);
+            }
+        }
+        return 0;
+    };
 
     // --- GML Animation Notifies & State Machine (PaperZD style) ---
     window.animation_notify_add = (objName, sprId, frame, callback) => {
@@ -31372,7 +31380,16 @@ const createEngineHTML = (projectData) => {
     window.audio_stop_sound  = (s) => {};
     window.audio_stop_all    = () => GM82Audio.stop_music();
     window.audio_is_playing  = (s) => true;
-    window.audio_sound_get_track_position = (s) => 0;
+    window.audio_sound_get_track_position = (s) => {
+        if (_gm82_active_sounds && _gm82_active_sounds[s] && _gm82_active_sounds[s].length > 0) {
+            const item = _gm82_active_sounds[s][_gm82_active_sounds[s].length - 1];
+            if (item && item.startCtxTime && typeof GM82Audio !== 'undefined' && GM82Audio.ctx) {
+                const rate = (item.source && item.source.playbackRate) ? item.source.playbackRate.value : 1.0;
+                return Math.max(0, (GM82Audio.ctx.currentTime - item.startCtxTime) * rate);
+            }
+        }
+        return 0;
+    };
     window.audio_set_master_volume = (v) => {};
 
     // =====================================================================
@@ -31844,6 +31861,27 @@ const createEngineHTML = (projectData) => {
             }
             return matches.length;
         };
+        const _lineIntersectsAABB = (x1, y1, x2, y2, bx1, by1, bx2, by2) => {
+            let minT = 0, maxT = 1;
+            const dx = x2 - x1, dy = y2 - y1;
+            const p = [-dx, dx, -dy, dy];
+            const q = [x1 - bx1, bx2 - x1, y1 - by1, by2 - y1];
+            for (let i = 0; i < 4; i++) {
+                if (p[i] === 0) {
+                    if (q[i] < 0) return false;
+                } else {
+                    const t = q[i] / p[i];
+                    if (p[i] < 0) {
+                        if (t > maxT) return false;
+                        if (t > minT) minT = t;
+                    } else {
+                        if (t < minT) return false;
+                        if (t < maxT) maxT = t;
+                    }
+                }
+            }
+            return minT <= maxT;
+        };
         window.collision_line_list = (x1, y1, x2, y2, obj, prec, notme, list, ordered) => {
             if (!window.instances) return 0;
             const self = window._currentInstance;
@@ -31853,7 +31891,13 @@ const createEngineHTML = (projectData) => {
                 if (inst.dead) continue;
                 if (notme && inst === self) continue;
                 if (obj !== 'all' && obj !== -1 && String(inst.objectId).toLowerCase() !== String(obj).toLowerCase() && String(inst.def?.name || '').toLowerCase() !== String(obj).toLowerCase()) continue;
-                matches.push(inst);
+                const bL = inst.bbox_left !== undefined ? inst.bbox_left : inst.x;
+                const bT = inst.bbox_top !== undefined ? inst.bbox_top : inst.y;
+                const bR = inst.bbox_right !== undefined ? inst.bbox_right : (inst.x + inst.w - 1);
+                const bB = inst.bbox_bottom !== undefined ? inst.bbox_bottom : (inst.y + inst.h - 1);
+                if (_lineIntersectsAABB(x1, y1, x2, y2, bL, bT, bR, bB)) {
+                    matches.push(inst);
+                }
             }
             if (ordered && self) {
                 matches.sort((a, b) => Math.hypot(a.x - self.x, a.y - self.y) - Math.hypot(b.x - self.x, b.y - self.y));
@@ -32400,6 +32444,26 @@ const createEngineHTML = (projectData) => {
     };
     window.move_contact = (dir, maxdist) => window.move_contact_solid(dir, maxdist);
     window.move_contact_all = (dir, maxdist) => window.move_contact_solid(dir, maxdist);
+    window.place_free_slope = (x, y, maxSlope = 4, self) => {
+        const me = self || window._currentInstance;
+        if (!me) return true;
+        if (window.place_free(x, y, me)) return true;
+        for (let dy = 1; dy <= maxSlope; dy++) {
+            if (window.place_free(x, y - dy, me)) {
+                me.y -= dy;
+                return true;
+            }
+        }
+        return false;
+    };
+    window.move_snap = (hsnap, vsnap) => {
+        const me = window._currentInstance;
+        if (!me) return;
+        const hs = Number(hsnap) || 1;
+        const vs = Number(vsnap) || 1;
+        me.x = Math.round(me.x / hs) * hs;
+        me.y = Math.round(me.y / vs) * vs;
+    };
     window.move_outside_solid = (dir, maxdist) => {
         const me = window._currentInstance;
         if (!me) return;
@@ -32408,7 +32472,7 @@ const createEngineHTML = (projectData) => {
         const dx = Math.cos(rad);
         const dy = -Math.sin(rad);
         let dist = 0;
-        const limit = maxdist < 0 ? 1000 : maxdist;
+        const limit = (maxdist === undefined || maxdist < 0) ? 1000 : maxdist;
         while (dist < limit && !window.place_free(me.x, me.y, me)) {
             me.x += dx; me.y += dy;
             dist += 1;
@@ -97487,7 +97551,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = true; });
       return next;
     });
-    arr.forEach(k => sendKey(k, "keydown"));
+    const primaryKey = arr.length > 0 ? arr[0] : null;
+    if (primaryKey !== null) sendKey(primaryKey, "keydown");
   };
 
   const handleBtnUp = (e, keyOrKeys) => {
@@ -97499,7 +97564,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = false; });
       return next;
     });
-    arr.forEach(k => sendKey(k, "keyup"));
+    const primaryKey = arr.length > 0 ? arr[0] : null;
+    if (primaryKey !== null) sendKey(primaryKey, "keyup");
   };
 
   const activeButtons = ((detectedControls && Array.isArray(detectedControls.buttons) && detectedControls.buttons.length > 0)
