@@ -1,39 +1,42 @@
 package com.normaker.gm82;
 
 /**
- * JNI declarations for NOR Maker GM82 core.
- * Load with: System.loadLibrary("gm82_android");
+ * JNI façade for the native GM82 loop.
+ * WebView injects a JS object (NorNative) that calls these methods.
  *
- * STATUS: declarations only – requires compiled libgm82_android.so from NDK.
- * gm82_native_draw is a STUB until GL textures are wired.
+ * Loop contract:
+ *   1) loadGame(path) once after init
+ *   2) each animation frame: tick() OR step()+draw()
+ *   3) optional: copy getFrameRgba() into Canvas ImageData
  */
-public class Gm82Native {
+public final class Gm82Native {
     static {
         try {
             System.loadLibrary("gm82_android");
         } catch (UnsatisfiedLinkError e) {
-            // Library not packaged yet – expected until NDK build is done
+            // Soft-fail in pure Web builds
         }
     }
 
-    public static native boolean nativeInit(int width, int height);
-    public static native void nativeShutdown();
-    public static native boolean nativeLoadGame(String absolutePath);
-    public static native void nativeResize(int width, int height);
-    public static native void nativeStep();
-    public static native void nativeDraw();
-    public static native void nativeKeyDown(int vk);
-    public static native void nativeKeyUp(int vk);
-    public static native void nativeTouch(int x, int y, int action);
-    public static native boolean nativeIsRunning();
-    public static native int nativeRoomWidth();
-    public static native int nativeRoomHeight();
+    private Gm82Native() {}
 
-    // VK constants matching gm82_input.h
-    public static final int VK_LEFT = 37;
-    public static final int VK_UP = 38;
-    public static final int VK_RIGHT = 39;
-    public static final int VK_DOWN = 40;
-    public static final int VK_SPACE = 32;
-    public static final int VK_ENTER = 13;
+    public static native boolean init(int width, int height);
+    public static native void shutdown();
+    public static native boolean loadGame(String absolutePath);
+    public static native void resize(int width, int height);
+
+    public static native void step();
+    public static native void draw();
+    public static native void tick();
+
+    /** RGBA bytes, length = roomW * roomH * 4, or null if not ready */
+    public static native byte[] getFrameRgba();
+    public static native boolean isFrameReady();
+    public static native boolean isRunning();
+    public static native int roomWidth();
+    public static native int roomHeight();
+
+    public static native void keyDown(int vk);
+    public static native void keyUp(int vk);
+    public static native void touch(int x, int y, int action);
 }
