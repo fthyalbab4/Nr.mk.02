@@ -48,7 +48,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         const gm82_decoded_object *o = &rt->objects->items[object_index];
         inst->sprite_index = o->sprite_index;
         inst->solid = o->solid;
-        inst->visible = o->visible ? 1 : 1; /* default visible if flag weird */
+        inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
     }
 }
@@ -62,7 +62,8 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
-    /* Create event: minimal – nothing yet (no GML). Hook point for later. */
+    /* Create event: behavior + scanned DnD actions (honest subset). */
+    gm82_events_fire_create_one(rt, inst);
     return inst;
 }
 
@@ -88,7 +89,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     if (rt->view_h > room->height) rt->view_h = room->height;
     rt->view_follow_object = 0;
 
-    /* Destroy non-persistent */
     int w = 0;
     for (int i = 0; i < rt->instance_count; i++) {
         if (rt->instances[i].alive && rt->instances[i].persistent) {
@@ -98,7 +98,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     }
     rt->instance_count = w;
 
-    /* Spawn room instances + Create */
     for (int i = 0; i < room->instance_count; i++) {
         const gm82_decoded_instance *src = &room->instances[i];
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
@@ -106,14 +105,14 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     }
     rt->running = 1;
     rt->frame = 0;
-    gm82_events_fire_create_all(rt);
+    /* Create already fired per instance in gm82_runtime_instance_create */
     return true;
 }
 
 static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
-    inst->vspeed = -sin(rad) * inst->speed; /* GM: direction 90 = up */
+    inst->vspeed = -sin(rad) * inst->speed;
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {
@@ -124,10 +123,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
         gm82_gml_set_frame_time(sec);
     }
 
-    /* Object Step events (behaviors / future GML) */
     gm82_events_fire_step_all(rt);
 
-    /* Alarms */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -142,7 +139,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    /* Begin Step / Step: apply velocity */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -150,12 +146,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
         if (inst->speed != 0.0)
             update_speed_from_dir(inst);
 
-        if (inst->path_index >= 0 && inst->path_speed != 0.0) {
+        if (inst->path_index >= 0 && inst->path_speed != 0.0)
             gm82_path_step_instance(inst);
-        }
-        if (inst->timeline_running) {
+        if (inst->timeline_running)
             gm82_timeline_step_instance(rt, inst);
-        }
 
         if (inst->gravity != 0.0) {
             double rad = inst->gravity_direction * 3.141592653589793 / 180.0;
@@ -173,7 +167,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         inst->x += inst->hspeed;
         inst->y += inst->vspeed;
 
-        /* Simple solid collision against other solids (AABB using sprite size) */
         if (inst->solid && rt->sprites) {
             int32_t sw = 16, sh = 16;
             if (inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
@@ -189,10 +182,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
                     ow = rt->sprites->frames[other->sprite_index].width;
                     oh = rt->sprites->frames[other->sprite_index].height;
                 }
-                double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-                double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
-                if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-                    /* push back on Y if falling */
+                if (inst->x < other->x + ow && inst->x + sw > other->x &&
+                    inst->y < other->y + oh && inst->y + sh > other->y) {
                     if (inst->vspeed > 0) {
                         inst->y = other->y - sh;
                         inst->vspeed = 0;
@@ -201,7 +192,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
             }
         }
 
-        /* Tile collision (treat tiles as solid platforms) */
         if (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
             const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
             int32_t sw = 16, sh = 16;
@@ -211,37 +201,22 @@ void gm82_runtime_step(gm82_runtime *rt) {
             }
             for (int ti = 0; ti < room->tile_count; ti++) {
                 const gm82_decoded_tile *tile = &room->tiles[ti];
-                double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-                double bx1 = tile->x, by1 = tile->y, bx2 = tile->x + tile->width, by2 = tile->y + tile->height;
-                if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-                    if (inst->vspeed > 0 && (inst->y - inst->vspeed + sh) <= by1 + 1) {
-                        inst->y = by1 - sh;
+                if (inst->x < tile->x + tile->width && inst->x + sw > tile->x &&
+                    inst->y < tile->y + tile->height && inst->y + sh > tile->y) {
+                    if (inst->vspeed > 0 && (inst->y - inst->vspeed + sh) <= tile->y + 1) {
+                        inst->y = tile->y - sh;
                         inst->vspeed = 0;
-                    } else if (inst->hspeed > 0) {
-                        inst->x = bx1 - sw;
-                        inst->hspeed = 0;
-                    } else if (inst->hspeed < 0) {
-                        inst->x = bx2;
-                        inst->hspeed = 0;
                     }
                 }
             }
         }
 
-        /* image_index advance (animation) */
         if (inst->image_speed != 0.0) {
-            /* accumulate using direction field low bits? keep simple: add rounded speed each frame */
             static double accum[512];
             int slot = (inst->id > 0) ? (inst->id % 512) : 0;
             accum[slot] += inst->image_speed;
-            while (accum[slot] >= 1.0) {
-                inst->image_index++;
-                accum[slot] -= 1.0;
-            }
-            while (accum[slot] <= -1.0) {
-                inst->image_index--;
-                accum[slot] += 1.0;
-            }
+            while (accum[slot] >= 1.0) { inst->image_index++; accum[slot] -= 1.0; }
+            while (accum[slot] <= -1.0) { inst->image_index--; accum[slot] += 1.0; }
             if (rt->sprite_groups && inst->sprite_index >= 0) {
                 int gi = gm82_sprite_group_index_for_frame(rt->sprite_groups, inst->sprite_index);
                 if (gi >= 0) {
@@ -256,7 +231,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    /* Camera follow */
     if (rt->view_enabled && rt->view_follow_object >= 0) {
         for (int i = 0; i < rt->instance_count; i++) {
             gm82_instance *tgt = &rt->instances[i];
@@ -276,7 +250,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    /* Compact dead instances periodically */
     if ((rt->frame & 31) == 0) {
         int w = 0;
         for (int i = 0; i < rt->instance_count; i++) {
@@ -307,22 +280,20 @@ static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int s
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
 
-    /* clear */
+    gm82_events_fire_draw_all(rt);
+
     for (int i = 0; i < buf_w * buf_h; i++) {
         rgba[i*4+0]=20; rgba[i*4+1]=20; rgba[i*4+2]=40; rgba[i*4+3]=255;
     }
 
-    /* background 0 (full image – room may also use tiles from same bg) */
     if (rt->backgrounds && rt->backgrounds->count > 0 && rt->backgrounds->items[0].rgba) {
         const gm82_decoded_background *bg = &rt->backgrounds->items[0];
-        /* only fill if no tiles; otherwise tiles compose the level art */
         int has_tiles = (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count
                          && rt->rooms->items[rt->current_room].tile_count > 0);
         if (!has_tiles)
             blit(rgba, buf_w, buf_h, bg->rgba, bg->width, bg->height, 0, 0);
     }
 
-    /* tiles from current room */
     if (rt->rooms && rt->backgrounds && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
         const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
         for (int ti = 0; ti < room->tile_count; ti++) {
@@ -347,7 +318,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    /* sort by depth (simple insertion for small counts) – draw high depth first */
     int order[GM82_MAX_INSTANCES];
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
@@ -383,7 +353,5 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index) {
     if (!rt || user_event_index < 0 || user_event_index > 11) return;
-    /* Placeholder: user events need GML scripts bound per object.
-       Currently counts as a successful no-op path so callers don't crash. */
     (void)user_event_index;
 }
