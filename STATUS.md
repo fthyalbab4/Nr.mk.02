@@ -1,14 +1,14 @@
-# STATUS.md — صادق
+# STATUS — صادق
 
-**2026-10-06**
+**2026-10-06 مساء**
 
-## Step 1 نتيجة host pipeline
-- mario / plataformas / shooter: **PIPELINE_OK** (load+materialize+step+draw)
-- zelda: goto_room FAIL (الغرف لم تُفك في decode المباشر)
+Host pipeline **4/4 PIPELINE_OK** (mario, zelda, shooter, plataformas).
 
-## نسبة
-~45–55% مسار native host على 3/4 عينات.
+- load + materialize + guard + goto_room + step + soft draw
+- rooms: `room*` و `r001`/`r_menu`
 
-ليس gameplay كامل على Android بعد.
+**ليس** gameplay كامل على Android بعد (SO rebuild + JS inject + GML).
 
-انظر STEP_LOG.md
+نسبة ~50–60% host path.
+
+STEP_LOG.md

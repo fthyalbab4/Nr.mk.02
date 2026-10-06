@@ -1,27 +1,34 @@
 # STEP LOG — تنفيذ تلقائي على المستودع
 
-## Step 1 — Host pipeline build + test (2026-10-06)
+## Step 1 — Host pipeline (2026-10-06)
+load → materialize → guard → goto_room → step×N → draw
 
-**الهدف:** إثبات load → materialize → guard → goto_room → step×N → draw بدون Android.
+| عينة | نتيجة |
+|------|--------|
+| mario_bros | **PIPELINE_OK** (181 inst) |
+| plataformas | **PIPELINE_OK** (60 inst) |
+| shooter | **PIPELINE_OK** (308 inst) |
+| zelda | فشل أولاً ثم أُصلح |
 
-**النتيجة:**
-| عينة | load | complete | goto_room | steps+draw |
-|------|------|----------|-----------|------------|
-| mario_bros.gmk | OK | true | 181 inst | **PIPELINE_OK** (90 frames) |
-| plataformas.gmk | OK | true | 60 inst | **PIPELINE_OK** |
-| shooter.gmk | OK | true | 308 inst | **PIPELINE_OK** |
-| zelda.gmk | OK | true | **FAIL** room decode=0 | — |
+## Step 2 — assets/www scripts
+- `assets/www/nor_native_loop_bridge.js`
+- `assets/www/index_html_native_loop_patch.js`
+- `tools/run_host_pipeline.sh`
 
-**ملاحظة zelda:** IR يعطي placeholder؛ `gm82_decode_rooms_from_gmk` رجّع 0.
+## Step 3 — إصلاح rooms لـ zelda (r001/r_menu)
+الأسماء `r001` ليست `room*` — تم توسيع الفلتر.
 
-**ملفات:** `tools/host_pipeline_test.c`, `tools/run_host_pipeline.sh`, `assets/www/*`
+| عينة | بعد الإصلاح |
+|------|-------------|
+| zelda | **PIPELINE_OK** (3 rooms, 39 inst في r001) |
+| mario / plataformas / shooter | ما زالت **PIPELINE_OK** |
 
-## Step 2 — دمج assets/www في APK (على الجهاز)
-1. نسخ `assets/www/*.js` إلى APK
-2. script tags قبل `</body>`
-3. إعادة بناء SO
+**4/4 عينات host pipeline ناجحة.**
 
-## Step 3 — إصلاح zelda rooms
+## Step 4 (التالي) — Android SO + APK
+1. NDK build `libgm82_android.so` من CMakeLists
+2. دمج JS في index.html
+3. تجربة على جهاز
 
 ## نسبة صادقة
-~45–55% لمسار host على 3/4 عينات.
+~50–60% مسار host (decode+step+draw). gameplay/GML/Android لسه.
