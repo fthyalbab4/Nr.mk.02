@@ -154357,6 +154357,11 @@ button, input, textarea, select {
   window.addEventListener("open-gmk-cloud-library", openModal);
   closeBtn.addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.style.display === "flex") {
+      closeModal();
+    }
+  });
 
   function getIconForCategory(cat) {
     switch(cat) {

@@ -5,3 +5,7 @@
 ## 2026-10-05 - Touch D-Pad & Handheld Game Runner Accessibility
 **Learning:** Virtual touch controllers (D-Pad, SELECT, START, action buttons) in handheld Game Boy / Arcade style emulator UI components must include ARIA labels (e.g., `aria-label="أعلى / W"`, `aria-label="إعادة تشغيل"`) so assistive technologies can read out controller inputs and utility tools accurately.
 **Action:** Add descriptive `aria-label` and `title` attributes to all virtual controller buttons and top bar tools in the game runner shell.
+
+## 2026-10-06 - Keyboard Escape Dismissal for Modal Overlays
+**Learning:** In WebViews hosting full-screen modal overlays, closing modals via the Escape key requires explicit keydown event listeners checking for `e.key === "Escape"` and verifying the modal's explicit display state (`modal.style.display === "flex"`) to prevent unexpected execution when hidden.
+**Action:** Always pair `Escape` key listeners on modal overlays with specific display state checks.
