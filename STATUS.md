@@ -1,16 +1,14 @@
-# STATUS.md — حالة المشروع (صادقة)
+# STATUS.md — صادق
 
-**آخر تحديث:** 2026-10-06
+**2026-10-06**
 
-## ملخص
+## Step 1 نتيجة host pipeline
+- mario / plataformas / shooter: **PIPELINE_OK** (load+materialize+step+draw)
+- zelda: goto_room FAIL (الغرف لم تُفك في decode المباشر)
 
-- Load GMK + materialize sprites/backgrounds + rooms يعمل على 4 عينات.
-- Guard يفتح (playable) بعد materialize ناجح.
-- Multi-frame يُخزَّن متتالي في rgba.
-- **ليست** جاهزة لـ gameplay كامل (GML/Events/native loop/audio ناقصة).
+## نسبة
+~45–55% مسار native host على 3/4 عينات.
 
-## النسبة
+ليس gameplay كامل على Android بعد.
 
-~40–50% من parity كامل مع Windows GM8.2.
-
-انظر GAPS_HONEST.md.
+انظر STEP_LOG.md
