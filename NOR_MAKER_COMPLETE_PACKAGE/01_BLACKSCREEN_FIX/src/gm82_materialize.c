@@ -63,20 +63,42 @@ bool gm82_materialize_sprites(gm82_project_ir *ir, const gm82_materialize_option
     }
 
     if (groups.count > 0) {
-        /* One IR sprite per named group. First frame pixels transferred.
-           Full multi-frame storage can be extended later. */
+        /* One IR sprite per named group. All frames concatenated into rgba
+           (frame 0 .. frame_count-1, each width*height*4 bytes). */
         for (int g = 0; g < groups.count; g++) {
             gm82_res_sprite *s = &ir->sprites[g];
             const gm82_sprite_group *grp = &groups.items[g];
-            int frame_idx = grp->frame_start;
+            int frame_start = grp->frame_start;
+            int frame_count = grp->frame_count;
+            if (frame_count <= 0) frame_count = 1;
             s->id = g;
             s->name = strdup(grp->name);
             s->width = grp->width;
             s->height = grp->height;
-            s->subimage_count = grp->frame_count;
-            s->rgba_size = L.frames[frame_idx].rgba_size;
-            s->rgba = L.frames[frame_idx].rgba;
-            L.frames[frame_idx].rgba = NULL;
+            s->subimage_count = frame_count;
+
+            size_t frame_bytes = 0;
+            if (frame_start >= 0 && frame_start < L.count)
+                frame_bytes = L.frames[frame_start].rgba_size;
+            size_t total = frame_bytes * (size_t)frame_count;
+            s->rgba_size = total;
+            s->rgba = total ? (uint8_t *)malloc(total) : NULL;
+            if (total && !s->rgba) {
+                s->status = GM82_RES_PARTIAL;
+                continue;
+            }
+            for (int f = 0; f < frame_count; f++) {
+                int idx = frame_start + f;
+                if (idx < 0 || idx >= L.count || !L.frames[idx].rgba) {
+                    if (s->rgba) memset(s->rgba + (size_t)f * frame_bytes, 0, frame_bytes);
+                    continue;
+                }
+                size_t copy_n = L.frames[idx].rgba_size < frame_bytes
+                              ? L.frames[idx].rgba_size : frame_bytes;
+                memcpy(s->rgba + (size_t)f * frame_bytes, L.frames[idx].rgba, copy_n);
+                if (copy_n < frame_bytes)
+                    memset(s->rgba + (size_t)f * frame_bytes + copy_n, 0, frame_bytes - copy_n);
+            }
             s->status = GM82_RES_DECODED;
         }
     } else {
