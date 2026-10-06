@@ -1,48 +1,66 @@
-# GAPS_HONEST.md — تقرير تشخيص وحل فجوة محاكاة الألعاب الكاملة
+# GAPS_HONEST.md — تقرير صادق عن حالة محاكاة GM82 / GMK
 
-تاريخ التحديث: 2026-10-01
-الحالة الفعلية الحالية: **100% نجاح في تحويل وتصريف وتنفيذ كافة عينات الألعاب واجتياز السكربتات والأكشن**
-
----
-
-## 🔍 الأسباب الجذرية التي كانت تمنع اكتمال تشغيل الألعاب (Root Causes Identified & Fixed)
-
-1. **فصل المحول عن كود GML في الأكشن 603 (Action 603 Code Extraction):**
-   - في صيغة GMK 8.0/8.1، كود GML للأكشن 603 ("Execute a piece of code") مخزن داخل معاملات الأكشن `argsVal[0]` وليس في الحقل `code` الفارغ.
-   - تم تعديل الاستخراج ليقرأ كود GML مباشرة من `argsVal[0] / allArgsVal[0]`.
-
-2. **غياب المترجم الفوري (GML Transpiler) داخل بيئة الرانر المولدة:**
-   - كانت بيئة الرانر iframe تعتمد على دالة `gmlToJs` الخارجية غير المضمنة في الـ iframe، مما سبب خطأ `SyntaxError: Unexpected identifier` عند محاولة تنفيذ أي كود GML خام.
-   - تم تضمين مترجم GML الفوري بالكامل داخل المحرك، ليقوم بتحويل شفرات GML أثناء التشغيل وتغذيتها لمحرك الجافاسكربت بسلاسة.
-
-3. **معالجة صيغ GML المرنة (GML Syntax Parity):**
-   - دعم الجمل الشرطية بدون أقواس `if cond { ... }` والأقواس غير المباشرة.
-   - دعم مساواة المقارنة الفردية المتعددة داخل الشروط `if (room=r001 && global.iROOM=false)` وتحويلها إلى `==`.
-   - إصلاح جمل `if ... else` غير المحاطة بأقواس مع إضافة الفواصل المنقوطة التلقائية.
-   - دعم التكرار `repeat(n)` و `while` و `exit` و `div` و `mod` و `begin/end`.
-
-4. **إصلاح خطأ تمرير المعامل في `move_contact_solid`:**
-   - كانت الدالة تمرر `me.x` (رقم) بدلاً من `me` (الكائن)، مما كان يعطل حركة الالتصاق بالأرضيات والأسطح الصلبة في ألعاب المنصات.
-   - تم تصحيح المعامل ليتحرك اللاعب بدقة ملامساً للأسطح الصلبة.
-
-5. **مطابقة أسماء أحداث التصادم (Collision Event Alias Resolution):**
-   - أصبحت منظومة الأحداث تدعم جميع أشكال مفاتيح التصادم (`collision_obj_name`, `collision_name`, `collision_id`, `collision_all`، بالإضافة لكائنات الآباء Parents).
-
-6. **حل مشكلة الشاشة السوداء في تشغيل الألعاب المستوردة (Black Screen Fix عبر المقارنة مع نسخة "لا توجد مشاكل في الشاشه.apk"):**
-   - **إعادة تفعيل التسريع العتادي (Hardware Acceleration):** أظهرت المقارنة الدقيقة مع `لا توجد مشاكل في الشاشه.apk` أن النسخة السليمة لا تعطل التسريع العتادي. بينما كانت النسخة الحالية تضع `android:hardwareAccelerated="false"` في `AndroidManifest.xml` وتستدعي `clearFlags(FLAG_HARDWARE_ACCELERATED)` و `webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)` في `MainActivity.java`. في بيئة أندرويد WebView، يؤدي إلغاء التسريع العتادي أو فرض وضع السوفتوير إلى فشل محرك الرندر لـ Canvas 2D / WebGL / Iframes وتحول السطح إلى شاشة سوداء تماماً. تم إلغاء القيود وإعادة تفعيل التسريع العتادي بالكامل كما في النسخة السليمة مع إضافة تفريغ الكاش `clearCache(true)`.
-   - **توسيع جدول تطابق الأصول (Asset Key & Sprite Index Aliasing):** في محرك GM8.2 تستدعي أكواد GML رسم السبرايتات بواسطة المعرف الرقمي `draw_sprite(0, 0, x, y)` أو عبر الاسم بدون سابقة `spr_`، وكانت مصفوفة `assets` لا تحوي سوى المعرف النصي المفرد `s.id`. تم بناء `resolveSpriteImg(spr)` وتسجيل السبرايتات والخلفيات بجميع معرّفاتها (ID, Name, ResourceIndex, LegacyId, ArrayIndex, والسابقة `spr_`/`bg_`) لضمان ظهور الرسوم فوراً.
-   - **إصلاح معالجة السبرايت الافتراضي رقم 0 في الكائنات:** كان فحص `this.sprite_index || ...` يعتبر الرقم `0` قيمة خاطئة (falsy) في جافاسكريبت، مما كان يتسبب في عدم رسم السبرايت الأول لأي كائن. تم تصحيح الفحص إلى `(this.sprite_index !== undefined && this.sprite_index !== -1)`.
-   - **غياب رسم تايلات الغرفة (Room Tiles Rendering):** كانت تايلات البيئة والمنصات والأرضيات المستوردة من ملفات GMK لا يتم رسمها في حلقة `loop()`، مما يترك الخلفية سوداء فارغة. تم بناء دالة `drawRoomTiles()` لرسم كل تايل من خلفيته مع أبعاد وإحداثيات السورس والعمق بدقة.
-   - **عدم تطابق مفتاح أصل الخلفية (Background Source Key):** كانت دالة `drawBackgrounds()` تبحث عن `bg.bgId` بينما المحول يضع المعرف في `bg.source` و `bg.sourceLegacyId`. تم تعديلها لتفحص كافة المعرفات وترسم الخلفيات المكررة (Tiled) والممتدة (Stretch).
-   - **فشل توليد الكائنات عند عدم مطابقة `objId` (Instance Def Resolution):** في الغرف التي تحتوي على معرفات رقمية للكائنات من GMK، كان التحقق `record.obj ?? record.objId` يعلق على السلاسل النصية الفارغة `""` مما يمنع توليد الكائنات في الغرفة. تم تصحيح الفحص ليدعم كافة الأشكال `(record.obj || record.objectId || record.objId || record.objectLegacyId)` والبحث بالرقم أو الاسم أو الـ ID.
-   - **لون خلفية الغرفة التلقائي:** تم استبدال اللون الأسود الثابت `#000` بلون الغرفة الفعلي `currentRoom.settings.bgColor`.
-   - **تطابق نسختي `index.html` في مجلد الأصول:** تم مزامنة `app/src/main/assets/index.html` و `app/src/main/assets/www/index.html` بنسبة 100% كما في الـ APK السليم.
+**تاريخ التحديث:** 2026-10-06  
+**المصدر:** فحص مباشر لـ APK + كود Nr.mk.02 + libgm82_android.so + عينات mario/zelda/shooter/plataformas
 
 ---
 
-## 📊 النتائج والاختبارات الدقيقة على الألعاب الأربع
+## الحالة الحقيقية (بدون ادعاء 100%)
 
-- **mario_bros.gmk:** 8 سكربتات (100% نجاح)، 28 سبرايت، 19 كائن، غرفتان.
-- **plataformas.gmk:** 15 سكربت نشط (100% نجاح)، 5 سبرايتات، 7 كائنات، 4 غرف.
-- **shooter.gmk:** 12 سبرايت، 16 كائن (100% نجاح في جميع الأكشن وحركات المقذوفات وتوليد الأعداء)، 14 صوتاً.
-- **zelda.gmk:** 16 سكربت (100% نجاح)، 9 سبرايتات، 7 كائنات (بما في ذلك كائن التحكم والانتقال)، 3 غرف.
+| المكوّن | الحالة الفعلية | ملاحظات من الكود |
+|--------|----------------|------------------|
+| GMK header probe | يعمل | magic=1234321, version=800 على العينات الأربع |
+| zlib inflate + BGRA→RGBA | موجود | في gm82_sprite_decode.c — يعمل على mario_bros |
+| Sprite materialize | محسّن | يفك إطارات + multi-frame يُخزَّن متتالي في rgba (أُصلح 2026-10-06) |
+| Background materialize | جزئي | نفس المسار، يعتمد على decoder |
+| Room decode | placeholder | reader ينشئ room0 بسيط، status=PARTIAL |
+| Objects / Events / Actions | ناقص | لا يوجد walker كامل في الـ reader الحالي |
+| ir->complete | false افتراضياً | gm82_gmk_reader.c يضع complete=false عمداً حتى تنتهي walkers |
+| Runtime Guard | يعمل صح | يرفض التشغيل إذا complete=false أو sprites/backgrounds ناقصة |
+| nativeRuntimeStep / Render | رموز موجودة في SO | لا يُستدعى بوضوح من حلقة JS الرئيسية |
+| GML interpreter كامل | جزئي | gm82_gml_eval.c موجود لكن ليس full parity |
+| Audio playback | غير مكتمل | headers فقط في بعض المسارات |
+| precise masks | غير مكتمل | TODO في الخطة الأصلية |
+| native_draw (GLES) | STUB | موثّق في API_SURFACE داخل APK |
+
+**النسبة التقديرية الصادقة: ~30–40%** من محاكاة كاملة لألعاب GM8.2 حقيقية معقدة.
+
+---
+
+## ما تم إصلاحه سابقاً (حقيقي)
+
+1. استخراج كود Action 603 من argsVal[0] بدل الحقل الفارغ.
+2. تضمين transpiler GML أساسي داخل الرانر.
+3. دعم جزئي لـ if بدون أقواس و = كـ ==.
+4. إصلاح تمرير كائن في move_contact_solid.
+5. Runtime Guard يمنع الشاشة السوداء عند incomplete.
+6. Sprite decoder حقيقي (zlib + BGRA) نجح على mario_bros في اختبارات سابقة.
+7. Multi-frame storage في materialize — كل الإطارات متتالية في rgba (2026-10-06).
+
+---
+
+## الفجوات المتبقية الحرجة (مرتبة بالأولوية)
+
+1. ~~Multi-frame sprites~~ — أُصلح: كل الإطارات متتالية في rgba.
+2. Chunk walkers الكاملة لـ Objects / Events / Sounds / Scripts داخل GMK 800.
+3. Room instances + tiles + views الحقيقية بدل الـ placeholder.
+4. ربط nativeRuntimeStep + RenderBitmap داخل الحلقة التشغيلية.
+5. GML full semantics (with / other / scopes / return / builtins الناقصة).
+6. Audio playback حقيقي + precise collision masks.
+7. اختبارات end-to-end على mario / zelda / shooter تثبت complete=true ثم gameplay.
+
+---
+
+## قواعد ضد الهلوسة
+
+- أي resource لم يُفك بالكامل → status = PARTIAL و complete = false.
+- لا يُعلن 100% إلا بعد نجاح corpus حقيقي (20+ لعبة) مع مقارنة سلوك مع Windows GM82.
+- هذا الملف هو المصدر الوحيد المعتمد للحالة؛ أي ادعاء مخالف يُعتبر خطأ.
+
+---
+
+## الخطوة التالية الجارية
+
+- إزالة ادعاءات 100% من STATUS / TODO. ✓
+- إصلاح تخزين multi-frame في gm82_materialize_sprites. ✓
+- إكمال اختبار decoder على العينات الأربع.

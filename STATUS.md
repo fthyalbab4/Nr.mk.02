@@ -1,19 +1,37 @@
-# STATUS.md — حالة محرك NOR Maker & GM82 Android
+# STATUS.md — حالة المشروع (صادقة)
 
-تاريخ آخر تحديث: 2026-10-01
-الحالة الفعلية الحالية: **100% نجاح واكتمال تشغيل عينات الألعاب**
+**آخر تحديث:** 2026-10-06
 
----
+## الملخص التنفيذي
 
-## 📊 جدول التغطية الحقيقية للمحرك (100% Real Parity)
+النواة تحتوي على:
+- Dual loader skeleton (GMK + .gm82)
+- Runtime Guard يعمل
+- Sprite/Background pixel decoder (zlib + BGRA→RGBA) — يعمل جزئياً
+- Materialize path موجود
+- بعض GML eval وbuiltins
 
-| المكون | النسبة الحالية | حالة الاكتمال والتحقق |
-|---|:---:|---|
-| **فك ترميز GMK / GM82 الثنائي والنصي** | **100%** | قراءة وفك جميع ملفات GMK (v800, v701, v600, v530) ومجلدات GM82 النصية |
-| **محول السكربتات والأكشن (GML Transpiler)** | **100%** | اجتياز 39/39 سكربت (100%) و 78/78 أكشن (100%) بدون أية أخطاء تجميع |
-| **محرك الفيزياء والتصادم (Physics & Collision)** | **100%** | إصلاح `move_contact_solid` و `place_free` و `place_meeting` وأقنعة البكسل 1-bit |
-| **منظومة الأحداث (Event Dispatch & Aliases)** | **100%** | تغطية أحداث Step, Create, Destroy, Alarm, Keyboard, Mouse, Other, و Collision بالكامل |
-| **الصوت والأداء المنخفض لزمن الاستجابة (Audio)** | **100%** | OpenSL ES + AudioBuffer رنين صوتي منخفض التأخير في الأندرويد والويب |
-| **الرسوميات والسبرايتات (Rendering & Sprites)** | **100%** | فك إطارات الصور والأنيميشن ورسم الخلفيات والكاميرات والفيوز بدقة تامة |
-| **حارس استقرار النواة (Runtime Guard)** | **100%** | جميع اختبارات `test_guard` و `run_full_verification.py` ناجحة بنسبة 16/16 |
-| **تجميع وبناء التطبيق (Android Build)** | **100%** | `compile_applet` ناجح بنسبة 100% (Build succeeded) |
+ليست جاهزة للاستخدام الكامل.
+complete=false هو السلوك الصحيح حالياً حتى تكتمل walkers وmulti-frame وObjects/Events.
+
+## النسبة الحالية
+
+~30–40% من parity كامل مع Windows GM8.2.
+
+## ما ينجح
+
+- Probe GMK 800 على mario_bros / zelda / shooter / plataformas
+- فك بعض إطارات السبرايت من mario_bros
+- Guard يمنع التشغيل عند incomplete
+- Multi-frame storage في materialize (أُصلح)
+
+## ما لا ينجح / ناقص
+
+- Objects + Events + full Actions
+- Room instances/tiles الحقيقية
+- ربط native step/render في الحلقة
+- Audio playback
+- Precise masks
+- GML full + DnD كامل
+
+انظر GAPS_HONEST.md للتفاصيل.
