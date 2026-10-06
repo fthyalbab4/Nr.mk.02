@@ -1,34 +1,27 @@
-# STEP LOG — تنفيذ تلقائي على المستودع
+# STEP LOG
 
-## Step 1 — Host pipeline (2026-10-06)
-load → materialize → guard → goto_room → step×N → draw
+## Step 1–3 — Host pipeline 4/4 OK + zelda r001 fix
 
-| عينة | نتيجة |
-|------|--------|
-| mario_bros | **PIPELINE_OK** (181 inst) |
-| plataformas | **PIPELINE_OK** (60 inst) |
-| shooter | **PIPELINE_OK** (308 inst) |
-| zelda | فشل أولاً ثم أُصلح |
+## Step 4 — Android packaging prep (2026-10-06)
 
-## Step 2 — assets/www scripts
+### 4a CMakeLists
+- كل مصادر runtime (مع path/timeline/particles/gml_eval)
+- دعم host build بدون NDK
+
+### 4b Host shared lib smoke
+```
+libgm82_android_host.so — symbols: init/load/step/draw/tick/frame_rgba
+mario: HOST_SO_SMOKE_OK running=1 frame=1500x208
+zelda: HOST_SO_SMOKE_OK running=1 frame=240x160
+```
+
+### 4c WebView bridge
+- `NorNativeWebBridge.java` → `window.NorNative`
 - `assets/www/nor_native_loop_bridge.js`
-- `assets/www/index_html_native_loop_patch.js`
-- `tools/run_host_pipeline.sh`
 
-## Step 3 — إصلاح rooms لـ zelda (r001/r_menu)
-الأسماء `r001` ليست `room*` — تم توسيع الفلتر.
+### 4d ما لم يُنفّذ هنا (يحتاج NDK + جهاز)
+- بناء arm64 `libgm82_android.so` حقيقي
+- تجميع APK + تجربة على الهاتف
 
-| عينة | بعد الإصلاح |
-|------|-------------|
-| zelda | **PIPELINE_OK** (3 rooms, 39 inst في r001) |
-| mario / plataformas / shooter | ما زالت **PIPELINE_OK** |
-
-**4/4 عينات host pipeline ناجحة.**
-
-## Step 4 (التالي) — Android SO + APK
-1. NDK build `libgm82_android.so` من CMakeLists
-2. دمج JS في index.html
-3. تجربة على جهاز
-
-## نسبة صادقة
-~50–60% مسار host (decode+step+draw). gameplay/GML/Android لسه.
+## نسبة
+~55–65% (مسار host SO + pipeline). Android APK لسه.
