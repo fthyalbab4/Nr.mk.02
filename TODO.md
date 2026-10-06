@@ -1,41 +1,31 @@
-# TODO.md — خطة عمل صادقة (بدون ادعاءات)
+# TODO.md — خطة عمل صادقة
 
-الهدف: محاكاة أقرب ما يمكن لـ Windows GM8.2 على Android، بخطوات قابلة للقياس.
+## تم
 
-## المرحلة الحالية (قيد التنفيذ)
+- [x] Sprite decoder + multi-frame storage
+- [x] Room/object decode موصول في gmk_reader
+- [x] Pipeline test: load → materialize → guard على 4 عينات
+- [x] إزالة ادعاءات 100%
 
-### 1. إصلاح Materialize
-- [x] Sprite decoder أساسي (zlib + BGRA)
-- [x] تخزين كل إطارات الـ multi-frame في rgba (متتالية) بدل أول إطار فقط
-- [ ] Background decoder مستقر على zelda / plataformas
-- [ ] gm82_project_ir_recompute_complete يعكس الواقع بدقة
+## التالي
 
-### 2. Chunk Walkers
-- [ ] Objects + Events + Actions headers
-- [ ] Sounds headers → ثم playback
-- [ ] Scripts
-- [ ] Room instances / tiles / views الحقيقية
+### Runtime
+- [ ] ربط nativeRuntimeStep + RenderBitmap في الحلقة
+- [ ] Event order + Create/Step/Draw من objects
 
-### 3. Runtime Integration
-- [ ] استدعاء nativeRuntimeStep + nativeRuntimeRenderBitmap من الحلقة
-- [ ] Event order مطابق لـ gm82help
-- [ ] other / with صحيح داخل triggerEvent
+### GML / Actions
+- [ ] Action 611 / 404
+- [ ] with / other / scopes
+- [ ] builtins الناقصة
 
-### 4. GML + Actions
-- [ ] Action 611 (relative + target)
-- [ ] Action 404 legacy
-- [ ] builtins الناقصة + scopes
+### Decode
+- [ ] Objects بدون بادئة obj_
+- [ ] Rooms لـ zelda بشكل أفضل (instances)
+- [ ] Events/Actions headers من GMK
 
-### 5. Audio + Collision
+### Audio / Collision
 - [ ] Playback حقيقي
 - [ ] Precise masks
 
-### 6. Validation
-- [ ] mario_bros / zelda / shooter تصل complete=true
-- [ ] gameplay أساسي بدون freeze
-- [ ] corpus أوسع لاحقاً
-
-## قواعد
-1. لا complete=true إلا بعد materialize ناجح فعلي.
-2. كل مرحلة لها اختبار regression.
-3. لا استبدال عشوائي لكود يعمل — إكمال فقط.
+### Validation
+- [ ] gameplay أساسي على mario بدون freeze

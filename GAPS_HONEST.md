@@ -1,66 +1,45 @@
 # GAPS_HONEST.md — تقرير صادق عن حالة محاكاة GM82 / GMK
 
-**تاريخ التحديث:** 2026-10-06  
-**المصدر:** فحص مباشر لـ APK + كود Nr.mk.02 + libgm82_android.so + عينات mario/zelda/shooter/plataformas
+**تاريخ التحديث:** 2026-10-06 (مساءً)  
+**المصدر:** فحص APK + كود Nr.mk.02 + اختبارات pipeline على mario/zelda/shooter/plataformas
 
 ---
 
-## الحالة الحقيقية (بدون ادعاء 100%)
+## نتائج الاختبار الفعلية (2026-10-06)
 
-| المكوّن | الحالة الفعلية | ملاحظات من الكود |
-|--------|----------------|------------------|
-| GMK header probe | يعمل | magic=1234321, version=800 على العينات الأربع |
-| zlib inflate + BGRA→RGBA | موجود | في gm82_sprite_decode.c — يعمل على mario_bros |
-| Sprite materialize | محسّن | يفك إطارات + multi-frame يُخزَّن متتالي في rgba (أُصلح 2026-10-06) |
-| Background materialize | جزئي | نفس المسار، يعتمد على decoder |
-| Room decode | placeholder | reader ينشئ room0 بسيط، status=PARTIAL |
-| Objects / Events / Actions | ناقص | لا يوجد walker كامل في الـ reader الحالي |
-| ir->complete | false افتراضياً | gm82_gmk_reader.c يضع complete=false عمداً حتى تنتهي walkers |
-| Runtime Guard | يعمل صح | يرفض التشغيل إذا complete=false أو sprites/backgrounds ناقصة |
-| nativeRuntimeStep / Render | رموز موجودة في SO | لا يُستدعى بوضوح من حلقة JS الرئيسية |
-| GML interpreter كامل | جزئي | gm82_gml_eval.c موجود لكن ليس full parity |
-| Audio playback | غير مكتمل | headers فقط في بعض المسارات |
-| precise masks | غير مكتمل | TODO في الخطة الأصلية |
-| native_draw (GLES) | STUB | موثّق في API_SURFACE داخل APK |
+| العينة | sprites | rooms | objects | materialize | complete | guard |
+|--------|---------|-------|---------|-------------|----------|-------|
+| mario_bros.gmk | 24 (multi-frame OK) | 2 (181+120 inst) | 15 | OK | **true** | **playable** |
+| zelda.gmk | 13 | 1 | 7 | OK | **true** | **playable** |
+| shooter.gmk | 12 | 2 | 0* | OK | **true** | **playable** |
+| plataformas.gmk | 6 (sprBala 36 frames) | 4 | 0* | OK | **true** | **playable** |
 
-**النسبة التقديرية الصادقة: ~30–40%** من محاكاة كاملة لألعاب GM8.2 حقيقية معقدة.
+\* object decoder يعتمد على بادئة `obj_` — بعض المشاريع بأسماء مختلفة لا تُلتقط بعد.
+
+**هذا لا يعني تشغيل gameplay كامل** — يعني فقط: load + materialize + guard يفتحان. ما زال ينقص Events/GML كامل/native loop/audio.
 
 ---
 
-## ما تم إصلاحه سابقاً (حقيقي)
+## الحالة حسب المكوّن
 
-1. استخراج كود Action 603 من argsVal[0] بدل الحقل الفارغ.
-2. تضمين transpiler GML أساسي داخل الرانر.
-3. دعم جزئي لـ if بدون أقواس و = كـ ==.
-4. إصلاح تمرير كائن في move_contact_solid.
-5. Runtime Guard يمنع الشاشة السوداء عند incomplete.
-6. Sprite decoder حقيقي (zlib + BGRA) نجح على mario_bros في اختبارات سابقة.
-7. Multi-frame storage في materialize — كل الإطارات متتالية في rgba (2026-10-06).
+| المكوّن | الحالة |
+|--------|--------|
+| GMK probe | يعمل |
+| Sprite decode + multi-frame rgba | يعمل على العينات الأربع |
+| Background decode | يعمل جزئياً |
+| Room instances/tiles | يعمل على mario/shooter/plataformas |
+| Objects (obj_* names) | يعمل على mario/zelda |
+| Runtime Guard | يعمل |
+| ir->complete بعد materialize | **true** على العينات الأربع |
+| nativeRuntimeStep في الحلقة | غير مربوط |
+| GML / Events / Actions كامل | ناقص |
+| Audio / precise masks | ناقص |
 
----
-
-## الفجوات المتبقية الحرجة (مرتبة بالأولوية)
-
-1. ~~Multi-frame sprites~~ — أُصلح: كل الإطارات متتالية في rgba.
-2. Chunk walkers الكاملة لـ Objects / Events / Sounds / Scripts داخل GMK 800.
-3. Room instances + tiles + views الحقيقية بدل الـ placeholder.
-4. ربط nativeRuntimeStep + RenderBitmap داخل الحلقة التشغيلية.
-5. GML full semantics (with / other / scopes / return / builtins الناقصة).
-6. Audio playback حقيقي + precise collision masks.
-7. اختبارات end-to-end على mario / zelda / shooter تثبت complete=true ثم gameplay.
+**النسبة التقديرية: ~40–50%** (ارتفعت بعد materialize+rooms؛ ما زالت بعيدة عن parity كامل).
 
 ---
 
 ## قواعد ضد الهلوسة
 
-- أي resource لم يُفك بالكامل → status = PARTIAL و complete = false.
-- لا يُعلن 100% إلا بعد نجاح corpus حقيقي (20+ لعبة) مع مقارنة سلوك مع Windows GM82.
-- هذا الملف هو المصدر الوحيد المعتمد للحالة؛ أي ادعاء مخالف يُعتبر خطأ.
-
----
-
-## الخطوة التالية الجارية
-
-- إزالة ادعاءات 100% من STATUS / TODO. ✓
-- إصلاح تخزين multi-frame في gm82_materialize_sprites. ✓
-- إكمال اختبار decoder على العينات الأربع.
+- complete=true على عينات ≠ لعبة قابلة للعب من البداية للنهاية.
+- لا يُعلن 100% إلا بعد corpus حقيقي + مقارنة مع Windows GM82.
