@@ -1,7 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 /*
  * JNI-facing native layer – connects existing core.
- * Soft RGBA framebuffer is primary; GLES optional later.
+ * GL draw is intentionally STUB (returns without drawing) until EGL textures exist.
  */
 #include "gm82_jni.h"
 #include "gm82_runtime.h"
@@ -31,9 +31,6 @@ static struct {
     gm82_action_table actions;
     uint8_t *file_buf;
     size_t file_size;
-    uint8_t *frame_rgba;
-    int frame_w, frame_h;
-    int frame_ready;
 } g;
 
 bool gm82_native_init(int surface_width, int surface_height) {
@@ -56,7 +53,6 @@ void gm82_native_shutdown(void) {
     gm82_decoded_background_list_free(&g.bgs);
     gm82_action_table_free(&g.actions);
     free(g.file_buf);
-    free(g.frame_rgba);
     memset(&g, 0, sizeof(g));
 }
 
@@ -121,7 +117,6 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
     if (g.objs.count > 0)
         g.views.views[0].follow_object = 0;
     g.running = 1;
-    gm82_native_draw();
 
     if (err) snprintf(err, (size_t)err_len, "ok spr=%d bg=%d obj=%d room=%d act_obj=%d",
                       ns, nb, no, nr, g.actions.count);
@@ -135,43 +130,15 @@ void gm82_native_resize(int w, int h) {
 void gm82_native_step(void) {
     if (!g.running) return;
     gm82_input_begin_frame(&g.input);
+    /* note: keys must be re-asserted by Java each frame or we track held state in input.down */
     gm82_runtime_step(&g.rt);
     gm82_view_update(&g.views, &g.rt);
 }
 
 void gm82_native_draw(void) {
-    if (!g.running) return;
-    int w = g.rt.room_width > 0 ? g.rt.room_width : (g.surf_w > 0 ? g.surf_w : 640);
-    int h = g.rt.room_height > 0 ? g.rt.room_height : (g.surf_h > 0 ? g.surf_h : 480);
-    if (w < 1) w = 640;
-    if (h < 1) h = 480;
-    size_t need = (size_t)w * (size_t)h * 4u;
-    if (!g.frame_rgba || g.frame_w != w || g.frame_h != h) {
-        free(g.frame_rgba);
-        g.frame_rgba = (uint8_t *)malloc(need);
-        g.frame_w = w;
-        g.frame_h = h;
-        g.frame_ready = 0;
-    }
-    if (!g.frame_rgba) return;
-    if (gm82_runtime_draw(&g.rt, g.frame_rgba, w, h))
-        g.frame_ready = 1;
-}
-
-const uint8_t *gm82_native_frame_rgba(int *out_w, int *out_h) {
-    if (out_w) *out_w = g.frame_w;
-    if (out_h) *out_h = g.frame_h;
-    if (!g.frame_ready || !g.frame_rgba) return NULL;
-    return g.frame_rgba;
-}
-
-int gm82_native_frame_ready(void) {
-    return g.frame_ready && g.frame_rgba != NULL;
-}
-
-void gm82_native_tick(void) {
-    gm82_native_step();
-    gm82_native_draw();
+    /* STUB: no GL context binding here.
+       Soft framebuffer path exists in gm82_runtime_draw for offline tests.
+       Android must upload textures – not implemented in this scaffold. */
 }
 
 void gm82_native_key_down(int vk) { gm82_input_key_down(&g.input, vk); }
