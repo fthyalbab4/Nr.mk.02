@@ -1,0 +1,3 @@
+# HONEST_ENGINEERING_METHODOLOGY
+
+Methodology notes.
