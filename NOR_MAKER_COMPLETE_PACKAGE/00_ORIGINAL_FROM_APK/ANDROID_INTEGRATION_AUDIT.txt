@@ -1,1 +1,4 @@
-ANDROID_INTEGRATION_AUDIT
+ANDROID_INTEGRATION_AUDIT (honest mirror)
+
+See /STATUS.md and /REPORTING_RULES.md.
+Host path ~55-65%. Android device proof: not claimed here.
