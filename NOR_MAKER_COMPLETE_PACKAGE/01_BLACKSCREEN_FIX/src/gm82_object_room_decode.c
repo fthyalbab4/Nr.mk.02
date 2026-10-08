@@ -45,11 +45,13 @@ void gm82_decoded_room_list_free(gm82_decoded_room_list *L) {
     free(L->items); memset(L, 0, sizeof(*L));
 }
 
+/* Object ver 430 (observed): sprite_index, solid, visible, depth, ... */
 int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_object_list *out) {
     memset(out, 0, sizeof(*out));
     if (!data || size < 12) return -1;
     gm82_decoded_object tmp[256];
     int n = 0;
+
     for (size_t i = 12; i + 2 < size; i++) {
         if (!(data[i]==0x78 && (data[i+1]==0x9c||data[i+1]==0xda||data[i+1]==0x01||data[i+1]==0x5e)))
             continue;
@@ -88,11 +90,13 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
     return out->count;
 }
 
+/* Room ver 541: header + best-effort instance scan */
 int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_room_list *out) {
     memset(out, 0, sizeof(*out));
     if (!data || size < 12) return -1;
     gm82_decoded_room tmp[32];
     int n = 0;
+
     for (size_t i = 12; i + 2 < size; i++) {
         if (!(data[i]==0x78 && (data[i+1]==0x9c||data[i+1]==0xda||data[i+1]==0x01||data[i+1]==0x5e)))
             continue;
@@ -108,28 +112,27 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         for (int k = 0; k < slen; k++) if (ns[k] < 32 || ns[k] > 126) ok = 0;
         if (!ok) { free(d); continue; }
         char name[64]; memcpy(name, ns, (size_t)slen); name[slen] = 0;
-        /* Accept room*, r* (e.g. r001), or ver 541/540 with valid geometry */
+        if (strncmp(name, "room", 4) != 0) { free(d); continue; }
         size_t off = 8 + (size_t)slen + 8;
         int32_t ver = rd_i32(d + off); off += 4;
-        int is_room_name = (strncmp(name, "room", 4) == 0) ||
-                          (name[0] == 'r' && (name[1] == '_' || (name[1] >= '0' && name[1] <= '9')));
-        int is_room_ver = (ver == 541 || ver == 800 || ver == 520 || ver == 540);
-        if (!is_room_ver) { free(d); continue; }
-        if (!is_room_name && ver != 541 && ver != 540) { free(d); continue; }
+        if (ver != 541 && ver != 800 && ver != 520) { free(d); continue; }
         int32_t clen = rd_i32(d + off); off += 4;
         if (clen < 0 || off + (size_t)clen > ol) { free(d); continue; }
         off += (size_t)clen;
         if (off + 20 > ol) { free(d); continue; }
         int32_t width = rd_i32(d + off); off += 4;
         int32_t height = rd_i32(d + off); off += 4;
-        off += 8; off += 4;
+        off += 8; /* snap */
+        off += 4; /* isometric */
         int32_t speed = rd_i32(d + off); off += 4;
         if (width < 16 || height < 16 || width > 10000 || height > 10000) { free(d); continue; }
+
         if (n >= 32) { free(d); break; }
         gm82_decoded_room *r = &tmp[n++];
         memset(r, 0, sizeof(*r));
         strncpy(r->name, name, sizeof(r->name)-1);
         r->width = width; r->height = height; r->speed = speed;
+
         gm82_decoded_instance ibuf[512];
         int ic = 0;
         for (size_t j = off; j + 20 <= ol && ic < 512; j += 4) {
@@ -141,14 +144,16 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
             if (obj < 0 || obj > 200) continue;
             if (id < 100001 || id > 2000000) continue;
             int dup = 0;
-            for (int k = 0; k < ic; k++) if (ibuf[k].id == id) { dup = 1; break; }
+            for (int k = 0; k < ic; k++)
+                if (ibuf[k].id == id) { dup = 1; break; }
             if (dup) continue;
             ibuf[ic].x = x; ibuf[ic].y = y;
             ibuf[ic].object_index = obj; ibuf[ic].id = id;
             ic++;
             if (j + 24 <= ol) {
                 int32_t maybe_clen = rd_i32(d + j + 16);
-                if (maybe_clen == 0) j += 20;
+                if (maybe_clen == 0)
+                    j += 20;
             }
         }
         r->instance_count = ic;
@@ -158,6 +163,58 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
             else r->instance_count = 0;
         }
         r->tiles = NULL; r->tile_count = 0;
+        if (ic > 0) {
+            int found_first = -1;
+            for (size_t j = off; j + 24 <= ol; j += 4) {
+                int32_t x = rd_i32(d + j), y = rd_i32(d + j + 4);
+                int32_t obj = rd_i32(d + j + 8), id = rd_i32(d + j + 12);
+                if (id >= 100001 && id <= 2000000 && x >= 0 && y >= 0 && x <= width && y <= height && obj >= 0 && obj <= 200) {
+                    found_first = (int)j; break;
+                }
+            }
+            if (found_first >= 0) {
+                size_t to = (size_t)found_first;
+                int ninst = 0;
+                while (to + 24 <= ol && ninst < ic + 5) {
+                    int32_t id = rd_i32(d + to + 12);
+                    if (id < 100001 || id > 2000000) break;
+                    to += 24; ninst++;
+                }
+                if (to + 4 <= ol) {
+                    int32_t tc = rd_i32(d + to);
+                    if (tc > 0 && tc < 5000 && to + 4 + (size_t)tc * 40 <= ol) {
+                        gm82_decoded_tile *tb = (gm82_decoded_tile *)malloc((size_t)tc * sizeof(*tb));
+                        int nt = 0;
+                        if (tb) {
+                            size_t p = to + 4;
+                            for (int ti = 0; ti < tc; ti++) {
+                                int32_t tx = rd_i32(d + p);
+                                int32_t ty = rd_i32(d + p + 4);
+                                int32_t bg = rd_i32(d + p + 8);
+                                int32_t xo = rd_i32(d + p + 12);
+                                int32_t yo = rd_i32(d + p + 16);
+                                int32_t tw = rd_i32(d + p + 20);
+                                int32_t th = rd_i32(d + p + 24);
+                                int32_t depth = rd_i32(d + p + 28);
+                                int32_t tid = rd_i32(d + p + 32);
+                                p += 40;
+                                if (tx < -100 || ty < -100 || tx > width + 100 || ty > height + 100) continue;
+                                if (tw < 1 || th < 1 || tw > 512 || th > 512) continue;
+                                if (bg < 0 || bg > 64) continue;
+                                tb[nt].x = tx; tb[nt].y = ty;
+                                tb[nt].background_index = bg;
+                                tb[nt].xo = xo; tb[nt].yo = yo;
+                                tb[nt].width = tw; tb[nt].height = th;
+                                tb[nt].depth = depth; tb[nt].id = tid;
+                                nt++;
+                            }
+                            if (nt > 0) { r->tiles = tb; r->tile_count = nt; }
+                            else free(tb);
+                        }
+                    }
+                }
+            }
+        }
         free(d);
     }
     out->count = n;
