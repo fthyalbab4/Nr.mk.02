@@ -17,14 +17,14 @@
 - View: follow + clamp
 
 ## GML builtins (C)
-instance_create/destroy/number/exists
-motion_set/add, move_towards_point, point_distance/direction
-place_meeting, position_meeting, instance_place
-x/y/hspeed/vspeed/direction/speed/sprite_index/...
-room_width/height/speed, room_goto/next/previous/restart, game_end
-score/lives/health
-keyboard_check/_pressed/_released
-abs/sign/clamp/lerp/irandom/random
+instance_create/destroy/number/exists  
+motion_set/add, move_towards_point, point_distance/direction  
+place_meeting, position_meeting, instance_place  
+x/y/hspeed/vspeed/direction/speed/sprite_index/...  
+room_width/height/speed, room_goto/next/previous/restart, game_end  
+score/lives/health  
+keyboard_check/_pressed/_released  
+abs/sign/clamp/lerp/irandom/random  
 
 ## Android (scaffold)
 - Gm82Native.java + jni bridge + CMakeLists
