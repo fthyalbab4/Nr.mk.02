@@ -1,33 +1,15 @@
-# Phase 1 – Resources Execution Status
+# Phase 1 (Resources) — صادق
 
-**تاريخ:** 2026-09-15
+| بند | حالة host |
+|-----|-----------|
+| GMK load | OK |
+| Sprites pixels | OK على العينات الأربع |
+| Backgrounds | OK |
+| Objects | OK لـ obj_* |
+| Rooms/instances | OK بما فيها r* |
+| complete/guard | يُفتح بعد materialize ناجح |
 
-## ما تم تنفيذه في هذه الجولة
+**Phase 1 على host: جيد نسبياً.**  
+**Phase 1 على Android device: غير مُثبت.**
 
-1. **تحسين `gm82_materialize_sprites`**
-   - أصبح يبني `sprite groups` من الإطارات المفكوكة.
-   - `subimage_count` بقى صحيح للـ sprites متعددة الإطارات.
-   - أول frame يُنقل ملكيته للـ IR (جاهز للرسم).
-
-2. **تأكيد حالة الـ Decoder على العينات**
-   | العينة | frames مفكوكة |
-   |--------|----------------|
-   | mario_bros.gmk | 78 |
-   | shooter.gmk | 1 |
-   | zelda.gmk | 0 |
-   | plataformas.gmk | 0 |
-
-3. **تحليل سبب فشل zelda / plataformas**
-   - الـ zlib streams موجودة وكبيرة.
-   - نمط `ver=800 + w + h + dlen` الموجود في mario مش موجود بنفس الشكل.
-   - يحتاج مسح أعمق لبنية الـ resource chunk (مخطط المرحلة التالية).
-
-## الناقص المتبقي في المرحلة 1
-
-- توسيع `scan_blob` / resource walker لصيغ zelda و plataformas.
-- إكمال materialize_backgrounds بنفس أسلوب الـ groups.
-- اختبار materialize كامل على mario (complete flag).
-
-## الخطوة التالية مباشرة
-
-تحليل أعمق لبنية zlib في zelda واستخراج نمط الإطارات البديل.
+لا تُعلن Phase 1 «كاملة 100%».

@@ -1,30 +1,21 @@
-# NOR Maker – Overall Progress (Honest)
+# Overall Progress — صادق
 
-**آخر تحديث:** 2026-09-15 15:45 EEST
+**آخر تحديث:** 2026-10-08
 
-## النسبة الإجمالية الحالية: **≈ 34%**
+## النسبة الإجمالية (host path فقط): **≈ 55–65%**
 
-### تفصيل حسب الطبقة
+أرقام قديمة (22% / 34% / 81%) أُلغيت أو صُحّحت حسب آخر اختبارات pipeline/SO.
 
-| الطبقة | النسبة | ملاحظة |
-|--------|--------|--------|
-| Resource decode (sprites/bg) | **42%** | كل العينات الأربعة بقت تطلع frames (zelda 49، plataformas 42، shooter 22، mario 157 مع تكرار) |
-| Objects / rooms / instances | 50% | — |
-| Runtime loop + events | 28% | groups جاهزة |
-| GML interpreter | 12% | — |
-| Input / View | 40% | — |
-| Audio | 5% | — |
-| GLES Android | 15% | — |
-| gm82core | 8% | — |
+| الطبقة | % تقديري | ملاحظة |
+|--------|----------|--------|
+| Resource decode | 55–70 | 4 عينات host |
+| Objects/rooms | 50–65 | بما فيها r001 |
+| Runtime loop/events | 40–55 | behaviors اسمية |
+| GML | 15–30 | eval بسيط |
+| Input/view | 35–50 | أساسي |
+| Audio | 5–15 | |
+| GLES on device | 0–20 | غير مُثبت |
+| Precise collision | 10–25 | AABB |
+| gm82core | 5–15 | |
 
-**الوزن المرجح ≈ 34%**
-
-### ما تم في هذه الجولة
-- إصلاح scan_blob: بحث byte-by-byte عن ver=800 (كان السبب في فشل zelda)
-- zelda / plataformas / shooter بقوا يفكوا frames
-- materialize groups موجود من قبل
-
-### المتبقي العاجل في Resources
-- إزالة التكرارات (dedupe) من نتائج الـ decoder
-- نفس التحسين للـ backgrounds
-- اختبار materialize كامل على mario + zelda
+**Android Windows-parity: غير مُقاس.**
