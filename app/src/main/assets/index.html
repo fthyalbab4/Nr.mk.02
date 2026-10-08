@@ -154205,8 +154205,9 @@ button, input, textarea, select {
 
     <!-- Filter & Search Controls -->
     <div style="padding:12px 16px; background:#e5e7eb; border-bottom:1px solid #d1d5db; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-      <div style="flex:1; min-width:200px; position:relative;">
-        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+      <div style="flex:1; min-width:200px; position:relative; display:flex; align-items:center;">
+        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px 8px 30px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+        <button id="gmk-cloud-search-clear" aria-label="مسح البحث" title="مسح البحث" style="display:none; position:absolute; left:8px; background:none; border:none; color:#6b7280; font-size:14px; font-weight:bold; cursor:pointer; padding:2px 6px; border-radius:50%;">✕</button>
       </div>
       <select id="gmk-cloud-category" aria-label="تصنيف الألعاب" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
         <option value="ALL">جميع الأقسام (146 لعبة)</option>
@@ -154248,6 +154249,7 @@ button, input, textarea, select {
   const modal = document.getElementById("gmk-cloud-modal");
   const closeBtn = document.getElementById("gmk-cloud-close-btn");
   const searchInput = document.getElementById("gmk-cloud-search");
+  const searchClearBtn = document.getElementById("gmk-cloud-search-clear");
   const categorySelect = document.getElementById("gmk-cloud-category");
   const grid = document.getElementById("gmk-cloud-grid");
   const statusDiv = document.getElementById("gmk-cloud-status");
@@ -154255,8 +154257,24 @@ button, input, textarea, select {
   const progressBar = document.getElementById("gmk-cloud-progress");
   const countSpan = document.getElementById("gmk-cloud-count");
 
+  function updateSearchClearBtn() {
+    if (searchClearBtn) {
+      searchClearBtn.style.display = searchInput.value.trim().length > 0 ? "block" : "none";
+    }
+  }
+
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      updateSearchClearBtn();
+      renderGames();
+      searchInput.focus();
+    });
+  }
+
   function openModal() {
     modal.style.display = "flex";
+    updateSearchClearBtn();
     renderGames();
     searchInput.focus();
   }
@@ -154270,7 +154288,13 @@ button, input, textarea, select {
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal.style.display === "flex") {
-      closeModal();
+      if (searchInput.value.length > 0) {
+        searchInput.value = "";
+        updateSearchClearBtn();
+        renderGames();
+      } else {
+        closeModal();
+      }
     }
   });
 
@@ -154345,7 +154369,10 @@ button, input, textarea, select {
     });
   }
 
-  searchInput.addEventListener("input", renderGames);
+  searchInput.addEventListener("input", () => {
+    updateSearchClearBtn();
+    renderGames();
+  });
   categorySelect.addEventListener("change", renderGames);
 
   async function loadCloudGame(item) {
