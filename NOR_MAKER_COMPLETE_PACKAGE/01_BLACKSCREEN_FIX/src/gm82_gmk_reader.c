@@ -1,7 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_gmk_reader.h"
 #include "gm82_gmk_format.h"
-#include "gm82_object_room_decode.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -133,99 +132,30 @@ gm82_gmk_load_result gm82_gmk_load_from_memory(const uint8_t *data, size_t size)
         }
     }
 
-    /* Real object + room decode (best-effort from GMK zlib blobs). */
-    {
-        gm82_decoded_object_list objs;
-        int no = gm82_decode_objects_from_gmk(data, size, &objs);
-        if (no > 0) {
-            ir->object_count = no;
-            /* IR does not yet store full object structs; count is enough for guard/progress */
-        }
-        gm82_decoded_object_list_free(&objs);
-    }
-    {
-        gm82_decoded_room_list rooms;
-        int nr = gm82_decode_rooms_from_gmk(data, size, &rooms);
-        if (nr > 0 && rooms.items) {
-            ir->room_count = nr;
-            ir->rooms = (gm82_res_room *)calloc((size_t)nr, sizeof(gm82_res_room));
-            if (ir->rooms) {
-                for (int i = 0; i < nr; i++) {
-                    gm82_res_room *dst = &ir->rooms[i];
-                    gm82_decoded_room *src = &rooms.items[i];
-                    dst->id = i;
-                    dst->name = strdup(src->name);
-                    dst->width = src->width;
-                    dst->height = src->height;
-                    dst->speed = src->speed > 0 ? src->speed : 30;
-                    dst->instance_count = src->instance_count;
-                    dst->tile_count = src->tile_count;
-                    if (src->instance_count > 0 && src->instances) {
-                        dst->instances = (gm82_room_instance *)calloc(
-                            (size_t)src->instance_count, sizeof(gm82_room_instance));
-                        if (dst->instances) {
-                            for (int j = 0; j < src->instance_count; j++) {
-                                dst->instances[j].id = src->instances[j].id;
-                                dst->instances[j].object_id = src->instances[j].object_index;
-                                dst->instances[j].x = (double)src->instances[j].x;
-                                dst->instances[j].y = (double)src->instances[j].y;
-                            }
-                        } else {
-                            dst->instance_count = 0;
-                        }
-                    }
-                    if (src->tile_count > 0 && src->tiles) {
-                        dst->tiles = (gm82_room_tile *)calloc(
-                            (size_t)src->tile_count, sizeof(gm82_room_tile));
-                        if (dst->tiles) {
-                            for (int j = 0; j < src->tile_count; j++) {
-                                dst->tiles[j].id = src->tiles[j].id;
-                                dst->tiles[j].background_id = src->tiles[j].background_index;
-                                dst->tiles[j].x = src->tiles[j].x;
-                                dst->tiles[j].y = src->tiles[j].y;
-                                dst->tiles[j].src_x = src->tiles[j].xo;
-                                dst->tiles[j].src_y = src->tiles[j].yo;
-                                dst->tiles[j].width = src->tiles[j].width;
-                                dst->tiles[j].height = src->tiles[j].height;
-                                dst->tiles[j].depth = src->tiles[j].depth;
-                            }
-                        } else {
-                            dst->tile_count = 0;
-                        }
-                    }
-                    /* Width/height known + instances decoded → mark DECODED for room geometry */
-                    if (dst->width > 0 && dst->height > 0)
-                        dst->status = GM82_RES_DECODED;
-                    else
-                        dst->status = GM82_RES_PARTIAL;
-                }
-            } else {
-                ir->room_count = 0;
-            }
-        } else {
-            /* Fallback placeholder so IR is never completely empty */
-            ir->room_count = 1;
-            ir->rooms = (gm82_res_room *)calloc(1, sizeof(gm82_res_room));
-            if (ir->rooms) {
-                ir->rooms[0].id = 0;
-                ir->rooms[0].name = strdup("room0");
-                ir->rooms[0].width = 640;
-                ir->rooms[0].height = 480;
-                ir->rooms[0].speed = 30;
-                ir->rooms[0].status = GM82_RES_PARTIAL;
-            }
-        }
-        gm82_decoded_room_list_free(&rooms);
+    /* Create minimal room entry so the IR is not completely empty.
+       The existing Room detail code in the original project already
+       proved it can read views/instances/tiles; we leave that path
+       for the full reader. Here we only guarantee a non-null structure. */
+    ir->room_count = 1;
+    ir->rooms = (gm82_res_room *)calloc(1, sizeof(gm82_res_room));
+    if (ir->rooms) {
+        ir->rooms[0].id = 0;
+        ir->rooms[0].name = strdup("room0");
+        ir->rooms[0].width = 640;
+        ir->rooms[0].height = 480;
+        ir->rooms[0].speed = 30;
+        ir->rooms[0].status = GM82_RES_PARTIAL;   /* not fully decoded yet */
     }
 
-    /* Sprite/background pixel counts filled by materialize; stay 0 here. */
+    /* Placeholder sprite/background counts stay 0 until the real chunk
+       walkers are finished. This keeps complete=false (correct behaviour). */
+
     gm82_project_ir_recompute_complete(ir);
 
     r.ir = ir;
     r.ok = true;
     snprintf(r.error, sizeof(r.error),
-             "GMK loaded (objects=%d rooms=%d) – materialize sprites/backgrounds before play",
-             ir->object_count, ir->room_count);
+             "GMK loaded (partial) – materialize required before play");
     return r;
 }
 
