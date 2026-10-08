@@ -1,10 +1,26 @@
-# تحميل الحزمة
+# NOR Maker package download
 
-رابط درايف (أرشيف كبير ~59MB):
-https://drive.google.com/file/d/1B_6oRyvT-zCNL3rOgNkvEscAKwBeu5mL/view
+**Source of truth:** `nm.maker.0..1.0.3.zip` on Google Drive
 
-## مهم
-وجود الأرشيف **لا يعني** أن المحرك 100% أو أن APK يلعب مثل ويندوز.
-الحالة الرسمية للمستودع: **`STATUS.md`** (~55–65% host path فقط).
+- View: https://drive.google.com/file/d/1B_6oRyvT-zCNL3rOgNkvEscAKwBeu5mL/view?usp=drivesdk
+- Direct: https://drive.usercontent.google.com/download?id=1B_6oRyvT-zCNL3rOgNkvEscAKwBeu5mL&export=download&confirm=t
 
-الملفات النصية محدّثة هنا؛ الثنائيات الضخمة عبر الدرايف.
+## What is already on this repo
+
+All **text** sources from the package:
+
+- `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/` (30 C files)
+- `.../include/` (headers)
+- `.../android/` (JNI / CMake / Java)
+- `.../docs/` + `tests/`
+- `00_ORIGINAL_FROM_APK/` (corpus, tests, reports)
+- Root MD status files
+
+## What is binary-only (Drive)
+
+- `02_SAMPLES/*.gmk` (except plataformas provided as `.b64`)
+- APK / images if any in the outer zip
+
+## plataformas sample on repo
+
+See `NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/plataformas.gmk.b64` + `decode_b64.sh`.
