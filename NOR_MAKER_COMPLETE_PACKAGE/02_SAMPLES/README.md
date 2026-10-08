@@ -1,23 +1,18 @@
-# Sample GMK files
+# Sample GMK files (binary)
 
-## Binary samples (from package zip)
+## plataformas.gmk (29 KB)
 
-| File | Size | On repo |
-|------|------|--------|
-| plataformas.gmk | 29 KB | `plataformas.gmk.b64` (decode with decode_b64.sh) |
-| mario_bros.gmk | 90 KB | Drive only |
-| zelda.gmk | 214 KB | Drive only |
-| shooter.gmk | 225 KB | Drive only |
-
-## Decode base64 sample
+On repo as base64 parts under `plataformas.gmk.b64.parts/`.
 
 ```bash
-sh decode_b64.sh plataformas.gmk.b64 plataformas.gmk
+cd NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES
+sh assemble_gmk.sh plataformas
 ```
 
-## Full package (all binaries + sources)
+## mario / zelda / shooter
 
+Full package (all binaries):
 https://drive.google.com/file/d/1B_6oRyvT-zCNL3rOgNkvEscAKwBeu5mL/view?usp=drivesdk
 
-Direct download:
+Direct:
 https://drive.usercontent.google.com/download?id=1B_6oRyvT-zCNL3rOgNkvEscAKwBeu5mL&export=download&confirm=t
