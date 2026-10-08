@@ -1,1 +1,2 @@
-GMK_PHASE_1_2_INTEGRATION
+GMK Phase 1.2 integration notes
+See gmk_phase12_manifest.json and related test results.
