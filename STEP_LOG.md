@@ -1,27 +1,18 @@
-# STEP LOG
+# STEP_LOG — خطوات منفَّذة بدليل
 
-## Step 1–3 — Host pipeline 4/4 OK + zelda r001 fix
+## Step 1–3 (2026-10-06)
+- Host pipeline: mario / plataformas / shooter / zelda → **PIPELINE_OK**
+- إصلاح rooms: قبول `r001` / `r_menu*` (zelda كانت تفشل)
 
-## Step 4 — Android packaging prep (2026-10-06)
+## Step 4 (2026-10-06)
+- CMakeLists بمصادر أوسع
+- Host SO smoke: mario frame 1500×208، zelda 240×160
+- WebView bridge + `assets/www` جاهزة للدمج
+- **لم يُبنَ** arm64 SO داخل APK هنا (لا NDK)
 
-### 4a CMakeLists
-- كل مصادر runtime (مع path/timeline/particles/gml_eval)
-- دعم host build بدون NDK
+## Step 5 (2026-10-08)
+- إعادة كتابة كل التقارير المتضخمة → منهج صادق (`REPORTING_RULES.md`)
+- AGENT_STATE بدون 16/16 وهمي وبدون phases PASS مزيفة
 
-### 4b Host shared lib smoke
-```
-libgm82_android_host.so — symbols: init/load/step/draw/tick/frame_rgba
-mario: HOST_SO_SMOKE_OK running=1 frame=1500x208
-zelda: HOST_SO_SMOKE_OK running=1 frame=240x160
-```
-
-### 4c WebView bridge
-- `NorNativeWebBridge.java` → `window.NorNative`
-- `assets/www/nor_native_loop_bridge.js`
-
-### 4d ما لم يُنفّذ هنا (يحتاج NDK + جهاز)
-- بناء arm64 `libgm82_android.so` حقيقي
-- تجميع APK + تجربة على الهاتف
-
-## نسبة
-~55–65% (مسار host SO + pipeline). Android APK لسه.
+## نسبة بعد الخطوات أعلاه
+Host path ~55–65%. Android playable: غير مُقاس.

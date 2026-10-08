@@ -1,3 +1,8 @@
-# HONEST_ENGINEERING_METHODOLOGY
+# منهج هندسي صادق
 
-Methodology notes.
+1. **اختبر قبل ما تعلن.** لا نسبة بدون أمر ومخرجات.
+2. **إكمال لا استبدال** إلا عند كود تالف.
+3. **fail-closed:** `complete=false` يمنع اللعب الوهمي.
+4. **فصل البيئات:** host OK ≠ Android OK.
+5. **لا 100%** قبل corpus على جهاز.
+6. التقارير تتبع `REPORTING_RULES.md`.

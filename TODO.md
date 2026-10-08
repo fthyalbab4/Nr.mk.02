@@ -1,31 +1,34 @@
-# TODO.md — خطة عمل صادقة
+# TODO — خطة عمل صادقة
 
-## تم
+## تم (مُقاس)
 
 - [x] Sprite decoder + multi-frame storage
-- [x] Room/object decode موصول في gmk_reader
-- [x] Pipeline test: load → materialize → guard على 4 عينات
-- [x] إزالة ادعاءات 100%
+- [x] Room/object decode + أسماء `r001`
+- [x] Host pipeline 4/4
+- [x] Host SO symbols + smoke mario/zelda
+- [x] Behaviors Create/Step scaffolding + fire_create_one
+- [x] إزالة ادعاءات 100% من التقارير الأساسية
 
-## التالي
+## التالي (مرتّب بالأولوية)
+
+### Android حقيقي
+- [ ] NDK build `libgm82_android.so` (arm64)
+- [ ] دمج SO في APK + `addJavascriptInterface(..., "NorNative")`
+- [ ] حقن `assets/www` scripts في `index.html`
+- [ ] تشغيل mario على جهاز وتسجيل لوج/فيديو
 
 ### Runtime
-- [ ] ربط nativeRuntimeStep + RenderBitmap في الحلقة
-- [ ] Event order + Create/Step/Draw من objects
+- [ ] ترتيب events أقرب لـ GM
+- [ ] Action lists من GMK أوسع من الـ subset الحالي
+- [ ] Alarms → event حقيقي
 
-### GML / Actions
-- [ ] Action 611 / 404
-- [ ] with / other / scopes
-- [ ] builtins الناقصة
+### GML
+- [ ] توسيع eval + builtins الناقصة
+- [ ] `with` / `other` / scopes
 
-### Decode
-- [ ] Objects بدون بادئة obj_
-- [ ] Rooms لـ zelda بشكل أفضل (instances)
-- [ ] Events/Actions headers من GMK
+### جودة
+- [ ] Precise collision
+- [ ] Audio playback
+- [ ] Corpus مقارنة مع ويندوز
 
-### Audio / Collision
-- [ ] Playback حقيقي
-- [ ] Precise masks
-
-### Validation
-- [ ] gameplay أساسي على mario بدون freeze
+لا تُعلَّم أي خانة [x] من غير أمر اختبار أو لوج جهاز.

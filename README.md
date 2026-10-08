@@ -1,23 +1,47 @@
-# NOR Maker (صانع الألعاب) for Android
+# NOR Maker — Android GM82/GMK runtime (عمل قيد التطوير)
 
-NOR Maker is a full-featured retro game creation studio and GameMaker 8.2 IDE ported to Android.
+محرك/نواة لإعادة تشغيل مشاريع **Game Maker 8.2 / GMK** على Android.
 
-## Features
+> **تحذير صادق:** هذا **ليس** IDE كامل ولا «محاكاة 100% مثل ويندوز» بعد.  
+> ما هو مُثبت اليوم: مسار **host** (load → decode → step → soft draw) على عينات GMK، وتجهيز JNI/WebView.
 
-- **Visual Game Creation Studio**: Build 2D/retro games with sprites, backgrounds, sound effects, fonts, objects, and scripts.
-- **Level & Room Editor**: Visual tile and instance placement, collision testing, grid snapping, and view configuration.
-- **Sprite & Pixel Art Editor**: Custom pixel drawing tools, animations, frame management, and color palettes.
-- **Script & Action System**: GML / GameMaker-compatible scripting and drag-and-drop actions for movement, physics, and gameplay logic.
-- **Native Game Engine**: C/C++ native runtime executing GML VM, collision detection, and SoundPool audio synthesis.
-- **Retro Theme & MDI Windows**: Retro styling, customizable skins, CRT scanline shader, and Arabic / English interface support.
-- **Export & Import**: Support for GMK, GMX, GMZ, NOR package, ROM export, and project templates.
+## الحالة المختصرة
 
-## Architecture
+انظر **`STATUS.md`** و **`GAPS_HONEST.md`** و **`REPORTING_RULES.md`**.
 
-- **Platform**: Android SDK 34+
-- **Native Layer**: C/C++ JNI runtime (`gm82_android`) with GML interpreter and GMK parser
-- **UI & Studio**: Multi-document interface (MDI) with touch optimization, virtual gamepad support, and sound engine integration
+| | |
+|--|--|
+| Host pipeline 4 عينات | OK |
+| Host native SO smoke | OK |
+| APK + NDK على جهاز | غير مُثبت في بيئة التوثيق هذه |
+| نسبة host تقديرية | ~55–65% |
 
-## Troubleshooting & Maintenance
+## هيكل مهم
 
-- Refer to `BLACK_SCREEN_FIX_GUIDE.md` for the exact reference WebView configuration, bridge settings, and troubleshooting steps for runtime rendering issues.
+- `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` — نواة C + android JNI
+- `assets/www/` — جسر JS للحلقة الأصلية
+- `tools/` — اختبارات host pipeline / SO smoke
+- `STEP_LOG.md` — سجل خطوات فعلية
+
+## بناء host (بدون NDK)
+
+```bash
+# مثال — راجع tools/run_host_pipeline.sh إن وُجد
+gcc -O2 -Iinclude -o pipeline_test tools/host_pipeline_test.c src/*.c ... -lz -lm
+./pipeline_test samples/mario_bros.gmk 30
+```
+
+## بناء Android
+
+يحتاج **Android NDK**. انسخ `android/CMakeLists.txt` إلى `app/src/main/cpp/` وطبق `gradle_native_snippet.gradle`، ثم:
+
+```bash
+./gradlew assembleDebug
+```
+
+ثم احقن `NorNative` في WebView (`NorNativeWebBridge`).
+
+## قواعد للوكلاء
+
+أي تقرير جديد **يجب** أن يلتزم بـ `REPORTING_RULES.md`.  
+ممنوع تضخيم النسب أو إعلان اكتمال phases من غير دليل.
