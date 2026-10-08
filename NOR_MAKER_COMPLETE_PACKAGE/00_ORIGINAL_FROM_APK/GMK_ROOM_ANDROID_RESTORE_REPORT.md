@@ -46,3 +46,11 @@
 ## الخطوة اللازمة لإكمال البناء
 
 يجب توفير Android SDK يتضمن platform وbuild-tools، وNDK r26d، وCMake 3.22.1، ثم وضع `sdk.dir` في `android_project_base/local.properties` وتشغيل `../.tools/gradle-8.2.1/bin/gradle assembleDebug`. بعد نجاح ذلك يمكن ربط manifest التفصيلي والـ Project IR واختبار الاستيراد على جهاز Android فعلي. لا يمكن اعتبار parity بنسبة 100% مع Windows GM8.2 مثبتة اعتمادًا على fixture صناعي فقط؛ يلزم GMK/GMX/GMZ حقيقي واختبار فتح/حفظ/إعادة فتح على برنامج GM8.2 الأصلي.
+
+## تحديث تقوية النواة
+
+استُعيدت ترويسة `gml_vm.h` التي كانت مفقودة من شجرة Android، وأضيفت واجهة `gml_vm_invoke` لتغطية استدعاء السكربتات مع arguments وscope. أثناء التحقق اكتُشف خلل ذاكرة حقيقي في `gml_vm_invoke`: كان يحفظ `error` بحجم 160 بايت ثم ينسخه إلى buffer أكبر غير متطابق. تم توحيد الحجم إلى 160 بايت، وأُعيد تشغيل اختبارات `do-until` و`switch` و`invoke` باستخدام AddressSanitizer وUndefinedBehaviorSanitizer دون فشل.
+
+أضيف اختبار `build_test/gml_invoke_test.c`، وكانت نتيجته `GML_INVOKE_SCOPE_TEST_PASS`. كما أُضيف `build_test/core_benchmark.c` لقياس مساري VM وGMK على fixture ثابت. آخر قياس محلي على 1000 تكرار كان `vm_seconds=0.018164` و`gmk_seconds=0.013343`، مع checksum `4950000`؛ هذه أرقام baseline للبيئة الحالية وليست مقارنة عادلة مع Windows أو Android.
+
+تم أيضًا اختبار GMK decoder تحت sanitizers على fixture سليم ومبتور، وكانت النتيجة: السليم يفك Room، والمبتور يخرج `parseStatus=partial` دون إعلان Room decoded، ولم تظهر أخطاء sanitizer.
