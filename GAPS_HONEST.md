@@ -1,48 +1,44 @@
-# GAPS_HONEST.md — تقرير تشخيص وحل فجوة محاكاة الألعاب الكاملة
+# GAPS_HONEST — ما يوجد vs ما ناقص (بدون وهم)
 
-تاريخ التحديث: 2026-10-01
-الحالة الفعلية الحالية: **100% نجاح في تحويل وتصريف وتنفيذ كافة عينات الألعاب واجتياز السكربتات والأكشن**
+آخر مراجعة صادقة: **2026-10-08**
 
----
+## موجود ومُختبر (host)
 
-## 🔍 الأسباب الجذرية التي كانت تمنع اكتمال تشغيل الألعاب (Root Causes Identified & Fixed)
+| المكوّن | الدليل |
+|---------|--------|
+| GMK load + zlib | pipeline على 4 عينات |
+| Sprite decode (BGRA→RGBA) + multi-frame | mario 157 frame groups؛ zelda/plataformas/shooter >0 |
+| Background decode | يعمل في pipeline |
+| Objects `obj_*` | mario 15 objects |
+| Rooms + instances | mario 181؛ zelda 39 في r001 |
+| Runtime step + soft draw | PIPELINE_OK |
+| Create/Step behaviors بالاسم | scaffolding (mario gravity، blocks solid) |
+| Actions scan + fire subset | موجود؛ ليس كل DnD |
+| `gm82_native_init/load/step/draw/tick/frame_rgba` | host SO smoke |
 
-1. **فصل المحول عن كود GML في الأكشن 603 (Action 603 Code Extraction):**
-   - في صيغة GMK 8.0/8.1، كود GML للأكشن 603 ("Execute a piece of code") مخزن داخل معاملات الأكشن `argsVal[0]` وليس في الحقل `code` الفارغ.
-   - تم تعديل الاستخراج ليقرأ كود GML مباشرة من `argsVal[0] / allArgsVal[0]`.
+## جزئي
 
-2. **غياب المترجم الفوري (GML Transpiler) داخل بيئة الرانر المولدة:**
-   - كانت بيئة الرانر iframe تعتمد على دالة `gmlToJs` الخارجية غير المضمنة في الـ iframe، مما سبب خطأ `SyntaxError: Unexpected identifier` عند محاولة تنفيذ أي كود GML خام.
-   - تم تضمين مترجم GML الفوري بالكامل داخل المحرك، ليقوم بتحويل شفرات GML أثناء التشغيل وتغذيتها لمحرك الجافاسكربت بسلاسة.
+| المكوّن | القيد |
+|---------|--------|
+| Event order GM الكامل | مبسّط (Create/Step/Draw) |
+| GML eval | parser بسيط؛ مش bytecode VM |
+| Collision | AABB؛ مش precise mask |
+| Views من بيانات الغرفة | تهيئة أساسية |
+| Dual .gm82 text | skeleton |
+| GLES / GL textures في jni | STUB أو غير مُثبت على جهاز |
+| Audio | headers / partial؛ playback غير مُثبت |
 
-3. **معالجة صيغ GML المرنة (GML Syntax Parity):**
-   - دعم الجمل الشرطية بدون أقواس `if cond { ... }` والأقواس غير المباشرة.
-   - دعم مساواة المقارنة الفردية المتعددة داخل الشروط `if (room=r001 && global.iROOM=false)` وتحويلها إلى `==`.
-   - إصلاح جمل `if ... else` غير المحاطة بأقواس مع إضافة الفواصل المنقوطة التلقائية.
-   - دعم التكرار `repeat(n)` و `while` و `exit` و `div` و `mod` و `begin/end`.
+## ناقص (صريح)
 
-4. **إصلاح خطأ تمرير المعامل في `move_contact_solid`:**
-   - كانت الدالة تمرر `me.x` (رقم) بدلاً من `me` (الكائن)، مما كان يعطل حركة الالتصاق بالأرضيات والأسطح الصلبة في ألعاب المنصات.
-   - تم تصحيح المعامل ليتحرك اللاعب بدقة ملامساً للأسطح الصلبة.
+- بناء NDK + APK + اختبار على هاتف
+- GML scripts من GMK كاملة
+- Action lists كاملة + `with`/`other`
+- Precise collision masks
+- Audio playback حقيقي
+- Surfaces / blend / particles كاملة
+- gm82core parity
+- مقارنة screenshots مع ويندوز على corpus
 
-5. **مطابقة أسماء أحداث التصادم (Collision Event Alias Resolution):**
-   - أصبحت منظومة الأحداث تدعم جميع أشكال مفاتيح التصادم (`collision_obj_name`, `collision_name`, `collision_id`, `collision_all`، بالإضافة لكائنات الآباء Parents).
+## ممنوع في التقارير
 
-6. **حل مشكلة الشاشة السوداء في تشغيل الألعاب المستوردة (Black Screen Fix عبر المقارنة مع نسخة "لا توجد مشاكل في الشاشه.apk"):**
-   - **إعادة تفعيل التسريع العتادي (Hardware Acceleration):** أظهرت المقارنة الدقيقة مع `لا توجد مشاكل في الشاشه.apk` أن النسخة السليمة لا تعطل التسريع العتادي. بينما كانت النسخة الحالية تضع `android:hardwareAccelerated="false"` في `AndroidManifest.xml` وتستدعي `clearFlags(FLAG_HARDWARE_ACCELERATED)` و `webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)` في `MainActivity.java`. في بيئة أندرويد WebView، يؤدي إلغاء التسريع العتادي أو فرض وضع السوفتوير إلى فشل محرك الرندر لـ Canvas 2D / WebGL / Iframes وتحول السطح إلى شاشة سوداء تماماً. تم إلغاء القيود وإعادة تفعيل التسريع العتادي بالكامل كما في النسخة السليمة مع إضافة تفريغ الكاش `clearCache(true)`.
-   - **توسيع جدول تطابق الأصول (Asset Key & Sprite Index Aliasing):** في محرك GM8.2 تستدعي أكواد GML رسم السبرايتات بواسطة المعرف الرقمي `draw_sprite(0, 0, x, y)` أو عبر الاسم بدون سابقة `spr_`، وكانت مصفوفة `assets` لا تحوي سوى المعرف النصي المفرد `s.id`. تم بناء `resolveSpriteImg(spr)` وتسجيل السبرايتات والخلفيات بجميع معرّفاتها (ID, Name, ResourceIndex, LegacyId, ArrayIndex, والسابقة `spr_`/`bg_`) لضمان ظهور الرسوم فوراً.
-   - **إصلاح معالجة السبرايت الافتراضي رقم 0 في الكائنات:** كان فحص `this.sprite_index || ...` يعتبر الرقم `0` قيمة خاطئة (falsy) في جافاسكريبت، مما كان يتسبب في عدم رسم السبرايت الأول لأي كائن. تم تصحيح الفحص إلى `(this.sprite_index !== undefined && this.sprite_index !== -1)`.
-   - **غياب رسم تايلات الغرفة (Room Tiles Rendering):** كانت تايلات البيئة والمنصات والأرضيات المستوردة من ملفات GMK لا يتم رسمها في حلقة `loop()`، مما يترك الخلفية سوداء فارغة. تم بناء دالة `drawRoomTiles()` لرسم كل تايل من خلفيته مع أبعاد وإحداثيات السورس والعمق بدقة.
-   - **عدم تطابق مفتاح أصل الخلفية (Background Source Key):** كانت دالة `drawBackgrounds()` تبحث عن `bg.bgId` بينما المحول يضع المعرف في `bg.source` و `bg.sourceLegacyId`. تم تعديلها لتفحص كافة المعرفات وترسم الخلفيات المكررة (Tiled) والممتدة (Stretch).
-   - **فشل توليد الكائنات عند عدم مطابقة `objId` (Instance Def Resolution):** في الغرف التي تحتوي على معرفات رقمية للكائنات من GMK، كان التحقق `record.obj ?? record.objId` يعلق على السلاسل النصية الفارغة `""` مما يمنع توليد الكائنات في الغرفة. تم تصحيح الفحص ليدعم كافة الأشكال `(record.obj || record.objectId || record.objId || record.objectLegacyId)` والبحث بالرقم أو الاسم أو الـ ID.
-   - **لون خلفية الغرفة التلقائي:** تم استبدال اللون الأسود الثابت `#000` بلون الغرفة الفعلي `currentRoom.settings.bgColor`.
-   - **تطابق نسختي `index.html` في مجلد الأصول:** تم مزامنة `app/src/main/assets/index.html` و `app/src/main/assets/www/index.html` بنسبة 100% كما في الـ APK السليم.
-
----
-
-## 📊 النتائج والاختبارات الدقيقة على الألعاب الأربع
-
-- **mario_bros.gmk:** 8 سكربتات (100% نجاح)، 28 سبرايت، 19 كائن، غرفتان.
-- **plataformas.gmk:** 15 سكربت نشط (100% نجاح)، 5 سبرايتات، 7 كائنات، 4 غرف.
-- **shooter.gmk:** 12 سبرايت، 16 كائن (100% نجاح في جميع الأكشن وحركات المقذوفات وتوليد الأعداء)، 14 صوتاً.
-- **zelda.gmk:** 16 سكربت (100% نجاح)، 9 سبرايتات، 7 كائنات (بما في ذلك كائن التحكم والانتقال)، 3 غرف.
+أي «100%» أو «مثل ويندوز» قبل إنهاء الناقص أعلاه + اختبار جهاز = **تزوير**.

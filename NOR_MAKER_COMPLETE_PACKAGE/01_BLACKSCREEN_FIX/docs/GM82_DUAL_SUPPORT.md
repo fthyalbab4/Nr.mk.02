@@ -43,5 +43,3 @@ if (!gm82_load_and_prepare("/path/to/game.gmk", &ir, err, sizeof(err))) {
 }
 // only reaches here when ir->complete == true
 ```
-
-Same call works for a .gm82 project directory.

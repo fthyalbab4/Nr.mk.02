@@ -54,6 +54,14 @@ else if(!strcmp(n->text,"point_distance")&&c==4){double dx=num(a[2])-num(a[0]),d
 else if(!strcmp(n->text,"point_direction")&&c==4){double dx=num(a[2])-num(a[0]),dy=num(a[1])-num(a[3]);double angle=atan2(dy,dx)*180.0/3.14159265358979323846;if(angle<0)angle+=360.0;r=gml_value_real(angle);}
 else if(!strcmp(n->text,"lengthdir_x")&&c==2)r=gml_value_real(num(a[0])*cos(num(a[1])*3.14159265358979323846/180.0));
 else if(!strcmp(n->text,"lengthdir_y")&&c==2)r=gml_value_real(-num(a[0])*sin(num(a[1])*3.14159265358979323846/180.0));
+else if(!strcmp(n->text,"angle_difference")&&c==2){double diff=fmod(num(a[0])-num(a[1]),360.0);if(diff<-180.0)diff+=360.0;else if(diff>180.0)diff-=360.0;r=gml_value_real(diff);}
+else if(!strcmp(n->text,"approach")&&c==3){double cur=num(a[0]),target=num(a[1]),amount=num(a[2]);r=gml_value_real(cur<target?(cur+amount>target?target:cur+amount):(cur-amount<target?target:cur-amount));}
+else if(!strcmp(n->text,"make_color_rgb")&&c==3){long red=(long)num(a[0])&0xFF,green=(long)num(a[1])&0xFF,blue=(long)num(a[2])&0xFF;r=gml_value_real((double)(red|(green<<8)|(blue<<16)));}
+else if(!strcmp(n->text,"color_get_red")&&c==1){r=gml_value_real((double)((long)num(a[0])&0xFF));}
+else if(!strcmp(n->text,"color_get_green")&&c==1){r=gml_value_real((double)(((long)num(a[0])>>8)&0xFF));}
+else if(!strcmp(n->text,"color_get_blue")&&c==1){r=gml_value_real((double)(((long)num(a[0])>>16)&0xFF));}
+else if(!strcmp(n->text,"color_reverse")&&c==1){long col=(long)num(a[0]);r=gml_value_real((double)(((col&0xFF)<<16)|(col&0xFF00)|((col>>16)&0xFF)));}
+else if(!strcmp(n->text,"color_inverse")&&c==1){r=gml_value_real((double)(0xFFFFFF^((long)num(a[0])&0xFFFFFF)));}
 else if(!strcmp(n->text,"string")&&c==1){if(a[0].kind==GML_V_STRING)r=gml_value_string(text_of(a[0]));else if(a[0].kind==GML_V_BOOL)r=gml_value_string(a[0].boolean?"1":"0");else r=number_text(num(a[0]));}
 else if(!strcmp(n->text,"string_length")&&c==1){r=gml_value_real((double)strlen(text_of(a[0])));}
 else if(!strcmp(n->text,"string_char_at")&&c==2){const char*s=text_of(a[0]);int pos=(int)num(a[1]);if(pos>=1&&(size_t)pos<=strlen(s)){char ch[2]={s[pos-1],0};r=gml_value_string(ch);}else r=gml_value_string("");}

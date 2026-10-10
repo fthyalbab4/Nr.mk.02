@@ -116,7 +116,6 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         size_t off = 8 + (size_t)slen + 8;
         int32_t ver = rd_i32(d + off); off += 4;
         if (ver != 541 && ver != 800 && ver != 520) { free(d); continue; }
-        /* caption string */
         int32_t clen = rd_i32(d + off); off += 4;
         if (clen < 0 || off + (size_t)clen > ol) { free(d); continue; }
         off += (size_t)clen;
@@ -134,8 +133,6 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         strncpy(r->name, name, sizeof(r->name)-1);
         r->width = width; r->height = height; r->speed = speed;
 
-        /* Instance harvest: GM format x,y,object,id,[creationCode string],locked.
-           Primary: aligned scan. Observed stride ~24 bytes when creation code empty. */
         gm82_decoded_instance ibuf[512];
         int ic = 0;
         for (size_t j = off; j + 20 <= ol && ic < 512; j += 4) {
@@ -153,11 +150,10 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
             ibuf[ic].x = x; ibuf[ic].y = y;
             ibuf[ic].object_index = obj; ibuf[ic].id = id;
             ic++;
-            /* skip ahead if next field looks like empty creation code + locked */
             if (j + 24 <= ol) {
                 int32_t maybe_clen = rd_i32(d + j + 16);
                 if (maybe_clen == 0)
-                    j += 20; /* will +=4 in loop → stride 24 */
+                    j += 20;
             }
         }
         r->instance_count = ic;
@@ -166,11 +162,8 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
             if (r->instances) memcpy(r->instances, ibuf, (size_t)ic * sizeof(*ibuf));
             else r->instance_count = 0;
         }
-        /* Tiles: after continuous instance block (stride 24 from first hit) */
         r->tiles = NULL; r->tile_count = 0;
         if (ic > 0) {
-            /* find first instance offset again roughly – scan for tile count after instances */
-            size_t scan = off;
             int found_first = -1;
             for (size_t j = off; j + 24 <= ol; j += 4) {
                 int32_t x = rd_i32(d + j), y = rd_i32(d + j + 4);
@@ -204,7 +197,6 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
                                 int32_t th = rd_i32(d + p + 24);
                                 int32_t depth = rd_i32(d + p + 28);
                                 int32_t tid = rd_i32(d + p + 32);
-                                /* locked at +36 */
                                 p += 40;
                                 if (tx < -100 || ty < -100 || tx > width + 100 || ty > height + 100) continue;
                                 if (tw < 1 || th < 1 || tw > 512 || th > 512) continue;
@@ -230,7 +222,6 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         out->items = (gm82_decoded_room *)malloc((size_t)n * sizeof(*out->items));
         if (out->items) {
             memcpy(out->items, tmp, (size_t)n * sizeof(*tmp));
-            /* ownership of instances pointers transferred */
             for (int i = 0; i < n; i++) { tmp[i].instances = NULL; tmp[i].tiles = NULL; }
         } else out->count = 0;
     }

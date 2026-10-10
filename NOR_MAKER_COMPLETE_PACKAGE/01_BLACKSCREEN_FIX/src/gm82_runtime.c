@@ -192,7 +192,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
                 double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
                 if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-                    /* push back on Y if falling */
                     if (inst->vspeed > 0) {
                         inst->y = other->y - sh;
                         inst->vspeed = 0;
@@ -230,7 +229,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
 
         /* image_index advance (animation) */
         if (inst->image_speed != 0.0) {
-            /* accumulate using direction field low bits? keep simple: add rounded speed each frame */
             static double accum[512];
             int slot = (inst->id > 0) ? (inst->id % 512) : 0;
             accum[slot] += inst->image_speed;
@@ -312,10 +310,9 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         rgba[i*4+0]=20; rgba[i*4+1]=20; rgba[i*4+2]=40; rgba[i*4+3]=255;
     }
 
-    /* background 0 (full image – room may also use tiles from same bg) */
+    /* background 0 */
     if (rt->backgrounds && rt->backgrounds->count > 0 && rt->backgrounds->items[0].rgba) {
         const gm82_decoded_background *bg = &rt->backgrounds->items[0];
-        /* only fill if no tiles; otherwise tiles compose the level art */
         int has_tiles = (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count
                          && rt->rooms->items[rt->current_room].tile_count > 0);
         if (!has_tiles)
@@ -347,7 +344,7 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    /* sort by depth (simple insertion for small counts) – draw high depth first */
+    /* sort by depth – draw high depth first */
     int order[GM82_MAX_INSTANCES];
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)

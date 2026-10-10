@@ -1,15 +1,43 @@
-# AGENT_STATE.md — NOR_MAKER Engine State Tracking
+# AGENT_STATE — مقاييس صادقة فقط
 
-plan_B_percent: 100
-is_100: true
-claim_100_percent_allowed: true
-release_tag: ANDROID_NATIVE_GM82_ENGINE_V9_FULL_PLAYABLE
-last_result: PASS
-last_test_log: "100% pass: 39/39 scripts, 78/78 actions across mario_bros.gmk, plataformas.gmk, shooter.gmk, zelda.gmk, 16/16 full verification suite pass, Android applet build succeeded"
-compiler_status: PASS
-gmk_samples_status: 100% PLAYABLE
-collision_system: FIXED_AND_VERIFIED
-gml_transpiler_inlined: TRUE
-action_603_support: 100%
-open_sl_es: TRUE
-native_guard_pass: 100%
+```
+realistic_host_path_percent: 55-65
+android_playable_percent: unmeasured (no device APK proof in this environment)
+is_100: false
+claim_100_percent_allowed: false
+anti_hallucination_rule: ENFORCED
+```
+
+## ما يُسمح بادّعائه
+
+- Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
+- Host SO smoke **OK** لـ mario و zelda.
+- Room filter يدعم `r001`.
+
+## ما لا يُسمح بادّعائه
+
+- `fixture_test_status: PASS (16/16)` بدون ملفات اختبار ولوج في المستودع.
+- `master_plan_4phases_status: PASS` — المراحل **غير** مكتملة على Android.
+- `samples_script_pass_rate: 89/89` — غير مُثبت هنا.
+- `android_build_status: PASS` — NDK build **لم يُشغَّل** في بيئة العمل الحالية.
+- أي طبقة ≥70% من غير اختبار مرفق.
+
+## تفصيل طبقي (تقديري صادق)
+
+| طبقة | % تقديري | أساس التقدير |
+|------|----------|--------------|
+| Resource decode | 55–70 | 4 عينات host |
+| Objects/rooms/instances | 50–65 | decode + spawn |
+| Runtime loop/events | 40–55 | step/draw host؛ behaviors اسمية |
+| GML | 15–30 | builtins + eval بسيط |
+| Input/view | 35–50 | أساسي |
+| Audio | 5–15 | شبه معدوم عملياً |
+| GLES on device | 0–20 | غير مُثبت |
+| Precise collision | 10–25 | AABB |
+| gm82core | 5–15 | skeleton |
+
+**weighted host-only: ~55–65**  
+**weighted Windows-parity on Android: غير مُقاس — لا تكتب رقماً مزوّراً**
+
+`work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`  
+`fail_closed_guard: ENFORCED`
