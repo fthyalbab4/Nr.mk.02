@@ -154361,6 +154361,15 @@ button, input, textarea, select {
     });
   }
 
+  if (searchInput) {
+    searchInput.onfocus = () => { searchInput.style.borderColor = "#2563eb"; searchInput.style.boxShadow = "0 0 0 2px rgba(37,99,235,0.2)"; };
+    searchInput.onblur = () => { searchInput.style.borderColor = "#9ca3af"; searchInput.style.boxShadow = "none"; };
+  }
+  if (categorySelect) {
+    categorySelect.onfocus = () => { categorySelect.style.borderColor = "#2563eb"; categorySelect.style.boxShadow = "0 0 0 2px rgba(37,99,235,0.2)"; };
+    categorySelect.onblur = () => { categorySelect.style.borderColor = "#9ca3af"; categorySelect.style.boxShadow = "none"; };
+  }
+
   function openModal() {
     modal.style.display = "flex";
     updateSearchClearBtn();
@@ -154414,13 +154423,31 @@ button, input, textarea, select {
     grid.innerHTML = "";
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px;">لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+        <span>لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</span>
+        <button id="gmk-cloud-empty-reset" aria-label="إعادة ضبط البحث والتصنيف" style="padding:6px 16px; background:#2563eb; color:#ffffff; border:none; border-radius:6px; font-weight:bold; font-size:12px; cursor:pointer; transition:background 0.2s;">
+          إعادة ضبط البحث 🔄
+        </button>
+      </div>`;
+      const resetBtn = document.getElementById("gmk-cloud-empty-reset");
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          searchInput.value = "";
+          categorySelect.value = "ALL";
+          updateSearchClearBtn();
+          renderGames();
+          searchInput.focus();
+        };
+      }
       return;
     }
 
     filtered.forEach(item => {
       const card = document.createElement("div");
-      card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-label", `عرض وتشغيل ${item.title}`);
+      card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer; outline:none;";
 
       card.onmouseenter = () => {
         card.style.transform = "translateY(-2px)";
@@ -154431,6 +154458,20 @@ button, input, textarea, select {
         card.style.transform = "none";
         card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
         card.style.borderColor = "#e5e7eb";
+      };
+      card.onfocus = () => {
+        card.style.borderColor = "#2563eb";
+        card.style.boxShadow = "0 0 0 2px rgba(37,99,235,0.25)";
+      };
+      card.onblur = () => {
+        card.style.borderColor = "#e5e7eb";
+        card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+      };
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          loadCloudGame(item);
+        }
       };
 
       const icon = getIconForCategory(item.category);
