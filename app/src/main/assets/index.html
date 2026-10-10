@@ -97748,6 +97748,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         className: "flex flex-col items-center -rotate-[25deg]",
                         children: [
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
+                            "aria-label": "زر الاختيار / SELECT",
+                            title: "اختيار (SELECT)",
                             className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Shift", 16, "Escape", 27]),
                             onPointerUp: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
@@ -97762,6 +97764,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         className: "flex flex-col items-center -rotate-[25deg]",
                         children: [
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
+                            "aria-label": "زر البداية / START",
+                            title: "بدء (START)",
                             className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Enter", 13, "Space", 32]),
                             onPointerUp: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
@@ -97801,6 +97805,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       children: [
                         /* Large Convex Button */
                         /* @__PURE__ */ jsxRuntimeExports.jsxs("button", {
+                          "aria-label": `${btn.labelAr || btn.label} (${btn.label})`,
+                          title: btn.labelAr || btn.label,
                           className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
                           style: { backgroundColor: btnColor, touchAction: "none" },
                           onPointerDown: (e) => handleBtnDown(e, btn.keys),
