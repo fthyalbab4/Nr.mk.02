@@ -200,7 +200,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
             }
         }
 
-        /* Tile collision (treat tiles as solid platforms) */
+        /* Tile collision (treat tiles as vertical top platforms only, not side walls) */
         if (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
             const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
             int32_t sw = 16, sh = 16;
@@ -213,15 +213,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
                 double bx1 = tile->x, by1 = tile->y, bx2 = tile->x + tile->width, by2 = tile->y + tile->height;
                 if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-                    if (inst->vspeed > 0 && (inst->y - inst->vspeed + sh) <= by1 + 1) {
+                    if (inst->vspeed > 0 && (inst->y - inst->vspeed + sh) <= by1 + 4) {
                         inst->y = by1 - sh;
                         inst->vspeed = 0;
-                    } else if (inst->hspeed > 0) {
-                        inst->x = bx1 - sw;
-                        inst->hspeed = 0;
-                    } else if (inst->hspeed < 0) {
-                        inst->x = bx2;
-                        inst->hspeed = 0;
                     }
                 }
             }

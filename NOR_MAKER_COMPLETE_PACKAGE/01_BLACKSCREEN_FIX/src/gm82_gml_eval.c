@@ -12,7 +12,7 @@ typedef struct {
     size_t i, n;
     gm82_runtime *rt;
     gm82_instance *self;
-    char err[64];
+    char err[128];
 } gml_parser;
 
 static void skip_ws(gml_parser *p) {
