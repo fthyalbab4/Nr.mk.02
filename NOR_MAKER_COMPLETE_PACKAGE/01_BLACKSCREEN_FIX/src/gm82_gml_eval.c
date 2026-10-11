@@ -12,7 +12,7 @@ typedef struct {
     size_t i, n;
     gm82_runtime *rt;
     gm82_instance *self;
-    char err[64];
+    char err[128];
 } gml_parser;
 
 static void skip_ws(gml_parser *p) {
@@ -52,6 +52,8 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "xprevious") == 0) { *out = s ? s->x - s->hspeed : 0; return true; }
+    if (strcmp(name, "yprevious") == 0) { *out = s ? s->y - s->vspeed : 0; return true; }
     if (strcmp(name, "hspeed") == 0) { *out = s ? s->hspeed : 0; return true; }
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
@@ -62,6 +64,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
+    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->x : 0; return true; }
+    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "bbox_right") == 0) { *out = s ? s->x + 16 : 0; return true; }
+    if (strcmp(name, "bbox_bottom") == 0) { *out = s ? s->y + 16 : 0; return true; }
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
     if (strcmp(name, "lives") == 0) { *out = gml_get_lives(); return true; }
     if (strcmp(name, "health") == 0) { *out = gml_get_health(); return true; }
@@ -69,6 +75,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "room_width") == 0) { *out = p->rt ? (double)p->rt->room_width : 0; return true; }
     if (strcmp(name, "room_height") == 0) { *out = p->rt ? (double)p->rt->room_height : 0; return true; }
     if (strcmp(name, "room_speed") == 0) { *out = p->rt ? (double)p->rt->room_speed : 30; return true; }
+    if (strcmp(name, "view_xview") == 0) { *out = p->rt ? p->rt->view_x : 0; return true; }
+    if (strcmp(name, "view_yview") == 0) { *out = p->rt ? p->rt->view_y : 0; return true; }
+    if (strcmp(name, "view_wview") == 0) { *out = p->rt ? p->rt->view_w : 320; return true; }
+    if (strcmp(name, "view_hview") == 0) { *out = p->rt ? p->rt->view_h : 240; return true; }
     if (strcmp(name, "mouse_x") == 0) { *out = gml_mouse_x(); return true; }
     if (strcmp(name, "mouse_y") == 0) { *out = gml_mouse_y(); return true; }
     snprintf(p->err, sizeof(p->err), "unknown var %s", name);
@@ -89,6 +99,8 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
     if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
     if (strcmp(name, "solid") == 0) { s->solid = v != 0; return true; }
+    if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = v; return true; }
+    if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = v; return true; }
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
@@ -234,7 +246,6 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         if (!parse_expr(&p, &cond)) return false;
         if (!match(&p, ')')) return false;
         skip_ws(&p);
-        /* split then/else by finding " else " at top level (simple) */
         const char *rest = p.s + p.i;
         const char *else_pos = strstr(rest, " else ");
         char then_buf[256], else_buf[256];
@@ -248,6 +259,60 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         }
         if (cond == 0) return true;
         return gm82_gml_eval_stmt(rt, self, rest);
+    }
+
+    /* repeat (count) body */
+    if (strcmp(id, "repeat") == 0) {
+        if (!match(&p, '(')) return false;
+        double count = 0;
+        if (!parse_expr(&p, &count)) return false;
+        if (!match(&p, ')')) return false;
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int num = (int)count;
+        for (int k = 0; k < num; k++) {
+            gm82_gml_eval_stmt(rt, self, body);
+        }
+        return true;
+    }
+
+    /* while (cond) body */
+    if (strcmp(id, "while") == 0) {
+        if (!match(&p, '(')) return false;
+        size_t cond_start = p.i;
+        double cond = 0;
+        if (!parse_expr(&p, &cond)) return false;
+        if (!match(&p, ')')) return false;
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int max_iters = 10000;
+        while (cond != 0 && max_iters-- > 0) {
+            gm82_gml_eval_stmt(rt, self, body);
+            p.i = cond_start;
+            if (!parse_expr(&p, &cond)) break;
+        }
+        return true;
+    }
+
+    /* with (target) body */
+    if (strcmp(id, "with") == 0) {
+        if (!match(&p, '(')) return false;
+        double target = 0;
+        if (!parse_expr(&p, &target)) return false;
+        if (!match(&p, ')')) return false;
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int32_t tgt_id = (int32_t)target;
+        if (rt) {
+            for (int k = 0; k < rt->instance_count; k++) {
+                gm82_instance *o = &rt->instances[k];
+                if (!o->alive) continue;
+                if (tgt_id == -1 || o->id == tgt_id || o->object_index == tgt_id) {
+                    gm82_gml_eval_stmt(rt, o, body);
+                }
+            }
+        }
+        return true;
     }
     if (!match(&p, '=')) {
         p.i = 0;
