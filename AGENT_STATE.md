@@ -1,46 +1,28 @@
-# AGENT_STATE — مقاييس صادقة فقط
+# AGENT_STATE — مقاييس صادقة ودقيقة فقط
 
 ```
-realistic_host_path_percent: 55-65
-android_playable_percent: unmeasured (no device APK proof in this environment)
+overall_windows_parity_percent: < 20% (نسبة التوافق الكلية الفعالية مع محرك ويندوز الأصلي أقل من 20%)
+realistic_host_path_percent: ~20-30%
+android_playable_percent: unmeasured / BLOCKED (لا يوجد هاتف متصل)
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
 ```
 
-## ما يُسمح بادّعائه
+## تفصيل طبقي (تقدير صادق ودقيق)
 
-- Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
-- Comprehensive verification suite **16/16 PASS** (`python3 run_full_verification.py`).
-- JS GMK Transpilation test **39/39 scripts, 78/78 actions PASS (100.0%)** without DOM/React exceptions (`node test_all_games_inlined.js` and `node test_100_percent.js`).
-- Native Runtime Guard executable **ALL_RUNTIME_GUARD_TESTS_PASS** (`test_guard`).
-- Host SO smoke **OK** لـ mario و zelda.
-- Room filter يدعم `r001`.
+| الطبقة | % التوافق الفعلي مع GM82 / Windows | أساس التقدير الواقعي |
+|------|-----------------------------------|---------------------|
+| Resource decode | 30–40% | دعم 4 عينات فقط، لا يشمل كل الصيغ والملحقات |
+| Objects/rooms/instances | 25–35% | فك وإسكان أساسي، يفتقر لأحداث الجيم ميكر الكاملة |
+| Runtime loop/events | 20–30% | دؤرة أحداث اسمية مبسّطة، ليست ترتيب أحداث GM82 الأصلي |
+| GML / Scripts | < 15% | إيفال بسيط جداً ودوال معدودة، مش VM/Bytecode كامل |
+| Audio | < 10% | طابور ذاكرة فقط بدون مشغّل جهاز حقيقي |
+| Precise collision | < 15% | AABB وبلاط علوي بسيط، مش Pixel-precise masks |
+| GLES on device | 0–10% | غير مثبت على جهاز مادي |
+| gm82core / Extensions | < 10% | مكتبة اسمية هيكلية فقط |
 
-## ما لا يُسمح بادّعائه
-
-- `fixture_test_status: PASS (16/16)` بدون ملفات اختبار ولوج في المستودع.
-- `master_plan_4phases_status: PASS` — المراحل **غير** مكتملة على Android.
-- `samples_script_pass_rate: 89/89` — غير مُثبت هنا.
-- `android_build_status: PASS` — NDK build **لم يُشغَّل** في بيئة العمل الحالية.
-- أي طبقة ≥70% من غير اختبار مرفق.
-
-## تفصيل طبقي (تقديري صادق)
-
-| طبقة | % تقديري | أساس التقدير |
-|------|----------|--------------|
-| Resource decode | 55–70 | 4 عينات host |
-| Objects/rooms/instances | 50–65 | decode + spawn |
-| Runtime loop/events | 40–55 | step/draw host؛ behaviors اسمية |
-| GML | 15–30 | builtins + eval بسيط |
-| Input/view | 35–50 | أساسي |
-| Audio | 5–15 | شبه معدوم عملياً |
-| GLES on device | 0–20 | غير مُثبت |
-| Precise collision | 10–25 | AABB |
-| gm82core | 5–15 | skeleton |
-
-**weighted host-only: ~55–65**  
-**weighted Windows-parity on Android: غير مُقاس — لا تكتب رقماً مزوّراً**
+**إجمالي التوافق الفعلي الشامل مع ويندوز / GM82: أقل من 20% (< 20%)**
 
 `work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`  
 `fail_closed_guard: ENFORCED`

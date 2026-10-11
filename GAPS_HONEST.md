@@ -1,44 +1,23 @@
-# GAPS_HONEST — ما يوجد vs ما ناقص (بدون وهم)
+# GAPS_HONEST — التقييم الصادق الصارم بالفجوات
 
-آخر مراجعة صادقة: **2026-10-08**
+نسبة التوافق الحقيقية الكلية مع محرك ويندوز GM82 الأصلي: **أقل من 20% (< 20%)**.
 
-## موجود ومُختبر (host)
+## تفصيل النواقص والفجوات المتبقية:
 
-| المكوّن | الدليل |
-|---------|--------|
-| GMK load + zlib | pipeline على 4 عينات |
-| Sprite decode (BGRA→RGBA) + multi-frame | mario 157 frame groups؛ zelda/plataformas/shooter >0 |
-| Background decode | يعمل في pipeline |
-| Objects `obj_*` | mario 15 objects |
-| Rooms + instances | mario 181؛ zelda 39 في r001 |
-| Runtime step + soft draw | PIPELINE_OK |
-| Create/Step behaviors بالاسم | scaffolding (mario gravity، blocks solid) |
-| Actions scan + fire subset | موجود؛ ليس كل DnD |
-| `gm82_native_init/load/step/draw/tick/frame_rgba` | host SO smoke |
+1. **GML & Script Execution (< 15%):**
+   - لا يوجد مفسر VM أو Bytecode كامل لـ GML.
+   - المفسر الحالي يقيم تعبيرات رياضية وجمل شرطية بسيطة جداً فقط.
+   - مئات من دوال المتغيرات المدمجة وبنى المعطيات والسكربتات في GM82 غير مدعومة.
 
-## جزئي
+2. **الأحداث والاصطدامات (Events & Collisions < 15%):**
+   - الاصطدام يعتمد AABB وبلاط علوي بسيط وليس Pixel-Precise Mask.
+   - ترتيب أحداث GameMaker غير مكتمل (يقتصر على Create/Step/Draw واسمي فقط).
 
-| المكوّن | القيد |
-|---------|--------|
-| Event order GM الكامل | مبسّط (Create/Step/Draw) |
-| GML eval & builtins | parser تعبيرات + builtins (motion, place_meeting, alarms, DS list/map/queue/stack, particles, mp_grid) |
-| Collision | AABB + Tile top-platforms؛ مش precise mask |
-| Views من بيانات الغرفة | تهيئة أساسية |
-| Dual .gm82 text | skeleton |
-| GLES / GL textures في jni | STUB أو غير مُثبت على جهاز |
-| Audio | headers / partial؛ playback غير مُثبت |
+3. **الصوت والمؤثرات (Audio & Sound < 10%):**
+   - طابور في الذاكرة فقط، لا يوجد تشغيل صوتي حقيقي عبر OpenSL / AAudio على جهاز مادي.
 
-## ناقص (صريح)
+4. **تشغيل أندرويد وعلى الأجهزة (Device / Android GLES < 10%):**
+   - لم يتم الاختبار أو الإثبات على جهاز أندرويد حقيقي (BLOCKED).
 
-- بناء NDK + APK + اختبار على هاتف
-- GML scripts من GMK كاملة
-- Action lists كاملة + `with`/`other`
-- Precise collision masks
-- Audio playback حقيقي
-- Surfaces / blend / particles كاملة
-- gm82core parity
-- مقارنة screenshots مع ويندوز على corpus
-
-## ممنوع في التقارير
-
-أي «100%» أو «مثل ويندوز» قبل إنهاء الناقص أعلاه + اختبار جهاز = **تزوير**.
+5. **المقارنة مع ويندوز (Windows Parity < 20%):**
+   - المحرك في مرحلة النواة الأولية الأساسية (Host MVP Core) ولا يمكن ادعاء أكثر من 20% توافق حقيقي مع ألعاب GM82 المعقدة.
