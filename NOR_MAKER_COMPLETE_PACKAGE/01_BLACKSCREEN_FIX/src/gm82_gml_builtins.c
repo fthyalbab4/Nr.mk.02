@@ -109,6 +109,35 @@ double gml_point_direction(double x1, double y1, double x2, double y2) {
     return atan2(-(y2 - y1), (x2 - x1)) * 180.0 / M_PI;
 }
 
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+    return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+void gml_string_digits(const char *src, char *dst, size_t max_len) {
+    if (!dst || max_len == 0) return;
+    if (!src) { dst[0] = '\0'; return; }
+    size_t j = 0;
+    for (size_t i = 0; src[i] != '\0' && j + 1 < max_len; i++) {
+        if (src[i] >= '0' && src[i] <= '9') {
+            dst[j++] = src[i];
+        }
+    }
+    dst[j] = '\0';
+}
+
+void gml_string_letters(const char *src, char *dst, size_t max_len) {
+    if (!dst || max_len == 0) return;
+    if (!src) { dst[0] = '\0'; return; }
+    size_t j = 0;
+    for (size_t i = 0; src[i] != '\0' && j + 1 < max_len; i++) {
+        if ((src[i] >= 'a' && src[i] <= 'z') || (src[i] >= 'A' && src[i] <= 'Z')) {
+            dst[j++] = src[i];
+        }
+    }
+    dst[j] = '\0';
+}
+
 static bool sprite_size(gm82_runtime *rt, int32_t sprite_index, int32_t *w, int32_t *h) {
     *w = 16; *h = 16;
     if (!rt || !rt->sprites || sprite_index < 0 || sprite_index >= rt->sprites->count)

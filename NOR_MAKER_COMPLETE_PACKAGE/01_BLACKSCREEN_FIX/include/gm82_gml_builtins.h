@@ -42,6 +42,9 @@ void   gml_motion_add(double dir, double spd);
 void   gml_move_towards_point(double tx, double ty, double sp);
 double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+void gml_string_digits(const char *src, char *dst, size_t max_len);
+void gml_string_letters(const char *src, char *dst, size_t max_len);
 
 /* ---- Collision (AABB via sprite size) ---- */
 double gml_place_meeting(double x, double y, double object_index);
