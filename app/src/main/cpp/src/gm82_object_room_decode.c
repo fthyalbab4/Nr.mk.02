@@ -31,6 +31,16 @@ static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *out_len) {
     *out_len = strm.total_out; inflateEnd(&strm); return dst;
 }
 
+void gm82_decoded_object_list_init(gm82_decoded_object_list *L) {
+    if (!L) return;
+    memset(L, 0, sizeof(*L));
+}
+
+void gm82_decoded_room_list_init(gm82_decoded_room_list *L) {
+    if (!L) return;
+    memset(L, 0, sizeof(*L));
+}
+
 void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
     if (!L) return;
     if (L->items) {
