@@ -13,6 +13,7 @@
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
+#include "gm82_input.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
