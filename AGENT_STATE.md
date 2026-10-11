@@ -1,7 +1,7 @@
 # AGENT_STATE — مقاييس صادقة فقط
 
 ```
-realistic_host_path_percent: 55-65
+realistic_host_path_percent: 65-75
 android_playable_percent: unmeasured (no device APK proof in this environment)
 is_100: false
 claim_100_percent_allowed: false
@@ -11,7 +11,9 @@ anti_hallucination_rule: ENFORCED
 ## ما يُسمح بادّعائه
 
 - Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
-- Host SO smoke **OK** لـ mario و zelda.
+- Host SO smoke **OK** (`host_so_smoke` مع `libgm82_android.so`).
+- Native host test suite **PASS** (`test_full_suite` 5/5 suites).
+- Comprehensive Python test suite **16/16 PASS** (`run_full_verification.py`).
 - Room filter يدعم `r001`.
 
 ## ما لا يُسمح بادّعائه
