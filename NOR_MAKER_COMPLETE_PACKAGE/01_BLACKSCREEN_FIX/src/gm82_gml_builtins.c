@@ -1704,6 +1704,13 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
+double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
+double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
+double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
+double gml_darcsin(double x) { return asin(x) * 180.0 / M_PI; }
+double gml_darccos(double x) { return acos(x) * 180.0 / M_PI; }
+double gml_darctan(double x) { return atan(x) * 180.0 / M_PI; }
+double gml_darctan2(double y, double x) { return atan2(y, x) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;

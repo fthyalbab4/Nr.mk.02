@@ -81,6 +81,9 @@ void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 /* Load room by index: clear non-persistent instances, spawn from room data, fire Create */
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index);
 
+/* Set target room speed (e.g., 30, 60, 90, 120 FPS) */
+void gm82_runtime_set_room_speed(gm82_runtime *rt, int speed);
+
 /* One frame: alarms → begin step → step → end step */
 void gm82_runtime_step(gm82_runtime *rt);
 

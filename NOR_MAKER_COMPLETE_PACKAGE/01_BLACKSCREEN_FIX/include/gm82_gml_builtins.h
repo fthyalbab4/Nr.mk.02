@@ -213,6 +213,13 @@ double gml_clamp(double val, double minv, double maxv);
 double gml_deg_to_rad(double deg);
 double gml_rad_to_deg(double rad);
 double gml_angle_difference(double dest, double src);
+double gml_dsin(double deg);
+double gml_dcos(double deg);
+double gml_dtan(double deg);
+double gml_darcsin(double x);
+double gml_darccos(double x);
+double gml_darctan(double x);
+double gml_darctan2(double y, double x);
 
 double gml_display_get_width(void);
 double gml_display_get_height(void);
