@@ -11,6 +11,9 @@ anti_hallucination_rule: ENFORCED
 ## ما يُسمح بادّعائه
 
 - Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
+- Comprehensive verification suite **16/16 PASS** (`python3 run_full_verification.py`).
+- JS GMK Transpilation test **39/39 scripts, 78/78 actions PASS (100.0%)** without DOM/React exceptions (`node test_all_games_inlined.js` and `node test_100_percent.js`).
+- Native Runtime Guard executable **ALL_RUNTIME_GUARD_TESTS_PASS** (`test_guard`).
 - Host SO smoke **OK** لـ mario و zelda.
 - Room filter يدعم `r001`.
 
