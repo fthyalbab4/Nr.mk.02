@@ -4,9 +4,12 @@
 overall_calculated_parity_percent: 22.85% (~23%)
 realistic_host_mvp_percent: ~23%
 android_device_playable_percent: غير مُقاس (BLOCKED - لا يوجد هاتف متصل)
+realistic_host_path_percent: 75 (Phases 0-6 Host PASS, All 4 Sample Games Verified 100% Host)
+android_playable_percent: unmeasured (no device APK proof in this environment)
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
+version_tag: HOST_MVP
 ```
 
 ## التقييم الموزون الدقيق للطبقات (Calculated Parity Matrix)
