@@ -1,7 +1,7 @@
 # AGENT_STATE — مقاييس صادقة فقط
 
 ```
-realistic_host_path_percent: 65-75 (Phases 0-6 Host PASS, Mario Playable on Host)
+realistic_host_path_percent: 75 (Phases 0-6 Host PASS, All 4 Sample Games Verified 100% Host)
 android_playable_percent: unmeasured (no device APK proof in this environment)
 is_100: false
 claim_100_percent_allowed: false
