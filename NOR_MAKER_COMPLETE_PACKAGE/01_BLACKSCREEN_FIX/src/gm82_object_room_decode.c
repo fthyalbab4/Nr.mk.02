@@ -67,7 +67,9 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         for (int k = 0; k < slen; k++) if (ns[k] < 32 || ns[k] > 126) ok = 0;
         if (!ok) { free(d); continue; }
         char name[64]; memcpy(name, ns, (size_t)slen); name[slen] = 0;
-        if (strncmp(name, "obj_", 4) != 0) { free(d); continue; }
+        bool is_obj = (strncmp(name, "obj_", 4) == 0 || strncmp(name, "obj", 3) == 0 ||
+                       strncmp(name, "o_", 2) == 0 || strncmp(name, "object", 6) == 0);
+        if (!is_obj) { free(d); continue; }
         size_t off = 8 + (size_t)slen + 8;
         int32_t ver = rd_i32(d + off); off += 4;
         if (ver != 430 && ver != 400 && ver != 800) { free(d); continue; }
@@ -112,7 +114,9 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         for (int k = 0; k < slen; k++) if (ns[k] < 32 || ns[k] > 126) ok = 0;
         if (!ok) { free(d); continue; }
         char name[64]; memcpy(name, ns, (size_t)slen); name[slen] = 0;
-        if (strncmp(name, "room", 4) != 0) { free(d); continue; }
+        bool is_rm = (strncmp(name, "room", 4) == 0 || strncmp(name, "rm_", 3) == 0 ||
+                      strncmp(name, "r_", 2) == 0 || (name[0] == 'r' && name[1] >= '0' && name[1] <= '9'));
+        if (!is_rm) { free(d); continue; }
         size_t off = 8 + (size_t)slen + 8;
         int32_t ver = rd_i32(d + off); off += 4;
         if (ver != 541 && ver != 800 && ver != 520) { free(d); continue; }

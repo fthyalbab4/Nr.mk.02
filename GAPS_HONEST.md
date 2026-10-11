@@ -21,8 +21,8 @@
 | المكوّن | القيد |
 |---------|--------|
 | Event order GM الكامل | مبسّط (Create/Step/Draw) |
-| GML eval | parser بسيط؛ مش bytecode VM |
-| Collision | AABB؛ مش precise mask |
+| GML eval & builtins | parser تعبيرات + builtins (motion, place_meeting, alarms, DS list/map/queue/stack, particles, mp_grid) |
+| Collision | AABB + Tile top-platforms؛ مش precise mask |
 | Views من بيانات الغرفة | تهيئة أساسية |
 | Dual .gm82 text | skeleton |
 | GLES / GL textures في jni | STUB أو غير مُثبت على جهاز |
