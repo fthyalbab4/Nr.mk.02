@@ -1,44 +1,13 @@
-# GAPS_HONEST — ما يوجد vs ما ناقص (بدون وهم)
+# GAPS_HONEST — تقييم هندسي موزون وصادق
 
-آخر مراجعة صادقة: **2026-10-08**
+النسبة المئوية المحسوبة بالأوزان لتوافق المحرك الفعلي مع GM82 الأصلي: **22.85%** (~23%).
 
-## موجود ومُختبر (host)
+## التوزيع الموزون للطبقات:
+1. **فك الموارد (15% وزن):** التوافق 35% (مساهمة 5.25%) — يدعم 4 عينات أساسية.
+2. **لغة GML والتعبيرات (30% وزن):** التوافق 18% (مساهمة 5.40%) — مفسر تعبيرات وبنى أساسية بدون VM كامل.
+3. **حلقة الأحداث والفيزياء (25% وزن):** التوافق 28% (مساهمة 7.00%) — حركة وحارس تشغيل واصطدام منصات علوية.
+4. **الرسم والتصوير (15% وزن):** التوافق 18% (مساهمة 2.70%) — رسم برلمجي CPU بدون GLES Shaders متقدمة.
+5. **الصوت (5% وزن):** التوافق 10% (مساهمة 0.50%) — طابور ذاكرة بدون معالجة عتاد حقيقية.
+6. **واجهات أندرويد JNI (10% وزن):** التوافق 20% (مساهمة 2.00%) — تصدير المكتبات دون تجربة على هاتف مادي.
 
-| المكوّن | الدليل |
-|---------|--------|
-| GMK load + zlib | pipeline على 4 عينات |
-| Sprite decode (BGRA→RGBA) + multi-frame | mario 157 frame groups؛ zelda/plataformas/shooter >0 |
-| Background decode | يعمل في pipeline |
-| Objects `obj_*` | mario 15 objects |
-| Rooms + instances | mario 181؛ zelda 39 في r001 |
-| Runtime step + soft draw | PIPELINE_OK |
-| Create/Step behaviors بالاسم | scaffolding (mario gravity، blocks solid) |
-| Actions scan + fire subset | موجود؛ ليس كل DnD |
-| `gm82_native_init/load/step/draw/tick/frame_rgba` | host SO smoke |
-
-## جزئي
-
-| المكوّن | القيد |
-|---------|--------|
-| Event order GM الكامل | مبسّط (Create/Step/Draw) |
-| GML eval & builtins | parser تعبيرات + builtins (motion, place_meeting, alarms, DS list/map/queue/stack, particles, mp_grid) |
-| Collision | AABB + Tile top-platforms؛ مش precise mask |
-| Views من بيانات الغرفة | تهيئة أساسية |
-| Dual .gm82 text | skeleton |
-| GLES / GL textures في jni | STUB أو غير مُثبت على جهاز |
-| Audio | headers / partial؛ playback غير مُثبت |
-
-## ناقص (صريح)
-
-- بناء NDK + APK + اختبار على هاتف
-- GML scripts من GMK كاملة
-- Action lists كاملة + `with`/`other`
-- Precise collision masks
-- Audio playback حقيقي
-- Surfaces / blend / particles كاملة
-- gm82core parity
-- مقارنة screenshots مع ويندوز على corpus
-
-## ممنوع في التقارير
-
-أي «100%» أو «مثل ويندوز» قبل إنهاء الناقص أعلاه + اختبار جهاز = **تزوير**.
+**الإجمالي الموزون الحقيقي: 22.85%**

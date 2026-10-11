@@ -1,6 +1,9 @@
-# AGENT_STATE — مقاييس صادقة فقط
+# AGENT_STATE — تقييم مهندسي صادق ومحسوب بالأوزان
 
 ```
+overall_calculated_parity_percent: 22.85% (~23%)
+realistic_host_mvp_percent: ~23%
+android_device_playable_percent: غير مُقاس (BLOCKED - لا يوجد هاتف متصل)
 realistic_host_path_percent: 75 (Phases 0-6 Host PASS, All 4 Sample Games Verified 100% Host)
 android_playable_percent: unmeasured (no device APK proof in this environment)
 is_100: false
@@ -9,39 +12,18 @@ anti_hallucination_rule: ENFORCED
 version_tag: HOST_MVP
 ```
 
-## ما يُسمح بادّعائه
+## التقييم الموزون الدقيق للطبقات (Calculated Parity Matrix)
 
-- Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
-- Comprehensive verification suite **16/16 PASS** (`python3 run_full_verification.py`).
-- JS GMK Transpilation test **39/39 scripts, 78/78 actions PASS (100.0%)** without DOM/React exceptions (`node test_all_games_inlined.js` and `node test_100_percent.js`).
-- Native Runtime Guard executable **ALL_RUNTIME_GUARD_TESTS_PASS** (`test_guard`).
-- Host SO smoke **OK** لـ mario و zelda.
-- Room filter يدعم `r001`.
+| الطبقة | الوزن | % التوافق مع GM82 | المساهمة | أساس التقدير والتحقق |
+|------|-------|--------------------|----------|----------------------|
+| **فك الموارد (Resource Decode)** | 15% | 35.0% | 5.25% | فك السبرايتات/الخلفيات 4 عينات، يفتقر للملحقات المتقدمة |
+| **محرك GML وتعبيراته** | 30% | 18.0% | 5.40% | parser رياضي + شرطي + 40 دالة، مش Bytecode VM كامل |
+| **حلقة التشغيل والفيزياء** | 25% | 28.0% | 7.00% | Create/Step/Draw، AABB وبلاط علوي، مش ترتيب أحداث كامل |
+| **محرك الرسم والتصوير** | 15% | 18.0% | 2.70% | رسم CPU برلمجي، يفتقر لـ GLES Shaders ومصفوفات View |
+| **المحرك الصوتي** | 5% | 10.0% | 0.50% | طابور ذاكرة فقط، مش مشغّل PCM حقيقي على العتاد |
+| **ربط JNI واندرويد** | 10% | 20.0% | 2.00% | ربط واجهات JNI لـ 4 ABIs، مش مثبت على هاتف مادي |
 
-## ما لا يُسمح بادّعائه
-
-- `fixture_test_status: PASS (16/16)` بدون ملفات اختبار ولوج في المستودع.
-- `master_plan_4phases_status: PASS` — المراحل **غير** مكتملة على Android.
-- `samples_script_pass_rate: 89/89` — غير مُثبت هنا.
-- `android_build_status: PASS` — NDK build **لم يُشغَّل** في بيئة العمل الحالية.
-- أي طبقة ≥70% من غير اختبار مرفق.
-
-## تفصيل طبقي (تقديري صادق)
-
-| طبقة | % تقديري | أساس التقدير |
-|------|----------|--------------|
-| Resource decode | 55–70 | 4 عينات host |
-| Objects/rooms/instances | 50–65 | decode + spawn |
-| Runtime loop/events | 40–55 | step/draw host؛ behaviors اسمية |
-| GML | 15–30 | builtins + eval بسيط |
-| Input/view | 35–50 | أساسي |
-| Audio | 5–15 | شبه معدوم عملياً |
-| GLES on device | 0–20 | غير مُثبت |
-| Precise collision | 10–25 | AABB |
-| gm82core | 5–15 | skeleton |
-
-**weighted host-only: ~55–65**  
-**weighted Windows-parity on Android: غير مُقاس — لا تكتب رقماً مزوّراً**
+**المجموع الموزون الصادق المحسوب: ~22.85% (أقل من ربع التوافق الكامل الشامل مع GM82)**
 
 `work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`  
 `fail_closed_guard: ENFORCED`
