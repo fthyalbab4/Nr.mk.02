@@ -17,6 +17,13 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_speed = 30;
 }
 
+void gm82_runtime_set_room_speed(gm82_runtime *rt, int speed) {
+    if (!rt) return;
+    if (speed < 1) speed = 30;
+    if (speed > 240) speed = 240;
+    rt->room_speed = speed;
+}
+
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,
     const gm82_decoded_sprite_list *sprites,
