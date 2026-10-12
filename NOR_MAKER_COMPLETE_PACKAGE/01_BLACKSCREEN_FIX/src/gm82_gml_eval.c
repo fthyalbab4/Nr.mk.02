@@ -140,6 +140,13 @@ static bool parse_primary(gml_parser *p, double *out) {
 
         if (strcmp(id, "abs") == 0) { *out = fabs(args[0]); return true; }
         if (strcmp(id, "sign") == 0) { *out = args[0] > 0 ? 1 : (args[0] < 0 ? -1 : 0); return true; }
+        if (strcmp(id, "sqr") == 0) { *out = gml_sqr(args[0]); return true; }
+        if (strcmp(id, "sqrt") == 0) { *out = gml_sqrt(args[0]); return true; }
+        if (strcmp(id, "power") == 0) { *out = gml_power(args[0], args[1]); return true; }
+        if (strcmp(id, "exp") == 0) { *out = gml_exp(args[0]); return true; }
+        if (strcmp(id, "ln") == 0) { *out = gml_ln(args[0]); return true; }
+        if (strcmp(id, "log10") == 0) { *out = gml_log10(args[0]); return true; }
+        if (strcmp(id, "logn") == 0) { *out = gml_logn(args[0], args[1]); return true; }
         if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)args[0] + 1)); return true; }
         if (strcmp(id, "random") == 0) { *out = ((double)rand() / (double)RAND_MAX) * args[0]; return true; }
         if (strcmp(id, "floor") == 0) { *out = floor(args[0]); return true; }

@@ -620,6 +620,32 @@ double gml_real(const char *s) {
     return strtod(s, NULL);
 }
 
+double gml_string_pos(const char *sub, const char *str) {
+    if (!sub || !str) return 0;
+    const char *p = strstr(str, sub);
+    return p ? (double)(p - str + 1) : 0;
+}
+
+double gml_string_count(const char *sub, const char *str) {
+    if (!sub || !str || !*sub) return 0;
+    double count = 0;
+    size_t len = strlen(sub);
+    const char *p = str;
+    while ((p = strstr(p, sub)) != NULL) {
+        count++;
+        p += len;
+    }
+    return count;
+}
+
+double gml_sqr(double x) { return x * x; }
+double gml_sqrt(double x) { return x >= 0 ? sqrt(x) : 0; }
+double gml_power(double x, double n) { return pow(x, n); }
+double gml_exp(double x) { return exp(x); }
+double gml_ln(double x) { return x > 0 ? log(x) : 0; }
+double gml_log10(double x) { return x > 0 ? log10(x) : 0; }
+double gml_logn(double n, double x) { return (n > 0 && x > 0) ? (log(x) / log(n)) : 0; }
+
 
 double gml_instance_change(double object_index, double perform_events) {
     (void)perform_events;
@@ -948,12 +974,11 @@ double gml_part_system_update(double sys) {
     return 1;
 }
 
-#define GM82_DS_LIST_MAX 32
-#define GM82_DS_LIST_CAP 256
+#define GM82_DS_LIST_MAX 64
 typedef struct {
     int used;
-    int size;
-    double data[GM82_DS_LIST_CAP];
+    int size, cap;
+    double *data;
 } gm82_ds_list;
 
 static gm82_ds_list g_ds_lists[GM82_DS_LIST_MAX];
@@ -963,6 +988,8 @@ double gml_ds_list_create(void) {
         if (g_ds_lists[i].used) continue;
         memset(&g_ds_lists[i], 0, sizeof(g_ds_lists[i]));
         g_ds_lists[i].used = 1;
+        g_ds_lists[i].cap = 32;
+        g_ds_lists[i].data = (double *)calloc(32, sizeof(double));
         return (double)i;
     }
     return -1;
@@ -971,6 +998,7 @@ double gml_ds_list_create(void) {
 double gml_ds_list_destroy(double id) {
     int i = (int)id;
     if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
+    if (g_ds_lists[i].data) free(g_ds_lists[i].data);
     memset(&g_ds_lists[i], 0, sizeof(g_ds_lists[i]));
     return 1;
 }
@@ -978,14 +1006,20 @@ double gml_ds_list_destroy(double id) {
 double gml_ds_list_add(double id, double value) {
     int i = (int)id;
     if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
-    if (g_ds_lists[i].size >= GM82_DS_LIST_CAP) return 0;
+    if (g_ds_lists[i].size >= g_ds_lists[i].cap) {
+        int new_cap = g_ds_lists[i].cap > 0 ? g_ds_lists[i].cap * 2 : 32;
+        double *buf = (double *)realloc(g_ds_lists[i].data, (size_t)new_cap * sizeof(double));
+        if (!buf) return 0;
+        g_ds_lists[i].data = buf;
+        g_ds_lists[i].cap = new_cap;
+    }
     g_ds_lists[i].data[g_ds_lists[i].size++] = value;
     return 1;
 }
 
 double gml_ds_list_find_value(double id, double pos) {
     int i = (int)id, p = (int)pos;
-    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used || !g_ds_lists[i].data) return 0;
     if (p < 0 || p >= g_ds_lists[i].size) return 0;
     return g_ds_lists[i].data[p];
 }
