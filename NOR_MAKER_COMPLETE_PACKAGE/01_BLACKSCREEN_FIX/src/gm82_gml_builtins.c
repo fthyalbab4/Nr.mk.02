@@ -109,35 +109,6 @@ double gml_point_direction(double x1, double y1, double x2, double y2) {
     return atan2(-(y2 - y1), (x2 - x1)) * 180.0 / M_PI;
 }
 
-double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
-    double dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
-    return sqrt(dx * dx + dy * dy + dz * dz);
-}
-
-void gml_string_digits(const char *src, char *dst, size_t max_len) {
-    if (!dst || max_len == 0) return;
-    if (!src) { dst[0] = '\0'; return; }
-    size_t j = 0;
-    for (size_t i = 0; src[i] != '\0' && j + 1 < max_len; i++) {
-        if (src[i] >= '0' && src[i] <= '9') {
-            dst[j++] = src[i];
-        }
-    }
-    dst[j] = '\0';
-}
-
-void gml_string_letters(const char *src, char *dst, size_t max_len) {
-    if (!dst || max_len == 0) return;
-    if (!src) { dst[0] = '\0'; return; }
-    size_t j = 0;
-    for (size_t i = 0; src[i] != '\0' && j + 1 < max_len; i++) {
-        if ((src[i] >= 'a' && src[i] <= 'z') || (src[i] >= 'A' && src[i] <= 'Z')) {
-            dst[j++] = src[i];
-        }
-    }
-    dst[j] = '\0';
-}
-
 static bool sprite_size(gm82_runtime *rt, int32_t sprite_index, int32_t *w, int32_t *h) {
     *w = 16; *h = 16;
     if (!rt || !rt->sprites || sprite_index < 0 || sprite_index >= rt->sprites->count)
@@ -307,7 +278,10 @@ double gml_room(void) {
     return g_rt ? (double)g_rt->current_room : 0;
 }
 
-/* Audio delegation - see gm82_sound_runtime.c for actual queue handling */
+/* Audio not implemented – return 0 / no-op without faking playback */
+double gml_sound_play(double sound_index) { (void)sound_index; return 0; }
+double gml_sound_stop(double sound_index) { (void)sound_index; return 0; }
+double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
 
 double gml_room_restart(void) {
     if (!g_rt) return 0;
@@ -1704,13 +1678,6 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
-double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
-double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
-double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
-double gml_darcsin(double x) { return asin(x) * 180.0 / M_PI; }
-double gml_darccos(double x) { return acos(x) * 180.0 / M_PI; }
-double gml_darctan(double x) { return atan(x) * 180.0 / M_PI; }
-double gml_darctan2(double y, double x) { return atan2(y, x) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;

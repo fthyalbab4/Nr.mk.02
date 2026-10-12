@@ -51,25 +51,11 @@
       opts = opts || {};
       state.preferNative = opts.preferNative !== false;
       state.canvas = opts.canvas || document.getElementById(opts.canvasId || 'gameCanvas');
-      if (opts.targetFps && typeof opts.targetFps === 'number') {
-        state.targetFps = Math.max(30, Math.min(240, opts.targetFps));
-      }
       if (state.canvas) state.ctx = state.canvas.getContext('2d');
       state.attached = true;
       return hasNativeLoop(getBridge());
     },
     hasNative: function () { return hasNativeLoop(getBridge()); },
-    setTargetFps: function (fps) {
-      if (typeof fps === 'number' && fps >= 30 && fps <= 240) {
-        state.targetFps = fps;
-        var b = getBridge();
-        if (b && typeof b.setRoomSpeed === 'function') {
-          b.setRoomSpeed(fps);
-        }
-      }
-      return state.targetFps;
-    },
-    getTargetFps: function () { return state.targetFps; },
     onFrame: function () {
       if (!state.attached || !state.preferNative) return false;
       var b = getBridge();
@@ -82,7 +68,7 @@
     },
     getStats: function () {
       return { frames: state.frames, nativeActive: state.nativeActive,
-        targetFps: state.targetFps, lastError: state.lastError, hasBridge: !!getBridge() };
+        lastError: state.lastError, hasBridge: !!getBridge() };
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

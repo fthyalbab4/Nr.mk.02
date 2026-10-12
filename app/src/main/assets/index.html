@@ -154365,12 +154365,7 @@ button, input, textarea, select {
         </button>
       `;
 
-      const actionBtn = card.querySelector("button");
-      actionBtn.onmouseenter = () => { actionBtn.style.background = "#1d4ed8"; };
-      actionBtn.onmouseleave = () => { actionBtn.style.background = "#2563eb"; };
-      actionBtn.onfocus = () => { actionBtn.style.outline = "2px solid #60a5fa"; actionBtn.style.outlineOffset = "2px"; };
-      actionBtn.onblur = () => { actionBtn.style.outline = "none"; };
-      actionBtn.onclick = (e) => {
+      card.querySelector("button").onclick = (e) => {
         e.stopPropagation();
         loadCloudGame(item);
       };

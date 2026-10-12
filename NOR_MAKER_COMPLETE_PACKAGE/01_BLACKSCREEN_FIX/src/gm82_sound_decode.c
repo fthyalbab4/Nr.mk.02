@@ -57,9 +57,7 @@ int gm82_decode_sounds_from_gmk(const uint8_t *data, size_t size, gm82_decoded_s
         if (!ok) { free(d); continue; }
         /* sound names often start with snd_ or end with .wav/.mid */
         int is_snd = 0;
-        if (strncmp(name, "snd", 3)==0 || strncmp(name, "sound", 5)==0 || strncmp(name, "c4_", 3)==0 ||
-            strncmp(name, "ganan_", 6)==0 || strstr(name, ".wav") || strstr(name, ".mid") ||
-            strstr(name, ".mp3") || strstr(name, ".ogg"))
+        if (strncmp(name, "snd", 3)==0 || strstr(name, ".wav") || strstr(name, ".mid") || strstr(name, ".mp3"))
             is_snd = 1;
         if (!is_snd) { free(d); continue; }
         if (n >= 128) { free(d); break; }

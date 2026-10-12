@@ -52,13 +52,6 @@ else if(!strcmp(n->text,"irandom_range")&&c==2){long lo=(long)num(a[0]),hi=(long
 else if(!strcmp(n->text,"choose")&&c>=1){size_t pick=(size_t)(rand()%c);r=copyv(&a[pick]);}
 else if(!strcmp(n->text,"point_distance")&&c==4){double dx=num(a[2])-num(a[0]),dy=num(a[3])-num(a[1]);r=gml_value_real(sqrt(dx*dx+dy*dy));}
 else if(!strcmp(n->text,"point_direction")&&c==4){double dx=num(a[2])-num(a[0]),dy=num(a[1])-num(a[3]);double angle=atan2(dy,dx)*180.0/3.14159265358979323846;if(angle<0)angle+=360.0;r=gml_value_real(angle);}
-else if(!strcmp(n->text,"dsin")&&c==1)r=gml_value_real(sin(num(a[0])*3.14159265358979323846/180.0));
-else if(!strcmp(n->text,"dcos")&&c==1)r=gml_value_real(cos(num(a[0])*3.14159265358979323846/180.0));
-else if(!strcmp(n->text,"dtan")&&c==1)r=gml_value_real(tan(num(a[0])*3.14159265358979323846/180.0));
-else if(!strcmp(n->text,"darcsin")&&c==1)r=gml_value_real(asin(num(a[0]))*180.0/3.14159265358979323846);
-else if(!strcmp(n->text,"darccos")&&c==1)r=gml_value_real(acos(num(a[0]))*180.0/3.14159265358979323846);
-else if(!strcmp(n->text,"darctan")&&c==1)r=gml_value_real(atan(num(a[0]))*180.0/3.14159265358979323846);
-else if(!strcmp(n->text,"darctan2")&&c==2)r=gml_value_real(atan2(num(a[0]),num(a[1]))*180.0/3.14159265358979323846);
 else if(!strcmp(n->text,"lengthdir_x")&&c==2)r=gml_value_real(num(a[0])*cos(num(a[1])*3.14159265358979323846/180.0));
 else if(!strcmp(n->text,"lengthdir_y")&&c==2)r=gml_value_real(-num(a[0])*sin(num(a[1])*3.14159265358979323846/180.0));
 else if(!strcmp(n->text,"angle_difference")&&c==2){double diff=fmod(num(a[0])-num(a[1]),360.0);if(diff<-180.0)diff+=360.0;else if(diff>180.0)diff-=360.0;r=gml_value_real(diff);}
