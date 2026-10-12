@@ -48,80 +48,18 @@ static bool parse_ident(gml_parser *p, char *buf, size_t buflen) {
     return j > 0;
 }
 
-#define GM82_MAX_GLOBALS 256
-
-typedef struct {
-    char name[64];
-    double value;
-} gml_global_var;
-
-static gml_global_var g_globals[GM82_MAX_GLOBALS];
-static int g_global_count = 0;
-
-static double get_global_var(const char *name) {
-    if (strcmp(name, "score") == 0) return gml_get_score();
-    if (strcmp(name, "lives") == 0) return gml_get_lives();
-    if (strcmp(name, "health") == 0) return gml_get_health();
-    for (int i = 0; i < g_global_count; i++) {
-        if (strcmp(g_globals[i].name, name) == 0) return g_globals[i].value;
-    }
-    return 0.0;
-}
-
-static void set_global_var(const char *name, double val) {
-    if (strcmp(name, "score") == 0) { gml_set_score(val); return; }
-    if (strcmp(name, "lives") == 0) { gml_set_lives(val); return; }
-    if (strcmp(name, "health") == 0) { gml_set_health(val); return; }
-    for (int i = 0; i < g_global_count; i++) {
-        if (strcmp(g_globals[i].name, name) == 0) {
-            g_globals[i].value = val;
-            return;
-        }
-    }
-    if (g_global_count < GM82_MAX_GLOBALS) {
-        strncpy(g_globals[g_global_count].name, name, 63);
-        g_globals[g_global_count].name[63] = 0;
-        g_globals[g_global_count].value = val;
-        g_global_count++;
-    }
-}
-
 static bool get_var(gml_parser *p, const char *name, double *out) {
-    if (strncmp(name, "global.", 7) == 0) {
-        *out = get_global_var(name + 7);
-        return true;
-    }
     gm82_instance *s = p->self;
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
-    if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
-    if (strcmp(name, "yprevious") == 0) { *out = s ? s->yprevious : 0; return true; }
-    if (strcmp(name, "xstart") == 0) { *out = s ? s->xstart : 0; return true; }
-    if (strcmp(name, "ystart") == 0) { *out = s ? s->ystart : 0; return true; }
     if (strcmp(name, "hspeed") == 0) { *out = s ? s->hspeed : 0; return true; }
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
     if (strcmp(name, "direction") == 0) { *out = s ? s->direction : 0; return true; }
-    if (strcmp(name, "gravity") == 0) { *out = s ? s->gravity : 0; return true; }
-    if (strcmp(name, "gravity_direction") == 0) { *out = s ? s->gravity_direction : 0; return true; }
-    if (strcmp(name, "friction") == 0) { *out = s ? s->friction : 0; return true; }
-    if (strcmp(name, "image_index") == 0) { *out = s ? s->image_index : 0; return true; }
+    if (strcmp(name, "image_index") == 0) { *out = s ? (double)s->image_index : 0; return true; }
     if (strcmp(name, "image_speed") == 0) { *out = s ? s->image_speed : 0; return true; }
-    if (strcmp(name, "image_angle") == 0) { *out = s ? s->image_angle : 0; return true; }
-    if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1.0; return true; }
-    if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1.0; return true; }
-    if (strcmp(name, "image_blend") == 0) { *out = s ? (double)s->image_blend : 0xffffff; return true; }
-    if (strcmp(name, "image_alpha") == 0) { *out = s ? s->image_alpha : 1.0; return true; }
-    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->bbox_left : 0; return true; }
-    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->bbox_top : 0; return true; }
-    if (strcmp(name, "bbox_right") == 0) { *out = s ? s->bbox_right : 0; return true; }
-    if (strcmp(name, "bbox_bottom") == 0) { *out = s ? s->bbox_bottom : 0; return true; }
     if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
-    if (strcmp(name, "mask_index") == 0) { *out = s ? (double)s->mask_index : -1; return true; }
-    if (strcmp(name, "depth") == 0) { *out = s ? (double)s->depth : 0; return true; }
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
-    if (strcmp(name, "visible") == 0) { *out = s && s->visible ? 1 : 0; return true; }
-    if (strcmp(name, "persistent") == 0) { *out = s && s->persistent ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
@@ -138,10 +76,6 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
 }
 
 static bool set_var(gml_parser *p, const char *name, double v) {
-    if (strncmp(name, "global.", 7) == 0) {
-        set_global_var(name + 7, v);
-        return true;
-    }
     gm82_instance *s = p->self;
     if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
         return false;
@@ -151,22 +85,10 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "vspeed") == 0) { s->vspeed = v; return true; }
     if (strcmp(name, "speed") == 0) { s->speed = v; return true; }
     if (strcmp(name, "direction") == 0) { s->direction = v; return true; }
-    if (strcmp(name, "gravity") == 0) { s->gravity = v; return true; }
-    if (strcmp(name, "gravity_direction") == 0) { s->gravity_direction = v; return true; }
-    if (strcmp(name, "friction") == 0) { s->friction = v; return true; }
-    if (strcmp(name, "image_index") == 0) { s->image_index = v; return true; }
+    if (strcmp(name, "image_index") == 0) { s->image_index = (int32_t)v; return true; }
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
-    if (strcmp(name, "image_angle") == 0) { s->image_angle = v; return true; }
-    if (strcmp(name, "image_xscale") == 0) { s->image_xscale = v; return true; }
-    if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
-    if (strcmp(name, "image_blend") == 0) { s->image_blend = (uint32_t)v; return true; }
-    if (strcmp(name, "image_alpha") == 0) { s->image_alpha = v; return true; }
     if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
-    if (strcmp(name, "mask_index") == 0) { s->mask_index = (int32_t)v; return true; }
-    if (strcmp(name, "depth") == 0) { s->depth = (int32_t)v; return true; }
     if (strcmp(name, "solid") == 0) { s->solid = v != 0; return true; }
-    if (strcmp(name, "visible") == 0) { s->visible = v != 0; return true; }
-    if (strcmp(name, "persistent") == 0) { s->persistent = v != 0; return true; }
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }

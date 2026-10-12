@@ -1,20 +1,16 @@
 # AGENT_STATE — مقاييس صادقة فقط
 
 ```
-realistic_host_path_percent: 65-75 (Phases 0-6 Host PASS, Mario Playable on Host)
+realistic_host_path_percent: 55-65
 android_playable_percent: unmeasured (no device APK proof in this environment)
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
-version_tag: HOST_MVP
 ```
 
 ## ما يُسمح بادّعائه
 
 - Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
-- Comprehensive verification suite **16/16 PASS** (`python3 run_full_verification.py`).
-- JS GMK Transpilation test **39/39 scripts, 78/78 actions PASS (100.0%)** without DOM/React exceptions (`node test_all_games_inlined.js` and `node test_100_percent.js`).
-- Native Runtime Guard executable **ALL_RUNTIME_GUARD_TESTS_PASS** (`test_guard`).
 - Host SO smoke **OK** لـ mario و zelda.
 - Room filter يدعم `r001`.
 

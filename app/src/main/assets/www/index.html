@@ -91918,9 +91918,9 @@ function gmlToJs(gml) {
   let js = gml;
 
   // Comments and basic keywords
-  js = js.replace(/\bvar\s+/gi, "let ");
-  js = js.replace(/\btrue\b/gi, "true").replace(/\bfalse\b/gi, "false");
-  js = js.replace(/\bexit\b/gi, "return;");
+  js = js.replace(/\bvar\s+/g, "let ");
+  js = js.replace(/\btrue\b/g, "true").replace(/\bfalse\b/g, "false");
+  js = js.replace(/\bexit\b/g, "return");
   js = js.replace(/<>/g, "!=");
   js = js.replace(/:=/g, "=");
   js = js.replace(/\bbegin\b/gi, "{");
@@ -91930,8 +91930,7 @@ function gmlToJs(gml) {
   js = js.replace(/([0-9\)\}\;])else\b/g, "$1 else");
   js = js.replace(/\belse([a-zA-Z_0-9\(\{])/g, "else $1");
 
-  // Bitwise & Logical operators
-  js = js.replace(/\bbnot\s+/gi, "~");
+  // Logical operators
   js = js.replace(/\bnot\s+/gi, "!");
   js = js.replace(/\s+\band\b\s+/gi, " && ");
   js = js.replace(/\s+\bor\b\s+/gi, " || ");

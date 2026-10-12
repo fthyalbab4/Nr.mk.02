@@ -50,6 +50,17 @@ double gml_sound_play(double sound_index) {
     return gm82_sound_play(g_sr, (int)sound_index, 0) ? 1.0 : 0.0;
 }
 
+double gml_sound_stop(double sound_index) {
+    (void)sound_index;
+    if (!g_sr) return 0;
+    gm82_sound_stop_all(g_sr);
+    return 1;
+}
+
+double gml_sound_isplaying(double sound_index) {
+    return gml_sound_is_playing(sound_index);
+}
+
 double gml_sound_loop(double sound_index) {
     if (!g_sr) return 0;
     return gm82_sound_play(g_sr, (int)sound_index, 1) ? 1.0 : 0.0;
