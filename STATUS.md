@@ -1,18 +1,24 @@
 # STATUS — صادق (2026-10-13)
 
-## ما يُقاس فعلياً
-- **Host pipeline** (load GMK → materialize → room → step → soft_draw): نجح سابقاً على عينات محدودة على Linux host.
-- **جهاز Android حقيقي:** غير مُقاس في هذه الجلسة.
+## إثبات (host)
+```
+gcc -O2 -Wall -o /tmp/test_event_order tools/gap_fill_20261013/test_event_order.c && /tmp/test_event_order
+# RESULT: ALL PASS (event order + xprevious + scaled AABB)
+```
+التفاصيل: `tools/gap_fill_20261013/PROOF.md`
 
-## ما تم في هذه الدورة (سد فجوات)
-1. ترتيب أحداث أقرب لـ GM8: Begin Step → Alarm → Step → حركة → Collision → End Step.
-2. `xprevious` / `yprevious` على الـ instance + قراءة من GML eval.
-3. AABB في التصادم يحسب `image_xscale` / `image_yscale`.
-4. hooks لـ begin/end step (جداول أحداث GMK الفرعية لسه ناقصة).
+## دمج الباتشات في النواة
+```bash
+bash tools/gap_fill_20261013/ASSEMBLE.sh
+```
+يطبق:
+- `gm82_runtime.event_order.patch`
+- `gm82_events.begin_end.patch`
+- `gml_xprevious.patch` (إن وُجد)
 
-## ما لم يُثبت
-- لعب كامل زي ويندوز على الهاتف.
-- GML/DnD كامل، precise mask في كل المسارات، صوت على الجهاز.
+Headers على main مسبقاً: `xprevious`/`yprevious` + begin/end API.
 
-## نسب
-**لا نسبة مئوية مزيفة.** التقدم = فجوات مغلقة باختبار.
+## غير مُقاس
+جهاز Android، لعب كامل زي ويندوز، GML كامل.
+
+**لا نسبة مئوية مزيفة.**
