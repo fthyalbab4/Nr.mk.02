@@ -1,24 +1,16 @@
-# STATUS — مستمر
+# STATUS
 
-## host مثبت
-| اختبار | نتيجة |
-|--------|--------|
-| 4/4 حركة + رسم | OK |
-| كل الغرف | OK |
-| 3000 step stress | **STABLE** |
-| spawn + camera | OK |
+## host
+- 4/4 MOVED + DRAW_OK
+- multi-room OK
+- 3000-step STABLE
+- GML snippets: mario 2, shooter 5, zelda 2
 
-## على main
-events (fantasma/link/…) · object filter · solid · MainActivity play path
-
-## ASSEMBLE
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-## للهدف (جهاز = ويندوز)
-1. **rebuild SO** بـ NDK من `app/src/main/cpp`
-2. install APK واختبار لمس
-3. ربط أحداث DnD/GML من الكائنات بالكامل
-
-بدون نسب مئوية وهمية.
+## متبقي للهدف
+1. NDK rebuild SO
+2. جهاز
+3. تنفيذ snippets GML أثناء step (مربوط جزئياً)

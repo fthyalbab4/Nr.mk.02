@@ -1,0 +1,44 @@
+--- a/app/src/main/cpp/src/gm82_object_room_decode.c
++++ b/app/src/main/cpp/src/gm82_object_room_decode.c
+@@ -173,6 +173,42 @@
+                 }
+             }
+         }
++        /* Harvest execute-code GML strings from object blob */
++        if (o->event_count > 0) {
++            for (size_t q = 0; q + 8 < ol; q++) {
++                int32_t nlen = rd_i32(d + q);
++                if (nlen < 40 || nlen > 2000 || q + 4 + (size_t)nlen > ol) continue;
++                const uint8_t *cs = d + q + 4;
++                int okc = 1;
++                for (int k = 0; k < nlen; k++) {
++                    uint8_t ch = cs[k];
++                    if (ch == 0) { okc = 0; break; }
++                    if (ch < 9 || (ch > 13 && ch < 32 && ch != 9)) { okc = 0; break; }
++                }
++                if (!okc) continue;
++                int has = 0;
++                for (int k = 0; k + 8 < nlen; k++) {
++                    if (cs[k]=='k' && cs[k+1]=='e' && cs[k+2]=='y' && cs[k+3]=='b') { has = 1; break; }
++                    if (cs[k]=='p' && cs[k+1]=='l' && cs[k+2]=='a' && cs[k+3]=='c' && cs[k+4]=='e') { has = 1; break; }
++                    if (cs[k]=='h' && cs[k+1]=='s' && cs[k+2]=='p' && cs[k+3]=='e') { has = 1; break; }
++                    if (cs[k]=='v' && cs[k+1]=='s' && cs[k+2]=='p' && cs[k+3]=='e') { has = 1; break; }
++                    if (cs[k]=='i' && cs[k+1]=='n' && cs[k+2]=='s' && cs[k+3]=='t') { has = 1; break; }
++                }
++                if (!has) continue;
++                gm82_decoded_event *target = &o->events[0];
++                for (int ei = 0; ei < o->event_count; ei++) {
++                    if (o->events[ei].main_type == 3) { target = &o->events[ei]; break; }
++                }
++                if (!target->code_snippet || (int)strlen(target->code_snippet) < 20) {
++                    free(target->code_snippet);
++                    target->code_snippet = (char *)malloc((size_t)nlen + 1);
++                    if (target->code_snippet) {
++                        memcpy(target->code_snippet, cs, (size_t)nlen);
++                        target->code_snippet[nlen] = 0;
++                    }
++                }
++            }
++        }
+         free(d);
+     }

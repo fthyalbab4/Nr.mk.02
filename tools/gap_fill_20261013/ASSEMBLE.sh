@@ -6,6 +6,9 @@ cd "$ROOT"
 if ! grep -q 'has_player' app/src/main/cpp/src/gm82_runtime.c 2>/dev/null; then
   patch -p1 < "$DIR/gm82_runtime.spawn_player.patch" || true
 fi
+if ! grep -q 'Harvest execute-code GML' app/src/main/cpp/src/gm82_object_room_decode.c 2>/dev/null; then
+  patch -p1 < "$DIR/gm82_object_gml_harvest.patch" || true
+fi
 if ! grep -q 'xprevious' app/src/main/cpp/src/gm82_gml_eval.c 2>/dev/null; then
   bash "$DIR/APPLY_GML.sh" || true
 fi
