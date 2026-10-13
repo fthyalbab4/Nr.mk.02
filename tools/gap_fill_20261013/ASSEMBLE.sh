@@ -29,6 +29,8 @@ if ! grep -q 'action_potential_step' app/src/main/cpp/src/gm82_gml_eval.c 2>/dev
   bash "$DIR/APPLY_POTENTIAL.sh" || true
 fi
 
+python3 "$DIR/collision_collectible.py" || true
+
 if ! grep -q 'has_player' app/src/main/cpp/src/gm82_runtime.c 2>/dev/null; then
   python3 "$DIR/spawn_fallback.py" || true
 fi

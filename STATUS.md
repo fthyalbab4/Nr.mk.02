@@ -1,19 +1,14 @@
 # STATUS
 
 ## host 4/4 PASS
-| sample | scripts | move | draw |
-|--------|---------|------|------|
-| mario_bros | 8 | MOVED | OK |
-| plataformas | 14 | MOVED | OK |
-| shooter | 0 | MOVED | OK |
-| zelda | 16 | MOVED | OK |
-
-ASSEMBLE: spawn + GML harvest + step GML + JNI scripts + xprevious + potential_step
-+ spawn_fallback.py if patch fails
+حركة + رسم + scripts + GML AI + collision collectibles
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-## متبقي للجهاز
-rebuild libgm82_android.so (NDK) ثم APK
+## SO في jniLibs قديم
+الرموز موجودة لكن بدون spawn/scripts/stepish.
+**لازم** `./gradlew assembleDebug` عندك (NDK) عشان يبني SO جديد من المصدر بعد ASSEMBLE.
+
+بدون نسب وهمية — الهدف على الجهاز = SO محدّث + APK.
