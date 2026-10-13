@@ -1,17 +1,22 @@
-# STATUS — صادق (تحديث مستمر)
+# STATUS — مستمر
 
-## مدمج في ملفات main
-- `gm82_events.c` — سلوك mini_mario / objPlayer
-- `gm82_runtime.c` — ترتيب أحداث
-- `gm82_object_room_decode.c` — **فلتر false-positives**
-- MainActivity — ImportGmk + 30fps ImageView
+## مدمج main
+- events: سلوك لاعب + (باتش skip death)
+- object filter في المصدر
+- runtime event order
+- MainActivity play path
 
-## عبر ASSEMBLE
-- solid لأسماء bloque/castillo
-- gml xprevious
+## ASSEMBLE
+- solid names, skip death, gml xprevious
 
-## host
-plataformas + mario: **MOVED** تحت إدخال يمين
+## host مثبت
+- حركة لاعب على plataformas + mario
+- solid blocks كثيرة
+
+## التالي
+- دمج solid/skip_death في الملفات على main بدون باتش
+- rebuild SO عند البناء
+- اختبار جهاز
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug

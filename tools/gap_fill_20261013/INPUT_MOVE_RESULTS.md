@@ -1,10 +1,12 @@
 # Input movement (host)
 
-After object false-positive filter + behavior name match:
-
 ```
-plataformas.gmk  player=objPlayer2  delta=90  MOVED
-mario_bros.gmk   player matched     delta≈79–90 MOVED
+plataformas.gmk  player=objPlayer2     delta=90  MOVED
+mario_bros.gmk   obj_minimario x 16→160 MOVED (pierde skipped)
 ```
 
-Room0 plataformas: oi=1 → objBloque (54 blocks), oi=0 → objPlayer2.
+Solid after name heuristic:
+```
+plataformas solid=54/60
+mario solid=154/181
+```
