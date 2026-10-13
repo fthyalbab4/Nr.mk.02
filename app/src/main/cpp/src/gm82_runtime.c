@@ -135,14 +135,15 @@ void gm82_runtime_step(gm82_runtime *rt) {
     }
 
     /*
-     * GM8 event order (Mark Overmars docs):
+     * GM8.2 deterministic event order:
      *   Begin Step → Alarm → Keyboard/Mouse → Step →
-     *   set positions → Collision → End Step → Draw
-     * We approximate: Step (incl. behaviors) → Alarm → move → Collision resolve.
-     * Keyboard is polled inside GML/actions via gm82_input.
+     *   Movement & Position update → Collision → End Step → View update → Draw
      */
 
-    /* Step events (behaviors / GML bind / object actions) */
+    /* Phase 1: Begin Step */
+    gm82_events_fire_begin_step_all(rt);
+
+    /* Phase 2: Main Step events (behaviors / GML bind / object actions) */
     gm82_events_fire_step_all(rt);
 
     /* Alarms tick */
@@ -244,6 +245,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
 
         /* Tiles are not solid objects in GM8 — only solid instances resolve. */
     }
+
+    /* Phase 3: End Step */
+    gm82_events_fire_end_step_all(rt);
 
     /* Update view camera follow (Milestone 3.5) */
     if (rt->view_enabled && rt->view_w > 0) {

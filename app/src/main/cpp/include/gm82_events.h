@@ -49,8 +49,10 @@ void gm82_events_register_defaults(void);
 /* Fire Create for all instances after room load (also called from goto_room) */
 void gm82_events_fire_create_all(gm82_runtime *rt);
 
-/* Fire Step (begin/normal/end simplified into one) for all alive instances */
+/* Fire Step phases (Begin Step, Normal Step, End Step) for all alive instances */
+void gm82_events_fire_begin_step_all(gm82_runtime *rt);
 void gm82_events_fire_step_all(gm82_runtime *rt);
+void gm82_events_fire_end_step_all(gm82_runtime *rt);
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other);
 
 /* Lookup behavior for object index */
