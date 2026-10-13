@@ -1,28 +1,30 @@
 # STATUS — صادق (2026-10-13)
 
-## على المستودع main (ملفات حقيقية)
-
-| عنصر | على GitHub |
-|------|------------|
-| `gm82_runtime.c` ترتيب أحداث + xprevious + AABB | **نعم — مدموج** |
-| `gm82_events.c` begin/end | **نعم** |
-| `gm82_jni_java_bridge.c` rooms+goto_room | **نعم** |
-| MainActivity ImportGmk + NorNative | **نعم** |
-| `gml_xprevious.proper.patch` | **نعم** (يُطبَّق بـ ASSEMBLE) |
-| إثبات host / PLAY_PATH docs | **نعم** |
-
-```bash
-git clone https://github.com/fthyalbab4/Nr.mk.02.git
-cd Nr.mk.02
-bash tools/gap_fill_20261013/ASSEMBLE.sh   # يطبّق gml xprevious إن ناقص + اختبار
+## مسار اللعب على Android (main)
 ```
+loadLibrary(gm82_android)
+nativeRuntimeCreate(640,480)
+nativeImportGmkSnapshot(sample.gmk)   // rooms + instances داخل الـ SO
+Handler ~30fps:
+  nativeRuntimeStep
+  nativeRuntimeRenderBitmap → ImageView
+```
+لا يعتمد على index.html (الـ maker) ولا على rAF في JS.
 
-## مثبت host
-- event order ALL PASS
-- ROOM_PIPELINE_OK (instances حتى 308)
-- PLAY_PATH_OK (lit pixels بعد draw)
+## على المستودع
+- `gm82_runtime.c` — ترتيب أحداث + xprevious + AABB (مدموج)
+- `gm82_events.c` / jni bridge / MainActivity أعلاه
+- `ASSEMBLE.sh` لـ gml xprevious
 
-## غير مثبت
-APK على جهاز.
+## host مثبت
+ROOM_PIPELINE_OK + PLAY_PATH_OK (lit pixels)
+
+## عندك الآن
+```bash
+git pull
+bash tools/gap_fill_20261013/ASSEMBLE.sh
+./gradlew assembleDebug
+# logcat: imported www/samples/...  و frame=1,90,180...
+```
 
 **لا نسبة مئوية.**

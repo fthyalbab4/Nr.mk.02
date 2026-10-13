@@ -4,26 +4,36 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 /**
- * MainActivity aligned with shipped libgm82_android.so.
- * Path: loadLibrary → nativeRuntimeCreate → nativeImportGmkSnapshot(sample)
- *       → WebView NorNative.tick → nativeRuntimeStep.
+ * Play path matching shipped SO:
+ * loadLibrary → nativeRuntimeCreate → nativeImportGmkSnapshot
+ * → Handler 30fps: nativeRuntimeStep + nativeRuntimeRenderBitmap → ImageView.
+ *
+ * Does not depend on the maker index.html rAF (that bundle does not load the bridge).
  */
 public class MainActivity extends Activity {
     private static final String TAG = "NOR_NATIVE";
-    private WebView webView;
+    private static final int ROOM_W = 640;
+    private static final int ROOM_H = 480;
+    private static final long FRAME_MS = 33; // ~30 fps
+
+    private ImageView gameView;
+    private Bitmap frameBitmap;
+    private final Handler loopHandler = new Handler(Looper.getMainLooper());
+    private boolean loopRunning = false;
     private String lastImportJson = "";
+    private int frameCount = 0;
 
     public static native void nativeClearResourceRegistry();
     public static native void nativeCodeDestroy(int i);
@@ -85,6 +95,27 @@ public class MainActivity extends Activity {
         }
     }
 
+    private final Runnable frameLoop = new Runnable() {
+        @Override
+        public void run() {
+            if (!loopRunning) return;
+            try {
+                nativeRuntimeStep(1.0f / 30.0f);
+                if (frameBitmap != null) {
+                    nativeRuntimeRenderBitmap(frameBitmap);
+                    gameView.setImageBitmap(frameBitmap);
+                }
+                frameCount++;
+                if (frameCount == 1 || frameCount % 90 == 0) {
+                    Log.i(TAG, "frame=" + frameCount + " import=" + lastImportJson);
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "frame error", t);
+            }
+            loopHandler.postDelayed(this, FRAME_MS);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,36 +126,51 @@ public class MainActivity extends Activity {
         );
 
         try {
-            nativeRuntimeCreate(640, 480);
+            nativeRuntimeCreate(ROOM_W, ROOM_H);
         } catch (Throwable t) {
-            Log.e(TAG, "nativeRuntimeCreate failed safely", t);
+            Log.e(TAG, "nativeRuntimeCreate failed", t);
         }
 
-        /* Critical: import a GMK so rooms/objects/instances exist (SO path) */
         lastImportJson = tryImportSampleGmk();
-        Log.i(TAG, "import result: " + lastImportJson);
+        Log.i(TAG, "import: " + lastImportJson);
 
-        FrameLayout container = new FrameLayout(this);
-        webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(24, 35, 48));
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        try {
-            settings.setAllowFileAccessFromFileURLs(true);
-            settings.setAllowUniversalAccessFromFileURLs(true);
-        } catch (Throwable ignored) {}
+        frameBitmap = Bitmap.createBitmap(ROOM_W, ROOM_H, Bitmap.Config.ARGB_8888);
+        gameView = new ImageView(this);
+        gameView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        gameView.setBackgroundColor(Color.rgb(20, 20, 40));
+        gameView.setOnTouchListener((v, event) -> {
+            int action = event.getActionMasked();
+            // Map touch to Space (32) for jump-style samples
+            if (action == MotionEvent.ACTION_DOWN) {
+                try { nativeRuntimeKey(32, true); } catch (Throwable ignored) {}
+                return true;
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                try { nativeRuntimeKey(32, false); } catch (Throwable ignored) {}
+                return true;
+            }
+            return false;
+        });
 
-        webView.addJavascriptInterface(new NativeBridge(), "NorNative");
-        webView.setWebViewClient(new WebViewClient());
-        webView.loadUrl("file:///android_asset/www/index.html");
-        container.addView(webView);
-        setContentView(container);
+        FrameLayout root = new FrameLayout(this);
+        root.addView(gameView, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+
+        startLoop();
     }
 
-    /** Load first available sample GMK bytes into nativeImportGmkSnapshot. */
+    private void startLoop() {
+        loopRunning = true;
+        loopHandler.removeCallbacks(frameLoop);
+        loopHandler.post(frameLoop);
+    }
+
+    private void stopLoop() {
+        loopRunning = false;
+        loopHandler.removeCallbacks(frameLoop);
+    }
+
     private String tryImportSampleGmk() {
         String[] candidates = new String[] {
             "www/samples/mario_bros.gmk",
@@ -143,10 +189,10 @@ public class MainActivity extends Activity {
                     return json;
                 }
             } catch (Throwable t) {
-                Log.w(TAG, "import failed for " + asset, t);
+                Log.w(TAG, "import failed " + asset, t);
             }
         }
-        return "{\"ok\":false,\"error\":\"no sample gmk imported\"}";
+        return "{\"ok\":false,\"error\":\"no sample\"}";
     }
 
     private byte[] readAssetBytes(String assetName) {
@@ -163,116 +209,26 @@ public class MainActivity extends Activity {
         }
     }
 
-    public final class NativeBridge {
-        @JavascriptInterface
-        public void tick() {
-            step(1.0f / 30.0f);
-        }
-
-        @JavascriptInterface
-        public void step(float delta) {
-            try {
-                MainActivity.nativeRuntimeStep(delta);
-            } catch (Throwable t) {
-                Log.w(TAG, "step error", t);
-            }
-        }
-
-        @JavascriptInterface
-        public boolean isRunning() {
-            return true;
-        }
-
-        @JavascriptInterface
-        public String importStatus() {
-            return lastImportJson != null ? lastImportJson : "";
-        }
-
-        /** Import GMK from asset path under assets/ (e.g. www/samples/mario_bros.gmk). */
-        @JavascriptInterface
-        public String importAsset(String assetPath) {
-            try {
-                byte[] bytes = readAssetBytes(assetPath);
-                if (bytes == null) return "{\"ok\":false,\"error\":\"asset not found\"}";
-                String json = MainActivity.nativeImportGmkSnapshot(bytes, getFilesDir().getAbsolutePath());
-                lastImportJson = json != null ? json : "";
-                return lastImportJson;
-            } catch (Throwable t) {
-                return "{\"ok\":false,\"error\":\"" + t.getMessage() + "\"}";
-            }
-        }
-
-        @JavascriptInterface
-        public boolean renderBitmap() {
-            try {
-                Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
-                return MainActivity.nativeRuntimeRenderBitmap(bmp);
-            } catch (Throwable t) {
-                Log.w(TAG, "renderBitmap error", t);
-                return false;
-            }
-        }
-
-        @JavascriptInterface
-        public String coreIdentity() {
-            try {
-                return MainActivity.nativeCoreIdentity();
-            } catch (Throwable t) {
-                return "";
-            }
-        }
-
-        @JavascriptInterface
-        public String snapshot() {
-            try {
-                return MainActivity.nativeRuntimeSnapshotJson();
-            } catch (Throwable t) {
-                return "";
-            }
-        }
-
-        @JavascriptInterface
-        public String evaluateGml(String code) {
-            try {
-                return MainActivity.nativeEvaluateGml(code);
-            } catch (Throwable t) {
-                return "";
-            }
-        }
-
-        @JavascriptInterface
-        public void key(int vk, boolean down) {
-            try {
-                MainActivity.nativeRuntimeKey(vk, down);
-            } catch (Throwable t) {
-            }
-        }
-
-        @JavascriptInterface
-        public void keyDown(int vk) { key(vk, true); }
-
-        @JavascriptInterface
-        public void keyUp(int vk) { key(vk, false); }
-    }
-
-    @Override
-    protected void onDestroy() {
-        try {
-            nativeRuntimeDestroy();
-        } catch (Throwable t) {
-        }
-        super.onDestroy();
-    }
-
     @Override
     protected void onPause() {
         super.onPause();
-        if (webView != null) webView.onPause();
+        stopLoop();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (webView != null) webView.onResume();
+        startLoop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopLoop();
+        try { nativeRuntimeDestroy(); } catch (Throwable ignored) {}
+        if (frameBitmap != null && !frameBitmap.isRecycled()) {
+            frameBitmap.recycle();
+            frameBitmap = null;
+        }
+        super.onDestroy();
     }
 }
