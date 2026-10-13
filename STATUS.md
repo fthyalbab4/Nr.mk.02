@@ -1,19 +1,21 @@
 # STATUS — مستمر
 
-## مدمج main
-- events: سلوك لاعب + skip death
-- runtime: solid names + event order
-- object filter
-- MainActivity play path
+## مدمج في ملفات main
+- `gm82_events.c`: سلوك لاعب (سرعات فقط) + skip death + أسماء GMK
+- `gm82_runtime.c`: حركة + solid AABB + solid names
+- `gm82_object_room_decode.c`: فلتر objects
+- `MainActivity.java`: ImportGmk + 30fps ImageView
 
-## host
-- حركة يمين MOVED
-- هبوط بدون قفز LANDED
-- قفز يعمل (jumped=1) + اصطدام solid
+## host مثبت
+| اختبار | نتيجة |
+|--------|--------|
+| حركة يمين | MOVED delta=90 |
+| هبوط | LANDED vspeed=0 |
+| قفز | jumped=1 |
 
-## ASSEMBLE
+## ASSEMBLE (xprevious)
 ```bash
-git pull
-bash tools/gap_fill_20261013/ASSEMBLE.sh  # xprevious + player_physics patch
-./gradlew assembleDebug
+git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
+
+التالي: SO rebuild · جهاز · GML أوسع
