@@ -1,12 +1,14 @@
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_events.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_input.h"
 #include "gm82_actions.h"
+#include "gm82_gml_eval.h"
 #include <string.h>
 #include <stdio.h>
-
-/* ---- Default behaviors (name-based until action lists fully parsed) ---- */
+#include <stdlib.h>
+#include <zlib.h>
 
 static void beh_player_create(gm82_runtime *rt, gm82_instance *self) {
     (void)rt;
@@ -16,81 +18,26 @@ static void beh_player_create(gm82_runtime *rt, gm82_instance *self) {
 static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
-
-    /* horizontal input (vk_left=37 vk_right=39 or A/D) */
     {
         double h = 0;
         if (gml_keyboard_check(37) || gml_keyboard_check(65)) h -= 3.0;
         if (gml_keyboard_check(39) || gml_keyboard_check(68)) h += 3.0;
-        gml_set_hspeed(h);
-        /* jump */
-        if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && gml_get_vspeed() == 0)
-            gml_set_vspeed(-8.0);
+        self->hspeed = h;
+        if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && self->vspeed >= -0.05 && self->vspeed <= 0.6)
+            self->vspeed = -8.0;
+        else
+            self->vspeed += 0.5;
     }
-
-    /* gravity */
-    gml_set_vspeed(gml_get_vspeed() + 0.5);
-
-    /* collide with any solid below */
-    if (gml_place_meeting(gml_get_x(), gml_get_y() + 1, -1)) {
-        /* check only solids manually */
-        int32_t sw = 16, sh = 16;
-        if (rt->sprites && self->sprite_index >= 0 && self->sprite_index < rt->sprites->count) {
-            sw = rt->sprites->frames[self->sprite_index].width;
-            sh = rt->sprites->frames[self->sprite_index].height;
-        }
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || !o->solid || o == self) continue;
-            int32_t ow = 16, oh = 16;
-            if (rt->sprites && o->sprite_index >= 0 && o->sprite_index < rt->sprites->count) {
-                ow = rt->sprites->frames[o->sprite_index].width;
-                oh = rt->sprites->frames[o->sprite_index].height;
-            }
-            if (self->x < o->x + ow && self->x + sw > o->x &&
-                self->y + 1 < o->y + oh && self->y + sh + 1 > o->y) {
-                if (self->vspeed > 0) {
-                    self->y = o->y - sh;
-                    self->vspeed = 0;
-                }
-            }
-        }
-    }
-
-    /* keep inside room */
-    if (self->y > rt->room_height) {
-        self->y = 0;
-        self->vspeed = 0;
-    }
-    if (self->x < 0) self->x = 0;
-    if (self->x > rt->room_width - 16) self->x = (double)(rt->room_width - 16);
+    (void)rt;
 }
 
 static void beh_enemy_step(gm82_runtime *rt, gm82_instance *self) {
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
-    /* simple patrol */
     if (self->hspeed == 0) self->hspeed = 1.0;
     if (self->x < 0 || self->x > rt->room_width - 16)
         self->hspeed = -self->hspeed;
-    /* gravity light */
     self->vspeed += 0.3;
-    if (gml_place_meeting(self->x, self->y + 1, -1)) {
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || !o->solid || o == self) continue;
-            int32_t sh = 16, oh = 16;
-            if (rt->sprites && self->sprite_index >= 0 && self->sprite_index < rt->sprites->count)
-                sh = rt->sprites->frames[self->sprite_index].height;
-            if (rt->sprites && o->sprite_index >= 0 && o->sprite_index < rt->sprites->count)
-                oh = rt->sprites->frames[o->sprite_index].height;
-            if (self->vspeed > 0 && self->y + sh >= o->y && self->y < o->y + oh &&
-                self->x + 8 > o->x && self->x < o->x + 16) {
-                self->y = o->y - sh;
-                self->vspeed = 0;
-            }
-        }
-    }
 }
 
 static void beh_solid_create(gm82_runtime *rt, gm82_instance *self) {
@@ -99,28 +46,125 @@ static void beh_solid_create(gm82_runtime *rt, gm82_instance *self) {
 }
 
 static const gm82_behavior g_behaviors[] = {
+    { "mini_mario",    beh_player_create, beh_player_step },
+    { "minimario",     beh_player_create, beh_player_step },
     { "obj_minimario", beh_player_create, beh_player_step },
     { "obj_mario",     beh_player_create, beh_player_step },
+    { "mario",         beh_player_create, beh_player_step },
+    { "objPlayer",     beh_player_create, beh_player_step },
+    { "obj_player",    beh_player_create, beh_player_step },
+    { "Player",        beh_player_create, beh_player_step },
+    { "heroe",         beh_player_create, beh_player_step },
+    { "fantasma",      beh_player_create, beh_player_step },
+    { "obj_link",      beh_player_create, beh_player_step },
+    { "link",          beh_player_create, beh_player_step },
     { "obj_enemigo",   NULL,              beh_enemy_step },
+    { "enemigo",       NULL,              beh_enemy_step },
+    { "objEnemigo",    NULL,              beh_enemy_step },
+    { "oso",           NULL,              beh_enemy_step },
     { "obj_bloque",    beh_solid_create,  NULL },
+    { "bloque",        beh_solid_create,  NULL },
+    { "objBloque",     beh_solid_create,  NULL },
     { "obj_castillo",  beh_solid_create,  NULL },
+    { "castillo",      beh_solid_create,  NULL },
+    { "caja",          beh_solid_create,  NULL },
     { NULL, NULL, NULL }
 };
 
 void gm82_events_register_defaults(void) {
-    /* static table – nothing to do at runtime */
 }
 
 const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index) {
     if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count)
         return NULL;
     const char *name = rt->objects->items[object_index].name;
+    if (!name || !name[0]) return NULL;
+    if (strstr(name, "pierde") || strstr(name, "dead") || strstr(name, "lose") ||
+        strstr(name, "muerte") || strstr(name, "die"))
+        return NULL;
+    const gm82_behavior *best = NULL;
+    size_t best_len = 0;
     for (int i = 0; g_behaviors[i].object_name_prefix; i++) {
-        if (strncmp(name, g_behaviors[i].object_name_prefix,
-                    strlen(g_behaviors[i].object_name_prefix)) == 0)
-            return &g_behaviors[i];
+        const char *pre = g_behaviors[i].object_name_prefix;
+        size_t pl = strlen(pre);
+        if (pl == 0) continue;
+        if ((strncmp(name, pre, pl) == 0 || strstr(name, pre) != NULL) && pl >= best_len) {
+            best = &g_behaviors[i];
+            best_len = pl;
+        }
+    }
+    return best;
+}
+
+#define GM82_GML_BIND_MAX 16
+typedef struct {
+    char prefix[64];
+    const char *code;
+} gm82_gml_bind;
+
+static gm82_gml_bind g_gml_step[GM82_GML_BIND_MAX];
+static gm82_gml_bind g_gml_create[GM82_GML_BIND_MAX];
+static int g_gml_step_n;
+static int g_gml_create_n;
+
+void gm82_events_clear_gml_bindings(void) {
+    g_gml_step_n = 0;
+    g_gml_create_n = 0;
+    memset(g_gml_step, 0, sizeof(g_gml_step));
+    memset(g_gml_create, 0, sizeof(g_gml_create));
+}
+
+bool gm82_events_bind_gml_step(const char *object_name_prefix, const char *code) {
+    if (!object_name_prefix || !code || g_gml_step_n >= GM82_GML_BIND_MAX) return false;
+    gm82_gml_bind *b = &g_gml_step[g_gml_step_n++];
+    strncpy(b->prefix, object_name_prefix, sizeof(b->prefix)-1);
+    b->code = code;
+    return true;
+}
+
+bool gm82_events_bind_gml_create(const char *object_name_prefix, const char *code) {
+    if (!object_name_prefix || !code || g_gml_create_n >= GM82_GML_BIND_MAX) return false;
+    gm82_gml_bind *b = &g_gml_create[g_gml_create_n++];
+    strncpy(b->prefix, object_name_prefix, sizeof(b->prefix)-1);
+    b->code = code;
+    return true;
+}
+
+static const char *find_gml(gm82_gml_bind *arr, int n, gm82_runtime *rt, int32_t object_index) {
+    if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count) return NULL;
+    const char *name = rt->objects->items[object_index].name;
+    for (int i = 0; i < n; i++) {
+        size_t L = strlen(arr[i].prefix);
+        if (L > 0 && strncmp(name, arr[i].prefix, L) == 0) return arr[i].code;
     }
     return NULL;
+}
+
+static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !rt->objects) return;
+    int32_t oi = inst->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type != 0) continue;
+        if (ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+    }
+}
+
+void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
+    if (!rt || !inst || !rt->objects) return;
+    int32_t oi = inst->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    (void)other;
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type != 4) continue;
+        if (!ev->action_name0[0]) continue;
+        gm82_action_execute_named(rt, inst, ev->action_name0);
+    }
 }
 
 void gm82_events_fire_create_all(gm82_runtime *rt) {
@@ -129,15 +173,37 @@ void gm82_events_fire_create_all(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
-        if (b && b->on_create) {
+        const char *gcode = find_gml(g_gml_create, g_gml_create_n, rt, inst->object_index);
+        if (gcode) {
             gm82_gml_set_self(inst);
-            b->on_create(rt, inst);
+            gm82_gml_eval_block(rt, inst, gcode);
+        } else {
+            const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
+            if (b && b->on_create) {
+                gm82_gml_set_self(inst);
+                b->on_create(rt, inst);
+            }
         }
+        fire_object_create_actions(rt, inst);
         if (rt->actions)
             gm82_actions_fire_create(rt, inst, rt->actions);
     }
 }
+
+static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !rt->objects) return;
+    int32_t oi = inst->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == 3 && ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+    }
+}
+
+void gm82_events_fire_begin_step_all(gm82_runtime *rt) { (void)rt; }
+void gm82_events_fire_end_step_all(gm82_runtime *rt) { (void)rt; }
 
 void gm82_events_fire_step_all(gm82_runtime *rt) {
     if (!rt) return;
@@ -145,12 +211,24 @@ void gm82_events_fire_step_all(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
-        if (b && b->on_step) {
+        const char *gcode = find_gml(g_gml_step, g_gml_step_n, rt, inst->object_index);
+        if (gcode) {
             gm82_gml_set_self(inst);
-            b->on_step(rt, inst);
+            gm82_gml_eval_block(rt, inst, gcode);
+        } else {
+            const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
+            if (b && b->on_step) {
+                gm82_gml_set_self(inst);
+                b->on_step(rt, inst);
+            }
         }
+        fire_object_step_actions(rt, inst);
         if (rt->actions)
             gm82_actions_fire_step(rt, inst, rt->actions);
     }
+}
+
+int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
+    (void)data; (void)size;
+    return 0;
 }
