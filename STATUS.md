@@ -1,15 +1,15 @@
 # STATUS
 
-## host 4/4
-| sample | move | draw | camera follow |
-|--------|------|------|---------------|
-| mario_bros | MOVED | OK | yes |
-| plataformas | MOVED | OK | yes |
-| shooter | MOVED | OK | yes |
-| zelda | MOVED | OK | yes (spawn link) |
+## host مثبت
+- 4/4 عيّنات: حركة + رسم
+- كل الغرف: goto + step + draw OK
+- spawn لاعب + camera follow
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-Next: NDK rebuild SO on your machine for device parity.
+## المتبقي للهدف
+1. rebuild SO (NDK عندك)
+2. APK على جهاز
+3. GML/DnD من أحداث الكائنات كاملة
