@@ -10,10 +10,17 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import com.normaker.gm82.Gm82Native;
 import com.normaker.gm82.Gm82SurfaceView;
+import com.normaker.gm82.NorNativeWebBridge;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
+/**
+ * Dual path:
+ * 1) Gm82SurfaceView — GL thread already calls nativeStep/nativeDraw (primary native loop)
+ * 2) WebView + NorNative — JS rAF can also tick via JavascriptInterface
+ * Both use the same libgm82_android.so; no NDK rebuild required for this wiring.
+ */
 public class MainActivity extends Activity {
     private Gm82SurfaceView mGm82View;
     private WebView mWebView;
@@ -49,6 +56,9 @@ public class MainActivity extends Activity {
         webSettings.setDomStorageEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
+
+        /* Critical: expose window.NorNative so nor_native_loop_bridge.js can tick */
+        mWebView.addJavascriptInterface(new NorNativeWebBridge(), "NorNative");
 
         mWebView.setWebViewClient(new WebViewClient() {
             @Override

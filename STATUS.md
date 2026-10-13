@@ -1,20 +1,16 @@
 # STATUS — صادق (2026-10-13)
 
-## مثبت على host
+## مثبت host
 `tools/gap_fill_20261013/test_event_order.c` → ALL PASS
-(ترتيب Begin→Alarm→Step→Move→Collision→End + xprevious + AABB scaled)
 
-## على main
-- باتشات: `tools/gap_fill_20261013/*.patch`
-- Headers: xprevious/yprevious + begin/end step
-- `PLAN_EXEC.md` — مسار الهدف بدون نسب
-
-## دمج في ملفات .c
-```bash
-bash tools/gap_fill_20261013/ASSEMBLE.sh
-```
+## مثبت في المستودع (كود)
+- باتشات ترتيب الأحداث + xprevious + AABB scaled تحت `tools/gap_fill_20261013/`
+- `ASSEMBLE.sh` يطبّقها على clone نظيف + الاختبار ينجح
+- **Native loop wiring:** `NorNativeWebBridge` → `Gm82Native.native*` + تسجيل في `MainActivity`
 
 ## غير مثبت
-لعب على جهاز Android، تكافؤ ويندوز كامل، GML كامل.
+- APK جديد على جهاز
+- لعب عينة GMK كاملة كويندوز
+- تطبيق الباتشات على ملفات `.c` في main (شغّل ASSEMBLE أو ادفع الملفات المصحّحة)
 
-**لا نسبة مئوية مزيفة.**
+**لا نسبة مئوية.** انظر `PLAN_EXEC.md`.
