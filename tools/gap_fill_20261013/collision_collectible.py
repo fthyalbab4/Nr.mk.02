@@ -1,23 +1,16 @@
 from pathlib import Path
 p = Path("app/src/main/cpp/src/gm82_events.c")
 t = p.read_text()
-if "Collectible heuristic" in t:
+if "is_pick" in t and "moneda" in t:
     print("COLLISION_ALREADY")
     raise SystemExit(0)
-old = """void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
-    if (!rt || !inst || !rt->objects) return;
-    int32_t oi = inst->object_index;
-    if (oi < 0 || oi >= rt->objects->count) return;
-    const gm82_decoded_object *obj = &rt->objects->items[oi];
-    (void)other;
-    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-        const gm82_decoded_event *ev = &obj->events[e];
-        if (ev->main_type != 4) continue;
-        if (!ev->action_name0[0]) continue;
-        gm82_action_execute_named(rt, inst, ev->action_name0);
-    }
-}"""
-new = """void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
+start = t.find("void gm82_events_fire_collision")
+if start < 0:
+    print("COLLISION_NO_FN"); raise SystemExit(1)
+end = t.find("\nvoid ", start + 10)
+if end < 0:
+    print("COLLISION_NO_END"); raise SystemExit(1)
+new_fn = """void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
     if (oi < 0 || oi >= rt->objects->count) return;
@@ -46,9 +39,7 @@ new = """void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, 
             if (is_pick && !other->solid) other->alive = 0;
         }
     }
-}"""
-if old not in t:
-    print("COLLISION_MISS")
-else:
-    p.write_text(t.replace(old, new, 1))
-    print("COLLISION_OK")
+}
+"""
+p.write_text(t[:start] + new_fn + t[end:])
+print("COLLISION_OK")
