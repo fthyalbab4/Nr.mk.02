@@ -60,6 +60,14 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->solid = o->solid;
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
+        /* Name heuristics when GMK solid bit is wrong/zero */
+        if (o->name) {
+            if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
+                strstr(o->name, "castillo") || strstr(o->name, "solid") ||
+                strstr(o->name, "Solid") || strstr(o->name, "wall") ||
+                strstr(o->name, "Wall") || strstr(o->name, "ground"))
+                inst->solid = 1;
+        }
     }
 }
 
@@ -133,14 +141,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         gm82_gml_set_frame_time(sec);
     }
 
-    /*
-     * GM8 event order (Mark Overmars docs):
-     *   Begin Step → Alarm → Keyboard/Mouse → Step →
-     *   set positions → Collision → End Step → Draw
-     * Keyboard polled via gm82_input inside GML/actions.
-     */
-
-    /* Snapshot previous position (used by GML xprevious/yprevious) */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -150,7 +150,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
 
     gm82_events_fire_begin_step_all(rt);
 
-    /* Alarms tick (after Begin Step, before Step — GM docs) */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -165,10 +164,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    /* Normal Step events (behaviors / GML / object actions) */
     gm82_events_fire_step_all(rt);
 
-    /* Apply motion (speed/dir, gravity, friction) then move */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -198,7 +195,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         inst->y += inst->vspeed;
     }
 
-    /* Collision phase: AABB + image scale */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
