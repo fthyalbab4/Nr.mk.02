@@ -10,8 +10,6 @@
 #include <stdlib.h>
 #include <zlib.h>
 
-/* ---- Default behaviors (name-based until action lists fully parsed) ---- */
-
 static void beh_player_create(gm82_runtime *rt, gm82_instance *self) {
     (void)rt;
     self->image_speed = 0.2;
@@ -95,7 +93,6 @@ static void beh_solid_create(gm82_runtime *rt, gm82_instance *self) {
 }
 
 static const gm82_behavior g_behaviors[] = {
-    /* Match real GMK names (prefix / substring via find_behavior) */
     { "mini_mario",    beh_player_create, beh_player_step },
     { "minimario",     beh_player_create, beh_player_step },
     { "obj_minimario", beh_player_create, beh_player_step },
@@ -124,6 +121,10 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
         return NULL;
     const char *name = rt->objects->items[object_index].name;
     if (!name || !name[0]) return NULL;
+    /* Skip death/lose variants so they are not controlled as the player. */
+    if (strstr(name, "pierde") || strstr(name, "dead") || strstr(name, "lose") ||
+        strstr(name, "muerte") || strstr(name, "die"))
+        return NULL;
     /* Prefer longest prefix match so "mini_mario" wins over "mario" */
     const gm82_behavior *best = NULL;
     size_t best_len = 0;
@@ -353,34 +354,6 @@ int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
         if (ver == 800 && (strncmp(name, "spr", 3) == 0 || strncmp(name, "snd", 3) == 0 ||
                            strncmp(name, "bg", 2) == 0 || strncmp(name, "back", 4) == 0)) {
             free(d); continue;
-        }
-        const char *best = NULL; int best_n = 0;
-        for (size_t j = 0; j + 8 < ol; j++) {
-            int32_t n = ev_rd_i32(d + j);
-            if (n < 16 || n > 1000 || j + 4 + (size_t)n > ol) continue;
-            const uint8_t *s = d + j + 4;
-            int good = 1;
-            for (int k = 0; k < n; k++) {
-                unsigned char c = s[k];
-                if (!(c >= 32 && c < 127) && c != 9 && c != 10 && c != 13) { good = 0; break; }
-            }
-            if (!good) continue;
-            int score = 0;
-            if (memmem(s, (size_t)n, "keyboard_", 9)) score += 2;
-            if (memmem(s, (size_t)n, "if ", 3)) score += 1;
-            if (memmem(s, (size_t)n, "x", 1) && memmem(s, (size_t)n, "=", 1)) score += 1;
-            if (memmem(s, (size_t)n, "image_", 6)) score += 1;
-            if (score < 2) continue;
-            if (n > best_n) { best_n = n; best = (const char *)s; }
-        }
-        if (best && g_autobind_store_n < 16) {
-            int ncopy = best_n < 1023 ? best_n : 1023;
-            memcpy(g_autobind_code_store[g_autobind_store_n], best, (size_t)ncopy);
-            g_autobind_code_store[g_autobind_store_n][ncopy] = 0;
-            if (gm82_events_bind_gml_create(name, g_autobind_code_store[g_autobind_store_n])) {
-                g_autobind_store_n++;
-                bound++;
-            }
         }
         free(d);
     }
