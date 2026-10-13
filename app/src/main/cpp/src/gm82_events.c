@@ -18,7 +18,6 @@ static void beh_player_create(gm82_runtime *rt, gm82_instance *self) {
 static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
-    /* Input → speeds only; motion + solid collision in gm82_runtime_step */
     {
         double h = 0;
         if (gml_keyboard_check(37) || gml_keyboard_check(65)) h -= 3.0;
@@ -56,14 +55,19 @@ static const gm82_behavior g_behaviors[] = {
     { "obj_player",    beh_player_create, beh_player_step },
     { "Player",        beh_player_create, beh_player_step },
     { "heroe",         beh_player_create, beh_player_step },
+    { "fantasma",      beh_player_create, beh_player_step },
+    { "obj_link",      beh_player_create, beh_player_step },
+    { "link",          beh_player_create, beh_player_step },
     { "obj_enemigo",   NULL,              beh_enemy_step },
     { "enemigo",       NULL,              beh_enemy_step },
     { "objEnemigo",    NULL,              beh_enemy_step },
+    { "oso",           NULL,              beh_enemy_step },
     { "obj_bloque",    beh_solid_create,  NULL },
     { "bloque",        beh_solid_create,  NULL },
     { "objBloque",     beh_solid_create,  NULL },
     { "obj_castillo",  beh_solid_create,  NULL },
     { "castillo",      beh_solid_create,  NULL },
+    { "caja",          beh_solid_create,  NULL },
     { NULL, NULL, NULL }
 };
 
