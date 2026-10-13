@@ -1,16 +1,16 @@
 # STATUS — صادق (2026-10-13)
 
-## مثبت host
-`tools/gap_fill_20261013/test_event_order.c` → ALL PASS
+## مثبت
+1. Host unit test event order + xprevious + scaled AABB → ALL PASS
+2. `ASSEMBLE.sh` على clone نظيف يطبّق باتشات C بنجاح
+3. SO في APK/jniLibs يصدّر `MainActivity.nativeRuntime*` فقط (مش `Gm82Native.*`)
+4. استعادة مسار Java المطابق للـ SO: MainActivity من APK الشغّال + NativeBridge → `NorNative`
 
-## مثبت في المستودع (كود)
-- باتشات ترتيب الأحداث + xprevious + AABB scaled تحت `tools/gap_fill_20261013/`
-- `ASSEMBLE.sh` يطبّقها على clone نظيف + الاختبار ينجح
-- **Native loop wiring:** `NorNativeWebBridge` → `Gm82Native.native*` + تسجيل في `MainActivity`
+## مهم
+إصلاحات `gm82_runtime.c` (ترتيب الأحداث) **في المصدر**؛ الـ SO الحالي في APK **لم يُعد بناؤه** بعد.
+بدون rebuild SO، الجهاز يشغّل سلوك الـ SO القديم.
 
-## غير مثبت
-- APK جديد على جهاز
-- لعب عينة GMK كاملة كويندوز
-- تطبيق الباتشات على ملفات `.c` في main (شغّل ASSEMBLE أو ادفع الملفات المصحّحة)
+## الهدف القابل للقياس
+عينة GMK تتحمّل، `nativeRuntimeStep` يدور، `nativeRuntimeRenderBitmap` يرسم، بدون freeze.
 
-**لا نسبة مئوية.** انظر `PLAN_EXEC.md`.
+**لا نسبة مئوية.**
