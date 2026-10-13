@@ -1,6 +1,6 @@
 --- a/app/src/main/cpp/src/gm82_runtime.c
 +++ b/app/src/main/cpp/src/gm82_runtime.c
-@@ -124,6 +124,39 @@
+@@ -123,6 +123,39 @@
      rt->running = 1;
      rt->frame = 0;
      gm82_events_fire_create_all(rt);
