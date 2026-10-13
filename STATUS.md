@@ -1,23 +1,27 @@
-# STATUS — مستمر
+# STATUS — مستمر نحو الهدف
 
-## مدمج main
-- events: سلوك لاعب + (باتش skip death)
-- object filter في المصدر
-- runtime event order
-- MainActivity play path
+## مدمج في ملفات main (بدون باتش)
+| ملف | محتوى |
+|-----|--------|
+| `gm82_events.c` | سلوك لاعب + skip pierdes/dead |
+| `gm82_runtime.c` | ترتيب أحداث + solid لأسماء bloque |
+| `gm82_object_room_decode.c` | فلتر false-positives |
+| `MainActivity.java` | ImportGmk + 30fps ImageView |
 
-## ASSEMBLE
-- solid names, skip death, gml xprevious
-
-## host مثبت
-- حركة لاعب على plataformas + mario
-- solid blocks كثيرة
-
-## التالي
-- دمج solid/skip_death في الملفات على main بدون باتش
-- rebuild SO عند البناء
-- اختبار جهاز
-
-```bash
-git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
+## host مثبت الآن
 ```
+mario_bros    player=obj_minimario  delta=90 MOVED  solid=154
+plataformas   player=objPlayer2     delta=90 MOVED  solid=54
+```
+
+## عبر ASSEMBLE فقط
+- gml xprevious
+
+## عندك
+```bash
+git pull
+bash tools/gap_fill_20261013/ASSEMBLE.sh   # xprevious
+./gradlew assembleDebug
+```
+
+**الهدف التالي:** rebuild SO + جهاز؛ توسيع GML/actions.
