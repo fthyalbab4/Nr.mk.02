@@ -16,6 +16,11 @@ fi
 if ! grep -q 'mini_mario' app/src/main/cpp/src/gm82_events.c 2>/dev/null; then
   patch -p1 < "$DIR/gm82_events.behavior_names.patch" || true
 fi
+if ! grep -q 'pierde' app/src/main/cpp/src/gm82_events.c 2>/dev/null || ! grep -q 'Skip death' app/src/main/cpp/src/gm82_events.c 2>/dev/null; then
+  if [[ -f "$DIR/gm82_events.skip_death.patch" ]]; then
+    patch -p1 < "$DIR/gm82_events.skip_death.patch" || true
+  fi
+fi
 if ! grep -q 'Reject zlib false-positives' app/src/main/cpp/src/gm82_object_room_decode.c 2>/dev/null; then
   patch -p1 < "$DIR/gm82_object_filter.patch" || true
 fi
