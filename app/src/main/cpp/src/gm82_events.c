@@ -21,23 +21,18 @@ static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
 
-    /* horizontal input (vk_left=37 vk_right=39 or A/D) */
     {
         double h = 0;
         if (gml_keyboard_check(37) || gml_keyboard_check(65)) h -= 3.0;
         if (gml_keyboard_check(39) || gml_keyboard_check(68)) h += 3.0;
         gml_set_hspeed(h);
-        /* jump */
         if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && gml_get_vspeed() == 0)
             gml_set_vspeed(-8.0);
     }
 
-    /* gravity */
     gml_set_vspeed(gml_get_vspeed() + 0.5);
 
-    /* collide with any solid below */
     if (gml_place_meeting(gml_get_x(), gml_get_y() + 1, -1)) {
-        /* check only solids manually */
         int32_t sw = 16, sh = 16;
         if (rt->sprites && self->sprite_index >= 0 && self->sprite_index < rt->sprites->count) {
             sw = rt->sprites->frames[self->sprite_index].width;
@@ -61,7 +56,6 @@ static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
         }
     }
 
-    /* keep inside room */
     if (self->y > rt->room_height) {
         self->y = 0;
         self->vspeed = 0;
@@ -73,11 +67,9 @@ static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
 static void beh_enemy_step(gm82_runtime *rt, gm82_instance *self) {
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
-    /* simple patrol */
     if (self->hspeed == 0) self->hspeed = 1.0;
     if (self->x < 0 || self->x > rt->room_width - 16)
         self->hspeed = -self->hspeed;
-    /* gravity light */
     self->vspeed += 0.3;
     if (gml_place_meeting(self->x, self->y + 1, -1)) {
         for (int i = 0; i < rt->instance_count; i++) {
@@ -112,7 +104,6 @@ static const gm82_behavior g_behaviors[] = {
 };
 
 void gm82_events_register_defaults(void) {
-    /* static table – nothing to do at runtime */
 }
 
 const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index) {
@@ -126,7 +117,6 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
     }
     return NULL;
 }
-
 
 #define GM82_GML_BIND_MAX 16
 typedef struct {
@@ -172,7 +162,6 @@ static const char *find_gml(gm82_gml_bind *arr, int n, gm82_runtime *rt, int32_t
     return NULL;
 }
 
-
 static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -180,7 +169,7 @@ static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        if (ev->main_type != 0) continue; /* Create only */
+        if (ev->main_type != 0) continue;
         if (ev->action_name0[0]) {
             gm82_action_execute_named(rt, inst, ev->action_name0);
             if (strcmp(ev->action_name0, "action_sprite_set") == 0 && ev->action_arg0 >= 0)
@@ -199,7 +188,6 @@ static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     }
 }
 
-
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -208,7 +196,7 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
     (void)other;
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        if (ev->main_type != 4) continue; /* Collision main event */
+        if (ev->main_type != 4) continue;
         if (!ev->action_name0[0]) continue;
         gm82_action_execute_named(rt, inst, ev->action_name0);
     }
@@ -237,7 +225,6 @@ void gm82_events_fire_create_all(gm82_runtime *rt) {
     }
 }
 
-
 static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -245,8 +232,6 @@ static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        /* Step (3) actions; also run any decoded GML snippet each step
-         * when it looks like movement code (keyboard/place_free). */
         if (ev->main_type == 3 && ev->action_name0[0]) {
             gm82_action_execute_named(rt, inst, ev->action_name0);
             if (strcmp(ev->action_name0, "action_set_hspeed") == 0 && ev->action_arg0 != -1)
@@ -259,6 +244,15 @@ static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
             gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
     }
+}
+
+/* Begin/End Step: order matches GM docs; subtypes when event decode lands */
+void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
+    (void)rt;
+}
+
+void gm82_events_fire_end_step_all(gm82_runtime *rt) {
+    (void)rt;
 }
 
 void gm82_events_fire_step_all(gm82_runtime *rt) {
@@ -310,7 +304,6 @@ static uint8_t *ev_inflate(const uint8_t *src, size_t n, size_t *ol) {
     *ol = strm.total_out; inflateEnd(&strm); return dst;
 }
 
-/* stored copies so pointers stay valid after scan */
 static char g_autobind_code_store[16][1024];
 static int g_autobind_store_n;
 
@@ -341,8 +334,6 @@ int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
                            strncmp(name, "bg", 2) == 0 || strncmp(name, "back", 4) == 0)) {
             free(d); continue;
         }
-
-        /* pick longest GML-like string in blob */
         const char *best = NULL; int best_n = 0;
         for (size_t j = 0; j + 8 < ol; j++) {
             int32_t n = ev_rd_i32(d + j);
