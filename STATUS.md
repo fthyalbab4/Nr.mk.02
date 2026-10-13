@@ -1,16 +1,24 @@
 # STATUS
 
-## host: 4/4 samples MOVED
-| GMK | player | result |
-|-----|--------|--------|
-| mario_bros | obj_minimario | MOVED |
-| plataformas | objPlayer2 | MOVED |
-| shooter | fantasma | MOVED |
-| zelda | obj_link | MOVED |
+## host مثبت 4/4
+- **MOVED** تحت إدخال يمين
+- **DRAW_OK** بكسلات مضيئة في soft render
 
-## مدمج main
-events (fantasma/link), runtime solid, object filter, MainActivity
+| عيّنة | لاعب | حركة | رسم |
+|--------|------|------|-----|
+| mario_bros | minimario | MOVED | OK |
+| plataformas | objPlayer2 | MOVED | OK |
+| shooter | fantasma | MOVED | OK |
+| zelda | obj_link | MOVED | OK |
 
+## على main
+events (fantasma/link/mario/player) · runtime solid · object filter · MainActivity
+
+## عندك
 ```bash
-git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
+git pull
+bash tools/gap_fill_20261013/ASSEMBLE.sh
+./gradlew assembleDebug
 ```
+
+**التالي:** rebuild SO · جهاز · GML أوسع من DnD/actions
