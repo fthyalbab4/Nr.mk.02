@@ -76,6 +76,8 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
+    if (strcmp(name, "yprevious") == 0) { *out = s ? s->yprevious : 0; return true; }
     if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
     if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
     if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
