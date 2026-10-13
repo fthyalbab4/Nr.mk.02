@@ -8,4 +8,4 @@
 ## تنبيه
 إن كان `MainActivity.java` = PLACEHOLDER، طبّق `tools/RECOVER_MAINACTIVITY.md`
 
-Host ~55–65%. ليس 100%.
+Host ~65–75% (مُثبت بتشغيل test_full_suite و host_so_smoke و run_full_verification.py). Android على جهاز حقيقي: غير مُقاس. ليس 100%.

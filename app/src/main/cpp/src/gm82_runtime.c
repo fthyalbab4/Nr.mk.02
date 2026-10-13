@@ -15,6 +15,8 @@ void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     rt->next_id = 100001;
     rt->room_speed = 30;
+    rt->room_width = 640;
+    rt->room_height = 480;
 }
 
 void gm82_runtime_bind_assets(gm82_runtime *rt,

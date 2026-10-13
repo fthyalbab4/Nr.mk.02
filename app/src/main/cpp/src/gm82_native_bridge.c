@@ -7,6 +7,38 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <sys/stat.h>
+
+static void mkdir_p(const char *dir) {
+    char tmp[512];
+    char *p = NULL;
+    size_t len;
+
+    snprintf(tmp, sizeof(tmp), "%s", dir);
+    len = strlen(tmp);
+    if (len == 0) return;
+    if (tmp[len - 1] == '/') tmp[len - 1] = 0;
+    for (p = tmp + 1; *p; p++) {
+        if (*p == '/') {
+            *p = 0;
+            mkdir(tmp, 0755);
+            *p = '/';
+        }
+    }
+    mkdir(tmp, 0755);
+}
+
+static void ensure_parent_dir(const char *path) {
+    if (!path) return;
+    char tmp[512];
+    strncpy(tmp, path, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = '\0';
+    char *slash = strrchr(tmp, '/');
+    if (slash && slash != tmp) {
+        *slash = '\0';
+        mkdir_p(tmp);
+    }
+}
 
 /* Retro ROM Exporter & Validator implementations */
 double nor_import_format_native(const char *path) {
@@ -41,6 +73,7 @@ double nor_validate_rom_native(const char *path, double kind) {
 double nor_export_nes_native(const char *project, const char *output) {
     (void)project;
     if (!output) return 0.0;
+    ensure_parent_dir(output);
     FILE *f = fopen(output, "wb");
     if (!f) return 0.0;
     /* 16-byte iNES header */
@@ -64,6 +97,7 @@ double nor_export_nes_native(const char *project, const char *output) {
 double nor_export_gbc_native(const char *project, const char *output) {
     (void)project;
     if (!output) return 0.0;
+    ensure_parent_dir(output);
     FILE *f = fopen(output, "wb");
     if (!f) return 0.0;
     uint8_t rom[32768];
@@ -82,6 +116,7 @@ double nor_export_gbc_native(const char *project, const char *output) {
 double nor_export_gba_native(const char *project, const char *output) {
     (void)project;
     if (!output) return 0.0;
+    ensure_parent_dir(output);
     FILE *f = fopen(output, "wb");
     if (!f) return 0.0;
     uint8_t rom[16384];
@@ -421,6 +456,18 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "ds_grid_get_sum") == 0 && count >= 5) {
         *out = gml_value_real(gml_ds_grid_get_sum(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_set_disk") == 0 && count >= 5) {
+        *out = gml_value_real(gml_ds_grid_set_disk(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_value_exists") == 0 && count >= 6) {
+        *out = gml_value_real(gml_ds_grid_value_exists(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_fill") == 0 && count >= 2) {
+        *out = gml_value_real(gml_ds_grid_fill(ARG_R(0), ARG_R(1)));
         return 1;
     }
 

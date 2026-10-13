@@ -13,73 +13,38 @@ let mainScript = html.substring(scriptTagOpen, s2_end);
 mainScript = mainScript.replace(/import\.meta\.url/g, '"file:///"');
 mainScript = mainScript.replace(/import\.meta/g, '{}');
 
-let docMock;
-
-const makeEl = (tagName = 'DIV') => {
-  const el = {
-    ownerDocument: docMock,
-    getContext: () => ({
-      drawImage: () => {},
-      getImageData: () => ({ data: new Uint8Array(4) }),
-      putImageData: () => {},
-      fillRect: () => {},
-      clearRect: () => {},
-      save: () => {},
-      restore: () => {},
-      beginPath: () => {},
-      closePath: () => {},
-      stroke: () => {},
-      fill: () => {},
-      moveTo: () => {},
-      lineTo: () => {},
-      arc: () => {},
-      translate: () => {},
-      rotate: () => {},
-      scale: () => {},
-      setTransform: () => {},
-    }),
-    width: 640,
-    height: 480,
-    nodeType: 1,
-    nodeName: String(tagName).toUpperCase(),
-    tagName: String(tagName).toUpperCase(),
-    childNesting: 0,
-    childNodes: [],
-    children: [],
-    options: [],
-    selectedOptions: [],
-    toDataURL: () => 'data:image/png;base64,mock',
-    style: { setProperty: () => {}, getPropertyValue: () => '' },
-    setAttribute: () => {},
-    removeAttribute: () => {},
-    appendChild: (c) => { if (c) { c.ownerDocument = docMock; } el.childNodes.push(c); el.children.push(c); return c; },
-    insertBefore: (c) => { if (c) { c.ownerDocument = docMock; } el.childNodes.push(c); el.children.push(c); return c; },
-    removeChild: () => {},
-    replaceChild: () => {},
-    prepend: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    querySelector: () => makeEl('DIV'),
-    querySelectorAll: () => [],
-  };
-  return el;
-};
-
-docMock = {
-  nodeType: 9,
-  createElement: (...args) => makeEl(...args),
-  createElementNS: () => makeEl(),
-  createTextNode: () => ({ nodeType: 3, textContent: '', ownerDocument: docMock }),
-  createComment: () => ({ nodeType: 8, textContent: '', ownerDocument: docMock }),
-  getElementById: () => makeEl(),
-  querySelector: () => makeEl(),
-  querySelectorAll: () => [],
-  head: null,
-  body: null,
-  documentElement: makeEl('HTML'),
+const makeEl = () => ({
+  getContext: () => ({
+    drawImage: () => {},
+    getImageData: () => ({ data: new Uint8Array(4) }),
+    putImageData: () => {},
+    fillRect: () => {},
+    clearRect: () => {},
+    save: () => {},
+    restore: () => {},
+    beginPath: () => {},
+    closePath: () => {},
+    stroke: () => {},
+    fill: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    arc: () => {},
+    translate: () => {},
+    rotate: () => {},
+    scale: () => {},
+    setTransform: () => {},
+  }),
+  width: 640,
+  height: 480,
+  toDataURL: () => 'data:image/png;base64,mock',
+  style: {},
+  setAttribute: () => {},
+  removeAttribute: () => {},
+  appendChild: () => {},
+  prepend: () => {},
   addEventListener: () => {},
-  removeEventListener: () => {}
-};
+  removeEventListener: () => {},
+});
 
 const sandbox = {
   console: console,
@@ -108,21 +73,21 @@ const sandbox = {
   MutationObserver: class { constructor() {} observe() {} disconnect() {} },
   CustomEvent: class { constructor(name) { this.name = name; } },
   Event: class { constructor(name) { this.name = name; } },
-  HTMLIFrameElement: class {},
-  HTMLElement: class {},
-  Element: class {},
-  HTMLDivElement: class {},
-  HTMLCanvasElement: class {},
   btoa: (str) => Buffer.from(str, 'binary').toString('base64'),
   atob: (str) => Buffer.from(str, 'base64').toString('binary'),
   navigator: { userAgent: 'Node' },
   location: { href: 'http://localhost/' },
-  document: docMock
+  document: {
+    createElement: makeEl,
+    getElementById: () => makeEl(),
+    querySelector: () => makeEl(),
+    querySelectorAll: () => [],
+    head: makeEl(),
+    body: makeEl(),
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  }
 };
-docMock.head = makeEl();
-docMock.body = makeEl();
-sandbox.addEventListener = () => {};
-sandbox.removeEventListener = () => {};
 sandbox.window = sandbox;
 sandbox.global = sandbox;
 sandbox.globalThis = sandbox;
@@ -134,16 +99,14 @@ function gmlToJs(gml) {
     if (!gml || !gml.trim()) return "";
     let js = gml.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     // Comments & Basic keywords
-    js = js.replace(/\bvar\s+/gi, "let ");
-    js = js.replace(/\btrue\b/gi, "true").replace(/\bfalse\b/gi, "false");
-    js = js.replace(/\bexit\b/gi, "return;");
+    js = js.replace(/\bvar\s+/g, "let ");
+    js = js.replace(/\btrue\b/g, "true").replace(/\bfalse\b/g, "false");
+    js = js.replace(/\bexit\b/g, "return;");
     js = js.replace(/<>/g, "!=");
     js = js.replace(/:=/g, "=");
     js = js.replace(/\bbegin\b/gi, "{");
     js = js.replace(/\bend\b/gi, "}");
     js = js.replace(/\s+\bthen\b\s+/gi, " ");
-    // Bitwise NOT in GML
-    js = js.replace(/\bbnot\s+/gi, "~");
     // Logical operators
     js = js.replace(/\bnot\s+/gi, "!");
     js = js.replace(/\s+\band\b\s+/gi, " && ");
@@ -227,4 +190,3 @@ for (const g of games) {
 }
 
 console.log(`\nRESULTS: Scripts: ${passedScripts}/${totalScripts} (${(passedScripts/Math.max(1,totalScripts)*100).toFixed(1)}%), Actions: ${passedActions}/${totalActions} (${(passedActions/Math.max(1,totalActions)*100).toFixed(1)}%)`);
-process.exit(0);

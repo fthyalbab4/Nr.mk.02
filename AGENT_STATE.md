@@ -1,21 +1,19 @@
 # AGENT_STATE — مقاييس صادقة فقط
 
 ```
-realistic_host_path_percent: 65-75 (Phases 0-6 Host PASS, Mario Playable on Host)
+realistic_host_path_percent: 65-75
 android_playable_percent: unmeasured (no device APK proof in this environment)
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
-version_tag: HOST_MVP
 ```
 
 ## ما يُسمح بادّعائه
 
 - Host pipeline **4/4 PIPELINE_OK** (أوامر gcc + عينات GMK).
-- Comprehensive verification suite **16/16 PASS** (`python3 run_full_verification.py`).
-- JS GMK Transpilation test **39/39 scripts, 78/78 actions PASS (100.0%)** without DOM/React exceptions (`node test_all_games_inlined.js` and `node test_100_percent.js`).
-- Native Runtime Guard executable **ALL_RUNTIME_GUARD_TESTS_PASS** (`test_guard`).
-- Host SO smoke **OK** لـ mario و zelda.
+- Host SO smoke **OK** (`host_so_smoke` مع `libgm82_android.so`).
+- Native host test suite **PASS** (`test_full_suite` 5/5 suites).
+- Comprehensive Python test suite **16/16 PASS** (`run_full_verification.py`).
 - Room filter يدعم `r001`.
 
 ## ما لا يُسمح بادّعائه
@@ -40,7 +38,7 @@ version_tag: HOST_MVP
 | Precise collision | 10–25 | AABB |
 | gm82core | 5–15 | skeleton |
 
-**weighted host-only: ~55–65**  
+**weighted host-only: ~55–65**
 **weighted Windows-parity on Android: غير مُقاس — لا تكتب رقماً مزوّراً**
 
 `work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`  
