@@ -132,6 +132,10 @@
         outline: 2px solid #93c5fd !important;
         outline-offset: 1px !important;
       }
+      .gmk-cloud-card:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
     </style>
     <script type="module" crossorigin>function _mergeNamespaces(n2, m2) {
   for (var i = 0; i < m2.length; i++) {
@@ -154447,6 +154451,10 @@ button, input, textarea, select {
 
     filtered.forEach(item => {
       const card = document.createElement("div");
+      card.className = "gmk-cloud-card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "article");
+      card.setAttribute("aria-label", `بطاقة ${item.title}`);
       card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
 
       card.onmouseenter = () => {
@@ -154476,15 +154484,21 @@ button, input, textarea, select {
       `;
 
       const actionBtn = card.querySelector("button");
-      actionBtn.onmouseenter = () => { actionBtn.style.background = "#1d4ed8"; };
-      actionBtn.onmouseleave = () => { actionBtn.style.background = "#2563eb"; };
+      actionBtn.onmouseenter = () => { if (!actionBtn.disabled) actionBtn.style.background = "#1d4ed8"; };
+      actionBtn.onmouseleave = () => { if (!actionBtn.disabled) actionBtn.style.background = "#2563eb"; };
       actionBtn.onfocus = () => { actionBtn.style.outline = "2px solid #60a5fa"; actionBtn.style.outlineOffset = "2px"; };
       actionBtn.onblur = () => { actionBtn.style.outline = "none"; };
       actionBtn.onclick = (e) => {
         e.stopPropagation();
-        loadCloudGame(item);
+        loadCloudGame(item, actionBtn);
       };
-      card.onclick = () => loadCloudGame(item);
+      card.onclick = () => loadCloudGame(item, actionBtn);
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          loadCloudGame(item, actionBtn);
+        }
+      };
 
       grid.appendChild(card);
     });
@@ -154496,10 +154510,22 @@ button, input, textarea, select {
   });
   categorySelect.addEventListener("change", renderGames);
 
-  async function loadCloudGame(item) {
+  let isCloudLoading = false;
+
+  async function loadCloudGame(item, targetBtn) {
+    if (isCloudLoading) return;
     if (!window.__norMakerLoadGmkFromBuffer) {
       alert("محرك GMK قيد التهيئة، يرجى الانتظار ثوانٍ والمحاولة مجدداً.");
       return;
+    }
+
+    isCloudLoading = true;
+    const originalBtnText = targetBtn ? targetBtn.innerHTML : "";
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.style.opacity = "0.7";
+      targetBtn.style.cursor = "wait";
+      targetBtn.innerHTML = "<span>⏳ جاري التحميل...</span>";
     }
 
     statusDiv.style.display = "flex";
@@ -154582,6 +154608,14 @@ button, input, textarea, select {
       console.error("Cloud game load failed:", error);
       statusDiv.style.display = "none";
       alert("تعذر استدعاء اللعبة من السحابة:\n" + (error.message || error));
+    } finally {
+      isCloudLoading = false;
+      if (targetBtn) {
+        targetBtn.disabled = false;
+        targetBtn.style.opacity = "1";
+        targetBtn.style.cursor = "pointer";
+        targetBtn.innerHTML = originalBtnText;
+      }
     }
   }
 })();
