@@ -5,3 +5,7 @@
 ## 2026-10-12 - Native CSS Pseudo-classes for Modal Control Focus Rings
 **Learning:** Overriding element styles imperatively with JavaScript `onfocus`/`onblur` or `onmouseenter`/`onmouseleave` inline styles risks overriding element theme variables and design tokens, and creates unmaintainable style collisions.
 **Action:** Use declarative CSS pseudo-classes (`:focus-visible`, `:hover`) in `<style>` blocks for static modal inputs and buttons to ensure clean keyboard accessibility and hover feedback without style leakage.
+
+## 2026-10-13 - Accessible Interactive Cards & Async Loading Feedback
+**Learning:** Container cards acting as clickable triggers in dynamically generated grids often omit `tabindex="0"`, `role="article"`, and `Enter`/`Space` keydown listeners, rendering them inaccessible to screen readers and keyboard users. Furthermore, async fetch triggers need an explicit `isCloudLoading` lock and button disabled state (`disabled = true`, `⏳ جاري التحميل...`) to prevent race conditions from repeated user clicks.
+**Action:** Always set `tabindex="0"`, `role="article"`, `aria-label`, and `onkeydown` listeners on interactive grid cards, and lock async button actions with visual loading indicators.
