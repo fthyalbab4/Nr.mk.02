@@ -1,8 +1,10 @@
-# Input movement host
+# Input movement (host)
+
+After object false-positive filter + behavior name match:
 
 ```
-mario_bros.gmk  player=mini_mario x: 16 → 106 (delta 90) MOVED
-plataformas.gmk room object_index mis-decode → NO_PLAYER (gap)
+plataformas.gmk  player=objPlayer2  delta=90  MOVED
+mario_bros.gmk   player matched     delta≈79–90 MOVED
 ```
 
-Behavior table now includes mini_mario / mario / objPlayer prefixes.
+Room0 plataformas: oi=1 → objBloque (54 blocks), oi=0 → objPlayer2.
