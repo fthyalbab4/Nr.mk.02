@@ -230,6 +230,11 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeKey(JNIEnv *env, jclass c
 }
 
 JNIEXPORT void JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetRoomSpeed(JNIEnv *env, jclass clazz, jint speed) {
+    gm82_runtime_set_room_speed(&g_engine_rt, speed);
+}
+
+JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetRoom(JNIEnv *env, jclass clazz, jint roomId, jint width, jint height, jboolean clearInstances) {
     g_current_room = roomId;
     if (width > 0) g_room_w = width;

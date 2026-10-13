@@ -8,9 +8,8 @@
       (typeof b.step === 'function' && typeof b.draw === 'function') ||
       typeof b.nativeRuntimeStep === 'function';
   }
-  /* Enhanced high-refresh simulation support targeting 90+ FPS execution */
   var state = { attached: false, preferNative: true, canvas: null, ctx: null,
-    frames: 0, nativeActive: false, lastError: null, targetFps: 90 };
+    frames: 0, nativeActive: false, lastError: null };
   function blitRgba(rgba, w, h) {
     if (!state.canvas || !rgba || w < 1 || h < 1) return false;
     if (state.canvas.width !== w) state.canvas.width = w;
@@ -52,11 +51,25 @@
       opts = opts || {};
       state.preferNative = opts.preferNative !== false;
       state.canvas = opts.canvas || document.getElementById(opts.canvasId || 'gameCanvas');
+      if (opts.targetFps && typeof opts.targetFps === 'number') {
+        state.targetFps = Math.max(30, Math.min(240, opts.targetFps));
+      }
       if (state.canvas) state.ctx = state.canvas.getContext('2d');
       state.attached = true;
       return hasNativeLoop(getBridge());
     },
     hasNative: function () { return hasNativeLoop(getBridge()); },
+    setTargetFps: function (fps) {
+      if (typeof fps === 'number' && fps >= 30 && fps <= 240) {
+        state.targetFps = fps;
+        var b = getBridge();
+        if (b && typeof b.setRoomSpeed === 'function') {
+          b.setRoomSpeed(fps);
+        }
+      }
+      return state.targetFps;
+    },
+    getTargetFps: function () { return state.targetFps; },
     onFrame: function () {
       if (!state.attached || !state.preferNative) return false;
       var b = getBridge();
@@ -69,7 +82,7 @@
     },
     getStats: function () {
       return { frames: state.frames, nativeActive: state.nativeActive,
-        lastError: state.lastError, hasBridge: !!getBridge() };
+        targetFps: state.targetFps, lastError: state.lastError, hasBridge: !!getBridge() };
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

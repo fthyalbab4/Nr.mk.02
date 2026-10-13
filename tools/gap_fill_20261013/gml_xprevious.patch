@@ -1,0 +1,7 @@
+--- a/app/src/main/cpp/src/gm82_gml_eval.c
++++ b/app/src/main/cpp/src/gm82_gml_eval.c
+@@
+     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
+     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
++    if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
++    if (strcmp(name, "yprevious") == 0) { *out = s ? s->yprevious : 0; return true; }
