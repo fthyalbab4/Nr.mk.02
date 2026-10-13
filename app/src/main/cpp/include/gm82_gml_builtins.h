@@ -13,6 +13,7 @@
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
+#include "gm82_sound_runtime.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -383,9 +384,6 @@ void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
 /* Audio stubs – no device playback yet */
-double gml_sound_play(double sound_index);
-double gml_sound_stop(double sound_index);
-double gml_sound_isplaying(double sound_index);
 
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);
