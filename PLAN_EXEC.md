@@ -1,27 +1,17 @@
-# PLAN_EXEC — الهدف: لعب GM82/GMK كويندوز على Android
+# PLAN_EXEC — الهدف: لعب GM82 كويندوز على Android
 
-## تم
-- [x] إثبات host: ترتيب الأحداث + xprevious + scaled AABB
-- [x] باتشات C + ASSEMBLE.sh
-- [x] كشف عدم تطابق Gm82Native مع SO
-- [x] MainActivity يطابق رموز SO + NorNative.tick → nativeRuntimeStep
+## تم (host + كود)
+- [x] ترتيب أحداث GM8 + xprevious + AABB scaled
+- [x] decode rooms/objects + goto_room → instances
+- [x] step + soft draw ببكسلات مضيئة (PLAY_PATH_OK)
+- [x] MainActivity: ImportGmkSnapshot + NorNative.tick
+- [x] load_game في jni_java_bridge يفك rooms أيضًا
 
-## التالي (متتابع)
-### 1) بناء وتشغيل APK
-- Assemble من المستودع الحالي
-- تثبيت على جهاز/محاكي
-- logcat: NOR_NATIVE بدون UnsatisfiedLinkError
+## التالي فورًا
+1. **عندك:** `git pull` ثم `./gradlew assembleDebug` وتثبيت APK
+2. logcat: `imported www/samples/...` و JSON فيه `rooms` > 0
+3. إن الرسم فاضي على الجهاز: تأكد أن JS يستدعي `NorNative.tick` و/أو `renderBitmap`
+4. إن احتجت ترتيب الأحداث داخل الـ SO: ASSEMBLE ثم NDK rebuild لـ libgm82_android.so
 
-### 2) عينة واحدة قابلة للقياس
-- mario_bros.gmk أو plataformas.gmk
-- نجاح = تحميل + إطارات step + عدم freeze 30 ثانية
-
-### 3) مصدر C vs SO
-- إما: الإبقاء على SO الحالي والتركيز على مسار JS→nativeRuntime* الموجود في SO
-- أو: عند توفر NDK، rebuild SO بعد ASSEMBLE لدمج ترتيب الأحداث في الثنائي
-
-### 4) GML/DnD حسب أعطال العينة فقط
-- لا توسعة عشوائية لكل GML
-
-## ممنوع
-نسب مئوية، ادعاء تكافؤ ويندوز بدون اختبار عينة، استبدال نواة سليمة.
+## تعريف النجاح القابل للقياس
+عينة mario أو plataformas: تحميل، instances > 0، إطارات تتحرك، رسم غير أسود ثابت، بدون freeze 30 ثانية.

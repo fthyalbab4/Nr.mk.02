@@ -1,23 +1,28 @@
 # STATUS — صادق (2026-10-13)
 
-## مثبت host
-- event order + xprevious + AABB → ALL PASS
-- **ROOM_PIPELINE_OK** على 4 GMK (mario 181 instances, plataformas 60, shooter 308, zelda 39)
-- `gm82_jni.c` nativeImportGmkSnapshot: decode sprites/bgs/objects/rooms + goto_room(0)
+## مثبت host (أرقام)
+| اختبار | نتيجة |
+|--------|--------|
+| event order + xprevious + AABB | ALL PASS |
+| ROOM_PIPELINE (4 GMK) | OK — حتى 308 instance |
+| **PLAY_PATH** plataformas | inst=60 frame=60 lit_pixels=776 |
+| **PLAY_PATH** mario_bros | inst=181 frame=60 lit_pixels=14225 |
 
-## مثبت في Java (main)
-- MainActivity يطابق SO (`nativeRuntime*`)
-- بعد `nativeRuntimeCreate` يستدعي **`nativeImportGmkSnapshot`** على عينة من assets
-- NorNative: tick/step + importAsset + snapshot + importStatus
+`lit_pixels` = بكسلات غير لون المسح بعد soft draw → فيه رسم فعلي مش شاشة فاضي.
 
-## مسار التشغيل المقصود على الجهاز
-1. loadLibrary(gm82_android)
-2. nativeRuntimeCreate(640,480)
-3. nativeImportGmkSnapshot(bytes) → rooms+instances داخل الـ SO
-4. حلقة: NorNative.tick → nativeRuntimeStep
-5. nativeRuntimeRenderBitmap عند الحاجة
+## مسار Android (main)
+1. `nativeRuntimeCreate`
+2. `nativeImportGmkSnapshot(sample.gmk)` ← غرف + instances
+3. `NorNative.tick` → `nativeRuntimeStep`
+4. `nativeRuntimeRenderBitmap`
 
-## غير مثبت هنا
-بناء APK جديد + تشغيل على جهاز من هذا الـ commit.
+## مصدر C
+- باتشات ترتيب الأحداث: `tools/gap_fill_20261013/*.patch`
+- شغّل قبل أي rebuild SO: `bash tools/gap_fill_20261013/ASSEMBLE.sh`
+- `gm82_events.c` begin/end على main
+- `gm82_runtime.c` على main قد يحتاج ASSEMBLE إن لم يُدفع الملف كاملًا
+
+## غير مثبت
+APK من هذا الـ commit على جهاز حقيقي.
 
 **لا نسبة مئوية.**
