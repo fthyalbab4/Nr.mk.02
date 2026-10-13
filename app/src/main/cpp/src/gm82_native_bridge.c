@@ -458,6 +458,18 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_ds_grid_get_sum(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
         return 1;
     }
+    if (strcmp(name, "ds_grid_set_disk") == 0 && count >= 5) {
+        *out = gml_value_real(gml_ds_grid_set_disk(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_value_exists") == 0 && count >= 6) {
+        *out = gml_value_real(gml_ds_grid_value_exists(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_fill") == 0 && count >= 2) {
+        *out = gml_value_real(gml_ds_grid_fill(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
 
     /* Color functions */
     if (strcmp(name, "make_color_rgb") == 0 && count >= 3) {
