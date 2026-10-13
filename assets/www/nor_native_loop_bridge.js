@@ -8,9 +8,8 @@
       (typeof b.step === 'function' && typeof b.draw === 'function') ||
       typeof b.nativeRuntimeStep === 'function';
   }
-  /* Enhanced high-refresh simulation support targeting 90+ FPS execution */
   var state = { attached: false, preferNative: true, canvas: null, ctx: null,
-    frames: 0, nativeActive: false, lastError: null, targetFps: 90 };
+    frames: 0, nativeActive: false, lastError: null };
   function blitRgba(rgba, w, h) {
     if (!state.canvas || !rgba || w < 1 || h < 1) return false;
     if (state.canvas.width !== w) state.canvas.width = w;

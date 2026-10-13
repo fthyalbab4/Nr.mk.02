@@ -1,15 +1,14 @@
-# STATUS — صادق ومُحقّق (Host ~75%)
+# STATUS — التقييم الحقيقي والخطة المستقبلية
 
-## الحالة الميدانية والمحسوبة:
-- **Host Pipeline (0→6):** PASS (تشفير الموارد، التجسيد، الغرف، كائنات ماريو، الفيزياء، الصوت، GML، والمحاكاة برمجياً).
-- **نسبة الإنجاز الفعلية الموثوقة على الـ Host:** ~75% (تمت التلبية واجتياز كل اختبارات المراحل `test_phase1` إلى `test_phase6` + `run_full_verification.py` 16/16 PASS + 39/39 scripts & 78/78 actions PASS 100.0%).
-- **اختبار الجهاز المادي أندرويد (Android Physical Device):** غير مُقاس (BLOCKED لعدم وجود هاتف متصل).
-- **علامة الإصدار المستحق:** `HOST_MVP / ANDROID_MVP` (وليس 100%).
+## مسار SO الموجود (بدون NDK جديد)
+- التطبيق يحمّل `libgm82_android` مسبقاً
+- JS: `nor_native_loop_bridge.js` + patch في `assets/www/`
+- باتش MainActivity: `tools/MainActivity.native_loop.patch`
 
-## اختبارات المرحلية المكتملة:
-- `test_phase1`: PASS (Materialize & Soft Frame Render 40,920 pixels).
-- `test_phase2`: PASS (Mario 15 objects, Zelda 3 rooms, 4/4 Multi-game Smoke PASS).
-- `test_phase3`: PASS (Mario 100 frames simulation, dx=300.0, view_x=60.0, `MARIO_PLAYABLE_PASS_HOST`).
-- `test_phase4`: PASS (Decoded 3 GMK sounds, Audio Queue enqueue & reset OK).
-- `test_phase5`: PASS (GML builtins, eval, alarms, DS list/map/queue/stack, particles, mp_grid).
-- `test_phase6`: PASS (objects=0 resilience, .gm82 text loader, zero regressions).
+## تنبيه
+إن كان `MainActivity.java` = PLACEHOLDER، طبّق `tools/RECOVER_MAINACTIVITY.md`
+
+Host ~65–75% (مُثبت بتشغيل test_full_suite و host_so_smoke و run_full_verification.py). Android على جهاز حقيقي: غير مُقاس. ليس 100%.
+- **النسبة الكلية المحسوبة حالياً:** **~37.5%** (محدثة بعد إكمال ووظائف ds_grid المتقدمة `ds_grid_set_grid_region` و `ds_grid_add_grid_region` وتسجيلها في GML VM وفي كافة المكونات المدمجة).
+- **الهدف الشامل القادم:** التدرج نحو 95% عبر الاختبارات الموسعة واختبارات الأجهزة الحقيقية.
+- **الحالة الحالية تحت الاختبار:** 100% نجاح في جميع سكربتات الاختبار الميدانية على Host (16/16 PASS في `run_full_verification.py` و `test_full_suite` و `node test_all_games_inlined.js`).

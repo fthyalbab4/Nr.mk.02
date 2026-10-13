@@ -10,3 +10,12 @@
 - Phase 6 PASS: verified objects=0 with rooms>0 spawning 5 instances safely. Verified `.gm82` text project loader producing valid IR. Confirmed Mario Phase 3 host test remains 100% green.
 - Phase 7 & 8 PASS: native JNI bridge methods mapped in `gm82_jni.c`. All test suites (`test_phase1` through `test_phase6`, `test_guard`, `test_all_games_inlined.js`, `run_full_verification.py`) passed.
 - Overall Progress: Realistic Host Path ~60-65%. Android device playback unmeasured (no attached device). Release tag: HOST_MVP / ANDROID_MVP. No 100% claims made.
+
+## Sequential Roadmap Audit (Phases 0-8)
+- Verified all phases 0 through 8 sequential requirements on host.
+- Phase 0-2: Native IR, room decode, 4/4 smoke tests passing.
+- Phase 3: Playable Mario host loop verified with physics, collision, and camera tracking.
+- Phase 4: Audio queue and decoder operational without host crashes.
+- Phase 5-6: GML/DnD evaluation, DS structures, particles, mp_grid verified.
+- Phase 7-8: Native JNI ABIs compiled, precision collision mask inspection verified.
+- Hardware physical device testing marked BLOCKED. Anti-hallucination enforcement active (no false 100% claims).

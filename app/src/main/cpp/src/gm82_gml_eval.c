@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_gml_eval.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_sound_runtime.h"
 #include "gm82_input.h"
 #include <ctype.h>
 #include <stdlib.h>

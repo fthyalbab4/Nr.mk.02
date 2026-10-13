@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
+#include "gm82_gml_builtins.h"
 static gml_value undef(void){gml_value v={0};return v;}
 gml_value gml_value_real(double n){gml_value v=undef();v.kind=GML_V_REAL;v.real=n;return v;}
 gml_value gml_value_bool(int b){gml_value v=undef();v.kind=GML_V_BOOL;v.boolean=!!b;v.real=!!b;return v;}
@@ -17,6 +18,8 @@ static int truth(gml_value v){if(v.kind==GML_V_STRING)return v.string&&v.string[
 static gml_value call(gml_vm*vm,const gml_ast*n){if(!n->text)return undef();gml_value a[32];size_t c=n->count<32?n->count:32;for(size_t i=0;i<c;i++)a[i]=eval(vm,n->items[i]);gml_value r=undef();
 if(!strcmp(n->text,"array_create")&&c==1){double raw=num(a[0]);size_t count=raw>0?(size_t)raw:0;if(count>4096)count=4096;r=gml_value_array(count);}
 else if(!strcmp(n->text,"array_length_1d")&&c==1){r=gml_value_real((a[0].kind==GML_V_ARRAY&&a[0].array)?(double)a[0].array->count:0.0);}
+else if(!strcmp(n->text,"ds_grid_set_grid_region")&&c==8){r=gml_value_real(gml_ds_grid_set_grid_region(num(a[0]),num(a[1]),num(a[2]),num(a[3]),num(a[4]),num(a[5]),num(a[6]),num(a[7])));}
+else if(!strcmp(n->text,"ds_grid_add_grid_region")&&c==8){r=gml_value_real(gml_ds_grid_add_grid_region(num(a[0]),num(a[1]),num(a[2]),num(a[3]),num(a[4]),num(a[5]),num(a[6]),num(a[7])));}
 else if(!strcmp(n->text,"array_length")&&c==1){r=gml_value_real((a[0].kind==GML_V_ARRAY&&a[0].array)?(double)a[0].array->count:0.0);}
 else if(!strcmp(n->text,"sqrt")&&c==1)r=gml_value_real(sqrt(num(a[0])));
 else if(!strcmp(n->text,"sqr")&&c==1){double v=num(a[0]);r=gml_value_real(v*v);}

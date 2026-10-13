@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #include <zlib.h>
 
 #define GM82_ACTION_MAX_ARGS 8

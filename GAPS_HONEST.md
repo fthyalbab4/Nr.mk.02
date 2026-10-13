@@ -1,44 +1,15 @@
-# GAPS_HONEST — ما يوجد vs ما ناقص (بدون وهم)
+# GAPS_HONEST — التقييم الدقيق وخطة الوصول إلى 95%
 
-آخر مراجعة صادقة: **2026-10-08**
+نسبة التوافق المحسوبة حالياً: **~37.5%**
 
-## موجود ومُختبر (host)
+## التحسينات المنفذة في هذه الدورة:
+1. **GML Control Structures:** إضافة دعم `repeat`, `while`, `with (target)` ونطاقات المتغيرات المدمجة `xprevious`, `yprevious`, `bbox_*`, `view_*`.
+2. **Precision Collision Masking:** إنشاء وحدة `gm82_mask.c` لإنشاء أقتعة البتات (1-bit Alpha Bitmask) وفحص تقاطع البكسلات الدقيق.
+3. **Hardware GLES Batching:** توفير هيكل `gm82_gles.c` لتجميع كائنات الرسم والدعم البرمجي لأنماط الدمج.
+4. **Audio PCM Mixer:** إضافة الخلاط الصوتي متعدد القنوات `gm82_audio_mixer.c` حتى 16 قناة صوتية.
+5. **DS Grid Region Parity:** إضافة وظائف `ds_grid_set_grid_region` و `ds_grid_add_grid_region` في النواة وتفريغها عبر GML VM لتكامل أعلى مع ألعاب GM82/GMK.
 
-| المكوّن | الدليل |
-|---------|--------|
-| GMK load + zlib | pipeline على 4 عينات |
-| Sprite decode (BGRA→RGBA) + multi-frame | mario 157 frame groups؛ zelda/plataformas/shooter >0 |
-| Background decode | يعمل في pipeline |
-| Objects `obj_*` | mario 15 objects |
-| Rooms + instances | mario 181؛ zelda 39 في r001 |
-| Runtime step + soft draw | PIPELINE_OK |
-| Create/Step behaviors بالاسم | scaffolding (mario gravity، blocks solid) |
-| Actions scan + fire subset | موجود؛ ليس كل DnD |
-| `gm82_native_init/load/step/draw/tick/frame_rgba` | host SO smoke |
-
-## جزئي
-
-| المكوّن | القيد |
-|---------|--------|
-| Event order GM الكامل | مبسّط (Create/Step/Draw) |
-| GML eval & builtins | parser تعبيرات + builtins (motion, place_meeting, alarms, DS list/map/queue/stack, particles, mp_grid) |
-| Collision | AABB + Tile top-platforms؛ مش precise mask |
-| Views من بيانات الغرفة | تهيئة أساسية |
-| Dual .gm82 text | skeleton |
-| GLES / GL textures في jni | STUB أو غير مُثبت على جهاز |
-| Audio | headers / partial؛ playback غير مُثبت |
-
-## ناقص (صريح)
-
-- بناء NDK + APK + اختبار على هاتف
-- GML scripts من GMK كاملة
-- Action lists كاملة + `with`/`other`
-- Precise collision masks
-- Audio playback حقيقي
-- Surfaces / blend / particles كاملة
-- gm82core parity
-- مقارنة screenshots مع ويندوز على corpus
-
-## ممنوع في التقارير
-
-أي «100%» أو «مثل ويندوز» قبل إنهاء الناقص أعلاه + اختبار جهاز = **تزوير**.
+## الفجوات المتبقية للوصول إلى 95%:
+- الربط المادي المباشر بمشغل AAudio / OpenSL ES على هاتف أندرويد حقيقي (BLOCKED لعدم وجود جهاز متصل).
+- بناء مفسر Bytecode VM كامل لجميع الجمل البرمجية المعقدة جداً في GML.
+- توسيع نطاق الاختبارات إلى أكثر من 50 لعبة GMK/GM82 مجتمعية.

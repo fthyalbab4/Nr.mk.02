@@ -104,6 +104,20 @@ void gm82_native_step(void) {
     gm82_runtime_step(&g_bridge_rt);
 }
 
+void gm82_native_tick(void) {
+    gm82_native_step();
+}
+
+int gm82_native_frame_ready(void) {
+    return (g_bridge_initialized && g_bridge_rt.running) ? 1 : 0;
+}
+
+const uint8_t *gm82_native_frame_rgba(int *w, int *h) {
+    if (w) *w = g_bridge_rt.room_width > 0 ? g_bridge_rt.room_width : 640;
+    if (h) *h = g_bridge_rt.room_height > 0 ? g_bridge_rt.room_height : 480;
+    return NULL;
+}
+
 void gm82_native_draw(void) {
     if (!g_bridge_initialized || !g_bridge_rt.running) return;
 #if defined(__ANDROID__) || defined(GM82_HAVE_GLES)
