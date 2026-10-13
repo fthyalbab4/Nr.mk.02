@@ -1,10 +1,10 @@
 --- a/app/src/main/cpp/src/gm82_runtime.c
 +++ b/app/src/main/cpp/src/gm82_runtime.c
-@@ -124,6 +124,36 @@
+@@ -124,6 +124,39 @@
      rt->running = 1;
      rt->frame = 0;
      gm82_events_fire_create_all(rt);
-+    /* Spawn player-like object if room has none (e.g. zelda creates via GML) */
++    /* Spawn player-like object if room has none */
 +    {
 +        int has_player = 0;
 +        for (int i = 0; i < rt->instance_count; i++) {
@@ -26,7 +26,9 @@
 +                if (!n) continue;
 +                if (strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "player") ||
 +                    strstr(n, "mario") || strstr(n, "Player")) {
-+                    gm82_runtime_instance_create(rt, oi, 64, 64);
++                    double sx = rt->room_width > 80 ? rt->room_width * 0.35 : 64;
++                    double sy = rt->room_height > 80 ? rt->room_height * 0.35 : 64;
++                    gm82_runtime_instance_create(rt, oi, sx, sy);
 +                    rt->view_follow_object = oi;
 +                    break;
 +                }

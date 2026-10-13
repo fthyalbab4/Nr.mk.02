@@ -1,18 +1,13 @@
 # STATUS
 
-## host مثبت
-| اختبار | نتيجة |
-|--------|--------|
-| 4 عيّنات حركة/رسم | OK |
-| GML step (oso AI) | x 176→236 |
-| 3000 step | STABLE |
-| multi-room | OK |
+## host: 4/4 pass
+حركة + رسم + GML AI (oso) + 3000 STABLE
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-## متبقي للهدف على الجهاز
-1. **rebuild SO** (NDK)
-2. APK + لمس
-3. scripts كاملة (gravedad, with)
+## متبقي للجهاز
+1. NDK rebuild libgm82_android.so
+2. install APK
+3. scripts أعمق
