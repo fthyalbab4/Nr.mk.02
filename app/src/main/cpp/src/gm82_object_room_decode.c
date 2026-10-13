@@ -94,14 +94,27 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
             free(d); continue;
         }
         if (n >= 256) { free(d); break; }
+        int32_t spr_i = rd_i32(d + off);
+        int32_t solid_i = rd_i32(d + off + 4);
+        int32_t vis_i = rd_i32(d + off + 8);
+        int32_t depth_i = rd_i32(d + off + 12);
+        int32_t pers_i = (off + 16 + 4 <= ol) ? rd_i32(d + off + 16) : 0;
+        /* Reject zlib false-positives (scripts/extensions/backgrounds misread as objects) */
+        if (solid_i != 0 && solid_i != 1) { free(d); continue; }
+        if (vis_i != 0 && vis_i != 1) { free(d); continue; }
+        if (spr_i < -1 || spr_i > 512) { free(d); continue; }
+        if (depth_i < -1000000 || depth_i > 1000000) { free(d); continue; }
+        /* Background/Tile misreads often have depth == 800 and solid == 0 with no obj_ prefix */
+        if (depth_i == 800 && solid_i == 0 && strncmp(name, "obj", 3) != 0) { free(d); continue; }
+
         gm82_decoded_object *o = &tmp[n++];
         memset(o, 0, sizeof(*o));
         strncpy(o->name, name, sizeof(o->name)-1);
-        o->sprite_index = rd_i32(d + off);
-        o->solid = rd_i32(d + off + 4);
-        o->visible = rd_i32(d + off + 8);
-        o->depth = rd_i32(d + off + 12);
-        o->persistent = (off + 16 + 4 <= ol) ? rd_i32(d + off + 16) : 0;
+        o->sprite_index = spr_i;
+        o->solid = solid_i;
+        o->visible = vis_i;
+        o->depth = depth_i;
+        o->persistent = pers_i;
         o->event_count = 0;
         /* GM8: after object header, for main event type 0..11:
          *   list of (event_kind, actionlist) ending with event_kind=-1
@@ -344,7 +357,6 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         r->tiles = NULL; r->tile_count = 0;
         if (ic > 0) {
             /* find first instance offset again roughly – scan for tile count after instances */
-            size_t scan = off;
             int found_first = -1;
             for (size_t j = off; j + 24 <= ol; j += 4) {
                 int32_t x = rd_i32(d + j), y = rd_i32(d + j + 4);

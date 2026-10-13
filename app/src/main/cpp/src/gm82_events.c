@@ -95,11 +95,24 @@ static void beh_solid_create(gm82_runtime *rt, gm82_instance *self) {
 }
 
 static const gm82_behavior g_behaviors[] = {
+    /* Match real GMK names (prefix / substring via find_behavior) */
+    { "mini_mario",    beh_player_create, beh_player_step },
+    { "minimario",     beh_player_create, beh_player_step },
     { "obj_minimario", beh_player_create, beh_player_step },
     { "obj_mario",     beh_player_create, beh_player_step },
+    { "mario",         beh_player_create, beh_player_step },
+    { "objPlayer",     beh_player_create, beh_player_step },
+    { "obj_player",    beh_player_create, beh_player_step },
+    { "Player",        beh_player_create, beh_player_step },
+    { "heroe",         beh_player_create, beh_player_step },
     { "obj_enemigo",   NULL,              beh_enemy_step },
+    { "enemigo",       NULL,              beh_enemy_step },
+    { "objEnemigo",    NULL,              beh_enemy_step },
     { "obj_bloque",    beh_solid_create,  NULL },
+    { "bloque",        beh_solid_create,  NULL },
+    { "objBloque",     beh_solid_create,  NULL },
     { "obj_castillo",  beh_solid_create,  NULL },
+    { "castillo",      beh_solid_create,  NULL },
     { NULL, NULL, NULL }
 };
 
@@ -110,12 +123,33 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
     if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count)
         return NULL;
     const char *name = rt->objects->items[object_index].name;
+    if (!name || !name[0]) return NULL;
+
+    /* Pass 1: Exact prefix match at start of string (e.g. strncmp == 0) */
+    const gm82_behavior *best = NULL;
+    size_t best_len = 0;
     for (int i = 0; g_behaviors[i].object_name_prefix; i++) {
-        if (strncmp(name, g_behaviors[i].object_name_prefix,
-                    strlen(g_behaviors[i].object_name_prefix)) == 0)
-            return &g_behaviors[i];
+        const char *pre = g_behaviors[i].object_name_prefix;
+        size_t pl = strlen(pre);
+        if (pl == 0) continue;
+        if (strncmp(name, pre, pl) == 0 && pl >= best_len) {
+            best = &g_behaviors[i];
+            best_len = pl;
+        }
     }
-    return NULL;
+    if (best) return best;
+
+    /* Pass 2: Fallback substring match if no exact prefix matched */
+    for (int i = 0; g_behaviors[i].object_name_prefix; i++) {
+        const char *pre = g_behaviors[i].object_name_prefix;
+        size_t pl = strlen(pre);
+        if (pl == 0) continue;
+        if (strstr(name, pre) != NULL && pl >= best_len) {
+            best = &g_behaviors[i];
+            best_len = pl;
+        }
+    }
+    return best;
 }
 
 #define GM82_GML_BIND_MAX 16
@@ -246,13 +280,43 @@ static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
     }
 }
 
-/* Begin/End Step: order matches GM docs; subtypes when event decode lands */
+/* Begin/End Step: order matches GM docs (main_type=3, event_numb=1 for Begin, 2 for End) */
 void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
-    (void)rt;
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        int32_t oi = inst->object_index;
+        if (!rt->objects || oi < 0 || oi >= rt->objects->count) continue;
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == 3 && ev->event_numb == 1) {
+                if (ev->action_name0[0]) gm82_action_execute_named(rt, inst, ev->action_name0);
+                if (ev->code_snippet && ev->code_snippet[0]) gm82_gml_eval_block(rt, inst, ev->code_snippet);
+            }
+        }
+    }
 }
 
 void gm82_events_fire_end_step_all(gm82_runtime *rt) {
-    (void)rt;
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        int32_t oi = inst->object_index;
+        if (!rt->objects || oi < 0 || oi >= rt->objects->count) continue;
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == 3 && ev->event_numb == 2) {
+                if (ev->action_name0[0]) gm82_action_execute_named(rt, inst, ev->action_name0);
+                if (ev->code_snippet && ev->code_snippet[0]) gm82_gml_eval_block(rt, inst, ev->code_snippet);
+            }
+        }
+    }
 }
 
 void gm82_events_fire_step_all(gm82_runtime *rt) {
