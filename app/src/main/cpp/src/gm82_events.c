@@ -238,26 +238,40 @@ void gm82_events_fire_create_all(gm82_runtime *rt) {
 }
 
 
-static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
+static void fire_object_step_actions_phase(gm82_runtime *rt, gm82_instance *inst, int sub_type) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
     if (oi < 0 || oi >= rt->objects->count) return;
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        /* Step (3) actions; also run any decoded GML snippet each step
-         * when it looks like movement code (keyboard/place_free). */
-        if (ev->main_type == 3 && ev->action_name0[0]) {
-            gm82_action_execute_named(rt, inst, ev->action_name0);
-            if (strcmp(ev->action_name0, "action_set_hspeed") == 0 && ev->action_arg0 != -1)
-                inst->hspeed = (double)ev->action_arg0;
-            if (strcmp(ev->action_name0, "action_set_vspeed") == 0 && ev->action_arg0 != -1)
-                inst->vspeed = (double)ev->action_arg0;
-        }
-        if (ev->code_snippet && ev->code_snippet[0] && (ev->main_type == 3 ||
-            strstr(ev->code_snippet, "keyboard") || strstr(ev->code_snippet, "place_free"))) {
+        /* Step (3) actions and snippets matching phase sub_type (0=Normal, 1=Begin, 2=End) using event_numb */
+        if (ev->main_type == 3 && ev->event_numb == sub_type) {
+            if (ev->action_name0[0]) {
+                gm82_action_execute_named(rt, inst, ev->action_name0);
+                if (strcmp(ev->action_name0, "action_set_hspeed") == 0 && ev->action_arg0 != -1)
+                    inst->hspeed = (double)ev->action_arg0;
+                if (strcmp(ev->action_name0, "action_set_vspeed") == 0 && ev->action_arg0 != -1)
+                    inst->vspeed = (double)ev->action_arg0;
+            }
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_eval_block(rt, inst, ev->code_snippet);
+            }
+        } else if (sub_type == 0 && ev->code_snippet && ev->code_snippet[0] &&
+                   (ev->main_type == 3 || strstr(ev->code_snippet, "keyboard") || strstr(ev->code_snippet, "place_free"))) {
             gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
+    }
+}
+
+void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        gm82_gml_set_self(inst);
+        fire_object_step_actions_phase(rt, inst, GM82_STEP_BEGIN);
     }
 }
 
@@ -278,9 +292,20 @@ void gm82_events_fire_step_all(gm82_runtime *rt) {
                 b->on_step(rt, inst);
             }
         }
-        fire_object_step_actions(rt, inst);
+        fire_object_step_actions_phase(rt, inst, GM82_STEP_NORMAL);
         if (rt->actions)
             gm82_actions_fire_step(rt, inst, rt->actions);
+    }
+}
+
+void gm82_events_fire_end_step_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        gm82_gml_set_self(inst);
+        fire_object_step_actions_phase(rt, inst, GM82_STEP_END);
     }
 }
 
