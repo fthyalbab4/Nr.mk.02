@@ -1,28 +1,32 @@
 # STATUS — صادق (2026-10-13)
 
-## مثبت host (أرقام)
-| اختبار | نتيجة |
-|--------|--------|
-| event order + xprevious + AABB | ALL PASS |
-| ROOM_PIPELINE (4 GMK) | OK — حتى 308 instance |
-| **PLAY_PATH** plataformas | inst=60 frame=60 lit_pixels=776 |
-| **PLAY_PATH** mario_bros | inst=181 frame=60 lit_pixels=14225 |
+## كل الشغل على المستودع (main)
 
-`lit_pixels` = بكسلات غير لون المسح بعد soft draw → فيه رسم فعلي مش شاشة فاضي.
+### مصادر C مدموجة
+| ملف | حالة |
+|-----|------|
+| `gm82_runtime.c` | **مدموج على main** — ترتيب أحداث + xprevious + AABB scale |
+| `gm82_events.c` | begin/end step على main |
+| `gm82_jni_java_bridge.c` | decode rooms/objects + goto_room |
+| `gm82_gml_eval.c` | xprevious عبر `tools/gap_fill_20261013/gml_xprevious.proper.patch` + ASSEMBLE |
 
-## مسار Android (main)
-1. `nativeRuntimeCreate`
-2. `nativeImportGmkSnapshot(sample.gmk)` ← غرف + instances
-3. `NorNative.tick` → `nativeRuntimeStep`
-4. `nativeRuntimeRenderBitmap`
+### Android
+| ملف | حالة |
+|-----|------|
+| MainActivity | nativeRuntime* + ImportGmkSnapshot + NorNative |
 
-## مصدر C
-- باتشات ترتيب الأحداث: `tools/gap_fill_20261013/*.patch`
-- شغّل قبل أي rebuild SO: `bash tools/gap_fill_20261013/ASSEMBLE.sh`
-- `gm82_events.c` begin/end على main
-- `gm82_runtime.c` على main قد يحتاج ASSEMBLE إن لم يُدفع الملف كاملًا
+### إثبات host
+- event order ALL PASS
+- ROOM_PIPELINE_OK (4 GMK)
+- PLAY_PATH_OK (lit pixels)
 
-## غير مثبت
-APK من هذا الـ commit على جهاز حقيقي.
+### قبل rebuild SO
+```bash
+bash tools/gap_fill_20261013/ASSEMBLE.sh   # gml xprevious إن لزم
+bash tools/ensure_core_patches.sh
+```
+
+### غير مثبت
+APK على جهاز من هذا الـ commit.
 
 **لا نسبة مئوية.**
