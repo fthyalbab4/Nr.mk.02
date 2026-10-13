@@ -7,6 +7,9 @@ cd "$ROOT"
 if ! grep -q 'gm82_events_fire_begin_step_all(rt)' app/src/main/cpp/src/gm82_runtime.c 2>/dev/null; then
   patch -p1 < "$DIR/gm82_runtime.event_order.patch" || true
 fi
+if ! grep -q 'bloque") || strstr' app/src/main/cpp/src/gm82_runtime.c 2>/dev/null; then
+  patch -p1 < "$DIR/gm82_runtime.solid_names.patch" || true
+fi
 if ! grep -q 'void gm82_events_fire_begin_step_all' app/src/main/cpp/src/gm82_events.c 2>/dev/null; then
   patch -p1 < "$DIR/gm82_events.begin_end.patch" || true
 fi
