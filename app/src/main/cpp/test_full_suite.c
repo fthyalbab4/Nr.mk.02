@@ -235,6 +235,17 @@ void test_advanced_gml_and_physics_suite(void) {
     gml_ds_grid_set(grid_id, 0, 0, 10.0);
     gml_ds_grid_set(grid_id, 1, 1, 20.0);
     assert(gml_ds_grid_get_sum(grid_id, 0, 0, 3, 3) == 30.0);
+
+    /* 4b. Test ds_grid_set_grid_region & ds_grid_add_grid_region */
+    double grid2_id = gml_ds_grid_create(4, 4);
+    assert(grid2_id >= 0);
+    gml_ds_grid_set_grid_region(grid2_id, grid_id, 0, 0, 1, 1, 2, 2);
+    assert(gml_ds_grid_get(grid2_id, 2, 2) == 10.0);
+    assert(gml_ds_grid_get(grid2_id, 3, 3) == 20.0);
+    gml_ds_grid_add_grid_region(grid2_id, grid_id, 0, 0, 1, 1, 2, 2);
+    assert(gml_ds_grid_get(grid2_id, 2, 2) == 20.0);
+    assert(gml_ds_grid_get(grid2_id, 3, 3) == 40.0);
+    gml_ds_grid_destroy(grid2_id);
     gml_ds_grid_destroy(grid_id);
 
     /* 5. Test ds_list sort and size */
