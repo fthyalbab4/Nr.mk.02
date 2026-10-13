@@ -1,22 +1,16 @@
-# STATUS — صادق (2026-10-13)
+# STATUS — صادق
 
-## مثبت host
-| اختبار | نتيجة |
-|--------|--------|
-| PLAY_PATH 4/4 | OK |
-| mario + يمين | MOVED |
-| **plataformas + يمين** | **MOVED** (بعد فلتر objects) |
+## على main كملفات مصدر
+- gm82_events.c: سلوك لاعب بأسماء GMK الحقيقية (**مدموج**)
+- gm82_runtime.c: ترتيب أحداث (**مدموج**)
+- MainActivity: مسار لعب كامل (**مدموج**)
 
-## إصلاحات على المستودع (ASSEMBLE)
-- ترتيب أحداث + xprevious
-- أسماء سلوك اللاعب (mini_mario, objPlayer, …)
-- **فلتر objects**: رفض zlib false-positives حتى object_index يطابق كائنات حقيقية
+## عبر ASSEMBLE
+- object filter + gml xprevious
 
-## Android
-ImportGmk + 30fps ImageView + D-pad
+## host
+mario + plataformas: MOVED تحت إدخال
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
-
-**لا نسبة مئوية.**
