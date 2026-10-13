@@ -1,37 +1,27 @@
-# PLAN_EXEC — صادق — الهدف: لعب GM82/GMK كويندوز على Android
+# PLAN_EXEC — الهدف: لعب GM82/GMK كويندوز على Android
 
-## ما تم (مثبت)
-- Host unit test: ترتيب الأحداث + xprevious + AABB scaled → ALL PASS
-- باتشات جاهزة على المستودع تحت `tools/gap_fill_20261013/`
-- Headers على main: xprevious/yprevious + begin/end step API
-- `bash tools/gap_fill_20261013/ASSEMBLE.sh` يطبّق الباتشات على مصادر C
+## تم
+- [x] إثبات host: ترتيب الأحداث + xprevious + scaled AABB
+- [x] باتشات C + ASSEMBLE.sh
+- [x] كشف عدم تطابق Gm82Native مع SO
+- [x] MainActivity يطابق رموز SO + NorNative.tick → nativeRuntimeStep
 
-## الخطوة التالية فوراً (A — دمج المصادر)
-1. من جذر المستودع: `bash tools/gap_fill_20261013/ASSEMBLE.sh`
-2. أو ادفع الملفات المصحّحة يدوياً من clone بعد patch
-3. Commit: runtime.c + events.c + gml_eval (سطرين)
+## التالي (متتابع)
+### 1) بناء وتشغيل APK
+- Assemble من المستودع الحالي
+- تثبيت على جهاز/محاكي
+- logcat: NOR_NATIVE بدون UnsatisfiedLinkError
 
-## B — native loop على الجهاز (بدون NDK جديد)
-- الاعتماد على `libgm82_android.so` الموجود في APK
-- التأكد أن Java `NorNativeWebBridge` / `Gm82Native` تستدعي:
-  - nativeRuntimeStep
-  - nativeRuntimeRenderBitmap
-- JS: `preferNative=true` + requestAnimationFrame → bridge.onFrame
-- معيار النجاح: إطارات تتحرك بدون شاشة سوداء ثابتة على عينة واحدة
+### 2) عينة واحدة قابلة للقياس
+- mario_bros.gmk أو plataformas.gmk
+- نجاح = تحميل + إطارات step + عدم freeze 30 ثانية
 
-## C — عينات ألعاب
-- اختر 1–3 ملفات GMK/.gm82 صغيرة
-- pipeline: load → materialize → goto_room → N steps → draw
-- سجّل ما ينكسر (GML / DnD / collision) فقط من الدليل
+### 3) مصدر C vs SO
+- إما: الإبقاء على SO الحالي والتركيز على مسار JS→nativeRuntime* الموجود في SO
+- أو: عند توفر NDK، rebuild SO بعد ASSEMBLE لدمج ترتيب الأحداث في الثنائي
 
-## D — سد GML/DnD حسب العينات (ليس كل GML دفعة واحدة)
-- أصلح ما تفشل فيه العينات أولاً
-- أعد اختبار host بعد كل إصلاح
+### 4) GML/DnD حسب أعطال العينة فقط
+- لا توسعة عشوائية لكل GML
 
 ## ممنوع
-- نسب مئوية
-- ادعاء "جاهز 100%"
-- استبدال نواة سليمة بكود تالف
-
-## تعريف "الهدف المنشود" القابل للقياس
-لعبة عيّنة محددة تُحمَّل كاملة، تدور الحلقة native، رسم يظهر، إدخال يستجيب، بدون freeze — مقارنة سلوكية مع نفس اللعبة على ويندوز لنفس المشهد.
+نسب مئوية، ادعاء تكافؤ ويندوز بدون اختبار عينة، استبدال نواة سليمة.
