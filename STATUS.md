@@ -1,23 +1,19 @@
 # STATUS — صادق (2026-10-13)
 
-## مثبت بأدلة
-| بند | دليل |
-|-----|------|
-| ترتيب أحداث + xprevious + AABB scaled | host test ALL PASS |
-| ASSEMBLE.sh | يطبّق باتشات C على clone نظيف |
-| رموز SO | `Java_com_normaker_nativefull_MainActivity_*` فقط — **لا** `Gm82Native_*` |
-| MainActivity | يعلن `nativeRuntimeStep/Create/RenderBitmap/...` + `NativeBridge` → `NorNative` |
+## مثبت الآن
+1. Host unit: event order + xprevious + scaled AABB → ALL PASS
+2. Host pipeline على 4 عينات GMK → **PIPELINE_OK (ok=4 fail=0)**
+3. MainActivity يطابق رموز SO (`nativeRuntime*`) + `NorNative.tick`
+4. `ASSEMBLE.sh` يطبّق باتشات C على المصادر
 
-## مهم جداً
-- إصلاحات `gm82_runtime.c` موجودة كـ **patches على المصدر**.
-- الـ SO داخل `jniLibs` / APK **لم يُبنَ من هذا المصدر بعد**.
-- على الجهاز حالياً: سلوك الـ SO الموجود + Java المطابق له.
-- لرؤية ترتيب الأحداث الجديد على الجهاز: يلزم rebuild للـ SO (NDK) — المستخدم طلب عدم فرض NDK جديد الآن.
+## حدود
+- Pipeline الحالي: load ملف + step + draw فارغ تقريباً (بدون materialize كامل للغرفة)
+- الـ SO في jniLibs لم يُعد بناؤه من المصدر المصحّح
+- لا اختبار جهاز في هذه الجلسة
 
-## الخطوة التالية للهدف
-1. `bash tools/gap_fill_20261013/ASSEMBLE.sh` ثم commit لملفات `.c` إن رغبت بالمصدر محدّث.
-2. بناء APK من هذا الـ commit وتشغيل عينة (mario/zelda).
-3. التحقق من logcat: `nativeRuntimeCreate` بدون crash، و`step` من JS.
-4. سد GML/DnD حسب ما تكسره العينة فقط.
+## التالي
+1. Commit ملفات `.c` بعد ASSEMBLE (أو شغّل ASSEMBLE قبل كل build)
+2. بناء APK + logcat
+3. materialize حقيقي لـ GMK → instances في host test
 
 **لا نسبة مئوية.**
