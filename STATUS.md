@@ -1,15 +1,24 @@
-# STATUS
+# STATUS — مستمر
 
 ## host مثبت
-- 4/4 عيّنات: حركة + رسم
-- كل الغرف: goto + step + draw OK
-- spawn لاعب + camera follow
+| اختبار | نتيجة |
+|--------|--------|
+| 4/4 حركة + رسم | OK |
+| كل الغرف | OK |
+| 3000 step stress | **STABLE** |
+| spawn + camera | OK |
 
+## على main
+events (fantasma/link/…) · object filter · solid · MainActivity play path
+
+## ASSEMBLE
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-## المتبقي للهدف
-1. rebuild SO (NDK عندك)
-2. APK على جهاز
-3. GML/DnD من أحداث الكائنات كاملة
+## للهدف (جهاز = ويندوز)
+1. **rebuild SO** بـ NDK من `app/src/main/cpp`
+2. install APK واختبار لمس
+3. ربط أحداث DnD/GML من الكائنات بالكامل
+
+بدون نسب مئوية وهمية.
