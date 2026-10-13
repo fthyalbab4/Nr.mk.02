@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #if defined(__ANDROID__) || defined(GM82_HAVE_GLES)
 #include <GLES2/gl2.h>
@@ -69,6 +70,18 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
     if (!g_bridge_initialized) {
         gm82_native_init(640, 480);
     }
+
+    /* Reset previous decode lists */
+    gm82_decoded_sprite_list_free(&g_bridge_sprites);
+    gm82_decoded_background_list_free(&g_bridge_bgs);
+    gm82_decoded_object_list_free(&g_bridge_objs);
+    gm82_decoded_room_list_free(&g_bridge_rooms);
+    gm82_sprite_group_list_free(&g_bridge_sprite_groups);
+    gm82_decoded_sprite_list_init(&g_bridge_sprites);
+    gm82_decoded_background_list_init(&g_bridge_bgs);
+    gm82_decoded_object_list_init(&g_bridge_objs);
+    gm82_decoded_room_list_init(&g_bridge_rooms);
+
     gm82_decode_sprites_from_file(path, &g_bridge_sprites);
     if (g_bridge_sprites.count > 0) {
         gm82_sprite_groups_build(&g_bridge_sprites, &g_bridge_sprite_groups);
@@ -78,12 +91,37 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
     if (g_bridge_bgs.count > 0) {
         gm82_gl_upload_backgrounds(&g_bridge_atlas, &g_bridge_bgs);
     }
+
+    /* Objects + rooms: required for goto_room / instances (was missing) */
+    {
+        FILE *f = fopen(path, "rb");
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            long sz = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            if (sz > 16 && sz < 80 * 1024 * 1024) {
+                uint8_t *buf = (uint8_t *)malloc((size_t)sz);
+                if (buf && fread(buf, 1, (size_t)sz, f) == (size_t)sz) {
+                    gm82_decode_objects_from_gmk(buf, (size_t)sz, &g_bridge_objs);
+                    gm82_decode_rooms_from_gmk(buf, (size_t)sz, &g_bridge_rooms);
+                }
+                free(buf);
+            }
+            fclose(f);
+        }
+    }
+
     gm82_runtime_bind_assets(&g_bridge_rt, &g_bridge_objs, &g_bridge_sprites,
                              &g_bridge_bgs, &g_bridge_rooms, NULL);
     gm82_runtime_bind_sprite_groups(&g_bridge_rt, &g_bridge_sprite_groups);
-    g_bridge_rt.running = 1;
-    g_bridge_rt.room_width = g_bridge_surface_w;
-    g_bridge_rt.room_height = g_bridge_surface_h;
+
+    if (g_bridge_rooms.count > 0) {
+        gm82_runtime_goto_room(&g_bridge_rt, 0);
+    } else {
+        g_bridge_rt.running = 1;
+        g_bridge_rt.room_width = g_bridge_surface_w;
+        g_bridge_rt.room_height = g_bridge_surface_h;
+    }
     return true;
 }
 
@@ -245,7 +283,7 @@ Java_com_normaker_gm82_Gm82Native_nativeStep(JNIEnv *env, jclass cls) {
 JNIEXPORT void JNICALL
 Java_com_normaker_gm82_Gm82Native_nativeDraw(JNIEnv *env, jclass cls) {
     (void)env; (void)cls;
-    gm82_native_draw(); /* STUB until GLES */
+    gm82_native_draw();
 }
 
 JNIEXPORT void JNICALL
