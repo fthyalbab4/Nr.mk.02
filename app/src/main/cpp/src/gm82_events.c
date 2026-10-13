@@ -257,8 +257,8 @@ static void fire_object_step_actions_phase(gm82_runtime *rt, gm82_instance *inst
             if (ev->code_snippet && ev->code_snippet[0]) {
                 gm82_gml_eval_block(rt, inst, ev->code_snippet);
             }
-        } else if (sub_type == 0 && ev->code_snippet && ev->code_snippet[0] &&
-                   (ev->main_type == 3 || strstr(ev->code_snippet, "keyboard") || strstr(ev->code_snippet, "place_free"))) {
+        } else if (sub_type == 0 && ev->code_snippet && ev->code_snippet[0] && ev->main_type != 3 &&
+                   (strstr(ev->code_snippet, "keyboard") || strstr(ev->code_snippet, "place_free"))) {
             gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
     }

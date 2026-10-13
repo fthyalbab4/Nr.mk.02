@@ -27,12 +27,17 @@ typedef struct {
     int32_t object_index;
     int32_t sprite_index;
     double  x, y;
+    double  xstart, ystart;
+    double  xprevious, yprevious;
     double  hspeed, vspeed;
     double  direction, speed;
     double  gravity, gravity_direction;
     double  friction;
     int32_t image_index;
     double  image_speed;
+    double  image_angle;
+    double  image_alpha;
+    uint32_t image_blend;
     double  image_xscale;
     double  image_yscale;
     int32_t depth;

@@ -76,6 +76,13 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "xstart") == 0) { *out = s ? s->xstart : 0; return true; }
+    if (strcmp(name, "ystart") == 0) { *out = s ? s->ystart : 0; return true; }
+    if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
+    if (strcmp(name, "yprevious") == 0) { *out = s ? s->yprevious : 0; return true; }
+    if (strcmp(name, "image_angle") == 0) { *out = s ? s->image_angle : 0; return true; }
+    if (strcmp(name, "image_alpha") == 0) { *out = s ? s->image_alpha : 1.0; return true; }
+    if (strcmp(name, "image_blend") == 0) { *out = s ? (double)s->image_blend : 0xFFFFFF; return true; }
     if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
     if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
     if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
@@ -229,6 +236,13 @@ static bool set_var(gml_parser *p, const char *name, double v) {
         return false;
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
     if (strcmp(name, "y") == 0) { s->y = v; return true; }
+    if (strcmp(name, "xstart") == 0) { s->xstart = v; return true; }
+    if (strcmp(name, "ystart") == 0) { s->ystart = v; return true; }
+    if (strcmp(name, "xprevious") == 0) { s->xprevious = v; return true; }
+    if (strcmp(name, "yprevious") == 0) { s->yprevious = v; return true; }
+    if (strcmp(name, "image_angle") == 0) { s->image_angle = v; return true; }
+    if (strcmp(name, "image_alpha") == 0) { s->image_alpha = v; return true; }
+    if (strcmp(name, "image_blend") == 0) { s->image_blend = (uint32_t)v; return true; }
     if (strcmp(name, "hspeed") == 0) { s->hspeed = v; return true; }
     if (strcmp(name, "vspeed") == 0) { s->vspeed = v; return true; }
     if (strcmp(name, "speed") == 0) { s->speed = v; return true; }
@@ -943,6 +957,11 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "sound_play") == 0) {
             *out = gml_sound_play(arg); return true;
+        }
+        if (strcmp(id, "audio_play_sound") == 0) {
+            double loop = (nargs >= 3) ? args[2] : 0;
+            *out = loop ? gml_sound_loop(arg) : gml_sound_play(arg);
+            return true;
         }
         if (strcmp(id, "sound_stop") == 0) {
             *out = gml_sound_stop(arg); return true;
