@@ -317,7 +317,48 @@ double gml_room(void) {
     return g_rt ? (double)g_rt->current_room : 0;
 }
 
-/* Audio delegation - see gm82_sound_runtime.c for actual queue handling */
+/* Math & Physics additions */
+double gml_sqr(double v) { return v * v; }
+double gml_sqrt_fn(double v) { return sqrt(v < 0 ? 0 : v); }
+double gml_power(double x, double y) { return pow(x, y); }
+double gml_frac(double v) { return v - floor(v); }
+double gml_dot_product(double x1, double y1, double x2, double y2) { return x1*x2 + y1*y2; }
+double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2) { return x1*x2 + y1*y2 + z1*z2; }
+
+double gml_move_bounce_solid(double adv) {
+    (void)adv;
+    if (!g_self || !g_rt) return 0;
+    double orig_x = g_self->x, orig_y = g_self->y;
+    double try_x = orig_x + g_self->hspeed;
+    double try_y = orig_y + g_self->vspeed;
+
+    bool h_col = !gml_place_free(try_x, orig_y);
+    bool v_col = !gml_place_free(orig_x, try_y);
+
+    if (h_col) g_self->hspeed = -g_self->hspeed;
+    if (v_col) g_self->vspeed = -g_self->vspeed;
+    if (!h_col && !v_col) {
+        g_self->hspeed = -g_self->hspeed;
+        g_self->vspeed = -g_self->vspeed;
+    }
+    return 1;
+}
+
+double gml_move_wrap(double hor, double vert, double margin) {
+    if (!g_self || !g_rt) return 0;
+    double rw = g_rt->room_width > 0 ? (double)g_rt->room_width : 640;
+    double rh = g_rt->room_height > 0 ? (double)g_rt->room_height : 480;
+    if (hor) {
+        if (g_self->x < -margin) g_self->x = rw + margin;
+        else if (g_self->x > rw + margin) g_self->x = -margin;
+    }
+    if (vert) {
+        if (g_self->y < -margin) g_self->y = rh + margin;
+        else if (g_self->y > rh + margin) g_self->y = -margin;
+    }
+    return 1;
+}
+
 
 double gml_room_restart(void) {
     if (!g_rt) return 0;

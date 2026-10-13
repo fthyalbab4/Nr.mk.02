@@ -317,12 +317,22 @@ double gml_get_lives(void);
 void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
-/* Audio stubs – no device playback yet */
+/* Audio stubs */
 double gml_sound_play(double sound_index);
 double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
+double gml_sound_volume(double sound_index, double vol);
 
-/* ---- Math helpers common in GML ---- */
+/* ---- Math & Physics helpers ---- */
+double gml_sqr(double v);
+double gml_sqrt_fn(double v);
+double gml_power(double x, double y);
+double gml_frac(double v);
+double gml_dot_product(double x1, double y1, double x2, double y2);
+double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_move_bounce_solid(double adv);
+double gml_move_wrap(double hor, double vert, double margin);
+
 double gml_abs(double v);
 double gml_sign(double v);
 double gml_clamp(double v, double lo, double hi);
