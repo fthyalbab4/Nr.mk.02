@@ -1,30 +1,18 @@
 # STATUS — صادق (2026-10-13)
 
-## مسار اللعب على Android (main)
-```
-loadLibrary(gm82_android)
-nativeRuntimeCreate(640,480)
-nativeImportGmkSnapshot(sample.gmk)   // rooms + instances داخل الـ SO
-Handler ~30fps:
-  nativeRuntimeStep
-  nativeRuntimeRenderBitmap → ImageView
-```
-لا يعتمد على index.html (الـ maker) ولا على rAF في JS.
+## مسار اللعب (على main)
+1. loadLibrary → nativeRuntimeCreate
+2. nativeImportGmkSnapshot(www/samples/*.gmk)
+3. 30fps: step + RenderBitmap → ImageView
+4. لمس: يسار/يمين + قفز؛ أزرار أجهزة/WASD
 
-## على المستودع
-- `gm82_runtime.c` — ترتيب أحداث + xprevious + AABB (مدموج)
-- `gm82_events.c` / jni bridge / MainActivity أعلاه
-- `ASSEMBLE.sh` لـ gml xprevious
+## host 4/4 OK
+mario 181 · plataformas 60 · shooter 308 · zelda 39 instances + lit pixels
 
-## host مثبت
-ROOM_PIPELINE_OK + PLAY_PATH_OK (lit pixels)
-
-## عندك الآن
+## عندك
 ```bash
-git pull
-bash tools/gap_fill_20261013/ASSEMBLE.sh
-./gradlew assembleDebug
-# logcat: imported www/samples/...  و frame=1,90,180...
+git pull && ./gradlew assembleDebug
+# logcat: imported … rooms>0  و frame=1,90,…
 ```
 
-**لا نسبة مئوية.**
+**لا نسبة مئوية. APK على الجهاز غير مثبت من هنا.**

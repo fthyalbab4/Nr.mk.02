@@ -1,13 +1,15 @@
-# Play path host results (2026-10-13)
+# PLAY_PATH host (2026-10-13)
 
-After event-order patches + room decode:
+After ASSEMBLE + decode rooms/objects + 90 steps + soft draw:
 
 ```
-plataformas.gmk  inst=60  frame=60 draw=1 lit_pixels=776   PLAY_PATH_OK
-mario_bros.gmk   inst=181 frame=60 draw=1 lit_pixels=14225 PLAY_PATH_OK
+mario_bros.gmk   inst=181 frame=90 lit=14225 OK
+plataformas.gmk  inst=60  frame=90 lit=776   OK
+shooter.gmk      inst=308 frame=90 lit=62951 OK
+zelda.gmk        inst=39  frame=90 lit=9232  OK
 ```
 
-`lit_pixels` = count of pixels not equal to clear color (20,20,40) after `gm82_runtime_draw`.
+All 4/4 samples: instances > 0 and non-clear pixels after draw.
 
-Proves: goto_room populates instances, step runs, soft draw writes sprite/bg data.
-Does not prove Windows parity or device APK.
+Android path: MainActivity ImportGmkSnapshot + 30fps step + RenderBitmap → ImageView
++ D-pad touch (left/right thirds, space on upper).
