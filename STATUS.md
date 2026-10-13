@@ -1,32 +1,28 @@
 # STATUS — صادق (2026-10-13)
 
-## كل الشغل على المستودع (main)
+## على المستودع main (ملفات حقيقية)
 
-### مصادر C مدموجة
-| ملف | حالة |
-|-----|------|
-| `gm82_runtime.c` | **مدموج على main** — ترتيب أحداث + xprevious + AABB scale |
-| `gm82_events.c` | begin/end step على main |
-| `gm82_jni_java_bridge.c` | decode rooms/objects + goto_room |
-| `gm82_gml_eval.c` | xprevious عبر `tools/gap_fill_20261013/gml_xprevious.proper.patch` + ASSEMBLE |
+| عنصر | على GitHub |
+|------|------------|
+| `gm82_runtime.c` ترتيب أحداث + xprevious + AABB | **نعم — مدموج** |
+| `gm82_events.c` begin/end | **نعم** |
+| `gm82_jni_java_bridge.c` rooms+goto_room | **نعم** |
+| MainActivity ImportGmk + NorNative | **نعم** |
+| `gml_xprevious.proper.patch` | **نعم** (يُطبَّق بـ ASSEMBLE) |
+| إثبات host / PLAY_PATH docs | **نعم** |
 
-### Android
-| ملف | حالة |
-|-----|------|
-| MainActivity | nativeRuntime* + ImportGmkSnapshot + NorNative |
-
-### إثبات host
-- event order ALL PASS
-- ROOM_PIPELINE_OK (4 GMK)
-- PLAY_PATH_OK (lit pixels)
-
-### قبل rebuild SO
 ```bash
-bash tools/gap_fill_20261013/ASSEMBLE.sh   # gml xprevious إن لزم
-bash tools/ensure_core_patches.sh
+git clone https://github.com/fthyalbab4/Nr.mk.02.git
+cd Nr.mk.02
+bash tools/gap_fill_20261013/ASSEMBLE.sh   # يطبّق gml xprevious إن ناقص + اختبار
 ```
 
-### غير مثبت
-APK على جهاز من هذا الـ commit.
+## مثبت host
+- event order ALL PASS
+- ROOM_PIPELINE_OK (instances حتى 308)
+- PLAY_PATH_OK (lit pixels بعد draw)
+
+## غير مثبت
+APK على جهاز.
 
 **لا نسبة مئوية.**
