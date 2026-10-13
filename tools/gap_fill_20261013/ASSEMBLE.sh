@@ -15,6 +15,9 @@ fi
 if ! grep -q 'xprevious' app/src/main/cpp/src/gm82_gml_eval.c 2>/dev/null; then
   bash "$DIR/APPLY_GML.sh" || true
 fi
+if ! grep -q 'action_potential_step' app/src/main/cpp/src/gm82_gml_eval.c 2>/dev/null; then
+  bash "$DIR/APPLY_POTENTIAL.sh" || true
+fi
 gcc -O2 -Wall -o /tmp/test_event_order "$DIR/test_event_order.c"
 /tmp/test_event_order
 echo ASSEMBLE_OK
