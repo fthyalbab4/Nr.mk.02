@@ -36,19 +36,58 @@ void gm82_input_set_mouse(gm82_input_state *in, int x, int y) {
 
 double gml_keyboard_check(double key) {
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input) return 0;
+    if (k == 0 /* vk_nokey */) {
+        for (int i = 0; i < GM82_KEY_MAX; i++) {
+            if (g_input->down[i]) return 0.0;
+        }
+        return 1.0;
+    }
+    if (k == 1 /* vk_anykey */) {
+        for (int i = 0; i < GM82_KEY_MAX; i++) {
+            if (g_input->down[i]) return 1.0;
+        }
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->down[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_pressed(double key) {
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input) return 0;
+    if (k == 0 /* vk_nokey */) {
+        for (int i = 0; i < GM82_KEY_MAX; i++) {
+            if (g_input->pressed[i]) return 0.0;
+        }
+        return 1.0;
+    }
+    if (k == 1 /* vk_anykey */) {
+        for (int i = 0; i < GM82_KEY_MAX; i++) {
+            if (g_input->pressed[i]) return 1.0;
+        }
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->pressed[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_released(double key) {
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input) return 0;
+    if (k == 0 /* vk_nokey */) {
+        for (int i = 0; i < GM82_KEY_MAX; i++) {
+            if (g_input->released[i]) return 0.0;
+        }
+        return 1.0;
+    }
+    if (k == 1 /* vk_anykey */) {
+        for (int i = 0; i < GM82_KEY_MAX; i++) {
+            if (g_input->released[i]) return 1.0;
+        }
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->released[k] ? 1.0 : 0.0;
 }
 
