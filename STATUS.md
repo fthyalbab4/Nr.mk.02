@@ -1,18 +1,22 @@
 # STATUS — صادق (2026-10-13)
 
-## مسار اللعب (على main)
-1. loadLibrary → nativeRuntimeCreate
-2. nativeImportGmkSnapshot(www/samples/*.gmk)
-3. 30fps: step + RenderBitmap → ImageView
-4. لمس: يسار/يمين + قفز؛ أزرار أجهزة/WASD
+## مثبت host
+| اختبار | نتيجة |
+|--------|--------|
+| PLAY_PATH 4/4 GMK | OK |
+| **mario_bros + مفتاح يمين 30 إطار** | **MOVED delta=90** |
+| plataformas room object_index | decode مشوه (معظم instances → index 1) — فجوة معروفة |
 
-## host 4/4 OK
-mario 181 · plataformas 60 · shooter 308 · zelda 39 instances + lit pixels
+## سلوك اللاعب
+أسماء GMK الحقيقية (`mini_mario`, `mario`, …) كانت لا تطابق `obj_minimario`.
+باتش: `gm82_events.behavior_names.patch` عبر ASSEMBLE.
+
+## Android
+MainActivity: ImportGmk + 30fps ImageView + D-pad لمس.
 
 ## عندك
 ```bash
-git pull && ./gradlew assembleDebug
-# logcat: imported … rooms>0  و frame=1,90,…
+git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-**لا نسبة مئوية. APK على الجهاز غير مثبت من هنا.**
+**لا نسبة مئوية.**
