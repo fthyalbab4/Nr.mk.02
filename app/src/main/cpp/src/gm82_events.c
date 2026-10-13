@@ -18,48 +18,18 @@ static void beh_player_create(gm82_runtime *rt, gm82_instance *self) {
 static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
-
+    /* Input → speeds only; motion + solid collision in gm82_runtime_step */
     {
         double h = 0;
         if (gml_keyboard_check(37) || gml_keyboard_check(65)) h -= 3.0;
         if (gml_keyboard_check(39) || gml_keyboard_check(68)) h += 3.0;
-        gml_set_hspeed(h);
-        if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && gml_get_vspeed() == 0)
-            gml_set_vspeed(-8.0);
+        self->hspeed = h;
+        if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && self->vspeed >= -0.05 && self->vspeed <= 0.6)
+            self->vspeed = -8.0;
+        else
+            self->vspeed += 0.5;
     }
-
-    gml_set_vspeed(gml_get_vspeed() + 0.5);
-
-    if (gml_place_meeting(gml_get_x(), gml_get_y() + 1, -1)) {
-        int32_t sw = 16, sh = 16;
-        if (rt->sprites && self->sprite_index >= 0 && self->sprite_index < rt->sprites->count) {
-            sw = rt->sprites->frames[self->sprite_index].width;
-            sh = rt->sprites->frames[self->sprite_index].height;
-        }
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || !o->solid || o == self) continue;
-            int32_t ow = 16, oh = 16;
-            if (rt->sprites && o->sprite_index >= 0 && o->sprite_index < rt->sprites->count) {
-                ow = rt->sprites->frames[o->sprite_index].width;
-                oh = rt->sprites->frames[o->sprite_index].height;
-            }
-            if (self->x < o->x + ow && self->x + sw > o->x &&
-                self->y + 1 < o->y + oh && self->y + sh + 1 > o->y) {
-                if (self->vspeed > 0) {
-                    self->y = o->y - sh;
-                    self->vspeed = 0;
-                }
-            }
-        }
-    }
-
-    if (self->y > rt->room_height) {
-        self->y = 0;
-        self->vspeed = 0;
-    }
-    if (self->x < 0) self->x = 0;
-    if (self->x > rt->room_width - 16) self->x = (double)(rt->room_width - 16);
+    (void)rt;
 }
 
 static void beh_enemy_step(gm82_runtime *rt, gm82_instance *self) {
@@ -69,22 +39,6 @@ static void beh_enemy_step(gm82_runtime *rt, gm82_instance *self) {
     if (self->x < 0 || self->x > rt->room_width - 16)
         self->hspeed = -self->hspeed;
     self->vspeed += 0.3;
-    if (gml_place_meeting(self->x, self->y + 1, -1)) {
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || !o->solid || o == self) continue;
-            int32_t sh = 16, oh = 16;
-            if (rt->sprites && self->sprite_index >= 0 && self->sprite_index < rt->sprites->count)
-                sh = rt->sprites->frames[self->sprite_index].height;
-            if (rt->sprites && o->sprite_index >= 0 && o->sprite_index < rt->sprites->count)
-                oh = rt->sprites->frames[o->sprite_index].height;
-            if (self->vspeed > 0 && self->y + sh >= o->y && self->y < o->y + oh &&
-                self->x + 8 > o->x && self->x < o->x + 16) {
-                self->y = o->y - sh;
-                self->vspeed = 0;
-            }
-        }
-    }
 }
 
 static void beh_solid_create(gm82_runtime *rt, gm82_instance *self) {
@@ -121,11 +75,9 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
         return NULL;
     const char *name = rt->objects->items[object_index].name;
     if (!name || !name[0]) return NULL;
-    /* Skip death/lose variants so they are not controlled as the player. */
     if (strstr(name, "pierde") || strstr(name, "dead") || strstr(name, "lose") ||
         strstr(name, "muerte") || strstr(name, "die"))
         return NULL;
-    /* Prefer longest prefix match so "mini_mario" wins over "mario" */
     const gm82_behavior *best = NULL;
     size_t best_len = 0;
     for (int i = 0; g_behaviors[i].object_name_prefix; i++) {
@@ -192,21 +144,8 @@ static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
         if (ev->main_type != 0) continue;
-        if (ev->action_name0[0]) {
+        if (ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
-            if (strcmp(ev->action_name0, "action_sprite_set") == 0 && ev->action_arg0 >= 0)
-                inst->sprite_index = ev->action_arg0;
-            else if (strcmp(ev->action_name0, "action_sprite_set") == 0 &&
-                     rt->objects && inst->object_index >= 0 &&
-                     inst->object_index < rt->objects->count)
-                inst->sprite_index = rt->objects->items[inst->object_index].sprite_index;
-            if (strcmp(ev->action_name0, "action_set_hspeed") == 0 && ev->action_arg0 != -1)
-                inst->hspeed = (double)ev->action_arg0;
-            if (strcmp(ev->action_name0, "action_set_vspeed") == 0 && ev->action_arg0 != -1)
-                inst->vspeed = (double)ev->action_arg0;
-            if (strcmp(ev->action_name0, "action_kill_object") == 0)
-                gm82_action_execute_named(rt, inst, "action_kill_object");
-        }
     }
 }
 
@@ -254,27 +193,13 @@ static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        if (ev->main_type == 3 && ev->action_name0[0]) {
+        if (ev->main_type == 3 && ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
-            if (strcmp(ev->action_name0, "action_set_hspeed") == 0 && ev->action_arg0 != -1)
-                inst->hspeed = (double)ev->action_arg0;
-            if (strcmp(ev->action_name0, "action_set_vspeed") == 0 && ev->action_arg0 != -1)
-                inst->vspeed = (double)ev->action_arg0;
-        }
-        if (ev->code_snippet && ev->code_snippet[0] && (ev->main_type == 3 ||
-            strstr(ev->code_snippet, "keyboard") || strstr(ev->code_snippet, "place_free"))) {
-            gm82_gml_eval_block(rt, inst, ev->code_snippet);
-        }
     }
 }
 
-void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
-    (void)rt;
-}
-
-void gm82_events_fire_end_step_all(gm82_runtime *rt) {
-    (void)rt;
-}
+void gm82_events_fire_begin_step_all(gm82_runtime *rt) { (void)rt; }
+void gm82_events_fire_end_step_all(gm82_runtime *rt) { (void)rt; }
 
 void gm82_events_fire_step_all(gm82_runtime *rt) {
     if (!rt) return;
@@ -299,63 +224,7 @@ void gm82_events_fire_step_all(gm82_runtime *rt) {
     }
 }
 
-static int32_t ev_rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
-}
-
-static uint8_t *ev_inflate(const uint8_t *src, size_t n, size_t *ol) {
-    *ol = 0;
-    z_stream strm; memset(&strm, 0, sizeof(strm));
-    if (inflateInit2(&strm, 15) != Z_OK) return NULL;
-    size_t cap = n * 8 + 256;
-    uint8_t *dst = (uint8_t *)malloc(cap);
-    if (!dst) { inflateEnd(&strm); return NULL; }
-    strm.next_in = (Bytef *)src; strm.avail_in = (uInt)n;
-    strm.next_out = dst; strm.avail_out = (uInt)cap;
-    int ret;
-    while ((ret = inflate(&strm, Z_NO_FLUSH)) == Z_OK) {
-        if (strm.avail_out == 0) {
-            size_t used = cap; cap *= 2;
-            uint8_t *nd = (uint8_t *)realloc(dst, cap);
-            if (!nd) { free(dst); inflateEnd(&strm); return NULL; }
-            dst = nd; strm.next_out = dst + used; strm.avail_out = (uInt)(cap - used);
-        }
-    }
-    if (ret != Z_STREAM_END) { free(dst); inflateEnd(&strm); return NULL; }
-    *ol = strm.total_out; inflateEnd(&strm); return dst;
-}
-
-static char g_autobind_code_store[16][1024];
-static int g_autobind_store_n;
-
 int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
-    if (!data || size < 12) return -1;
-    int bound = 0;
-    g_autobind_store_n = 0;
-    for (size_t i = 12; i + 2 < size; i++) {
-        if (!(data[i]==0x78 && (data[i+1]==0x9c||data[i+1]==0xda||data[i+1]==0x01||data[i+1]==0x5e)))
-            continue;
-        size_t ol = 0;
-        uint8_t *d = ev_inflate(data + i, size - i, &ol);
-        i += 16;
-        if (!d || ol < 40) { free(d); continue; }
-        if (ev_rd_i32(d) != 1) { free(d); continue; }
-        int32_t slen = ev_rd_i32(d + 4);
-        if (slen < 3 || slen > 48 || 8 + (size_t)slen > ol) { free(d); continue; }
-        char name[64];
-        memcpy(name, d + 8, (size_t)slen); name[slen] = 0;
-        int ok = 1;
-        for (int k = 0; k < slen; k++) if (name[k] < 32 || name[k] > 126) ok = 0;
-        if (!ok) { free(d); continue; }
-        size_t off = 8 + (size_t)slen + 8;
-        if (off + 4 > ol) { free(d); continue; }
-        int32_t ver = ev_rd_i32(d + off);
-        if (ver != 430 && ver != 400 && ver != 800) { free(d); continue; }
-        if (ver == 800 && (strncmp(name, "spr", 3) == 0 || strncmp(name, "snd", 3) == 0 ||
-                           strncmp(name, "bg", 2) == 0 || strncmp(name, "back", 4) == 0)) {
-            free(d); continue;
-        }
-        free(d);
-    }
-    return bound;
+    (void)data; (void)size;
+    return 0;
 }
