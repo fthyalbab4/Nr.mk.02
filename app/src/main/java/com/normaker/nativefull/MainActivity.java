@@ -12,21 +12,18 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 /**
  * MainActivity aligned with shipped libgm82_android.so.
- * Evidence: SO exports Java_com_normaker_nativefull_MainActivity_* only
- * (no Gm82Native_* symbols in current jniLibs).
- *
- * Path: loadLibrary → nativeRuntimeCreate → WebView + NativeBridge as "NorNative"
- * → nativeRuntimeStep / nativeRuntimeRenderBitmap.
+ * Path: loadLibrary → nativeRuntimeCreate → nativeImportGmkSnapshot(sample)
+ *       → WebView NorNative.tick → nativeRuntimeStep.
  */
 public class MainActivity extends Activity {
     private static final String TAG = "NOR_NATIVE";
     private WebView webView;
+    private String lastImportJson = "";
 
     public static native void nativeClearResourceRegistry();
     public static native void nativeCodeDestroy(int i);
@@ -103,10 +100,9 @@ public class MainActivity extends Activity {
             Log.e(TAG, "nativeRuntimeCreate failed safely", t);
         }
 
-        File gameFile = extractAssetGameFile("mario_bros.gmk");
-        if (gameFile == null) {
-            gameFile = extractAssetGameFile("www/samples/mario_bros.gmk");
-        }
+        /* Critical: import a GMK so rooms/objects/instances exist (SO path) */
+        lastImportJson = tryImportSampleGmk();
+        Log.i(TAG, "import result: " + lastImportJson);
 
         FrameLayout container = new FrameLayout(this);
         webView = new WebView(this);
@@ -128,19 +124,40 @@ public class MainActivity extends Activity {
         setContentView(container);
     }
 
-    private File extractAssetGameFile(String assetName) {
+    /** Load first available sample GMK bytes into nativeImportGmkSnapshot. */
+    private String tryImportSampleGmk() {
+        String[] candidates = new String[] {
+            "www/samples/mario_bros.gmk",
+            "www/samples/plataformas.gmk",
+            "www/samples/zelda.gmk",
+            "www/samples/shooter.gmk",
+            "mario_bros.gmk"
+        };
+        for (String asset : candidates) {
+            try {
+                byte[] bytes = readAssetBytes(asset);
+                if (bytes == null || bytes.length < 16) continue;
+                String json = nativeImportGmkSnapshot(bytes, getFilesDir().getAbsolutePath());
+                if (json != null && json.length() > 0) {
+                    Log.i(TAG, "imported " + asset + " → " + json);
+                    return json;
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "import failed for " + asset, t);
+            }
+        }
+        return "{\"ok\":false,\"error\":\"no sample gmk imported\"}";
+    }
+
+    private byte[] readAssetBytes(String assetName) {
         try {
-            String name = assetName.contains("/") ? assetName.substring(assetName.lastIndexOf('/') + 1) : assetName;
-            File outFile = new File(getFilesDir(), name);
-            if (outFile.exists() && outFile.length() > 0) return outFile;
             InputStream is = getAssets().open(assetName);
-            FileOutputStream fos = new FileOutputStream(outFile);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
             byte[] buf = new byte[8192];
-            int len;
-            while ((len = is.read(buf)) > 0) fos.write(buf, 0, len);
-            fos.close();
+            int n;
+            while ((n = is.read(buf)) > 0) bos.write(buf, 0, n);
             is.close();
-            return outFile;
+            return bos.toByteArray();
         } catch (Exception e) {
             return null;
         }
@@ -167,6 +184,25 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String importStatus() {
+            return lastImportJson != null ? lastImportJson : "";
+        }
+
+        /** Import GMK from asset path under assets/ (e.g. www/samples/mario_bros.gmk). */
+        @JavascriptInterface
+        public String importAsset(String assetPath) {
+            try {
+                byte[] bytes = readAssetBytes(assetPath);
+                if (bytes == null) return "{\"ok\":false,\"error\":\"asset not found\"}";
+                String json = MainActivity.nativeImportGmkSnapshot(bytes, getFilesDir().getAbsolutePath());
+                lastImportJson = json != null ? json : "";
+                return lastImportJson;
+            } catch (Throwable t) {
+                return "{\"ok\":false,\"error\":\"" + t.getMessage() + "\"}";
+            }
+        }
+
+        @JavascriptInterface
         public boolean renderBitmap() {
             try {
                 Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
@@ -181,6 +217,15 @@ public class MainActivity extends Activity {
         public String coreIdentity() {
             try {
                 return MainActivity.nativeCoreIdentity();
+            } catch (Throwable t) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public String snapshot() {
+            try {
+                return MainActivity.nativeRuntimeSnapshotJson();
             } catch (Throwable t) {
                 return "";
             }
