@@ -91,6 +91,8 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
+double gml_draw_clear(double color);
+double gml_draw_clear_alpha(double color, double alpha);
 
 void gm82_particles_bind(gm82_particle_world *w);
 double gml_part_system_create(void);

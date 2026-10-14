@@ -240,6 +240,36 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_grid_set_disk") == 0) {
             *out = gml_ds_grid_set_disk(args[0], args[1], args[2], args[3], args[4]); return true;
         }
+        if (strcmp(id, "surface_create") == 0) {
+            *out = gml_surface_create(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "surface_free") == 0) {
+            *out = gml_surface_free(args[0]); return true;
+        }
+        if (strcmp(id, "surface_exists") == 0) {
+            *out = gml_surface_exists(args[0]); return true;
+        }
+        if (strcmp(id, "surface_get_width") == 0) {
+            *out = gml_surface_get_width(args[0]); return true;
+        }
+        if (strcmp(id, "surface_get_height") == 0) {
+            *out = gml_surface_get_height(args[0]); return true;
+        }
+        if (strcmp(id, "surface_set_target") == 0) {
+            *out = gml_surface_set_target(args[0]); return true;
+        }
+        if (strcmp(id, "surface_reset_target") == 0) {
+            *out = gml_surface_reset_target(); return true;
+        }
+        if (strcmp(id, "draw_surface") == 0) {
+            *out = gml_draw_surface(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "draw_clear") == 0) {
+            *out = gml_draw_clear(args[0]); return true;
+        }
+        if (strcmp(id, "draw_clear_alpha") == 0) {
+            *out = gml_draw_clear_alpha(args[0], args[1]); return true;
+        }
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id);
         return false;
     }

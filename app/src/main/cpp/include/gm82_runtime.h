@@ -27,6 +27,7 @@ typedef struct {
     int32_t object_index;
     int32_t sprite_index;
     double  x, y;
+    double  xstart, ystart;
     double  xprevious, yprevious; /* GM: position at start of step */
     double  hspeed, vspeed;
     double  direction, speed;

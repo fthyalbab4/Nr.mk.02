@@ -158,12 +158,29 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
     int32_t oi = inst->object_index;
     if (oi < 0 || oi >= rt->objects->count) return;
     const gm82_decoded_object *obj = &rt->objects->items[oi];
-    (void)other;
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
         if (ev->main_type != 4) continue;
-        if (!ev->action_name0[0]) continue;
-        gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, ev->code_snippet);
+        }
+    }
+    if (other && other->alive && rt->objects) {
+        int32_t oj = other->object_index;
+        if (oj >= 0 && oj < rt->objects->count) {
+            const gm82_decoded_object *o2 = &rt->objects->items[oj];
+            const char *n = o2->name;
+            int is_pick = n && (strstr(n, "moneda") || strstr(n, "coin") || strstr(n, "bonus") ||
+                               strstr(n, "estrella") || strstr(n, "item"));
+            for (int e = 0; e < o2->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+                const char *cs = o2->events[e].code_snippet;
+                if (cs && strstr(cs, "instance_destroy")) { is_pick = 1; break; }
+            }
+            if (is_pick && !other->solid) other->alive = 0;
+        }
     }
 }
 
@@ -197,30 +214,120 @@ static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
+        /* Step event actions */
         if (ev->main_type == 3 && ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
+        /* Run GML snippets that look like continuous logic even if tagged Create */
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            const char *cs = ev->code_snippet;
+            int stepish = (ev->main_type == 3) ||
+                strstr(cs, "keyboard") || strstr(cs, "hspeed") || strstr(cs, "vspeed") ||
+                strstr(cs, "motion_set") || strstr(cs, "move_towards") ||
+                strstr(cs, "instance_exists") || strstr(cs, "distance_to") ||
+                strstr(cs, "instance_create") || strstr(cs, "alarm");
+            if (stepish) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, cs);
+            }
+        }
     }
 }
 
-void gm82_events_fire_begin_step_all(gm82_runtime *rt) { (void)rt; }
-void gm82_events_fire_end_step_all(gm82_runtime *rt) { (void)rt; }
+
+/* Fire object events matching main_type / event_numb (GM8: Step=3, Draw=8).
+ * Snapshot iteration: caller freezes instance_count for the phase. */
+static void fire_object_ev(gm82_runtime *rt, gm82_instance *inst,
+                           int main_type, int event_numb) {
+    if (!rt || !inst || !inst->alive || !rt->objects) return;
+    if (inst->object_index < 0 || inst->object_index >= rt->objects->count) return;
+    const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type != main_type) continue;
+        if (event_numb >= 0 && ev->event_numb != event_numb) continue;
+        if (ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, ev->code_snippet);
+        }
+    }
+}
+
+void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        fire_object_ev(rt, inst, 3, 1);
+    }
+}
+
+void gm82_events_fire_end_step_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        fire_object_ev(rt, inst, 3, 2);
+    }
+}
+
+void gm82_events_fire_draw_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive || !inst->visible) continue;
+        fire_object_ev(rt, inst, 8, 0);
+    }
+}
+
+void gm82_events_fire_pre_draw_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        fire_object_ev(rt, inst, 8, 1);
+    }
+}
+
+void gm82_events_fire_post_draw_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_gml_set_runtime(rt);
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        fire_object_ev(rt, inst, 8, 2);
+    }
+}
+
 
 void gm82_events_fire_step_all(gm82_runtime *rt) {
     if (!rt) return;
     gm82_gml_set_runtime(rt);
-    for (int i = 0; i < rt->instance_count; i++) {
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
+        fire_object_ev(rt, inst, 3, 0);
         const char *gcode = find_gml(g_gml_step, g_gml_step_n, rt, inst->object_index);
         if (gcode) {
             gm82_gml_set_self(inst);
             gm82_gml_eval_block(rt, inst, gcode);
-        } else {
-            const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
-            if (b && b->on_step) {
-                gm82_gml_set_self(inst);
-                b->on_step(rt, inst);
-            }
+        }
+        /* Built-in behaviors fill gaps (movement) until full GML scripts land */
+        const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
+        if (b && b->on_step) {
+            gm82_gml_set_self(inst);
+            b->on_step(rt, inst);
         }
         fire_object_step_actions(rt, inst);
         if (rt->actions)
@@ -228,7 +335,87 @@ void gm82_events_fire_step_all(gm82_runtime *rt) {
     }
 }
 
+static int32_t ev_rd_i32(const uint8_t *p) {
+    return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
+}
+
+static uint8_t *ev_inflate(const uint8_t *src, size_t n, size_t *ol) {
+    *ol = 0;
+    z_stream strm; memset(&strm, 0, sizeof(strm));
+    if (inflateInit2(&strm, 15) != Z_OK) return NULL;
+    size_t cap = n * 8 + 256;
+    uint8_t *dst = (uint8_t *)malloc(cap);
+    if (!dst) { inflateEnd(&strm); return NULL; }
+    strm.next_in = (Bytef *)src; strm.avail_in = (uInt)n;
+    strm.next_out = dst; strm.avail_out = (uInt)cap;
+    int ret;
+    while ((ret = inflate(&strm, Z_NO_FLUSH)) == Z_OK) {
+        if (strm.avail_out == 0) {
+            size_t used = cap; cap *= 2;
+            uint8_t *nd = (uint8_t *)realloc(dst, cap);
+            if (!nd) { free(dst); inflateEnd(&strm); return NULL; }
+            dst = nd; strm.next_out = dst + used; strm.avail_out = (uInt)(cap - used);
+        }
+    }
+    if (ret != Z_STREAM_END) { free(dst); inflateEnd(&strm); return NULL; }
+    *ol = strm.total_out; inflateEnd(&strm); return dst;
+}
+
+static char g_autobind_code_store[16][1024];
+static int g_autobind_store_n;
+
 int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
-    (void)data; (void)size;
-    return 0;
+    if (!data || size < 12) return -1;
+    int bound = 0;
+    g_autobind_store_n = 0;
+    for (size_t i = 12; i + 2 < size; i++) {
+        if (!(data[i]==0x78 && (data[i+1]==0x9c||data[i+1]==0xda||data[i+1]==0x01||data[i+1]==0x5e)))
+            continue;
+        size_t ol = 0;
+        uint8_t *d = ev_inflate(data + i, size - i, &ol);
+        i += 16;
+        if (!d || ol < 40) { free(d); continue; }
+        if (ev_rd_i32(d) != 1) { free(d); continue; }
+        int32_t slen = ev_rd_i32(d + 4);
+        if (slen < 3 || slen > 48 || 8 + (size_t)slen > ol) { free(d); continue; }
+        char name[64];
+        memcpy(name, d + 8, (size_t)slen); name[slen] = 0;
+        int ok = 1;
+        for (int k = 0; k < slen; k++) if (name[k] < 32 || name[k] > 126) ok = 0;
+        if (!ok) { free(d); continue; }
+        int name_ok = (strncmp(name, "obj", 3) == 0) || strstr(name, "mario") ||
+                      strstr(name, "player") || strstr(name, "link") || strstr(name, "fantasma");
+        if (!name_ok) { free(d); continue; }
+
+        const char *best = NULL; int best_n = 0;
+        for (size_t j = 0; j + 8 < ol; j++) {
+            int32_t n = ev_rd_i32(d + j);
+            if (n < 16 || n > 1000 || j + 4 + (size_t)n > ol) continue;
+            const uint8_t *s = d + j + 4;
+            int good = 1;
+            for (int k = 0; k < n; k++) {
+                unsigned char c = s[k];
+                if (!(c >= 32 && c < 127) && c != 9 && c != 10 && c != 13) { good = 0; break; }
+            }
+            if (!good) continue;
+            int score = 0;
+            for (int k = 0; k <= n - 9; k++) if (memcmp(s + k, "keyboard_", 9) == 0) { score += 2; break; }
+            for (int k = 0; k <= n - 3; k++) if (memcmp(s + k, "if ", 3) == 0) { score += 1; break; }
+            for (int k = 0; k <= n - 6; k++) if (memcmp(s + k, "hspeed", 6) == 0) { score += 1; break; }
+            for (int k = 0; k <= n - 6; k++) if (memcmp(s + k, "image_", 6) == 0) { score += 1; break; }
+            if (score < 2) continue;
+            if (n > best_n) { best_n = n; best = (const char *)s; }
+        }
+        if (best && g_autobind_store_n < 16) {
+            int ncopy = best_n < 1023 ? best_n : 1023;
+            memcpy(g_autobind_code_store[g_autobind_store_n], best, (size_t)ncopy);
+            g_autobind_code_store[g_autobind_store_n][ncopy] = 0;
+            if (gm82_events_bind_gml_step(name, g_autobind_code_store[g_autobind_store_n])) {
+                g_autobind_store_n++;
+                bound++;
+            }
+        }
+        free(d);
+    }
+    return bound;
 }
