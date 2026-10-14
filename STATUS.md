@@ -2,11 +2,10 @@
 
 host **4/4 PASS**
 
-- spawn / GML step / scripts / collision / room widen
-- Alarm events (main 2) / Destroy events (main 1)
+جديد: استعادة **autobind GML** من Nr.mk.01 (كان stub) + JNI
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-انظر NOT_DONE.md
+انظر REPO_AUDIT_2026-10-14.md و NOT_DONE.md

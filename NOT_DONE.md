@@ -1,15 +1,11 @@
 # ما لم يُنفَّذ (صريح)
 
-## تخطّي هنا
 1. rebuild libgm82_android.so (مفيش NDK)
 2. APK + لمس على جهاز
 3. صوت OpenSLES على جهاز
+4. object_index الغرف 1:1 مع GM
+5. GML/DnD كامل GM8
+6. REA+Ghidra على runner ويندوز (Ghidra + تصريح)
+7. نقل DLL/GEX من GM82Project لأندرويد
 
-## فجوات نواة جزئية
-4. object_index في الغرف قد لا يطابق فهرس GM الأصلي بالكامل
-5. بعض instances (مثل عملات mario) قد لا تُفَك من room0
-6. GML/DnD ليس كامل GM8
-7. REA/Ghidra reverse كامل
-
-## host مثبت
-4/4 MOVED+DRAW · spawn · GML step · scripts · collision · room widen · alarm events
+تم: autobind من Nr.mk.01 + REPO_AUDIT_2026-10-14.md
