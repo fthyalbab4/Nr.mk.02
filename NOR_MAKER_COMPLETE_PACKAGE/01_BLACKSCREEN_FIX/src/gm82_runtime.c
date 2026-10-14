@@ -100,6 +100,16 @@ void gm82_runtime_compact_instances(gm82_runtime *rt) {
     rt->instance_count = w;
 }
 
+gm82_instance *gm82_runtime_instance_find_by_id(gm82_runtime *rt, int32_t id) {
+    if (!rt || id <= 0) return NULL;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive && rt->instances[i].id == id) {
+            return &rt->instances[i];
+        }
+    }
+    return NULL;
+}
+
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
     if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
     gm82_instance *inst = &rt->instances[rt->instance_count++];
@@ -111,6 +121,7 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
+    gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
@@ -197,7 +208,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 if (inst->alarms[a] > 0) {
                     inst->alarms[a]--;
                     if (inst->alarms[a] == 0) {
-                        gm82_alarm_fire_scripts(rt, inst, a);
+                        gm82_events_fire_alarm(rt, inst, a);
                         inst->alarms[a] = -1;
                     }
                 }
