@@ -1,11 +1,13 @@
 # STATUS
 
-host **4/4 PASS**
+## ألعاب السحابة (هدف أدنى — مش 100% لكل عنوان)
 
-- Pipeline deterministic (docs/DETERMINISTIC_PIPELINE.md)
-- Open-source gm82core instance helpers (docs/REA_AND_GM82_ANALYSIS.md)
-- **REA MCP / Ghidra: not available in this agent** — no proprietary runner decompile claimed
+- كتالوج الواجهة: **~146** GMK (floowsnaake/GMK8_Examples)
+- عينات مدمجة 4 تحت `assets/www/samples/`
+- docs/CLOUD_GAMES.md
 
 ```bash
-git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
+git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh
+bash tools/gap_fill_20261013/cloud_smoke.sh
+./gradlew assembleDebug
 ```
