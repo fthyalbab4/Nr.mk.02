@@ -13,6 +13,7 @@
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
+#include "gm82_sound_runtime.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -98,6 +99,7 @@ double gml_draw_background_tiled(double bg, double x, double y);
 double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 void gml_draw_text(double x, double y, const char *str);
 void gml_draw_text_color(double x, double y, const char *str, double c1, double c2, double c3, double c4);
+void gml_draw_text_ext(double x, double y, const char *str, double sep, double w);
 
 /* Surfaces (CPU framebuffer targets) */
 double gml_surface_create(double w, double h);
@@ -330,7 +332,7 @@ double gml_instance_activate_object(double object_index);
 void gm82_path_bind(gm82_path_list *paths);
 double gml_path_start(double path_index, double speed, double end_action, double absolute);
 double gml_path_end(void);
-double gml_path_get_number(void);
+double gml_path_get_number(double ind);
 void gm82_path_step_instance(gm82_instance *inst);
 void gm82_timeline_bind(gm82_timeline_list *tls);
 double gml_timeline_start(double timeline_index, double position, double step, double direction);
@@ -382,9 +384,6 @@ void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
 /* Audio stubs – no device playback yet */
-double gml_sound_play(double sound_index);
-double gml_sound_stop(double sound_index);
-double gml_sound_isplaying(double sound_index);
 
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);

@@ -1,0 +1,31 @@
+--- a/app/src/main/cpp/src/gm82_events.c
++++ b/app/src/main/cpp/src/gm82_events.c
+@@ -17,60 +17,20 @@
+ static void beh_player_step(gm82_runtime *rt, gm82_instance *self) {
+     gm82_gml_set_runtime(rt);
+     gm82_gml_set_self(self);
+-
+-    {
+-        double h = 0;
+-        if (gml_keyboard_check(37) || gml_keyboard_check(65)) h -= 3.0;
+-        if (gml_keyboard_check(39) || gml_keyboard_check(68)) h += 3.0;
+-        gml_set_hspeed(h);
+-        if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && gml_get_vspeed() == 0)
+-            gml_set_vspeed(-8.0);
+-    }
+-
+-    gml_set_vspeed(gml_get_vspeed() + 0.5);
+-    /* ... old inline resolve removed ... */
++    /* Input → speeds only; motion + solid collision in gm82_runtime_step */
++    {
++        double h = 0;
++        if (gml_keyboard_check(37) || gml_keyboard_check(65)) h -= 3.0;
++        if (gml_keyboard_check(39) || gml_keyboard_check(68)) h += 3.0;
++        self->hspeed = h;
++        if ((gml_keyboard_check(38) || gml_keyboard_check(32)) && self->vspeed >= -0.05 && self->vspeed <= 0.6)
++            self->vspeed = -8.0;
++        else
++            self->vspeed += 0.5;
++    }
++    (void)rt;
+ }

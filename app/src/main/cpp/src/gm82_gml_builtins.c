@@ -1268,8 +1268,10 @@ double gml_path_end(void) {
     return 1;
 }
 
-double gml_path_get_number(void) {
-    return g_paths ? (double)g_paths->count : 0;
+double gml_path_get_number(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0;
+    return (double)g_paths->items[idx].count;
 }
 
 void gm82_path_step_instance(gm82_instance *inst) {
@@ -1399,6 +1401,11 @@ void gml_draw_text_color(double x, double y, const char *str,
     g_draw_color = (uint32_t)c1;
     gml_draw_text(x, y, str);
     g_draw_color = old;
+}
+
+void gml_draw_text_ext(double x, double y, const char *str, double sep, double w) {
+    (void)sep; (void)w;
+    gml_draw_text(x, y, str);
 }
 
 #define GM82_SURFACE_MAX 32
@@ -2386,8 +2393,15 @@ static char g_win_caption[128] = "Game Runner";
 
 double gml_display_get_width(void) { return (double)g_win_w; }
 double gml_display_get_height(void) { return (double)g_win_h; }
-double gml_window_get_width(void) { return (double)g_win_w; }
-double gml_window_get_height(void) { return (double)g_win_h; }
+double gml_window_get_width(void) {
+    if (g_rt && g_rt->room_width > 0) return (double)g_rt->room_width;
+    return (double)g_win_w;
+}
+
+double gml_window_get_height(void) {
+    if (g_rt && g_rt->room_height > 0) return (double)g_rt->room_height;
+    return (double)g_win_h;
+}
 
 void gm82_window_set_size(int w, int h) {
     if (w > 0) g_win_w = w;
@@ -2709,8 +2723,8 @@ static bool precise_mask_overlap(const gm82_runtime *rt,
                                  int32_t spr2, double x2, double y2) {
     if (!rt || !rt->sprites) return false;
     if (spr1 < 0 || spr1 >= rt->sprites->count || spr2 < 0 || spr2 >= rt->sprites->count) return false;
-    const gm82_decoded_sprite *s1 = &rt->sprites->frames[spr1];
-    const gm82_decoded_sprite *s2 = &rt->sprites->frames[spr2];
+    const gm82_decoded_frame *s1 = &rt->sprites->frames[spr1];
+    const gm82_decoded_frame *s2 = &rt->sprites->frames[spr2];
     if (!s1->rgba || !s2->rgba || s1->width <= 0 || s1->height <= 0 || s2->width <= 0 || s2->height <= 0) return false;
 
     int ix1 = (int)(x1 > x2 ? x1 : x2);
@@ -2749,12 +2763,6 @@ double gml_place_meeting_precise(double x, double y, double object_index) {
 }
 
 /* GM82Core & Studio Math Extensions */
-double gml_angle_difference(double ang1, double ang2) {
-    double diff = fmod(ang1 - ang2 + 180.0, 360.0);
-    if (diff < 0.0) diff += 360.0;
-    return diff - 180.0;
-}
-
 double gml_angle_abs(double angle) {
     double a = fmod(angle, 360.0);
     if (a < 0.0) a += 360.0;
@@ -2815,36 +2823,8 @@ double gml_cosine(double a, double b, double amount) {
     return a * (1.0 - mu2) + b * mu2;
 }
 
-double gml_darccos(double x) {
-    if (x < -1.0) x = -1.0;
-    if (x > 1.0) x = 1.0;
-    return acos(x) * 180.0 / 3.14159265358979323846;
-}
-
-double gml_darcsin(double x) {
-    if (x < -1.0) x = -1.0;
-    if (x > 1.0) x = 1.0;
-    return asin(x) * 180.0 / 3.14159265358979323846;
-}
-
-double gml_darctan(double x) {
-    return atan(x) * 180.0 / 3.14159265358979323846;
-}
-
 double gml_darctan2(double y, double x) {
     return atan2(y, x) * 180.0 / 3.14159265358979323846;
-}
-
-double gml_dcos(double angle) {
-    return cos(angle * 3.14159265358979323846 / 180.0);
-}
-
-double gml_dsin(double angle) {
-    return sin(angle * 3.14159265358979323846 / 180.0);
-}
-
-double gml_dtan(double angle) {
-    return tan(angle * 3.14159265358979323846 / 180.0);
 }
 
 double gml_dsecant(double angle) {
@@ -3023,53 +3003,6 @@ double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2
     return -1.0;
 }
 
-double gml_ds_grid_multiply(double id, double x, double y, double val) {
-    int i = (int)id;
-    if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
-    int gx = (int)x, gy = (int)y;
-    if (gx >= 0 && gx < g_ds_grids[i].width && gy >= 0 && gy < g_ds_grids[i].height) {
-        g_ds_grids[i].data[gy * g_ds_grids[i].width + gx] *= val;
-        return 1.0;
-    }
-    return 0.0;
-}
-
-double gml_ds_grid_add(double id, double x, double y, double val) {
-    int i = (int)id;
-    if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
-    int gx = (int)x, gy = (int)y;
-    if (gx >= 0 && gx < g_ds_grids[i].width && gy >= 0 && gy < g_ds_grids[i].height) {
-        g_ds_grids[i].data[gy * g_ds_grids[i].width + gx] += val;
-        return 1.0;
-    }
-    return 0.0;
-}
-
-double gml_ds_grid_copy(double id, double source_id) {
-    int dst = (int)id, src = (int)source_id;
-    if (dst < 0 || dst >= MAX_DS_GRIDS || !g_ds_grid_active[dst] || !g_ds_grids[dst].data) return 0;
-    if (src < 0 || src >= MAX_DS_GRIDS || !g_ds_grid_active[src] || !g_ds_grids[src].data) return 0;
-    if (g_ds_grids[dst].width != g_ds_grids[src].width || g_ds_grids[dst].height != g_ds_grids[src].height) {
-        gml_ds_grid_resize(dst, g_ds_grids[src].width, g_ds_grids[src].height);
-    }
-    memcpy(g_ds_grids[dst].data, g_ds_grids[src].data, (size_t)(g_ds_grids[dst].width * g_ds_grids[dst].height) * sizeof(double));
-    return 1.0;
-}
-
-double gml_ds_list_shuffle(double id) {
-    int i = (int)id;
-    if (i < 0 || i >= MAX_DS_LISTS || !g_ds_list_active[i]) return 0;
-    ds_list *l = &g_ds_lists[i];
-    if (l->size <= 1) return 1;
-    for (int j = l->size - 1; j > 0; j--) {
-        int k = rand() % (j + 1);
-        double tmp = l->data[j];
-        l->data[j] = l->data[k];
-        l->data[k] = tmp;
-    }
-    return 1.0;
-}
-
 /* Tile subsystem */
 #define MAX_RUNTIME_TILES 1024
 typedef struct {
@@ -3201,37 +3134,17 @@ double gml_tile_set_region(double id, double left, double top, double width, dou
 }
 
 /* Window & View Helpers */
-double gml_window_get_width(void) {
-    if (g_rt) return (double)g_rt->room_width;
-    return 640.0;
-}
-
-double gml_window_get_height(void) {
-    if (g_rt) return (double)g_rt->room_height;
-    return 480.0;
-}
-
 double gml_window_set_size(double w, double h) {
     if (g_rt) {
         g_rt->room_width = (int32_t)w;
         g_rt->room_height = (int32_t)h;
     }
+    gm82_window_set_size((int)w, (int)h);
     return 1.0;
 }
 
 double gml_window_center(void) {
     return 1.0;
-}
-
-/* Timing functions */
-double gml_get_timer(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (double)ts.tv_sec * 1000000.0 + (double)ts.tv_nsec / 1000.0;
-}
-
-double gml_delta_time(void) {
-    return 1000000.0 / 30.0; /* 30 fps delta in microseconds */
 }
 
 /* Color functions & Blend modes */

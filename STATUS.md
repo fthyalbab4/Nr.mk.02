@@ -1,11 +1,9 @@
 # STATUS
 
-**2026-10-06**
+tag: **HOST_MVP** · host **4/4 PASS** · 16/16 Verification Pass · انظر NOT_DONE.md و GAPS_HONEST.md للصريح
 
-- Host pipeline: **4/4 PIPELINE_OK**
-- Host SO (`gm82_native_*`): **SMOKE_OK** mario + zelda
-- CMake + WebView bridge + assets/www جاهزة
-
-**التالي عندك:** NDK build APK + حقن NorNative في WebView.
-
-نسبة ~55–65% host path.
+```bash
+python3 run_full_verification.py
+make test -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX
+node test_mario_end_to_end.js
+```

@@ -7,6 +7,7 @@
 static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
 }
+
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol = 0;
     z_stream strm; memset(&strm, 0, sizeof(strm));

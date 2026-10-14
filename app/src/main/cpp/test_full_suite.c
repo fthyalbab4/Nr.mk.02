@@ -6,6 +6,7 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_runtime.h"
 #include "gm82_actions.h"
+#include "gm82_input.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -280,6 +281,47 @@ void test_advanced_gml_and_physics_suite(void) {
     inst->x = -10.0;
     assert(gm82_action_execute_named(&rt, inst, "action_wrap") == true);
     assert(inst->x == (double)(rt.room_width - 10));
+
+    /* 8. Test place_meeting with temporary (x, y) coordinates */
+    inst->x = 100.0;
+    inst->y = 200.0;
+    gm82_instance *other_inst = gm82_runtime_instance_create(&rt, 1, 150.0, 200.0);
+    assert(other_inst != NULL);
+    gm82_gml_set_self(inst);
+    /* inst is at (100, 200). testing place_meeting at (140, 200) with obj_index 1 should collide */
+    assert(gml_place_meeting(140.0, 200.0, 1.0) == 1.0);
+    /* inst position must remain unchanged at (100, 200) */
+    assert(inst->x == 100.0 && inst->y == 200.0);
+    /* testing place_meeting at (50, 50) should return 0 */
+    assert(gml_place_meeting(50.0, 50.0, 1.0) == 0.0);
+
+    /* 9. Test keyboard_check (vk_nokey, vk_anykey, specific key) */
+    gm82_input_state input_st;
+    gm82_input_init(&input_st);
+    gm82_input_bind_global(&input_st);
+
+    /* Initially no keys down */
+    assert(gml_keyboard_check(0 /* vk_nokey */) == 1.0);
+    assert(gml_keyboard_check(1 /* vk_anykey */) == 0.0);
+    assert(gml_keyboard_check(37 /* vk_left */) == 0.0);
+
+    /* Press VK_LEFT (37) */
+    gm82_input_key_down(&input_st, 37);
+    assert(gml_keyboard_check(0 /* vk_nokey */) == 0.0);
+    assert(gml_keyboard_check(1 /* vk_anykey */) == 1.0);
+    assert(gml_keyboard_check(37 /* vk_left */) == 1.0);
+    assert(gml_keyboard_check_pressed(37 /* vk_left */) == 1.0);
+    assert(gml_keyboard_check_pressed(1 /* vk_anykey */) == 1.0);
+    assert(gml_keyboard_check_pressed(0 /* vk_nokey */) == 0.0);
+
+    /* Release VK_LEFT (37) */
+    gm82_input_key_up(&input_st, 37);
+    assert(gml_keyboard_check(0 /* vk_nokey */) == 1.0);
+    assert(gml_keyboard_check(1 /* vk_anykey */) == 0.0);
+    assert(gml_keyboard_check(37 /* vk_left */) == 0.0);
+    assert(gml_keyboard_check_released(37 /* vk_left */) == 1.0);
+    assert(gml_keyboard_check_released(1 /* vk_anykey */) == 1.0);
+    assert(gml_keyboard_check_released(0 /* vk_nokey */) == 0.0);
 
     printf("[PASS] Advanced GML, Physics & DnD Actions Suite\n");
 }

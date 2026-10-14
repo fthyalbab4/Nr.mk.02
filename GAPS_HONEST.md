@@ -1,45 +1,23 @@
-# GAPS_HONEST.md — تقرير صادق عن حالة محاكاة GM82 / GMK
+# GAPS_HONEST — بدون تضخيم (الإصدار: HOST_MVP)
 
-**تاريخ التحديث:** 2026-10-06 (مساءً)  
-**المصدر:** فحص APK + كود Nr.mk.02 + اختبارات pipeline على mario/zelda/shooter/plataformas
+## أُغلق جزئياً (هذه الدورة - HOST_MVP)
+| فجوة | حالة |
+|------|------|
+| ترتيب Begin/Alarm/Step/Move/Collision/End | مُحدَّث في `gm82_runtime_step` ومختبر |
+| xprevious / yprevious | حقول + GML getter |
+| مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
+| محاكاة ماريو على Host (3.6) | اختُبرت بـ `test_mario_end_to_end.js` ومرّت بنجاح |
+| طابور الصوت ورسائل PCM Mixer | مدعوم في `gm82_audio_mixer.c` واختُبر في 16/16 pass |
 
----
+## مفتوح (أولوية للمراحل القادمة)
+| فجوة | ملاحظات |
+|------|---------|
+| Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
+| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB |
+| sprite origin في bbox | غير مربوط بالكامل |
+| GML كامل | interpreter جزئي |
+| صوت على جهاز أندرويد مادي | إثبات مطلوب على جهاز حقيقي |
+| MainActivity WebView+NorNative | النسخة على main مبسّطة |
 
-## نتائج الاختبار الفعلية (2026-10-06)
-
-| العينة | sprites | rooms | objects | materialize | complete | guard |
-|--------|---------|-------|---------|-------------|----------|-------|
-| mario_bros.gmk | 24 (multi-frame OK) | 2 (181+120 inst) | 15 | OK | **true** | **playable** |
-| zelda.gmk | 13 | 1 | 7 | OK | **true** | **playable** |
-| shooter.gmk | 12 | 2 | 0* | OK | **true** | **playable** |
-| plataformas.gmk | 6 (sprBala 36 frames) | 4 | 0* | OK | **true** | **playable** |
-
-\* object decoder يعتمد على بادئة `obj_` — بعض المشاريع بأسماء مختلفة لا تُلتقط بعد.
-
-**هذا لا يعني تشغيل gameplay كامل** — يعني فقط: load + materialize + guard يفتحان. ما زال ينقص Events/GML كامل/native loop/audio.
-
----
-
-## الحالة حسب المكوّن
-
-| المكوّن | الحالة |
-|--------|--------|
-| GMK probe | يعمل |
-| Sprite decode + multi-frame rgba | يعمل على العينات الأربع |
-| Background decode | يعمل جزئياً |
-| Room instances/tiles | يعمل على mario/shooter/plataformas |
-| Objects (obj_* names) | يعمل على mario/zelda |
-| Runtime Guard | يعمل |
-| ir->complete بعد materialize | **true** على العينات الأربع |
-| nativeRuntimeStep في الحلقة | غير مربوط |
-| GML / Events / Actions كامل | ناقص |
-| Audio / precise masks | ناقص |
-
-**النسبة التقديرية: ~40–50%** (ارتفعت بعد materialize+rooms؛ ما زالت بعيدة عن parity كامل).
-
----
-
-## قواعد ضد الهلوسة
-
-- complete=true على عينات ≠ لعبة قابلة للعب من البداية للنهاية.
-- لا يُعلن 100% إلا بعد corpus حقيقي + مقارنة مع Windows GM82.
+## قاعدة
+ممنوع «100%»/«95%» من غير مصفوفة اختبار كاملة ممرورة.

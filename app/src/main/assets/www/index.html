@@ -112,6 +112,30 @@
         body { font-size: 8px; }
         button, [role="button"] { min-height: 32px; }
       }
+
+      /* Cloud Modal UX & Accessibility Focus/Hover States */
+      #gmk-cloud-search:focus-visible, #gmk-cloud-category:focus-visible {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+      }
+      #gmk-cloud-close-btn:hover {
+        background: #dc2626 !important;
+      }
+      #gmk-cloud-close-btn:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 2px !important;
+      }
+      #gmk-cloud-search-clear:hover {
+        background: #d1d5db !important;
+      }
+      #gmk-cloud-search-clear:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 1px !important;
+      }
+      .gmk-cloud-card:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
     </style>
     <script type="module" crossorigin>function _mergeNamespaces(n2, m2) {
   for (var i = 0; i < m2.length; i++) {
@@ -91918,9 +91942,9 @@ function gmlToJs(gml) {
   let js = gml;
 
   // Comments and basic keywords
-  js = js.replace(/\bvar\s+/g, "let ");
-  js = js.replace(/\btrue\b/g, "true").replace(/\bfalse\b/g, "false");
-  js = js.replace(/\bexit\b/g, "return");
+  js = js.replace(/\bvar\s+/gi, "let ");
+  js = js.replace(/\btrue\b/gi, "true").replace(/\bfalse\b/gi, "false");
+  js = js.replace(/\bexit\b/gi, "return;");
   js = js.replace(/<>/g, "!=");
   js = js.replace(/:=/g, "=");
   js = js.replace(/\bbegin\b/gi, "{");
@@ -91930,7 +91954,8 @@ function gmlToJs(gml) {
   js = js.replace(/([0-9\)\}\;])else\b/g, "$1 else");
   js = js.replace(/\belse([a-zA-Z_0-9\(\{])/g, "else $1");
 
-  // Logical operators
+  // Bitwise & Logical operators
+  js = js.replace(/\bbnot\s+/gi, "~");
   js = js.replace(/\bnot\s+/gi, "!");
   js = js.replace(/\s+\band\b\s+/gi, " && ");
   js = js.replace(/\s+\bor\b\s+/gi, " || ");
@@ -97837,6 +97862,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         className: "flex flex-col items-center -rotate-[25deg]",
                         children: [
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
+                            "aria-label": "زر الاختيار / SELECT",
+                            title: "اختيار (SELECT)",
                             className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Shift", 16, "Escape", 27]),
                             onPointerUp: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
@@ -97851,6 +97878,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         className: "flex flex-col items-center -rotate-[25deg]",
                         children: [
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
+                            "aria-label": "زر البداية / START",
+                            title: "بدء (START)",
                             className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Enter", 13, "Space", 32]),
                             onPointerUp: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
@@ -97890,6 +97919,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       children: [
                         /* Large Convex Button */
                         /* @__PURE__ */ jsxRuntimeExports.jsxs("button", {
+                          "aria-label": `${btn.labelAr || btn.label} (${btn.label})`,
+                          title: btn.labelAr || btn.label,
                           className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
                           style: { backgroundColor: btnColor, touchAction: "none" },
                           onPointerDown: (e) => handleBtnDown(e, btn.keys),
@@ -154294,8 +154325,9 @@ button, input, textarea, select {
 
     <!-- Filter & Search Controls -->
     <div style="padding:12px 16px; background:#e5e7eb; border-bottom:1px solid #d1d5db; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-      <div style="flex:1; min-width:200px; position:relative;">
-        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+      <div style="flex:1; min-width:200px; position:relative; display:flex; align-items:center;">
+        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px 8px 30px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+        <button id="gmk-cloud-search-clear" aria-label="مسح البحث" title="مسح البحث" style="display:none; position:absolute; left:8px; background:none; border:none; color:#6b7280; font-size:14px; font-weight:bold; cursor:pointer; padding:2px 6px; border-radius:50%;">✕</button>
       </div>
       <select id="gmk-cloud-category" aria-label="تصنيف الألعاب" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
         <option value="ALL">جميع الأقسام (146 لعبة)</option>
@@ -154337,6 +154369,7 @@ button, input, textarea, select {
   const modal = document.getElementById("gmk-cloud-modal");
   const closeBtn = document.getElementById("gmk-cloud-close-btn");
   const searchInput = document.getElementById("gmk-cloud-search");
+  const searchClearBtn = document.getElementById("gmk-cloud-search-clear");
   const categorySelect = document.getElementById("gmk-cloud-category");
   const grid = document.getElementById("gmk-cloud-grid");
   const statusDiv = document.getElementById("gmk-cloud-status");
@@ -154344,8 +154377,24 @@ button, input, textarea, select {
   const progressBar = document.getElementById("gmk-cloud-progress");
   const countSpan = document.getElementById("gmk-cloud-count");
 
+  function updateSearchClearBtn() {
+    if (searchClearBtn) {
+      searchClearBtn.style.display = searchInput.value.trim().length > 0 ? "block" : "none";
+    }
+  }
+
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      updateSearchClearBtn();
+      renderGames();
+      searchInput.focus();
+    });
+  }
+
   function openModal() {
     modal.style.display = "flex";
+    updateSearchClearBtn();
     renderGames();
     searchInput.focus();
   }
@@ -154359,7 +154408,13 @@ button, input, textarea, select {
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal.style.display === "flex") {
-      closeModal();
+      if (searchInput.value.length > 0) {
+        searchInput.value = "";
+        updateSearchClearBtn();
+        renderGames();
+      } else {
+        closeModal();
+      }
     }
   });
 
@@ -154396,6 +154451,10 @@ button, input, textarea, select {
 
     filtered.forEach(item => {
       const card = document.createElement("div");
+      card.className = "gmk-cloud-card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "article");
+      card.setAttribute("aria-label", `بطاقة ${item.title}`);
       card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
 
       card.onmouseenter = () => {
@@ -154424,23 +154483,49 @@ button, input, textarea, select {
         </button>
       `;
 
-      card.querySelector("button").onclick = (e) => {
+      const actionBtn = card.querySelector("button");
+      actionBtn.onmouseenter = () => { if (!actionBtn.disabled) actionBtn.style.background = "#1d4ed8"; };
+      actionBtn.onmouseleave = () => { if (!actionBtn.disabled) actionBtn.style.background = "#2563eb"; };
+      actionBtn.onfocus = () => { actionBtn.style.outline = "2px solid #60a5fa"; actionBtn.style.outlineOffset = "2px"; };
+      actionBtn.onblur = () => { actionBtn.style.outline = "none"; };
+      actionBtn.onclick = (e) => {
         e.stopPropagation();
-        loadCloudGame(item);
+        loadCloudGame(item, actionBtn);
       };
-      card.onclick = () => loadCloudGame(item);
+      card.onclick = () => loadCloudGame(item, actionBtn);
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          loadCloudGame(item, actionBtn);
+        }
+      };
 
       grid.appendChild(card);
     });
   }
 
-  searchInput.addEventListener("input", renderGames);
+  searchInput.addEventListener("input", () => {
+    updateSearchClearBtn();
+    renderGames();
+  });
   categorySelect.addEventListener("change", renderGames);
 
-  async function loadCloudGame(item) {
+  let isCloudLoading = false;
+
+  async function loadCloudGame(item, targetBtn) {
+    if (isCloudLoading) return;
     if (!window.__norMakerLoadGmkFromBuffer) {
       alert("محرك GMK قيد التهيئة، يرجى الانتظار ثوانٍ والمحاولة مجدداً.");
       return;
+    }
+
+    isCloudLoading = true;
+    const originalBtnText = targetBtn ? targetBtn.innerHTML : "";
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.style.opacity = "0.7";
+      targetBtn.style.cursor = "wait";
+      targetBtn.innerHTML = "<span>⏳ جاري التحميل...</span>";
     }
 
     statusDiv.style.display = "flex";
@@ -154523,6 +154608,14 @@ button, input, textarea, select {
       console.error("Cloud game load failed:", error);
       statusDiv.style.display = "none";
       alert("تعذر استدعاء اللعبة من السحابة:\n" + (error.message || error));
+    } finally {
+      isCloudLoading = false;
+      if (targetBtn) {
+        targetBtn.disabled = false;
+        targetBtn.style.opacity = "1";
+        targetBtn.style.cursor = "pointer";
+        targetBtn.innerHTML = originalBtnText;
+      }
     }
   }
 })();
