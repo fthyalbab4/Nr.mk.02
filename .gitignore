@@ -8,6 +8,7 @@ coverage/
 !.env.example
 Nor-maker-7-main/
 extracted_NorMaker-0_1/
+NorMaker-0_extracted/android_project_base/
 .gradle/
 *.o
 *.so

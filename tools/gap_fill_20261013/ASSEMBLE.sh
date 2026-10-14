@@ -21,7 +21,6 @@ apply_patch() {
   fi
 }
 
-# Spawn via python (unified patch was malformed)
 if ! grep -q 'has_player' app/src/main/cpp/src/gm82_runtime.c 2>/dev/null; then
   python3 "$DIR/spawn_fallback.py" || true
 else
@@ -40,6 +39,8 @@ if ! grep -q 'action_potential_step' app/src/main/cpp/src/gm82_gml_eval.c 2>/dev
 fi
 
 python3 "$DIR/collision_collectible.py" || true
+python3 "$DIR/room_instance_widen.py" || true
+python3 "$DIR/skip_empty_obj.py" || true
 
 gcc -O2 -Wall -o /tmp/test_event_order "$DIR/test_event_order.c"
 /tmp/test_event_order
