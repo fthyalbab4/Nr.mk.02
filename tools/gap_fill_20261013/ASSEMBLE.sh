@@ -41,6 +41,7 @@ fi
 python3 "$DIR/collision_collectible.py" || true
 python3 "$DIR/room_instance_widen.py" || true
 python3 "$DIR/skip_empty_obj.py" || true
+python3 "$DIR/alarm_object_events.py" || true
 
 gcc -O2 -Wall -o /tmp/test_event_order "$DIR/test_event_order.c"
 /tmp/test_event_order
