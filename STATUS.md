@@ -2,10 +2,9 @@
 
 host **4/4 PASS**
 
-من NM.Maker.0..1.0: DnD action_* + xstart/ystart (انظر MM_PORT_FROM_0_1_0.md)
+Pipeline: Begin→Alarm→Step→Move→Collision→End + Pre-Draw→Draw(depth)→Post-Draw  
+Phase-frozen instance lists · `gm82_room_state.h` · `docs/DETERMINISTIC_PIPELINE.md`
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
-
-بدون نسب مزيفة — NOT_DONE.md
