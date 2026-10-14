@@ -925,6 +925,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "move_towards_point") == 0) {
             gml_move_towards_point(args[0], args[1], nargs >= 3 ? args[2] : 0); *out = 0; return true;
         }
+        if (strcmp(id, "mp_potential_step") == 0 || strcmp(id, "action_potential_step") == 0) {
+            double tx = nargs >= 1 ? args[0] : 0;
+            double ty = nargs >= 2 ? args[1] : 0;
+            double sp = nargs >= 3 ? args[2] : 1;
+            gml_move_towards_point(tx, ty, sp);
+            *out = 1; return true;
+        }
         if (strcmp(id, "choose") == 0) {
             if (nargs > 0) *out = args[rand() % nargs]; else *out = 0; return true;
         }

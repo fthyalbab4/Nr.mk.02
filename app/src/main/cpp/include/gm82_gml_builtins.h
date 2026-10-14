@@ -388,7 +388,6 @@ void   gml_set_health(double v);
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);
 double gml_sign(double v);
-double gml_median(double a, double b, double c);
 double gml_clamp(double v, double lo, double hi);
 double gml_lerp(double a, double b, double t);
 double gml_irandom(double n);
