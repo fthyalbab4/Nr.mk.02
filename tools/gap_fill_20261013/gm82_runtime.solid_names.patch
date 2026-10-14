@@ -1,0 +1,16 @@
+--- a/app/src/main/cpp/src/gm82_runtime.c
++++ b/app/src/main/cpp/src/gm82_runtime.c
+@@ -60,6 +60,14 @@
+         inst->solid = o->solid;
+         inst->visible = o->visible ? 1 : 1;
+         inst->depth = o->depth;
++        /* Name heuristics when GMK solid bit is wrong/zero */
++        if (o->name) {
++            if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
++                strstr(o->name, "castillo") || strstr(o->name, "solid") ||
++                strstr(o->name, "Solid") || strstr(o->name, "wall") ||
++                strstr(o->name, "Wall") || strstr(o->name, "ground"))
++                inst->solid = 1;
++        }
+     }
+ }

@@ -1,0 +1,43 @@
+--- a/app/src/main/java/com/normaker/nativefull/MainActivity.java
++++ b/app/src/main/java/com/normaker/nativefull/MainActivity.java
+@@ -179,6 +179,18 @@
+             }
+ 
+             @Override
++            public void onPageFinished(WebView view, String url) {
++                super.onPageFinished(view, url);
++                try {
++                    view.evaluateJavascript(
++                        "(function(){if(window.__norLoopInjected)return;window.__norLoopInjected=true;function load(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}load('nor_native_loop_bridge.js',function(){load('index_html_native_loop_patch.js',function(){if(window.NorNativeLoop){try{NorNativeLoop.attach({canvas:document.getElementById('gameCanvas'),preferNative:true});}catch(e){}}});});})()",
++                        null);
++                } catch (Throwable t) {
++                    android.util.Log.w("NOR_WEBVIEW", "native loop inject failed", t);
++                }
++            }
++
++            @Override
+             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                 android.util.Log.e("NOR_WEBVIEW", "WebView error: " + errorCode + " - " + description + " at " + failingUrl);
+             }
+@@ -586,6 +598,21 @@
+         @JavascriptInterface public void step(float delta) {
+             try { nativeRuntimeStep(delta); drainNativeSoundCommands(); } catch (Throwable t) { android.util.Log.w("NOR_NATIVE", "step error", t); }
+         }
++        @JavascriptInterface public void tick() {
++            try { nativeRuntimeStep(1f / 30f); drainNativeSoundCommands(); } catch (Throwable t) { android.util.Log.w("NOR_NATIVE", "tick error", t); }
++        }
++        @JavascriptInterface public void draw() { }
++        @JavascriptInterface public boolean isRunning() {
++            try {
++                String snap = nativeRuntimeSnapshotJson();
++                return snap != null && snap.contains("\"active\":true");
++            } catch (Throwable t) { return false; }
++        }
++        @JavascriptInterface public boolean init(int w, int h) {
++            try { return nativeRuntimeCreate(w > 0 ? w : 640, h > 0 ? h : 480); } catch (Throwable t) { return false; }
++        }
++        @JavascriptInterface public int roomWidth() { return 0; }
++        @JavascriptInterface public int roomHeight() { return 0; }
+         @JavascriptInterface public boolean registerSound(int soundId, String path) {
+             try { return registerSoundResource(soundId, path); } catch (Throwable t) { return false; }
+         }

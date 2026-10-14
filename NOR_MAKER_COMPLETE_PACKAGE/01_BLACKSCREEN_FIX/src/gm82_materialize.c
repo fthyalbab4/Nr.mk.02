@@ -2,6 +2,9 @@
 #include "gm82_materialize.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_background_decode.h"
+#include "gm82_object_room_decode.h"
+#include "gm82_sound_decode.h"
+#include "gm82_script.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -149,6 +152,72 @@ bool gm82_materialize_backgrounds(gm82_project_ir *ir, const gm82_materialize_op
 bool gm82_materialize_rooms(gm82_project_ir *ir, const gm82_materialize_options *opts) {
     (void)opts;
     if (!ir) return false;
+
+    gm82_decoded_room_list L;
+    memset(&L, 0, sizeof(L));
+    int n = -1;
+    if (ir->source_data && ir->source_data_size > 0)
+        n = gm82_decode_rooms_from_gmk(ir->source_data, ir->source_data_size, &L);
+
+    if (n > 0) {
+        for (int32_t i = 0; i < ir->room_count; i++) {
+            free(ir->rooms[i].name);
+            free(ir->rooms[i].caption);
+            free(ir->rooms[i].instances);
+            free(ir->rooms[i].tiles);
+        }
+        free(ir->rooms);
+        ir->room_count = n;
+        ir->rooms = (gm82_res_room *)calloc((size_t)n, sizeof(gm82_res_room));
+        if (ir->rooms) {
+            for (int i = 0; i < n; i++) {
+                gm82_res_room *r = &ir->rooms[i];
+                r->id = i;
+                r->name = strdup(L.items[i].name);
+                r->width = L.items[i].width;
+                r->height = L.items[i].height;
+                r->speed = L.items[i].speed > 0 ? L.items[i].speed : 30;
+                r->instance_count = L.items[i].instance_count;
+                if (r->instance_count > 0 && L.items[i].instances) {
+                    r->instances = (gm82_room_instance *)calloc((size_t)r->instance_count, sizeof(gm82_room_instance));
+                    if (r->instances) {
+                        for (int j = 0; j < r->instance_count; j++) {
+                            r->instances[j].id = L.items[i].instances[j].id;
+                            r->instances[j].object_id = L.items[i].instances[j].object_index;
+                            r->instances[j].x = L.items[i].instances[j].x;
+                            r->instances[j].y = L.items[i].instances[j].y;
+                        }
+                    } else {
+                        r->instance_count = 0;
+                    }
+                }
+                r->tile_count = L.items[i].tile_count;
+                if (r->tile_count > 0 && L.items[i].tiles) {
+                    r->tiles = (gm82_room_tile *)calloc((size_t)r->tile_count, sizeof(gm82_room_tile));
+                    if (r->tiles) {
+                        for (int j = 0; j < r->tile_count; j++) {
+                            r->tiles[j].id = L.items[i].tiles[j].id;
+                            r->tiles[j].background_id = L.items[i].tiles[j].background_index;
+                            r->tiles[j].x = L.items[i].tiles[j].x;
+                            r->tiles[j].y = L.items[i].tiles[j].y;
+                            r->tiles[j].src_x = L.items[i].tiles[j].xo;
+                            r->tiles[j].src_y = L.items[i].tiles[j].yo;
+                            r->tiles[j].width = L.items[i].tiles[j].width;
+                            r->tiles[j].height = L.items[i].tiles[j].height;
+                            r->tiles[j].depth = L.items[i].tiles[j].depth;
+                        }
+                    } else {
+                        r->tile_count = 0;
+                    }
+                }
+                r->status = GM82_RES_DECODED;
+            }
+            gm82_decoded_room_list_free(&L);
+            return true;
+        }
+        gm82_decoded_room_list_free(&L);
+    }
+
     bool all_ok = true;
     for (int32_t i = 0; i < ir->room_count; i++) {
         gm82_res_room *r = &ir->rooms[i];
@@ -170,6 +239,29 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
     ok = gm82_materialize_sprites(ir, &local) && ok;
     ok = gm82_materialize_backgrounds(ir, &local) && ok;
     ok = gm82_materialize_rooms(ir, &local) && ok;
+
+    /* Decode objects and sounds to populate counts and metadata in IR */
+    if (ir->source_data && ir->source_data_size > 0) {
+        gm82_decoded_object_list obj_list;
+        int nobj = gm82_decode_objects_from_gmk(ir->source_data, ir->source_data_size, &obj_list);
+        if (nobj > 0) {
+            ir->object_count = nobj;
+            gm82_decoded_object_list_free(&obj_list);
+        }
+
+        gm82_decoded_sound_list snd_list;
+        int nsnd = gm82_decode_sounds_from_gmk(ir->source_data, ir->source_data_size, &snd_list);
+        if (nsnd > 0) {
+            ir->sound_count = nsnd;
+            gm82_decoded_sound_list_free(&snd_list);
+        }
+
+        gm82_script_list scr_list;
+        int nscr = gm82_decode_scripts_from_gmk(ir->source_data, ir->source_data_size, &scr_list);
+        if (nscr > 0) {
+            ir->script_count = nscr;
+        }
+    }
 
     /* If we have decoded sprites but backgrounds list is empty, clear background requirement */
     if (ir->sprite_count > 0 && ir->background_count == 0)

@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_gml_eval.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_sound_runtime.h"
 #include "gm82_input.h"
 #include <ctype.h>
 #include <stdlib.h>
@@ -75,6 +76,8 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
+    if (strcmp(name, "yprevious") == 0) { *out = s ? s->yprevious : 0; return true; }
     if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
     if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
     if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
@@ -921,6 +924,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "move_towards_point") == 0) {
             gml_move_towards_point(args[0], args[1], nargs >= 3 ? args[2] : 0); *out = 0; return true;
+        }
+        if (strcmp(id, "mp_potential_step") == 0 || strcmp(id, "action_potential_step") == 0) {
+            double tx = nargs >= 1 ? args[0] : 0;
+            double ty = nargs >= 2 ? args[1] : 0;
+            double sp = nargs >= 3 ? args[2] : 1;
+            gml_move_towards_point(tx, ty, sp);
+            *out = 1; return true;
         }
         if (strcmp(id, "choose") == 0) {
             if (nargs > 0) *out = args[rand() % nargs]; else *out = 0; return true;

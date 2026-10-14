@@ -59,11 +59,11 @@
 
 ## ترتيب النواقص المتبقية (واقعي)
 
-1. Action list / GML script parser من الـ GMK
-2. ربط النواة بـ Android (JNI + GLSurfaceView)
-3. Audio
-4. Precise collision
-5. توسيع صيغ GMK (zelda وغيرها)
-6. gm82core subset
+1. Action list / GML script parser من الـ GMK  
+2. ربط النواة بـ Android (JNI + GLSurfaceView)  
+3. Audio  
+4. Precise collision  
+5. توسيع صيغ GMK (zelda وغيرها)  
+6. gm82core subset  
 
 أي ادعاء "100% GM82" قبل إنهاء القائمة أعلاه = غير صحيح.
