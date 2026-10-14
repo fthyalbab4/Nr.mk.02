@@ -2,10 +2,10 @@
 
 host **4/4 PASS**
 
-جديد: استعادة **autobind GML** من Nr.mk.01 (كان stub) + JNI
+من NM.Maker.0..1.0: DnD action_* + xstart/ystart (انظر MM_PORT_FROM_0_1_0.md)
 
 ```bash
 git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
 ```
 
-انظر REPO_AUDIT_2026-10-14.md و NOT_DONE.md
+بدون نسب مزيفة — NOT_DONE.md
