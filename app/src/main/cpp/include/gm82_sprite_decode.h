@@ -13,6 +13,8 @@ typedef struct {
     char     name[64];
     int32_t  width;
     int32_t  height;
+    int32_t  origin_x;
+    int32_t  origin_y;
     uint8_t *rgba;       /* width*height*4, caller frees via list_free */
     size_t   rgba_size;
     uint8_t *bitmask;    /* (width * height + 7) / 8 bytes, 1 bit per pixel (alpha > 0) */

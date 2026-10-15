@@ -267,10 +267,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        int32_t sw = 16, sh = 16;
+        int32_t sw = 16, sh = 16, ox = 0, oy = 0;
         if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
             sw = rt->sprites->frames[inst->sprite_index].width;
             sh = rt->sprites->frames[inst->sprite_index].height;
+            ox = rt->sprites->frames[inst->sprite_index].origin_x;
+            oy = rt->sprites->frames[inst->sprite_index].origin_y;
         }
         {
             double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
@@ -279,6 +281,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
             if (ys < 0) ys = -ys;
             sw = (int32_t)(sw * xs);
             sh = (int32_t)(sh * ys);
+            ox = (int32_t)(ox * xs);
+            oy = (int32_t)(oy * ys);
             if (sw < 1) sw = 1;
             if (sh < 1) sh = 1;
         }
@@ -286,10 +290,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
             if (i == j) continue;
             gm82_instance *other = &rt->instances[j];
             if (!other->alive) continue;
-            int32_t ow = 16, oh = 16;
+            int32_t ow = 16, oh = 16, oox = 0, ooy = 0;
             if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
                 ow = rt->sprites->frames[other->sprite_index].width;
                 oh = rt->sprites->frames[other->sprite_index].height;
+                oox = rt->sprites->frames[other->sprite_index].origin_x;
+                ooy = rt->sprites->frames[other->sprite_index].origin_y;
             }
             {
                 double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
@@ -298,11 +304,13 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 if (ys < 0) ys = -ys;
                 ow = (int32_t)(ow * xs);
                 oh = (int32_t)(oh * ys);
+                oox = (int32_t)(oox * xs);
+                ooy = (int32_t)(ooy * ys);
                 if (ow < 1) ow = 1;
                 if (oh < 1) oh = 1;
             }
-            double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-            double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
+            double ax1 = inst->x - ox, ay1 = inst->y - oy, ax2 = ax1 + sw, ay2 = ay1 + sh;
+            double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
             if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
                 continue;
             gm82_events_fire_collision(rt, inst, other);
