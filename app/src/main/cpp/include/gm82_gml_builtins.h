@@ -340,6 +340,7 @@ double gml_timeline_stop(void);
 void gm82_timeline_step_instance(gm82_runtime *rt, gm82_instance *inst);
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha);
+double gml_event_user(double numb);
 
 /* ---- Built-in variable access on self ---- */
 double gml_get_x(void);
