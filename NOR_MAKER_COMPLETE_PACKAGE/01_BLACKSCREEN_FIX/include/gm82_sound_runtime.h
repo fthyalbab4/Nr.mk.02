@@ -45,6 +45,7 @@ double gml_sound_stop_all(void);
 double gml_sound_is_playing(double sound_index); /* always 0 without device */
 double gml_sound_exists(double sound_index);
 double gml_sound_volume(double sound_index, double volume);
+double gml_sound_pitch(double sound_index, double pitch);
 double gml_sound_get_name_count(void);
 
 #ifdef __cplusplus
