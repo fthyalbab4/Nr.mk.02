@@ -1,11 +1,13 @@
-# STATUS — صادق
+# STATUS
 
-## مسار SO الموجود (بدون NDK جديد)
-- التطبيق يحمّل `libgm82_android` مسبقاً
-- JS: `nor_native_loop_bridge.js` + patch في `assets/www/`
-- باتش MainActivity: `tools/MainActivity.native_loop.patch`
+## ألعاب السحابة (هدف أدنى — مش 100% لكل عنوان)
 
-## تنبيه
-إن كان `MainActivity.java` = PLACEHOLDER، طبّق `tools/RECOVER_MAINACTIVITY.md`
+- كتالوج الواجهة: **~146** GMK (floowsnaake/GMK8_Examples)
+- عينات مدمجة 4 تحت `assets/www/samples/`
+- docs/CLOUD_GAMES.md
 
-Host ~55–65%. ليس 100%.
+```bash
+git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh
+bash tools/gap_fill_20261013/cloud_smoke.sh
+./gradlew assembleDebug
+```

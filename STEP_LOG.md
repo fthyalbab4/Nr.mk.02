@@ -1,6 +1,5 @@
 # STEP_LOG
 
-## 2026-10-08 — existing SO path
-- tick/isRunning/init على NativeBridge
-- حقن JS loop في WebView
-- بدون شرط NDK جديد
+## 2026-10-13 — event order + xprevious + scaled AABB
+- gm82_runtime.h/c, gm82_events.h/c, gm82_gml_eval.c
+- STATUS/GAPS بدون نسب مزيفة
