@@ -265,8 +265,110 @@ void gml_draw_sprite(double sprite, double x, double y) {
 
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha) {
-    (void)sprite; (void)subimg; (void)x; (void)y;
-    (void)xscale; (void)yscale; (void)rot; (void)color; (void)alpha;
+    if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
+    int si = (int)sprite;
+    if (si < 0 || si >= g_rt->sprites->count) return;
+
+    int frame_idx = si;
+    if (g_rt->sprite_groups) {
+        int sub = (subimg < 0) ? (g_self ? g_self->image_index : 0) : (int)subimg;
+        frame_idx = gm82_sprite_resolve_frame(g_rt->sprite_groups, si, sub);
+    }
+    if (frame_idx < 0 || frame_idx >= g_rt->sprites->count) frame_idx = si;
+
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame_idx];
+    if (!fr->rgba || fr->width <= 0 || fr->height <= 0) return;
+
+    if (xscale == 0 || yscale == 0 || alpha <= 0.0) return;
+    if (alpha > 1.0) alpha = 1.0;
+
+    uint32_t col = (uint32_t)color;
+    uint8_t cr = col & 0xFF;
+    uint8_t cg = (col >> 8) & 0xFF;
+    uint8_t cb = (col >> 16) & 0xFF;
+
+    if (rot == 0.0) {
+        int dx0 = (int)x, dy0 = (int)y;
+        double abs_xs = fabs(xscale), abs_ys = fabs(yscale);
+        int dest_w = (int)(fr->width * abs_xs);
+        int dest_h = (int)(fr->height * abs_ys);
+        if (dest_w < 1) dest_w = 1;
+        if (dest_h < 1) dest_h = 1;
+
+        for (int dy = 0; dy < dest_h; dy++) {
+            int py = dy0 + dy;
+            if (py < 0 || py >= g_draw_h) continue;
+            int sy = (int)(dy / abs_ys);
+            if (sy >= fr->height) sy = fr->height - 1;
+
+            for (int dx = 0; dx < dest_w; dx++) {
+                int px = dx0 + dx;
+                if (px < 0 || px >= g_draw_w) continue;
+                int sx = (int)(dx / abs_xs);
+                if (sx >= fr->width) sx = fr->width - 1;
+
+                const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
+                if (s[3] == 0) continue;
+
+                uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+                double a = (s[3] / 255.0) * alpha;
+
+                uint8_t sr = (col == 0xFFFFFF) ? s[0] : (uint8_t)((s[0] * cr) / 255);
+                uint8_t sg = (col == 0xFFFFFF) ? s[1] : (uint8_t)((s[1] * cg) / 255);
+                uint8_t sb = (col == 0xFFFFFF) ? s[2] : (uint8_t)((s[2] * cb) / 255);
+
+                d[0] = (uint8_t)(d[0] * (1.0 - a) + sr * a);
+                d[1] = (uint8_t)(d[1] * (1.0 - a) + sg * a);
+                d[2] = (uint8_t)(d[2] * (1.0 - a) + sb * a);
+                d[3] = 255;
+            }
+        }
+    } else {
+        /* Rotated sprite rendering using inverse transformation matrix */
+        double rad = rot * M_PI / 180.0;
+        double cos_a = cos(rad), sin_a = sin(rad);
+        int orig_w = fr->width, orig_h = fr->height;
+        int half_w = (int)(orig_w * fabs(xscale) / 2.0);
+        int half_h = (int)(orig_h * fabs(yscale) / 2.0);
+
+        for (int dy = -half_h; dy <= half_h; dy++) {
+            int py = (int)y + dy;
+            if (py < 0 || py >= g_draw_h) continue;
+            for (int dx = -half_w; dx <= half_w; dx++) {
+                int px = (int)x + dx;
+                if (px < 0 || px >= g_draw_w) continue;
+
+                /* Unrotate & unscale back to sprite local space */
+                double lx = (dx * cos_a + dy * sin_a) / xscale + orig_w / 2.0;
+                double ly = (-dx * sin_a + dy * cos_a) / yscale + orig_h / 2.0;
+
+                int sx = (int)lx, sy = (int)ly;
+                if (sx < 0 || sx >= orig_w || sy < 0 || sy >= orig_h) continue;
+
+                const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)orig_w + (size_t)sx) * 4;
+                if (s[3] == 0) continue;
+
+                uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+                double a = (s[3] / 255.0) * alpha;
+
+                uint8_t sr = (col == 0xFFFFFF) ? s[0] : (uint8_t)((s[0] * cr) / 255);
+                uint8_t sg = (col == 0xFFFFFF) ? s[1] : (uint8_t)((s[1] * cg) / 255);
+                uint8_t sb = (col == 0xFFFFFF) ? s[2] : (uint8_t)((s[2] * cb) / 255);
+
+                d[0] = (uint8_t)(d[0] * (1.0 - a) + sr * a);
+                d[1] = (uint8_t)(d[1] * (1.0 - a) + sg * a);
+                d[2] = (uint8_t)(d[2] * (1.0 - a) + sb * a);
+                d[3] = 255;
+            }
+        }
+    }
+}
+
+double gml_event_user(double numb) {
+    if (!g_rt) return 0;
+    int ev = (int)numb;
+    gm82_runtime_event_user(g_rt, ev);
+    return 1;
 }
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }

@@ -457,5 +457,33 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index) {
     if (!rt || user_event_index < 0 || user_event_index > 11) return;
-    (void)user_event_index;
+    gm82_instance *self = gm82_gml_get_self();
+    if (self && self->alive && rt->objects && self->object_index >= 0 && self->object_index < rt->objects->count) {
+        const gm82_decoded_object *obj = &rt->objects->items[self->object_index];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type != 7 || ev->event_numb != user_event_index) continue;
+            if (ev->action_name0[0])
+                gm82_action_execute_named(rt, self, ev->action_name0);
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_eval_block(rt, self, ev->code_snippet);
+            }
+        }
+    } else if (rt->objects) {
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive || inst->object_index < 0 || inst->object_index >= rt->objects->count) continue;
+            const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+            for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+                const gm82_decoded_event *ev = &obj->events[e];
+                if (ev->main_type != 7 || ev->event_numb != user_event_index) continue;
+                if (ev->action_name0[0])
+                    gm82_action_execute_named(rt, inst, ev->action_name0);
+                if (ev->code_snippet && ev->code_snippet[0]) {
+                    gm82_gml_set_self(inst);
+                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                }
+            }
+        }
+    }
 }

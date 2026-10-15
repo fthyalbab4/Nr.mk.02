@@ -1361,6 +1361,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "game_has_ended") == 0) {
             *out = gml_game_has_ended(); return true;
         }
+        if (strcmp(id, "event_user") == 0) {
+            *out = gml_event_user(arg); return true;
+        }
         if (strcmp(id, "get_x") == 0) {
             *out = gml_get_x(); return true;
         }
