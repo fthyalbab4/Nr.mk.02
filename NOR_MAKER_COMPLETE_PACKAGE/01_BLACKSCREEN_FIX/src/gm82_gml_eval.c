@@ -175,6 +175,19 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "move_bounce_solid") == 0) { *out = gml_move_bounce_solid(args[0]); return true; }
         if (strcmp(id, "move_wrap") == 0) { *out = gml_move_wrap(args[0], args[1], args[2]); return true; }
         if (strcmp(id, "sound_play") == 0) { *out = gml_sound_play(args[0]); return true; }
+        if (strcmp(id, "sound_play_pitch") == 0) {
+            gml_sound_pitch(args[0], arg_count >= 2 ? args[1] : 1.0);
+            *out = gml_sound_play(args[0]);
+            return true;
+        }
+        if (strcmp(id, "sound_loop") == 0) {
+            *out = gml_sound_loop(args[0]); return true;
+        }
+        if (strcmp(id, "sound_loop_pitch") == 0) {
+            gml_sound_pitch(args[0], arg_count >= 2 ? args[1] : 1.0);
+            *out = gml_sound_loop(args[0]);
+            return true;
+        }
         if (strcmp(id, "sound_stop") == 0 || strcmp(id, "sound_stop_all") == 0) { *out = gml_sound_stop_all(); return true; }
         if (strcmp(id, "sound_isplaying") == 0 || strcmp(id, "sound_is_playing") == 0) { *out = gml_sound_is_playing(args[0]); return true; }
         if (strcmp(id, "sound_volume") == 0) { *out = gml_sound_volume(args[0], args[1]); return true; }
