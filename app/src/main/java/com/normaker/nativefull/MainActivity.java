@@ -28,7 +28,9 @@ public class MainActivity extends Activity {
     private static final String TAG = "NOR_NATIVE";
     private static final int ROOM_W = 640;
     private static final int ROOM_H = 480;
-    private static final long FRAME_MS = 33;
+    private static final long TARGET_FPS = 90;
+    private static final long FRAME_MS = 1000 / TARGET_FPS;
+    private long lastFrameTimeNanos = 0;
 
     // GM vk_* codes (must match gm82_input.h)
     private static final int VK_LEFT = 37;
@@ -67,15 +69,20 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             if (!loopRunning) return;
+            long nowNanos = System.nanoTime();
+            float dt = (lastFrameTimeNanos > 0) ? (nowNanos - lastFrameTimeNanos) / 1000000000.0f : (1.0f / TARGET_FPS);
+            if (dt <= 0.0001f || dt > 0.1f) dt = 1.0f / TARGET_FPS;
+            lastFrameTimeNanos = nowNanos;
+
             try {
-                nativeRuntimeStep(1.0f / 30.0f);
+                nativeRuntimeStep(dt);
                 if (frameBitmap != null) {
                     nativeRuntimeRenderBitmap(frameBitmap);
                     gameView.setImageBitmap(frameBitmap);
                 }
                 frameCount++;
-                if (frameCount == 1 || frameCount % 90 == 0) {
-                    Log.i(TAG, "frame=" + frameCount + " import=" + lastImportJson);
+                if (frameCount == 1 || frameCount % 180 == 0) {
+                    Log.i(TAG, "frame=" + frameCount + " dt=" + dt + " import=" + lastImportJson);
                 }
             } catch (Throwable t) {
                 Log.w(TAG, "frame error", t);

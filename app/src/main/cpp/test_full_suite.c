@@ -326,6 +326,65 @@ void test_advanced_gml_and_physics_suite(void) {
     printf("[PASS] Advanced GML, Physics & DnD Actions Suite\n");
 }
 
+void test_user_events_and_drawing_suite(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+
+    gm82_decoded_object_list obj_list;
+    memset(&obj_list, 0, sizeof(obj_list));
+    gm82_decoded_object obj;
+    memset(&obj, 0, sizeof(obj));
+    strncpy(obj.name, "obj_test_user", sizeof(obj.name));
+    obj.sprite_index = 0;
+    obj.event_count = 1;
+
+    obj.events[0].main_type = 7; /* User Event */
+    obj.events[0].event_numb = 0; /* Event User 0 */
+    obj.events[0].code_snippet = "x += 50; y += 100;";
+
+    obj_list.count = 1;
+    obj_list.items = &obj;
+
+    gm82_decoded_sprite_list spr_list;
+    memset(&spr_list, 0, sizeof(spr_list));
+    gm82_decoded_frame frame;
+    memset(&frame, 0, sizeof(frame));
+    frame.width = 8;
+    frame.height = 8;
+    frame.rgba = (uint8_t *)calloc(8 * 8 * 4, 1);
+    for (int i = 0; i < 64; i++) {
+        frame.rgba[i * 4 + 0] = 255;
+        frame.rgba[i * 4 + 3] = 255;
+    }
+    spr_list.count = 1;
+    spr_list.frames = &frame;
+
+    gm82_runtime_bind_assets(&rt, &obj_list, &spr_list, NULL, NULL, NULL);
+
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 20.0);
+    assert(inst != NULL);
+
+    gm82_gml_set_runtime(&rt);
+    gm82_gml_set_self(inst);
+
+    /* Test event_user(0) via gml_event_user */
+    assert(gml_event_user(0.0) == 1.0);
+    assert(inst->x == 60.0 && inst->y == 120.0);
+
+    /* Test draw_sprite_ext soft rendering */
+    uint8_t draw_buf[32 * 32 * 4];
+    memset(draw_buf, 0, sizeof(draw_buf));
+    gm82_draw_set_target(draw_buf, 32, 32);
+
+    gml_draw_sprite_ext(0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0xFFFFFF, 1.0);
+    /* Pixel (0,0) and (1,1) in destination buffer should be red (255, 0, 0, 255) */
+    assert(draw_buf[0] == 255);
+    assert(draw_buf[3] == 255);
+
+    free(frame.rgba);
+    printf("[PASS] User Events & Extended Sprite Drawing Suite\n");
+}
+
 int main(void) {
     printf("--- Running Native Host Comprehensive Test Suite ---\n");
     test_gmk_probe_suite();
@@ -333,6 +392,7 @@ int main(void) {
     test_gml_builtins_suite();
     test_retro_rom_suite();
     test_advanced_gml_and_physics_suite();
+    test_user_events_and_drawing_suite();
     printf("--- All Native Host Tests Passed! ---\n");
     return 0;
 }

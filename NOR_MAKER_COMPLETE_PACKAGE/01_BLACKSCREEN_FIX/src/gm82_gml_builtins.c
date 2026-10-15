@@ -452,6 +452,39 @@ double gml_point_in_rectangle(double px, double py, double x1, double y1, double
     return (px >= x1 && px <= x2 && py >= y1 && py <= y2) ? 1.0 : 0.0;
 }
 
+double gml_point_in_circle(double px, double py, double cx, double cy, double r) {
+    double dx = px - cx, dy = py - cy;
+    return (dx * dx + dy * dy <= r * r) ? 1.0 : 0.0;
+}
+
+double gml_color_reverse(double col) {
+    uint32_t c = (uint32_t)col;
+    return (double)(((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF));
+}
+
+double gml_color_inverse(double col) {
+    return (double)(0xFFFFFF ^ ((uint32_t)col & 0xFFFFFF));
+}
+
+double gml_make_color_rgb(double r, double g, double b) {
+    uint32_t ur = (uint32_t)r & 255;
+    uint32_t ug = (uint32_t)g & 255;
+    uint32_t ub = (uint32_t)b & 255;
+    return (double)(ur | (ug << 8) | (ub << 16));
+}
+
+double gml_color_get_red(double col) {
+    return (double)((uint32_t)col & 0xFF);
+}
+
+double gml_color_get_green(double col) {
+    return (double)(((uint32_t)col >> 8) & 0xFF);
+}
+
+double gml_color_get_blue(double col) {
+    return (double)(((uint32_t)col >> 16) & 0xFF);
+}
+
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     (void)prec;
     if (!g_rt) return -4;
@@ -1640,7 +1673,7 @@ double gml_ini_close(void) {
         for (int i = 0; i < g_ini_count; i++) {
             if (strcmp(g_ini[i].section, last_sec) != 0) {
                 fprintf(f, "[%s]\n", g_ini[i].section);
-                snprintf(last_sec, sizeof(last_sec), "%s", g_ini[i].section);
+                snprintf(last_sec, sizeof(last_sec), "%.63s", g_ini[i].section);
             }
             fprintf(f, "%s=%.10g\n", g_ini[i].key, g_ini[i].value);
         }
