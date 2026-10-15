@@ -106,6 +106,11 @@ double gml_point_distance(double x1, double y1, double x2, double y2) {
     return sqrt(dx * dx + dy * dy);
 }
 
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+    return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 double gml_point_direction(double x1, double y1, double x2, double y2) {
     return atan2(-(y2 - y1), (x2 - x1)) * 180.0 / M_PI;
 }
