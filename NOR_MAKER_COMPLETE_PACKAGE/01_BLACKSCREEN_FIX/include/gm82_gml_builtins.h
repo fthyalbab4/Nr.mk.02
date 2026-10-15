@@ -232,6 +232,15 @@ double gml_darccos(double x);
 double gml_darctan(double x);
 double gml_darctan2(double y, double x);
 
+/* Color functions */
+double gml_color_reverse(double col);
+double gml_color_inverse(double col);
+double gml_make_color_rgb(double r, double g, double b);
+double gml_color_get_red(double col);
+double gml_color_get_green(double col);
+double gml_color_get_blue(double col);
+double gml_point_in_circle(double px, double py, double cx, double cy, double r);
+
 double gml_display_get_width(void);
 double gml_display_get_height(void);
 double gml_window_get_width(void);

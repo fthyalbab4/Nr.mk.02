@@ -210,6 +210,27 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "point_in_rectangle") == 0) {
             *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
         }
+        if (strcmp(id, "point_in_circle") == 0) {
+            *out = gml_point_in_circle(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "color_reverse") == 0) {
+            *out = gml_color_reverse(args[0]); return true;
+        }
+        if (strcmp(id, "color_inverse") == 0) {
+            *out = gml_color_inverse(args[0]); return true;
+        }
+        if (strcmp(id, "make_color_rgb") == 0) {
+            *out = gml_make_color_rgb(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "color_get_red") == 0) {
+            *out = gml_color_get_red(args[0]); return true;
+        }
+        if (strcmp(id, "color_get_green") == 0) {
+            *out = gml_color_get_green(args[0]); return true;
+        }
+        if (strcmp(id, "color_get_blue") == 0) {
+            *out = gml_color_get_blue(args[0]); return true;
+        }
         if (strcmp(id, "instance_create") == 0) {
             *out = gml_instance_create(args[0], args[1], args[2]); return true;
         }

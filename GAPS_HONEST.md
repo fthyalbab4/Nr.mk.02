@@ -8,6 +8,7 @@
 | مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
 | High FPS & dynamic delta-time | دعم 60-90+ FPS وحساب `dt` ديناميكياً في `MainActivity` و `gm82_runtime` |
 | GML Math Builtins | إضافة `dsin`, `dcos`, `clamp`, `lerp`, `point_distance_3d`, `dot_product` |
+| GML Color & Math Extension | إضافة `color_reverse`, `color_inverse`, `make_color_rgb`, `color_get_red/green/blue`, `point_in_circle` |
 
 ## مفتوح (أولوية)
 | فجوة | ملاحظات |
