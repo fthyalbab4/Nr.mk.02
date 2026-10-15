@@ -1840,7 +1840,9 @@ double gml_lengthdir_y(double len, double dir) {
     return -len * sin(dir * M_PI / 180.0);
 }
 double gml_deg_to_rad(double deg) { return deg * M_PI / 180.0; }
+double gml_degtorad(double deg) { return deg * M_PI / 180.0; }
 double gml_rad_to_deg(double rad) { return rad * 180.0 / M_PI; }
+double gml_radtodeg(double rad) { return rad * 180.0 / M_PI; }
 double gml_angle_difference(double dest, double src) {
     double d = fmod(dest - src + 180.0, 360.0) - 180.0;
     if (d < -180.0) d += 360.0;
@@ -1853,6 +1855,25 @@ double gml_darcsin(double x) { return asin(x) * 180.0 / M_PI; }
 double gml_darccos(double x) { return acos(x) * 180.0 / M_PI; }
 double gml_darctan(double x) { return atan(x) * 180.0 / M_PI; }
 double gml_darctan2(double y, double x) { return atan2(y, x) * 180.0 / M_PI; }
+
+static int double_cmp(const void *a, const void *b) {
+    double da = *(const double *)a, db = *(const double *)b;
+    return (da > db) - (da < db);
+}
+
+double gml_mean(const double *vals, size_t count) {
+    if (!vals || count == 0) return 0;
+    double sum = 0;
+    for (size_t i = 0; i < count; i++) sum += vals[i];
+    return sum / (double)count;
+}
+
+double gml_median(double *vals, size_t count) {
+    if (!vals || count == 0) return 0;
+    qsort(vals, count, sizeof(double), double_cmp);
+    if (count % 2 == 1) return vals[count / 2];
+    return (vals[(count / 2) - 1] + vals[count / 2]) / 2.0;
+}
 
 
 static int g_win_w = 640, g_win_h = 480;

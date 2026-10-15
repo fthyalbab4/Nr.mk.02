@@ -7,7 +7,7 @@
 | xprevious / yprevious | حقول + GML getter |
 | مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
 | High FPS & dynamic delta-time | دعم 60-90+ FPS وحساب `dt` ديناميكياً في `MainActivity` و `gm82_runtime` |
-| GML Math Builtins | إضافة `dsin`, `dcos`, `clamp`, `lerp`, `point_distance_3d`, `dot_product` |
+| GML Math Builtins | إضافة `dsin`, `dcos`, `clamp`, `lerp`, `point_distance_3d`, `dot_product`, `degtorad`, `radtodeg`, `mean`, `median` |
 
 ## مفتوح (أولوية)
 | فجوة | ملاحظات |
