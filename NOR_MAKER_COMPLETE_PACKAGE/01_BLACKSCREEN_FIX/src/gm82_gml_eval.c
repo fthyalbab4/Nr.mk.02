@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_gml_eval.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_sound_runtime.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,6 +53,8 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "xprevious") == 0) { *out = s ? s->x - s->hspeed : 0; return true; }
+    if (strcmp(name, "yprevious") == 0) { *out = s ? s->y - s->vspeed : 0; return true; }
     if (strcmp(name, "hspeed") == 0) { *out = s ? s->hspeed : 0; return true; }
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
@@ -62,6 +65,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
+    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->x : 0; return true; }
+    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "bbox_right") == 0) { *out = s ? s->x + 16 : 0; return true; }
+    if (strcmp(name, "bbox_bottom") == 0) { *out = s ? s->y + 16 : 0; return true; }
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
     if (strcmp(name, "lives") == 0) { *out = gml_get_lives(); return true; }
     if (strcmp(name, "health") == 0) { *out = gml_get_health(); return true; }
@@ -69,6 +76,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "room_width") == 0) { *out = p->rt ? (double)p->rt->room_width : 0; return true; }
     if (strcmp(name, "room_height") == 0) { *out = p->rt ? (double)p->rt->room_height : 0; return true; }
     if (strcmp(name, "room_speed") == 0) { *out = p->rt ? (double)p->rt->room_speed : 30; return true; }
+    if (strcmp(name, "view_xview") == 0) { *out = p->rt ? p->rt->view_x : 0; return true; }
+    if (strcmp(name, "view_yview") == 0) { *out = p->rt ? p->rt->view_y : 0; return true; }
+    if (strcmp(name, "view_wview") == 0) { *out = p->rt ? p->rt->view_w : 320; return true; }
+    if (strcmp(name, "view_hview") == 0) { *out = p->rt ? p->rt->view_h : 240; return true; }
     if (strcmp(name, "mouse_x") == 0) { *out = gml_mouse_x(); return true; }
     if (strcmp(name, "mouse_y") == 0) { *out = gml_mouse_y(); return true; }
     snprintf(p->err, sizeof(p->err), "unknown var %s", name);
@@ -89,6 +100,8 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
     if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
     if (strcmp(name, "solid") == 0) { s->solid = v != 0; return true; }
+    if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = v; return true; }
+    if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = v; return true; }
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
@@ -124,34 +137,139 @@ static bool parse_primary(gml_parser *p, double *out) {
     if (!parse_ident(p, id, sizeof(id))) return false;
     /* function call? */
     if (match(p, '(')) {
-        double arg = 0;
+        double args[8] = {0};
+        int arg_count = 0;
         if (peek(p) != ')') {
-            if (!parse_expr(p, &arg)) return false;
+            do {
+                if (arg_count < 8) {
+                    if (!parse_expr(p, &args[arg_count++])) return false;
+                } else {
+                    double dummy;
+                    if (!parse_expr(p, &dummy)) return false;
+                }
+            } while (match(p, ','));
         }
         if (!match(p, ')')) return false;
-        if (strcmp(id, "abs") == 0) { *out = fabs(arg); return true; }
-        if (strcmp(id, "sign") == 0) { *out = arg > 0 ? 1 : (arg < 0 ? -1 : 0); return true; }
-        if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
-        if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
-        if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
-        if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+
+        if (strcmp(id, "abs") == 0) { *out = fabs(args[0]); return true; }
+        if (strcmp(id, "sign") == 0) { *out = args[0] > 0 ? 1 : (args[0] < 0 ? -1 : 0); return true; }
+        if (strcmp(id, "sqr") == 0) { *out = gml_sqr(args[0]); return true; }
+        if (strcmp(id, "sqrt") == 0) { *out = gml_sqrt_fn(args[0]); return true; }
+        if (strcmp(id, "power") == 0) { *out = gml_power(args[0], args[1]); return true; }
+        if (strcmp(id, "frac") == 0) { *out = gml_frac(args[0]); return true; }
+        if (strcmp(id, "dot_product") == 0) { *out = gml_dot_product(args[0], args[1], args[2], args[3]); return true; }
+        if (strcmp(id, "dot_product_3d") == 0) { *out = gml_dot_product_3d(args[0], args[1], args[2], args[3], args[4], args[5]); return true; }
+        if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)args[0] + 1)); return true; }
+        if (strcmp(id, "random") == 0) { *out = ((double)rand() / (double)RAND_MAX) * args[0]; return true; }
+        if (strcmp(id, "floor") == 0) { *out = floor(args[0]); return true; }
+        if (strcmp(id, "ceil") == 0) { *out = ceil(args[0]); return true; }
+        if (strcmp(id, "round") == 0) { *out = round(args[0]); return true; }
+        if (strcmp(id, "clamp") == 0) { *out = gml_clamp(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "lerp") == 0) { *out = gml_lerp(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "approach") == 0) { *out = gml_approach(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "point_distance") == 0) { *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true; }
+        if (strcmp(id, "point_direction") == 0) { *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true; }
+        if (strcmp(id, "point_distance_3d") == 0) { *out = gml_point_distance_3d(args[0], args[1], args[2], args[3], args[4], args[5]); return true; }
+        if (strcmp(id, "lengthdir_x") == 0) { *out = gml_lengthdir_x(args[0], args[1]); return true; }
+        if (strcmp(id, "lengthdir_y") == 0) { *out = gml_lengthdir_y(args[0], args[1]); return true; }
+        if (strcmp(id, "move_bounce_solid") == 0) { *out = gml_move_bounce_solid(args[0]); return true; }
+        if (strcmp(id, "move_wrap") == 0) { *out = gml_move_wrap(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "sound_play") == 0) { *out = gml_sound_play(args[0]); return true; }
+        if (strcmp(id, "sound_stop") == 0 || strcmp(id, "sound_stop_all") == 0) { *out = gml_sound_stop_all(); return true; }
+        if (strcmp(id, "sound_isplaying") == 0 || strcmp(id, "sound_is_playing") == 0) { *out = gml_sound_is_playing(args[0]); return true; }
+        if (strcmp(id, "sound_volume") == 0) { *out = gml_sound_volume(args[0], args[1]); return true; }
+        if (strcmp(id, "min") == 0) {
+            double m = args[0];
+            for (int k = 1; k < arg_count; k++) if (args[k] < m) m = args[k];
+            *out = m; return true;
+        }
+        if (strcmp(id, "max") == 0) {
+            double m = args[0];
+            for (int k = 1; k < arg_count; k++) if (args[k] > m) m = args[k];
+            *out = m; return true;
+        }
         if (strcmp(id, "keyboard_check") == 0) {
-            *out = gml_keyboard_check(arg); return true;
+            *out = gml_keyboard_check(args[0]); return true;
         }
         if (strcmp(id, "mouse_check_button") == 0) {
-            *out = gml_mouse_check_button(arg); return true;
+            *out = gml_mouse_check_button(args[0]); return true;
         }
         if (strcmp(id, "keyboard_check_pressed") == 0) {
-            *out = gml_keyboard_check_pressed(arg); return true;
+            *out = gml_keyboard_check_pressed(args[0]); return true;
         }
         if (strcmp(id, "place_free") == 0) {
-            /* place_free(x) only one arg – use self y */
-            *out = gml_place_free(arg, p->self ? p->self->y : 0); return true;
+            double py = (arg_count > 1) ? args[1] : (p->self ? p->self->y : 0);
+            *out = gml_place_free(args[0], py); return true;
+        }
+        if (strcmp(id, "place_meeting") == 0) {
+            *out = gml_place_meeting(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "position_meeting") == 0) {
+            *out = gml_position_meeting(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "point_in_rectangle") == 0) {
+            *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "instance_create") == 0) {
+            *out = gml_instance_create(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "instance_destroy") == 0) {
+            gml_instance_destroy(); *out = 1; return true;
+        }
+        if (strcmp(id, "instance_exists") == 0) {
+            *out = gml_instance_exists(args[0]); return true;
         }
         if (strcmp(id, "instance_number") == 0) {
-            *out = gml_instance_number(arg); return true;
+            *out = gml_instance_number(args[0]); return true;
         }
-        if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
+        if (strcmp(id, "ds_grid_create") == 0) {
+            *out = gml_ds_grid_create(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "ds_grid_destroy") == 0) {
+            *out = gml_ds_grid_destroy(args[0]); return true;
+        }
+        if (strcmp(id, "ds_grid_set") == 0) {
+            *out = gml_ds_grid_set(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "ds_grid_get") == 0) {
+            *out = gml_ds_grid_get(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "ds_grid_value_sum") == 0) {
+            *out = gml_ds_grid_value_sum(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "ds_grid_set_disk") == 0) {
+            *out = gml_ds_grid_set_disk(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "surface_create") == 0) {
+            *out = gml_surface_create(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "surface_free") == 0) {
+            *out = gml_surface_free(args[0]); return true;
+        }
+        if (strcmp(id, "surface_exists") == 0) {
+            *out = gml_surface_exists(args[0]); return true;
+        }
+        if (strcmp(id, "surface_get_width") == 0) {
+            *out = gml_surface_get_width(args[0]); return true;
+        }
+        if (strcmp(id, "surface_get_height") == 0) {
+            *out = gml_surface_get_height(args[0]); return true;
+        }
+        if (strcmp(id, "surface_set_target") == 0) {
+            *out = gml_surface_set_target(args[0]); return true;
+        }
+        if (strcmp(id, "surface_reset_target") == 0) {
+            *out = gml_surface_reset_target(); return true;
+        }
+        if (strcmp(id, "draw_surface") == 0) {
+            *out = gml_draw_surface(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "draw_clear") == 0) {
+            *out = gml_draw_clear(args[0]); return true;
+        }
+        if (strcmp(id, "draw_clear_alpha") == 0) {
+            *out = gml_draw_clear_alpha(args[0], args[1]); return true;
+        }
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id);
         return false;
     }
@@ -234,7 +352,6 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         if (!parse_expr(&p, &cond)) return false;
         if (!match(&p, ')')) return false;
         skip_ws(&p);
-        /* split then/else by finding " else " at top level (simple) */
         const char *rest = p.s + p.i;
         const char *else_pos = strstr(rest, " else ");
         char then_buf[256], else_buf[256];
@@ -248,6 +365,129 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         }
         if (cond == 0) return true;
         return gm82_gml_eval_stmt(rt, self, rest);
+    }
+
+    /* for (init; cond; step) body */
+    if (strcmp(id, "for") == 0) {
+        if (!match(&p, '(')) return false;
+        char init_str[512] = "", cond_str[512] = "", step_str[512] = "";
+        size_t j = 0;
+        int paren_depth = 0;
+        bool in_str = false;
+
+        while (p.i < p.n) {
+            char c = p.s[p.i];
+            if (c == '"' || c == '\'') in_str = !in_str;
+            if (!in_str) {
+                if (c == '(') paren_depth++;
+                else if (c == ')') paren_depth--;
+                else if (c == ';' && paren_depth == 0) break;
+            }
+            if (j + 1 < sizeof(init_str)) init_str[j++] = c;
+            p.i++;
+        }
+        init_str[j] = 0;
+        if (!match(&p, ';')) return false;
+
+        j = 0; paren_depth = 0; in_str = false;
+        while (p.i < p.n) {
+            char c = p.s[p.i];
+            if (c == '"' || c == '\'') in_str = !in_str;
+            if (!in_str) {
+                if (c == '(') paren_depth++;
+                else if (c == ')') paren_depth--;
+                else if (c == ';' && paren_depth == 0) break;
+            }
+            if (j + 1 < sizeof(cond_str)) cond_str[j++] = c;
+            p.i++;
+        }
+        cond_str[j] = 0;
+        if (!match(&p, ';')) return false;
+
+        j = 0; paren_depth = 0; in_str = false;
+        while (p.i < p.n) {
+            char c = p.s[p.i];
+            if (c == '"' || c == '\'') in_str = !in_str;
+            if (!in_str) {
+                if (c == '(') paren_depth++;
+                else if (c == ')') {
+                    if (paren_depth == 0) break;
+                    paren_depth--;
+                }
+            }
+            if (j + 1 < sizeof(step_str)) step_str[j++] = c;
+            p.i++;
+        }
+        step_str[j] = 0;
+        if (!match(&p, ')')) return false;
+
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+
+        if (init_str[0]) gm82_gml_eval_stmt(rt, self, init_str);
+        int max_iters = 10000;
+        while (max_iters-- > 0) {
+            double cval = 1;
+            if (cond_str[0]) gm82_gml_eval_expr(rt, self, cond_str, &cval);
+            if (cval == 0) break;
+            gm82_gml_eval_stmt(rt, self, body);
+            if (step_str[0]) gm82_gml_eval_stmt(rt, self, step_str);
+        }
+        return true;
+    }
+
+    /* repeat (count) body */
+    if (strcmp(id, "repeat") == 0) {
+        if (!match(&p, '(')) return false;
+        double count = 0;
+        if (!parse_expr(&p, &count)) return false;
+        if (!match(&p, ')')) return false;
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int num = (int)count;
+        for (int k = 0; k < num; k++) {
+            gm82_gml_eval_stmt(rt, self, body);
+        }
+        return true;
+    }
+
+    /* while (cond) body */
+    if (strcmp(id, "while") == 0) {
+        if (!match(&p, '(')) return false;
+        size_t cond_start = p.i;
+        double cond = 0;
+        if (!parse_expr(&p, &cond)) return false;
+        if (!match(&p, ')')) return false;
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int max_iters = 10000;
+        while (cond != 0 && max_iters-- > 0) {
+            gm82_gml_eval_stmt(rt, self, body);
+            p.i = cond_start;
+            if (!parse_expr(&p, &cond)) break;
+        }
+        return true;
+    }
+
+    /* with (target) body */
+    if (strcmp(id, "with") == 0) {
+        if (!match(&p, '(')) return false;
+        double target = 0;
+        if (!parse_expr(&p, &target)) return false;
+        if (!match(&p, ')')) return false;
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int32_t tgt_id = (int32_t)target;
+        if (rt) {
+            for (int k = 0; k < rt->instance_count; k++) {
+                gm82_instance *o = &rt->instances[k];
+                if (!o->alive) continue;
+                if (tgt_id == -1 || o->id == tgt_id || o->object_index == tgt_id) {
+                    gm82_gml_eval_stmt(rt, o, body);
+                }
+            }
+        }
+        return true;
     }
     if (!match(&p, '=')) {
         p.i = 0;

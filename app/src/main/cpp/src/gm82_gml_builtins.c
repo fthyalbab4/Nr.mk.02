@@ -265,8 +265,110 @@ void gml_draw_sprite(double sprite, double x, double y) {
 
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha) {
-    (void)sprite; (void)subimg; (void)x; (void)y;
-    (void)xscale; (void)yscale; (void)rot; (void)color; (void)alpha;
+    if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
+    int si = (int)sprite;
+    if (si < 0 || si >= g_rt->sprites->count) return;
+
+    int frame_idx = si;
+    if (g_rt->sprite_groups) {
+        int sub = (subimg < 0) ? (g_self ? g_self->image_index : 0) : (int)subimg;
+        frame_idx = gm82_sprite_resolve_frame(g_rt->sprite_groups, si, sub);
+    }
+    if (frame_idx < 0 || frame_idx >= g_rt->sprites->count) frame_idx = si;
+
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame_idx];
+    if (!fr->rgba || fr->width <= 0 || fr->height <= 0) return;
+
+    if (xscale == 0 || yscale == 0 || alpha <= 0.0) return;
+    if (alpha > 1.0) alpha = 1.0;
+
+    uint32_t col = (uint32_t)color;
+    uint8_t cr = col & 0xFF;
+    uint8_t cg = (col >> 8) & 0xFF;
+    uint8_t cb = (col >> 16) & 0xFF;
+
+    if (rot == 0.0) {
+        int dx0 = (int)x, dy0 = (int)y;
+        double abs_xs = fabs(xscale), abs_ys = fabs(yscale);
+        int dest_w = (int)(fr->width * abs_xs);
+        int dest_h = (int)(fr->height * abs_ys);
+        if (dest_w < 1) dest_w = 1;
+        if (dest_h < 1) dest_h = 1;
+
+        for (int dy = 0; dy < dest_h; dy++) {
+            int py = dy0 + dy;
+            if (py < 0 || py >= g_draw_h) continue;
+            int sy = (int)(dy / abs_ys);
+            if (sy >= fr->height) sy = fr->height - 1;
+
+            for (int dx = 0; dx < dest_w; dx++) {
+                int px = dx0 + dx;
+                if (px < 0 || px >= g_draw_w) continue;
+                int sx = (int)(dx / abs_xs);
+                if (sx >= fr->width) sx = fr->width - 1;
+
+                const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
+                if (s[3] == 0) continue;
+
+                uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+                double a = (s[3] / 255.0) * alpha;
+
+                uint8_t sr = (col == 0xFFFFFF) ? s[0] : (uint8_t)((s[0] * cr) / 255);
+                uint8_t sg = (col == 0xFFFFFF) ? s[1] : (uint8_t)((s[1] * cg) / 255);
+                uint8_t sb = (col == 0xFFFFFF) ? s[2] : (uint8_t)((s[2] * cb) / 255);
+
+                d[0] = (uint8_t)(d[0] * (1.0 - a) + sr * a);
+                d[1] = (uint8_t)(d[1] * (1.0 - a) + sg * a);
+                d[2] = (uint8_t)(d[2] * (1.0 - a) + sb * a);
+                d[3] = 255;
+            }
+        }
+    } else {
+        /* Rotated sprite rendering using inverse transformation matrix */
+        double rad = rot * M_PI / 180.0;
+        double cos_a = cos(rad), sin_a = sin(rad);
+        int orig_w = fr->width, orig_h = fr->height;
+        int half_w = (int)(orig_w * fabs(xscale) / 2.0);
+        int half_h = (int)(orig_h * fabs(yscale) / 2.0);
+
+        for (int dy = -half_h; dy <= half_h; dy++) {
+            int py = (int)y + dy;
+            if (py < 0 || py >= g_draw_h) continue;
+            for (int dx = -half_w; dx <= half_w; dx++) {
+                int px = (int)x + dx;
+                if (px < 0 || px >= g_draw_w) continue;
+
+                /* Unrotate & unscale back to sprite local space */
+                double lx = (dx * cos_a + dy * sin_a) / xscale + orig_w / 2.0;
+                double ly = (-dx * sin_a + dy * cos_a) / yscale + orig_h / 2.0;
+
+                int sx = (int)lx, sy = (int)ly;
+                if (sx < 0 || sx >= orig_w || sy < 0 || sy >= orig_h) continue;
+
+                const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)orig_w + (size_t)sx) * 4;
+                if (s[3] == 0) continue;
+
+                uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+                double a = (s[3] / 255.0) * alpha;
+
+                uint8_t sr = (col == 0xFFFFFF) ? s[0] : (uint8_t)((s[0] * cr) / 255);
+                uint8_t sg = (col == 0xFFFFFF) ? s[1] : (uint8_t)((s[1] * cg) / 255);
+                uint8_t sb = (col == 0xFFFFFF) ? s[2] : (uint8_t)((s[2] * cb) / 255);
+
+                d[0] = (uint8_t)(d[0] * (1.0 - a) + sr * a);
+                d[1] = (uint8_t)(d[1] * (1.0 - a) + sg * a);
+                d[2] = (uint8_t)(d[2] * (1.0 - a) + sb * a);
+                d[3] = 255;
+            }
+        }
+    }
+}
+
+double gml_event_user(double numb) {
+    if (!g_rt) return 0;
+    int ev = (int)numb;
+    gm82_runtime_event_user(g_rt, ev);
+    return 1;
 }
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
@@ -1268,8 +1370,10 @@ double gml_path_end(void) {
     return 1;
 }
 
-double gml_path_get_number(void) {
-    return g_paths ? (double)g_paths->count : 0;
+double gml_path_get_number(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0;
+    return (double)g_paths->items[idx].count;
 }
 
 void gm82_path_step_instance(gm82_instance *inst) {
@@ -1399,6 +1503,11 @@ void gml_draw_text_color(double x, double y, const char *str,
     g_draw_color = (uint32_t)c1;
     gml_draw_text(x, y, str);
     g_draw_color = old;
+}
+
+void gml_draw_text_ext(double x, double y, const char *str, double sep, double w) {
+    (void)sep; (void)w;
+    gml_draw_text(x, y, str);
 }
 
 #define GM82_SURFACE_MAX 32
@@ -2386,8 +2495,15 @@ static char g_win_caption[128] = "Game Runner";
 
 double gml_display_get_width(void) { return (double)g_win_w; }
 double gml_display_get_height(void) { return (double)g_win_h; }
-double gml_window_get_width(void) { return (double)g_win_w; }
-double gml_window_get_height(void) { return (double)g_win_h; }
+double gml_window_get_width(void) {
+    if (g_rt && g_rt->room_width > 0) return (double)g_rt->room_width;
+    return (double)g_win_w;
+}
+
+double gml_window_get_height(void) {
+    if (g_rt && g_rt->room_height > 0) return (double)g_rt->room_height;
+    return (double)g_win_h;
+}
 
 void gm82_window_set_size(int w, int h) {
     if (w > 0) g_win_w = w;
@@ -2709,8 +2825,8 @@ static bool precise_mask_overlap(const gm82_runtime *rt,
                                  int32_t spr2, double x2, double y2) {
     if (!rt || !rt->sprites) return false;
     if (spr1 < 0 || spr1 >= rt->sprites->count || spr2 < 0 || spr2 >= rt->sprites->count) return false;
-    const gm82_decoded_sprite *s1 = &rt->sprites->frames[spr1];
-    const gm82_decoded_sprite *s2 = &rt->sprites->frames[spr2];
+    const gm82_decoded_frame *s1 = &rt->sprites->frames[spr1];
+    const gm82_decoded_frame *s2 = &rt->sprites->frames[spr2];
     if (!s1->rgba || !s2->rgba || s1->width <= 0 || s1->height <= 0 || s2->width <= 0 || s2->height <= 0) return false;
 
     int ix1 = (int)(x1 > x2 ? x1 : x2);
@@ -2749,12 +2865,6 @@ double gml_place_meeting_precise(double x, double y, double object_index) {
 }
 
 /* GM82Core & Studio Math Extensions */
-double gml_angle_difference(double ang1, double ang2) {
-    double diff = fmod(ang1 - ang2 + 180.0, 360.0);
-    if (diff < 0.0) diff += 360.0;
-    return diff - 180.0;
-}
-
 double gml_angle_abs(double angle) {
     double a = fmod(angle, 360.0);
     if (a < 0.0) a += 360.0;
@@ -2815,36 +2925,8 @@ double gml_cosine(double a, double b, double amount) {
     return a * (1.0 - mu2) + b * mu2;
 }
 
-double gml_darccos(double x) {
-    if (x < -1.0) x = -1.0;
-    if (x > 1.0) x = 1.0;
-    return acos(x) * 180.0 / 3.14159265358979323846;
-}
-
-double gml_darcsin(double x) {
-    if (x < -1.0) x = -1.0;
-    if (x > 1.0) x = 1.0;
-    return asin(x) * 180.0 / 3.14159265358979323846;
-}
-
-double gml_darctan(double x) {
-    return atan(x) * 180.0 / 3.14159265358979323846;
-}
-
 double gml_darctan2(double y, double x) {
     return atan2(y, x) * 180.0 / 3.14159265358979323846;
-}
-
-double gml_dcos(double angle) {
-    return cos(angle * 3.14159265358979323846 / 180.0);
-}
-
-double gml_dsin(double angle) {
-    return sin(angle * 3.14159265358979323846 / 180.0);
-}
-
-double gml_dtan(double angle) {
-    return tan(angle * 3.14159265358979323846 / 180.0);
 }
 
 double gml_dsecant(double angle) {
@@ -3023,53 +3105,6 @@ double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2
     return -1.0;
 }
 
-double gml_ds_grid_multiply(double id, double x, double y, double val) {
-    int i = (int)id;
-    if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
-    int gx = (int)x, gy = (int)y;
-    if (gx >= 0 && gx < g_ds_grids[i].width && gy >= 0 && gy < g_ds_grids[i].height) {
-        g_ds_grids[i].data[gy * g_ds_grids[i].width + gx] *= val;
-        return 1.0;
-    }
-    return 0.0;
-}
-
-double gml_ds_grid_add(double id, double x, double y, double val) {
-    int i = (int)id;
-    if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
-    int gx = (int)x, gy = (int)y;
-    if (gx >= 0 && gx < g_ds_grids[i].width && gy >= 0 && gy < g_ds_grids[i].height) {
-        g_ds_grids[i].data[gy * g_ds_grids[i].width + gx] += val;
-        return 1.0;
-    }
-    return 0.0;
-}
-
-double gml_ds_grid_copy(double id, double source_id) {
-    int dst = (int)id, src = (int)source_id;
-    if (dst < 0 || dst >= MAX_DS_GRIDS || !g_ds_grid_active[dst] || !g_ds_grids[dst].data) return 0;
-    if (src < 0 || src >= MAX_DS_GRIDS || !g_ds_grid_active[src] || !g_ds_grids[src].data) return 0;
-    if (g_ds_grids[dst].width != g_ds_grids[src].width || g_ds_grids[dst].height != g_ds_grids[src].height) {
-        gml_ds_grid_resize(dst, g_ds_grids[src].width, g_ds_grids[src].height);
-    }
-    memcpy(g_ds_grids[dst].data, g_ds_grids[src].data, (size_t)(g_ds_grids[dst].width * g_ds_grids[dst].height) * sizeof(double));
-    return 1.0;
-}
-
-double gml_ds_list_shuffle(double id) {
-    int i = (int)id;
-    if (i < 0 || i >= MAX_DS_LISTS || !g_ds_list_active[i]) return 0;
-    ds_list *l = &g_ds_lists[i];
-    if (l->size <= 1) return 1;
-    for (int j = l->size - 1; j > 0; j--) {
-        int k = rand() % (j + 1);
-        double tmp = l->data[j];
-        l->data[j] = l->data[k];
-        l->data[k] = tmp;
-    }
-    return 1.0;
-}
-
 /* Tile subsystem */
 #define MAX_RUNTIME_TILES 1024
 typedef struct {
@@ -3201,37 +3236,17 @@ double gml_tile_set_region(double id, double left, double top, double width, dou
 }
 
 /* Window & View Helpers */
-double gml_window_get_width(void) {
-    if (g_rt) return (double)g_rt->room_width;
-    return 640.0;
-}
-
-double gml_window_get_height(void) {
-    if (g_rt) return (double)g_rt->room_height;
-    return 480.0;
-}
-
 double gml_window_set_size(double w, double h) {
     if (g_rt) {
         g_rt->room_width = (int32_t)w;
         g_rt->room_height = (int32_t)h;
     }
+    gm82_window_set_size((int)w, (int)h);
     return 1.0;
 }
 
 double gml_window_center(void) {
     return 1.0;
-}
-
-/* Timing functions */
-double gml_get_timer(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (double)ts.tv_sec * 1000000.0 + (double)ts.tv_nsec / 1000.0;
-}
-
-double gml_delta_time(void) {
-    return 1000000.0 / 30.0; /* 30 fps delta in microseconds */
 }
 
 /* Color functions & Blend modes */

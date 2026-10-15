@@ -66,6 +66,8 @@ typedef struct {
     int count;
 } gm82_decoded_room_list;
 
+void gm82_decoded_object_list_init(gm82_decoded_object_list *L);
+void gm82_decoded_room_list_init(gm82_decoded_room_list *L);
 void gm82_decoded_object_list_free(gm82_decoded_object_list *L);
 void gm82_decoded_room_list_free(gm82_decoded_room_list *L);
 

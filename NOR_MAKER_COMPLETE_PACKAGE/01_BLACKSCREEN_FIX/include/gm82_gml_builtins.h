@@ -91,6 +91,8 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
+double gml_draw_clear(double color);
+double gml_draw_clear_alpha(double color, double alpha);
 
 void gm82_particles_bind(gm82_particle_world *w);
 double gml_part_system_create(void);
@@ -139,6 +141,14 @@ double gml_ds_queue_tail(double id);
 double gml_ds_queue_size(double id);
 double gml_ds_queue_empty(double id);
 double gml_ds_queue_clear(double id);
+
+/* ds_grid */
+double gml_ds_grid_create(double w, double h);
+double gml_ds_grid_destroy(double id);
+double gml_ds_grid_set(double id, double x, double y, double val);
+double gml_ds_grid_get(double id, double x, double y);
+double gml_ds_grid_value_sum(double id, double x1, double y1, double x2, double y2);
+double gml_ds_grid_set_disk(double id, double cx, double cy, double r, double val);
 
 /* ds_priority (numeric priority, higher first) */
 double gml_ds_priority_create(void);
@@ -210,9 +220,21 @@ double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 double gml_lerp(double a, double b, double amount);
 double gml_clamp(double val, double minv, double maxv);
+double gml_approach(double val, double target, double max_amount);
 double gml_deg_to_rad(double deg);
+double gml_degtorad(double deg);
 double gml_rad_to_deg(double rad);
+double gml_radtodeg(double rad);
+double gml_mean(const double *vals, size_t count);
+double gml_median(double *vals, size_t count);
 double gml_angle_difference(double dest, double src);
+double gml_dsin(double deg);
+double gml_dcos(double deg);
+double gml_dtan(double deg);
+double gml_darcsin(double x);
+double gml_darccos(double x);
+double gml_darctan(double x);
+double gml_darctan2(double y, double x);
 
 double gml_display_get_width(void);
 double gml_display_get_height(void);
@@ -301,12 +323,22 @@ double gml_get_lives(void);
 void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
-/* Audio stubs – no device playback yet */
+/* Audio stubs */
 double gml_sound_play(double sound_index);
 double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
+double gml_sound_volume(double sound_index, double vol);
 
-/* ---- Math helpers common in GML ---- */
+/* ---- Math & Physics helpers ---- */
+double gml_sqr(double v);
+double gml_sqrt_fn(double v);
+double gml_power(double x, double y);
+double gml_frac(double v);
+double gml_dot_product(double x1, double y1, double x2, double y2);
+double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_move_bounce_solid(double adv);
+double gml_move_wrap(double hor, double vert, double margin);
+
 double gml_abs(double v);
 double gml_sign(double v);
 double gml_clamp(double v, double lo, double hi);
