@@ -42,6 +42,7 @@ void   gml_motion_set(double dir, double spd);
 void   gml_motion_add(double dir, double spd);
 void   gml_move_towards_point(double tx, double ty, double sp);
 double gml_point_distance(double x1, double y1, double x2, double y2);
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 
 /* ---- Collision (AABB via sprite size) ---- */
@@ -242,6 +243,11 @@ double gml_file_text_writeln(double id);
 double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
+
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
+void gml_file_find_close(void);
 
 double gml_date_current_datetime(void);
 double gml_date_get_year(double datetime);
