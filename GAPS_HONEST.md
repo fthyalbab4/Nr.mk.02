@@ -8,6 +8,7 @@
 | مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
 | High FPS & dynamic delta-time | دعم 60-90+ FPS وحساب `dt` ديناميكياً في `MainActivity` و `gm82_runtime` |
 | GML Math Builtins | إضافة `dsin`, `dcos`, `clamp`, `lerp`, `point_distance_3d`, `dot_product` |
+| Audio API Sync | إضافة stubs لـ `gml_sound_stop`, `gml_sound_isplaying`, `gml_sound_pitch`, `gml_sound_pan` وتزامن C engine |
 
 ## مفتوح (أولوية)
 | فجوة | ملاحظات |
