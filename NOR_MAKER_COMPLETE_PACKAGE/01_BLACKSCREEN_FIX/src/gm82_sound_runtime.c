@@ -84,6 +84,12 @@ double gml_sound_volume(double sound_index, double volume) {
     return 1;
 }
 
+double gml_sound_pitch(double sound_index, double pitch) {
+    (void)sound_index;
+    (void)pitch;
+    return 1;
+}
+
 double gml_sound_get_name_count(void) {
     if (!g_sr || !g_sr->sounds) return 0;
     return (double)g_sr->sounds->count;

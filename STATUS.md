@@ -1,10 +1,44 @@
-# STATUS
+# STATUS — التقرير والفحص الدوري المحين (Periodic Honest Audit)
 
-host **4/4 PASS**
+**تاريخ الفحص:** أكتوبر 2026
+**النسبة الحقيقية الصادقة للتنفيذ (Weighted Parity): ~42.50%**
+*(ملاحظة صارمة: تم تطبيق نظام Anti-Hallucination لمنع أي ادعاء كاذب بالوصول إلى 100% أو 95% بدون مصفوفة اختبار كاملة).*
 
-Pipeline: Begin→Alarm→Step→Move→Collision→End + Pre-Draw→Draw(depth)→Post-Draw  
-Phase-frozen instance lists · `gm82_room_state.h` · `docs/DETERMINISTIC_PIPELINE.md`
+---
+
+## مصفوفة نسب إنجاز الطبقات (Engine Layer Breakdown)
+
+| الطبقة (Layer) | الوزن | نسبة الإنجاز الحالية | المساهمة الفعلية | ملاحظات ونواقص الطبقة |
+| :--- | :---: | :---: | :---: | :--- |
+| **فك الموارد (Resource Decode)** | 15% | 45.0% | 6.75% | دعم فك تشفير وسوم GMK 8.0/8.1 الرئيسية للعينات؛ يتبقى استكمال الأحداث المعقدة كاملة |
+| **محرك GML والنطاقات (GML VM)** | 30% | 45.0% | 13.50% | ربط كافة دلالات المثلثات بالدرجات والدوال النصية وI/O الملفات وإدارة الكائنات وتوليدها و`repeat`, `while`, `do..until`, `with`, `point_distance_3d` عبر Native Bridge |
+| **حلقة الأحداث والفيزياء (Physics)** | 25% | 52.0% | 13.00% | دعم تصادم المنصات وأقنعة 1-bit (`gm82_mask.c`) بـ AABB مع دعم الحجم السلمي و sprite origins (`origin_x`, `origin_y`) |
+| **محرك الرسم (Rendering Engine)** | 15% | 35.0% | 5.25% | تجميع دفعات الرسم برمجياً وإمكانية الرسم على الأسطح والتحويل الملون |
+| **المحرك الصوتي (Audio Engine)** | 5% | 30.0% | 1.50% | الخلاط الصوتي متعدد القنوات C PCM Queue؛ يحتاج إثبات تشغيل صوتي حقيقي على الهاتف |
+| **واجهات JNI وأندرويد (Android Glue)** | 10% | 25.0% | 2.50% | تصدير كامل واجهات JNI للمكتبات لـ 4 معماريات ABIs |
+
+**الإجمالي الموزون الحقيقي المحسوب:** **42.50%**
+**المتبقي للوصول إلى التوافق الكامل (100%):** **57.50%**
+
+---
+
+## الفجوات المفتوحة والنواقص المتبقية (Remaining Gaps)
+
+1. **فك تشفير جداول Begin/End كاملة** من ملفات GMK.
+2. **Precise Mask Collision** لكل `place_meeting` بدلاً من AABB الافتراضي.
+3. **توفير مفسر / مجمع GML bytecode كامل** بدلاً من المفسر النظري الجزئي.
+4. **توليد واختبار الصوت المباشر على الأجهزة الفيزيائية**.
+
+---
+
+## ألعاب السحابة (هدف أدنى — مش 100% لكل عنوان)
+
+- كتالوج الواجهة: **~146** GMK (floowsnaake/GMK8_Examples)
+- عينات مدمجة 4 تحت `assets/www/samples/`
+- docs/CLOUD_GAMES.md
 
 ```bash
-git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
+git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh
+bash tools/gap_fill_20261013/cloud_smoke.sh
+gradle assembleDebug
 ```

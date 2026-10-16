@@ -518,8 +518,176 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(ceil(ARG_R(0)));
         return 1;
     }
+    if (strcmp(name, "dsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dcos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dcos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dtan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dtan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darcsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darcsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darccos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darccos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darctan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan2") == 0 && count >= 2) {
+        *out = gml_value_real(gml_darctan2(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "deg_to_rad") == 0 && count >= 1) {
+        *out = gml_value_real(gml_deg_to_rad(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "rad_to_deg") == 0 && count >= 1) {
+        *out = gml_value_real(gml_rad_to_deg(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dot_product") == 0 && count >= 4) {
+        *out = gml_value_real(gml_dot_product(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if (strcmp(name, "math_min") == 0 && count >= 2) {
+        *out = gml_value_real(gml_math_min(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "math_max") == 0 && count >= 2) {
+        *out = gml_value_real(gml_math_max(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "arctan2") == 0 && count >= 2) {
+        *out = gml_value_real(gml_arctan2(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "power") == 0 && count >= 2) {
+        *out = gml_value_real(gml_power(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "log10") == 0 && count >= 1) {
+        *out = gml_value_real(gml_log10(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "log2") == 0 && count >= 1) {
+        *out = gml_value_real(gml_log2(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "exp") == 0 && count >= 1) {
+        *out = gml_value_real(gml_exp(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "frac") == 0 && count >= 1) {
+        *out = gml_value_real(gml_frac(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "color_reverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_reverse(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "color_inverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_inverse(ARG_R(0)));
+        return 1;
+    }
+
+    /* Strings extended */
+    if (strcmp(name, "string_upper") == 0 && count >= 1) {
+        char buf[512];
+        gml_string_upper(ARG_S(0), buf, sizeof(buf));
+        *out = gml_value_string(buf);
+        return 1;
+    }
+    if (strcmp(name, "string_lower") == 0 && count >= 1) {
+        char buf[512];
+        gml_string_lower(ARG_S(0), buf, sizeof(buf));
+        *out = gml_value_string(buf);
+        return 1;
+    }
+    if (strcmp(name, "string_char_at") == 0 && count >= 2) {
+        *out = gml_value_real(gml_string_char_at(ARG_S(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "string_replace") == 0 && count >= 3) {
+        char buf[512];
+        gml_string_replace(ARG_S(0), ARG_S(1), ARG_S(2), buf, sizeof(buf));
+        *out = gml_value_string(buf);
+        return 1;
+    }
+    if (strcmp(name, "string_replace_all") == 0 && count >= 3) {
+        char buf[512];
+        gml_string_replace_all(ARG_S(0), ARG_S(1), ARG_S(2), buf, sizeof(buf));
+        *out = gml_value_string(buf);
+        return 1;
+    }
+    if (strcmp(name, "string_delete") == 0 && count >= 3) {
+        char buf[512];
+        gml_string_delete(ARG_S(0), ARG_R(1), ARG_R(2), buf, sizeof(buf));
+        *out = gml_value_string(buf);
+        return 1;
+    }
+    if (strcmp(name, "string_insert") == 0 && count >= 3) {
+        char buf[512];
+        gml_string_insert(ARG_S(0), ARG_S(1), ARG_R(2), buf, sizeof(buf));
+        *out = gml_value_string(buf);
+        return 1;
+    }
+
+    /* Files & Directories */
+    if (strcmp(name, "file_exists") == 0 && count >= 1) {
+        *out = gml_value_real(gml_file_exists(ARG_S(0)));
+        return 1;
+    }
+    if (strcmp(name, "file_delete") == 0 && count >= 1) {
+        *out = gml_value_real(gml_file_delete(ARG_S(0)));
+        return 1;
+    }
+    if (strcmp(name, "file_find_first") == 0 && count >= 2) {
+        const char *f = gml_file_find_first(ARG_S(0), ARG_R(1));
+        *out = gml_value_string(f ? f : "");
+        return 1;
+    }
+    if (strcmp(name, "file_find_next") == 0) {
+        const char *f = gml_file_find_next();
+        *out = gml_value_string(f ? f : "");
+        return 1;
+    }
+    if (strcmp(name, "file_find_close") == 0) {
+        gml_file_find_close();
+        *out = gml_value_real(1.0);
+        return 1;
+    }
 
     /* Collision & Instances */
+    if (strcmp(name, "instance_create") == 0 && count >= 3) {
+        *out = gml_value_real(gml_instance_create(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "instance_destroy") == 0) {
+        gml_instance_destroy();
+        *out = gml_value_real(1.0);
+        return 1;
+    }
+    if (strcmp(name, "instance_change") == 0 && count >= 2) {
+        *out = gml_value_real(gml_instance_change(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "instance_find") == 0 && count >= 2) {
+        *out = gml_value_real(gml_instance_find(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "instance_nearest") == 0 && count >= 3) {
+        *out = gml_value_real(gml_instance_nearest(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
     if (strcmp(name, "place_free") == 0 && count >= 2) {
         *out = gml_value_real(gml_place_free(ARG_R(0), ARG_R(1)));
         return 1;
@@ -594,6 +762,10 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "game_end") == 0) {
         *out = gml_value_real(gml_game_end());
+        return 1;
+    }
+    if (strcmp(name, "event_user") == 0 && count >= 1) {
+        *out = gml_value_real(gml_event_user(ARG_R(0)));
         return 1;
     }
 

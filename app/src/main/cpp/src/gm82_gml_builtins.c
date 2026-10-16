@@ -1,6 +1,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <time.h>
+#include <dirent.h>
+#include <fnmatch.h>
 #include "gm82_gml_builtins.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
@@ -104,6 +106,11 @@ void gml_move_towards_point(double tx, double ty, double sp) {
 double gml_point_distance(double x1, double y1, double x2, double y2) {
     double dx = x2 - x1, dy = y2 - y1;
     return sqrt(dx * dx + dy * dy);
+}
+
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+    return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 double gml_point_direction(double x1, double y1, double x2, double y2) {
@@ -265,8 +272,110 @@ void gml_draw_sprite(double sprite, double x, double y) {
 
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha) {
-    (void)sprite; (void)subimg; (void)x; (void)y;
-    (void)xscale; (void)yscale; (void)rot; (void)color; (void)alpha;
+    if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
+    int si = (int)sprite;
+    if (si < 0 || si >= g_rt->sprites->count) return;
+
+    int frame_idx = si;
+    if (g_rt->sprite_groups) {
+        int sub = (subimg < 0) ? (g_self ? g_self->image_index : 0) : (int)subimg;
+        frame_idx = gm82_sprite_resolve_frame(g_rt->sprite_groups, si, sub);
+    }
+    if (frame_idx < 0 || frame_idx >= g_rt->sprites->count) frame_idx = si;
+
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame_idx];
+    if (!fr->rgba || fr->width <= 0 || fr->height <= 0) return;
+
+    if (xscale == 0 || yscale == 0 || alpha <= 0.0) return;
+    if (alpha > 1.0) alpha = 1.0;
+
+    uint32_t col = (uint32_t)color;
+    uint8_t cr = col & 0xFF;
+    uint8_t cg = (col >> 8) & 0xFF;
+    uint8_t cb = (col >> 16) & 0xFF;
+
+    if (rot == 0.0) {
+        int dx0 = (int)x, dy0 = (int)y;
+        double abs_xs = fabs(xscale), abs_ys = fabs(yscale);
+        int dest_w = (int)(fr->width * abs_xs);
+        int dest_h = (int)(fr->height * abs_ys);
+        if (dest_w < 1) dest_w = 1;
+        if (dest_h < 1) dest_h = 1;
+
+        for (int dy = 0; dy < dest_h; dy++) {
+            int py = dy0 + dy;
+            if (py < 0 || py >= g_draw_h) continue;
+            int sy = (int)(dy / abs_ys);
+            if (sy >= fr->height) sy = fr->height - 1;
+
+            for (int dx = 0; dx < dest_w; dx++) {
+                int px = dx0 + dx;
+                if (px < 0 || px >= g_draw_w) continue;
+                int sx = (int)(dx / abs_xs);
+                if (sx >= fr->width) sx = fr->width - 1;
+
+                const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
+                if (s[3] == 0) continue;
+
+                uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+                double a = (s[3] / 255.0) * alpha;
+
+                uint8_t sr = (col == 0xFFFFFF) ? s[0] : (uint8_t)((s[0] * cr) / 255);
+                uint8_t sg = (col == 0xFFFFFF) ? s[1] : (uint8_t)((s[1] * cg) / 255);
+                uint8_t sb = (col == 0xFFFFFF) ? s[2] : (uint8_t)((s[2] * cb) / 255);
+
+                d[0] = (uint8_t)(d[0] * (1.0 - a) + sr * a);
+                d[1] = (uint8_t)(d[1] * (1.0 - a) + sg * a);
+                d[2] = (uint8_t)(d[2] * (1.0 - a) + sb * a);
+                d[3] = 255;
+            }
+        }
+    } else {
+        /* Rotated sprite rendering using inverse transformation matrix */
+        double rad = rot * M_PI / 180.0;
+        double cos_a = cos(rad), sin_a = sin(rad);
+        int orig_w = fr->width, orig_h = fr->height;
+        int half_w = (int)(orig_w * fabs(xscale) / 2.0);
+        int half_h = (int)(orig_h * fabs(yscale) / 2.0);
+
+        for (int dy = -half_h; dy <= half_h; dy++) {
+            int py = (int)y + dy;
+            if (py < 0 || py >= g_draw_h) continue;
+            for (int dx = -half_w; dx <= half_w; dx++) {
+                int px = (int)x + dx;
+                if (px < 0 || px >= g_draw_w) continue;
+
+                /* Unrotate & unscale back to sprite local space */
+                double lx = (dx * cos_a + dy * sin_a) / xscale + orig_w / 2.0;
+                double ly = (-dx * sin_a + dy * cos_a) / yscale + orig_h / 2.0;
+
+                int sx = (int)lx, sy = (int)ly;
+                if (sx < 0 || sx >= orig_w || sy < 0 || sy >= orig_h) continue;
+
+                const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)orig_w + (size_t)sx) * 4;
+                if (s[3] == 0) continue;
+
+                uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+                double a = (s[3] / 255.0) * alpha;
+
+                uint8_t sr = (col == 0xFFFFFF) ? s[0] : (uint8_t)((s[0] * cr) / 255);
+                uint8_t sg = (col == 0xFFFFFF) ? s[1] : (uint8_t)((s[1] * cg) / 255);
+                uint8_t sb = (col == 0xFFFFFF) ? s[2] : (uint8_t)((s[2] * cb) / 255);
+
+                d[0] = (uint8_t)(d[0] * (1.0 - a) + sr * a);
+                d[1] = (uint8_t)(d[1] * (1.0 - a) + sg * a);
+                d[2] = (uint8_t)(d[2] * (1.0 - a) + sb * a);
+                d[3] = 255;
+            }
+        }
+    }
+}
+
+double gml_event_user(double numb) {
+    if (!g_rt) return 0;
+    int ev = (int)numb;
+    gm82_runtime_event_user(g_rt, ev);
+    return 1;
 }
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
@@ -1994,9 +2103,10 @@ static gm82_buffer g_bufs[GM82_BUF_MAX];
 
 static size_t buf_type_size(int type) {
     switch (type) {
+        case 0: return 8;
         case 1: return 1; case 2: return 2; case 3: return 4;
         case 4: return 4; case 5: return 8; case 6: return 1;
-        default: return 1;
+        default: return 8;
     }
 }
 
@@ -2034,13 +2144,14 @@ static int buf_write_at(gm82_buffer *b, size_t pos, int type, double value) {
     if (pos + ts > b->capacity) return 0;
     uint8_t *p = b->data + pos;
     switch (type) {
+        case 0:
+        case 5: { double v = value; memcpy(p, &v, 8); break; }
         case 1: *p = (uint8_t)value; break;
         case 2: { int16_t v = (int16_t)value; memcpy(p, &v, 2); break; }
         case 3: { int32_t v = (int32_t)value; memcpy(p, &v, 4); break; }
         case 4: { float v = (float)value; memcpy(p, &v, 4); break; }
-        case 5: { double v = value; memcpy(p, &v, 8); break; }
         case 6: *p = value != 0 ? 1 : 0; break;
-        default: return 0;
+        default: { double v = value; memcpy(p, &v, 8); break; }
     }
     if (pos + ts > b->size) b->size = pos + ts;
     return 1;
@@ -2051,13 +2162,14 @@ static double buf_read_at(gm82_buffer *b, size_t pos, int type) {
     if (pos + ts > b->capacity) return 0;
     uint8_t *p = b->data + pos;
     switch (type) {
+        case 0:
+        case 5: { double v; memcpy(&v, p, 8); return v; }
         case 1: return (double)(*p);
         case 2: { int16_t v; memcpy(&v, p, 2); return (double)v; }
         case 3: { int32_t v; memcpy(&v, p, 4); return (double)v; }
         case 4: { float v; memcpy(&v, p, 4); return (double)v; }
-        case 5: { double v; memcpy(&v, p, 8); return v; }
         case 6: return *p ? 1.0 : 0.0;
-        default: return 0;
+        default: { double v; memcpy(&v, p, 8); return v; }
     }
 }
 
@@ -2302,6 +2414,74 @@ double gml_file_exists(const char *path) {
 double gml_file_delete(const char *path) {
     if (!path) return 0;
     return remove(path) == 0 ? 1.0 : 0.0;
+}
+
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize) {
+    if (!out || outsize == 0) return;
+    int t = (int)total;
+    int d = (int)dec;
+    if (t < 0) t = 0;
+    if (d < 0) d = 0;
+    snprintf(out, outsize, "%*.*f", t, d, val);
+}
+
+static DIR *g_file_find_dir = NULL;
+static char g_file_find_pattern[256] = "*";
+static char g_file_find_buf[512] = "";
+
+void gml_file_find_close(void) {
+    if (g_file_find_dir) {
+        closedir(g_file_find_dir);
+        g_file_find_dir = NULL;
+    }
+    g_file_find_buf[0] = '\0';
+}
+
+const char *gml_file_find_first(const char *mask, double attr) {
+    (void)attr;
+    gml_file_find_close();
+    if (!mask || mask[0] == '\0') mask = "*";
+
+    char dir_path[256] = ".";
+    const char *last_slash = strrchr(mask, '/');
+    if (!last_slash) last_slash = strrchr(mask, '\\');
+
+    if (last_slash) {
+        size_t dlen = (size_t)(last_slash - mask);
+        if (dlen >= sizeof(dir_path)) dlen = sizeof(dir_path) - 1;
+        strncpy(dir_path, mask, dlen);
+        dir_path[dlen] = '\0';
+        snprintf(g_file_find_pattern, sizeof(g_file_find_pattern), "%s", last_slash + 1);
+    } else {
+        snprintf(g_file_find_pattern, sizeof(g_file_find_pattern), "%s", mask);
+    }
+
+    if (g_file_find_pattern[0] == '\0') {
+        snprintf(g_file_find_pattern, sizeof(g_file_find_pattern), "*");
+    }
+
+    g_file_find_dir = opendir(dir_path[0] != '\0' ? dir_path : ".");
+    if (!g_file_find_dir) {
+        return "";
+    }
+
+    return gml_file_find_next();
+}
+
+const char *gml_file_find_next(void) {
+    if (!g_file_find_dir) return "";
+    struct dirent *ent;
+    while ((ent = readdir(g_file_find_dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+            continue;
+        }
+        if (fnmatch(g_file_find_pattern, ent->d_name, 0) == 0) {
+            snprintf(g_file_find_buf, sizeof(g_file_find_buf), "%s", ent->d_name);
+            return g_file_find_buf;
+        }
+    }
+    gml_file_find_close();
+    return "";
 }
 
 /* GM datetime is days since 1899-12-30; we use unix-ish simplified: seconds as real */
