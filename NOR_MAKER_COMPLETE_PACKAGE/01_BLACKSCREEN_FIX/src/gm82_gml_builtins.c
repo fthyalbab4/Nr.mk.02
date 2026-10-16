@@ -1640,7 +1640,8 @@ double gml_ini_close(void) {
         for (int i = 0; i < g_ini_count; i++) {
             if (strcmp(g_ini[i].section, last_sec) != 0) {
                 fprintf(f, "[%s]\n", g_ini[i].section);
-                snprintf(last_sec, sizeof(last_sec), "%s", g_ini[i].section);
+                strncpy(last_sec, g_ini[i].section, sizeof(last_sec) - 1);
+                last_sec[sizeof(last_sec) - 1] = '\0';
             }
             fprintf(f, "%s=%.10g\n", g_ini[i].key, g_ini[i].value);
         }
