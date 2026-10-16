@@ -380,21 +380,53 @@ double gml_event_user(double numb) {
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
-double gml_get_bbox_left(void) { return g_self ? g_self->x : 0; }
+double gml_get_bbox_left(void) {
+    if (!g_self) return 0;
+    int32_t xo = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        xo = g_rt->sprites->frames[g_self->sprite_index].xoffset;
+    double scale = g_self->image_xscale != 0 ? g_self->image_xscale : 1.0;
+    return g_self->x - xo * scale;
+}
 double gml_get_bbox_right(void) {
     if (!g_self) return 0;
-    int32_t sw = 16;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+    int32_t sw = 16, xo = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sw = g_rt->sprites->frames[g_self->sprite_index].width;
-    return g_self->x + sw - 1;
+        xo = g_rt->sprites->frames[g_self->sprite_index].xoffset;
+    }
+    double scale = g_self->image_xscale != 0 ? g_self->image_xscale : 1.0;
+    return g_self->x + (sw - 1 - xo) * scale;
 }
-double gml_get_bbox_top(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_top(void) {
+    if (!g_self) return 0;
+    int32_t yo = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        yo = g_rt->sprites->frames[g_self->sprite_index].yoffset;
+    double scale = g_self->image_yscale != 0 ? g_self->image_yscale : 1.0;
+    return g_self->y - yo * scale;
+}
 double gml_get_bbox_bottom(void) {
     if (!g_self) return 0;
-    int32_t sh = 16;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+    int32_t sh = 16, yo = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sh = g_rt->sprites->frames[g_self->sprite_index].height;
-    return g_self->y + sh - 1;
+        yo = g_rt->sprites->frames[g_self->sprite_index].yoffset;
+    }
+    double scale = g_self->image_yscale != 0 ? g_self->image_yscale : 1.0;
+    return g_self->y + (sh - 1 - yo) * scale;
+}
+double gml_get_sprite_xoffset(void) {
+    if (!g_self || !g_rt || !g_rt->sprites) return 0;
+    if (g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        return (double)g_rt->sprites->frames[g_self->sprite_index].xoffset;
+    return 0;
+}
+double gml_get_sprite_yoffset(void) {
+    if (!g_self || !g_rt || !g_rt->sprites) return 0;
+    if (g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        return (double)g_rt->sprites->frames[g_self->sprite_index].yoffset;
+    return 0;
 }
 void gml_set_x(double v) { if (g_self) g_self->x = v; }
 void gml_set_y(double v) { if (g_self) g_self->y = v; }
@@ -855,6 +887,18 @@ double gml_sprite_get_number(double sprite) {
     (void)sprite;
     /* multi-frame not fully tracked yet – report 1 if exists */
     return gml_sprite_exists(sprite);
+}
+double gml_sprite_get_xoffset(double sprite) {
+    if (!g_rt || !g_rt->sprites) return 0;
+    int si = (int)sprite;
+    if (si < 0 || si >= g_rt->sprites->count) return 0;
+    return (double)g_rt->sprites->frames[si].xoffset;
+}
+double gml_sprite_get_yoffset(double sprite) {
+    if (!g_rt || !g_rt->sprites) return 0;
+    int si = (int)sprite;
+    if (si < 0 || si >= g_rt->sprites->count) return 0;
+    return (double)g_rt->sprites->frames[si].yoffset;
 }
 double gml_sprite_exists(double sprite) {
     if (!g_rt || !g_rt->sprites) return 0;

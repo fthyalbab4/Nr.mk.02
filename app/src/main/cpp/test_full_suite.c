@@ -351,6 +351,8 @@ void test_user_events_and_drawing_suite(void) {
     memset(&frame, 0, sizeof(frame));
     frame.width = 8;
     frame.height = 8;
+    frame.xoffset = 2;
+    frame.yoffset = 3;
     frame.rgba = (uint8_t *)calloc(8 * 8 * 4, 1);
     for (int i = 0; i < 64; i++) {
         frame.rgba[i * 4 + 0] = 255;
@@ -370,6 +372,26 @@ void test_user_events_and_drawing_suite(void) {
     /* Test event_user(0) via gml_event_user */
     assert(gml_event_user(0.0) == 1.0);
     assert(inst->x == 60.0 && inst->y == 120.0);
+
+    /* Test Sprite Origin & Origin-Aware Bounding Box */
+    inst->sprite_index = 0;
+    inst->image_xscale = 1.0;
+    inst->image_yscale = 1.0;
+    assert(gml_sprite_get_xoffset(0.0) == 2.0);
+    assert(gml_sprite_get_yoffset(0.0) == 3.0);
+    assert(gml_get_sprite_xoffset() == 2.0);
+    assert(gml_get_sprite_yoffset() == 3.0);
+    assert(gml_get_bbox_left() == 58.0);
+    assert(gml_get_bbox_right() == 65.0);
+    assert(gml_get_bbox_top() == 117.0);
+    assert(gml_get_bbox_bottom() == 124.0);
+
+    inst->image_xscale = 2.0;
+    inst->image_yscale = 2.0;
+    assert(gml_get_bbox_left() == 56.0);
+    assert(gml_get_bbox_right() == 70.0);
+    assert(gml_get_bbox_top() == 114.0);
+    assert(gml_get_bbox_bottom() == 128.0);
 
     /* Test draw_sprite_ext soft rendering */
     uint8_t draw_buf[32 * 32 * 4];

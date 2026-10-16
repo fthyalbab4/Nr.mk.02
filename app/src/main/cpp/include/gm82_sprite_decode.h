@@ -13,6 +13,8 @@ typedef struct {
     char     name[64];
     int32_t  width;
     int32_t  height;
+    int32_t  xoffset;
+    int32_t  yoffset;
     uint8_t *rgba;       /* width*height*4, caller frees via list_free */
     size_t   rgba_size;
     uint8_t *bitmask;    /* (width * height + 7) / 8 bytes, 1 bit per pixel (alpha > 0) */
@@ -31,6 +33,7 @@ typedef struct {
     int32_t frame_start; /* index into frames[] */
     int32_t frame_count;
     int32_t width, height;
+    int32_t xoffset, yoffset;
 } gm82_sprite_group;
 
 typedef struct {
