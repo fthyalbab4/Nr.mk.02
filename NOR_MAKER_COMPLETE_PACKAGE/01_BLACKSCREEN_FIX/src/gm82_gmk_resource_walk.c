@@ -32,7 +32,7 @@ static uint32_t s_u32(gm_stream *s) {
 
 static int32_t s_i32(gm_stream *s) { return (int32_t)s_u32(s); }
 
-static char *s_str(gm_stream *s) {
+static char __attribute__((unused)) *s_str(gm_stream *s) {
     int32_t len = s_i32(s);
     if (len < 0 || (size_t)len > s->size - s->pos || len > 1024*1024) return NULL;
     char *out = (char *)malloc((size_t)len + 1);

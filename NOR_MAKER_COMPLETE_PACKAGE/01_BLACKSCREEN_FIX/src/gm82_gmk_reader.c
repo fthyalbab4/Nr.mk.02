@@ -18,7 +18,7 @@ static uint32_t read_u32(const uint8_t *p) {
            ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
-static int32_t read_i32(const uint8_t *p) {
+static int32_t __attribute__((unused)) read_i32(const uint8_t *p) {
     return (int32_t)read_u32(p);
 }
 

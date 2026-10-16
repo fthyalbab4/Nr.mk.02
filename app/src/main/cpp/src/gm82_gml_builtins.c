@@ -1,6 +1,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <time.h>
+#include <dirent.h>
+#include <fnmatch.h>
 #include "gm82_gml_builtins.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
@@ -104,6 +106,11 @@ void gml_move_towards_point(double tx, double ty, double sp) {
 double gml_point_distance(double x1, double y1, double x2, double y2) {
     double dx = x2 - x1, dy = y2 - y1;
     return sqrt(dx * dx + dy * dy);
+}
+
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+    return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 double gml_point_direction(double x1, double y1, double x2, double y2) {
@@ -2096,9 +2103,10 @@ static gm82_buffer g_bufs[GM82_BUF_MAX];
 
 static size_t buf_type_size(int type) {
     switch (type) {
+        case 0: return 8;
         case 1: return 1; case 2: return 2; case 3: return 4;
         case 4: return 4; case 5: return 8; case 6: return 1;
-        default: return 1;
+        default: return 8;
     }
 }
 
@@ -2136,13 +2144,14 @@ static int buf_write_at(gm82_buffer *b, size_t pos, int type, double value) {
     if (pos + ts > b->capacity) return 0;
     uint8_t *p = b->data + pos;
     switch (type) {
+        case 0:
+        case 5: { double v = value; memcpy(p, &v, 8); break; }
         case 1: *p = (uint8_t)value; break;
         case 2: { int16_t v = (int16_t)value; memcpy(p, &v, 2); break; }
         case 3: { int32_t v = (int32_t)value; memcpy(p, &v, 4); break; }
         case 4: { float v = (float)value; memcpy(p, &v, 4); break; }
-        case 5: { double v = value; memcpy(p, &v, 8); break; }
         case 6: *p = value != 0 ? 1 : 0; break;
-        default: return 0;
+        default: { double v = value; memcpy(p, &v, 8); break; }
     }
     if (pos + ts > b->size) b->size = pos + ts;
     return 1;
@@ -2153,13 +2162,14 @@ static double buf_read_at(gm82_buffer *b, size_t pos, int type) {
     if (pos + ts > b->capacity) return 0;
     uint8_t *p = b->data + pos;
     switch (type) {
+        case 0:
+        case 5: { double v; memcpy(&v, p, 8); return v; }
         case 1: return (double)(*p);
         case 2: { int16_t v; memcpy(&v, p, 2); return (double)v; }
         case 3: { int32_t v; memcpy(&v, p, 4); return (double)v; }
         case 4: { float v; memcpy(&v, p, 4); return (double)v; }
-        case 5: { double v; memcpy(&v, p, 8); return v; }
         case 6: return *p ? 1.0 : 0.0;
-        default: return 0;
+        default: { double v; memcpy(&v, p, 8); return v; }
     }
 }
 
@@ -2404,6 +2414,74 @@ double gml_file_exists(const char *path) {
 double gml_file_delete(const char *path) {
     if (!path) return 0;
     return remove(path) == 0 ? 1.0 : 0.0;
+}
+
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize) {
+    if (!out || outsize == 0) return;
+    int t = (int)total;
+    int d = (int)dec;
+    if (t < 0) t = 0;
+    if (d < 0) d = 0;
+    snprintf(out, outsize, "%*.*f", t, d, val);
+}
+
+static DIR *g_file_find_dir = NULL;
+static char g_file_find_pattern[256] = "*";
+static char g_file_find_buf[512] = "";
+
+void gml_file_find_close(void) {
+    if (g_file_find_dir) {
+        closedir(g_file_find_dir);
+        g_file_find_dir = NULL;
+    }
+    g_file_find_buf[0] = '\0';
+}
+
+const char *gml_file_find_first(const char *mask, double attr) {
+    (void)attr;
+    gml_file_find_close();
+    if (!mask || mask[0] == '\0') mask = "*";
+
+    char dir_path[256] = ".";
+    const char *last_slash = strrchr(mask, '/');
+    if (!last_slash) last_slash = strrchr(mask, '\\');
+
+    if (last_slash) {
+        size_t dlen = (size_t)(last_slash - mask);
+        if (dlen >= sizeof(dir_path)) dlen = sizeof(dir_path) - 1;
+        strncpy(dir_path, mask, dlen);
+        dir_path[dlen] = '\0';
+        snprintf(g_file_find_pattern, sizeof(g_file_find_pattern), "%s", last_slash + 1);
+    } else {
+        snprintf(g_file_find_pattern, sizeof(g_file_find_pattern), "%s", mask);
+    }
+
+    if (g_file_find_pattern[0] == '\0') {
+        snprintf(g_file_find_pattern, sizeof(g_file_find_pattern), "*");
+    }
+
+    g_file_find_dir = opendir(dir_path[0] != '\0' ? dir_path : ".");
+    if (!g_file_find_dir) {
+        return "";
+    }
+
+    return gml_file_find_next();
+}
+
+const char *gml_file_find_next(void) {
+    if (!g_file_find_dir) return "";
+    struct dirent *ent;
+    while ((ent = readdir(g_file_find_dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+            continue;
+        }
+        if (fnmatch(g_file_find_pattern, ent->d_name, 0) == 0) {
+            snprintf(g_file_find_buf, sizeof(g_file_find_buf), "%s", ent->d_name);
+            return g_file_find_buf;
+        }
+    }
+    gml_file_find_close();
+    return "";
 }
 
 /* GM datetime is days since 1899-12-30; we use unix-ish simplified: seconds as real */
