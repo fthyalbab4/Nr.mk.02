@@ -673,6 +673,25 @@ double gml_real(const char *s) {
     return strtod(s, NULL);
 }
 
+void gml_string_format(double val, double total, double dec, char *dst, size_t max_len) {
+    if (!dst || max_len == 0) return;
+    int tot = (int)total;
+    int d = (int)dec;
+    if (tot < 0) tot = 0;
+    if (d < 0) d = 0;
+    snprintf(dst, max_len, "%*.*f", tot, d, val);
+}
+
+double gml_colour_get_red(double col) { return (double)(((uint32_t)col) & 0xFF); }
+double gml_colour_get_green(double col) { return (double)((((uint32_t)col) >> 8) & 0xFF); }
+double gml_colour_get_blue(double col) { return (double)((((uint32_t)col) >> 16) & 0xFF); }
+double gml_make_colour_rgb(double r, double g, double b) {
+    uint32_t ur = (uint32_t)gml_clamp(r, 0, 255);
+    uint32_t ug = (uint32_t)gml_clamp(g, 0, 255);
+    uint32_t ub = (uint32_t)gml_clamp(b, 0, 255);
+    return (double)(ur | (ug << 8) | (ub << 16));
+}
+
 
 double gml_instance_change(double object_index, double perform_events) {
     (void)perform_events;
