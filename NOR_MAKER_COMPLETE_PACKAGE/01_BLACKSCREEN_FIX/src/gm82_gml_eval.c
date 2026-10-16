@@ -155,6 +155,11 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "sign") == 0) { *out = args[0] > 0 ? 1 : (args[0] < 0 ? -1 : 0); return true; }
         if (strcmp(id, "sqr") == 0) { *out = gml_sqr(args[0]); return true; }
         if (strcmp(id, "sqrt") == 0) { *out = gml_sqrt_fn(args[0]); return true; }
+        if (strcmp(id, "dsin") == 0) { *out = gml_dsin(args[0]); return true; }
+        if (strcmp(id, "dcos") == 0) { *out = gml_dcos(args[0]); return true; }
+        if (strcmp(id, "dtan") == 0) { *out = gml_dtan(args[0]); return true; }
+        if (strcmp(id, "degtorad") == 0 || strcmp(id, "deg_to_rad") == 0) { *out = gml_deg_to_rad(args[0]); return true; }
+        if (strcmp(id, "radtodeg") == 0 || strcmp(id, "rad_to_deg") == 0) { *out = gml_rad_to_deg(args[0]); return true; }
         if (strcmp(id, "power") == 0) { *out = gml_power(args[0], args[1]); return true; }
         if (strcmp(id, "frac") == 0) { *out = gml_frac(args[0]); return true; }
         if (strcmp(id, "dot_product") == 0) { *out = gml_dot_product(args[0], args[1], args[2], args[3]); return true; }
