@@ -9,3 +9,7 @@
 ## 2026-10-13 - Accessible Interactive Cards & Async Loading Feedback
 **Learning:** Container cards acting as clickable triggers in dynamically generated grids often omit `tabindex="0"`, `role="article"`, and `Enter`/`Space` keydown listeners, rendering them inaccessible to screen readers and keyboard users. Furthermore, async fetch triggers need an explicit `isCloudLoading` lock and button disabled state (`disabled = true`, `⏳ جاري التحميل...`) to prevent race conditions from repeated user clicks.
 **Action:** Always set `tabindex="0"`, `role="article"`, `aria-label`, and `onkeydown` listeners on interactive grid cards, and lock async button actions with visual loading indicators.
+
+## 2026-10-14 - Empty State Actionable CTA & Keyboard Search Recovery
+**Learning:** Empty search/filter states in modal card grids that only display static fallback text leave keyboard and screen-reader users isolated without an immediate mechanism to reset filters or restore the catalog without re-navigating through upper controls.
+**Action:** Always provide an actionable reset CTA button (`aria-label="إعادة ضبط البحث والتصفية"`) inside empty state blocks that clears query/category filters, re-renders the list, and restores keyboard focus to the search input.
