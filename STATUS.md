@@ -1,6 +1,6 @@
 # STATUS — التقرير والفحص الدوري المحين (Periodic Honest Audit)
 
-**تاريخ الفحص:** أكتوبر 2026
+**تاريخ الفحص:** 16 أكتوبر 2026
 **النسبة الحقيقية الصادقة للتنفيذ (Weighted Parity): ~36.75%**
 *(ملاحظة صارمة: تم تطبيق نظام Anti-Hallucination لمنع أي ادعاء كاذب بالوصول إلى 100% أو 95% بدون مصفوفة اختبار كاملة).*
 
@@ -29,6 +29,15 @@
 3. **ربط sprite origin بالحجم والمحاذاة داخل bbox** بشكل كامل.
 4. **توفير مفسر / مجمع GML bytecode كامل** بدلاً من المفسر النظري الجزئي.
 5. **توليد واختبار الصوت المباشر على الأجهزة الفيزيائية**.
+
+---
+
+## أدلة ودلائل مصفوفة الاختبار المرفقة (Audit Evidence)
+- `python3 run_full_verification.py`: **16/16 PASS (100%)**
+- `bash tools/run_host_pipeline.sh`: **4/4 GMK Samples PASS (100%)**
+- `node test_all_games_inlined.js`: **39 Scripts / 78 Actions PASS (100%)**
+- Native C `test_full_suite`: **PASS (Probe, GML VM, Builtins, ROM, Physics, User Events)**
+- Native C `test_guard`: **PASS (All Runtime Guard Tests Pass)**
 
 ---
 
