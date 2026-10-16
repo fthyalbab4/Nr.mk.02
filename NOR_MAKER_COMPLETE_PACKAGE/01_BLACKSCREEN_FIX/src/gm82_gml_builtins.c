@@ -109,6 +109,35 @@ double gml_point_direction(double x1, double y1, double x2, double y2) {
     return atan2(-(y2 - y1), (x2 - x1)) * 180.0 / M_PI;
 }
 
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+    return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+void gml_string_digits(const char *src, char *dst, size_t max_len) {
+    if (!dst || max_len == 0) return;
+    if (!src) { dst[0] = '\0'; return; }
+    size_t j = 0;
+    for (size_t i = 0; src[i] != '\0' && j + 1 < max_len; i++) {
+        if (src[i] >= '0' && src[i] <= '9') {
+            dst[j++] = src[i];
+        }
+    }
+    dst[j] = '\0';
+}
+
+void gml_string_letters(const char *src, char *dst, size_t max_len) {
+    if (!dst || max_len == 0) return;
+    if (!src) { dst[0] = '\0'; return; }
+    size_t j = 0;
+    for (size_t i = 0; src[i] != '\0' && j + 1 < max_len; i++) {
+        if ((src[i] >= 'a' && src[i] <= 'z') || (src[i] >= 'A' && src[i] <= 'Z')) {
+            dst[j++] = src[i];
+        }
+    }
+    dst[j] = '\0';
+}
+
 static bool sprite_size(gm82_runtime *rt, int32_t sprite_index, int32_t *w, int32_t *h) {
     *w = 16; *h = 16;
     if (!rt || !rt->sprites || sprite_index < 0 || sprite_index >= rt->sprites->count)
@@ -192,6 +221,18 @@ double gml_draw_clear(double color) {
     }
     return 1;
 }
+
+double gml_draw_clear_alpha(double color, double alpha) {
+    if (!g_draw_buf || g_draw_w <= 0 || g_draw_h <= 0) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+    uint8_t a = (uint8_t)(alpha <= 0 ? 0 : (alpha >= 1.0 ? 255 : (alpha * 255.0)));
+    size_t n = (size_t)g_draw_w * (size_t)g_draw_h;
+    for (size_t i = 0; i < n; i++) {
+        g_draw_buf[i*4]=r; g_draw_buf[i*4+1]=g; g_draw_buf[i*4+2]=b; g_draw_buf[i*4+3]=a;
+    }
+    return 1;
+}
 void gml_draw_sprite(double sprite, double x, double y) {
     if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
     int si = (int)sprite;
@@ -262,6 +303,16 @@ double gml_clamp(double v, double lo, double hi) {
     return v;
 }
 double gml_lerp(double a, double b, double t) { return a + (b - a) * t; }
+double gml_approach(double val, double target, double max_amount) {
+    if (val < target) {
+        val += max_amount;
+        if (val > target) val = target;
+    } else if (val > target) {
+        val -= max_amount;
+        if (val < target) val = target;
+    }
+    return val;
+}
 double gml_irandom(double n) {
     if (n <= 0) return 0;
     return (double)(rand() % ((int)n + 1));
@@ -278,10 +329,48 @@ double gml_room(void) {
     return g_rt ? (double)g_rt->current_room : 0;
 }
 
-/* Audio not implemented – return 0 / no-op without faking playback */
-double gml_sound_play(double sound_index) { (void)sound_index; return 0; }
-double gml_sound_stop(double sound_index) { (void)sound_index; return 0; }
-double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
+/* Math & Physics additions */
+double gml_sqr(double v) { return v * v; }
+double gml_sqrt_fn(double v) { return sqrt(v < 0 ? 0 : v); }
+double gml_power(double x, double y) { return pow(x, y); }
+double gml_frac(double v) { return v - floor(v); }
+double gml_dot_product(double x1, double y1, double x2, double y2) { return x1*x2 + y1*y2; }
+double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2) { return x1*x2 + y1*y2 + z1*z2; }
+
+double gml_move_bounce_solid(double adv) {
+    (void)adv;
+    if (!g_self || !g_rt) return 0;
+    double orig_x = g_self->x, orig_y = g_self->y;
+    double try_x = orig_x + g_self->hspeed;
+    double try_y = orig_y + g_self->vspeed;
+
+    bool h_col = !gml_place_free(try_x, orig_y);
+    bool v_col = !gml_place_free(orig_x, try_y);
+
+    if (h_col) g_self->hspeed = -g_self->hspeed;
+    if (v_col) g_self->vspeed = -g_self->vspeed;
+    if (!h_col && !v_col) {
+        g_self->hspeed = -g_self->hspeed;
+        g_self->vspeed = -g_self->vspeed;
+    }
+    return 1;
+}
+
+double gml_move_wrap(double hor, double vert, double margin) {
+    if (!g_self || !g_rt) return 0;
+    double rw = g_rt->room_width > 0 ? (double)g_rt->room_width : 640;
+    double rh = g_rt->room_height > 0 ? (double)g_rt->room_height : 480;
+    if (hor) {
+        if (g_self->x < -margin) g_self->x = rw + margin;
+        else if (g_self->x > rw + margin) g_self->x = -margin;
+    }
+    if (vert) {
+        if (g_self->y < -margin) g_self->y = rh + margin;
+        else if (g_self->y > rh + margin) g_self->y = -margin;
+    }
+    return 1;
+}
+
 
 double gml_room_restart(void) {
     if (!g_rt) return 0;
@@ -1248,6 +1337,85 @@ double gml_ds_priority_empty(double id) {
     return gml_ds_priority_size(id) == 0 ? 1.0 : 0.0;
 }
 
+#define GM82_DS_GRID_MAX 64
+typedef struct {
+    int used;
+    int w, h;
+    double *data;
+} gm82_ds_grid;
+static gm82_ds_grid g_ds_grids[GM82_DS_GRID_MAX];
+
+double gml_ds_grid_create(double w, double h) {
+    int gw = (int)w > 0 ? (int)w : 1;
+    int gh = (int)h > 0 ? (int)h : 1;
+    for (int i = 0; i < GM82_DS_GRID_MAX; i++) {
+        if (g_ds_grids[i].used) continue;
+        double *buf = (double *)calloc((size_t)gw * (size_t)gh, sizeof(double));
+        if (!buf) return -1;
+        g_ds_grids[i].used = 1;
+        g_ds_grids[i].w = gw;
+        g_ds_grids[i].h = gh;
+        g_ds_grids[i].data = buf;
+        return (double)i;
+    }
+    return -1;
+}
+
+double gml_ds_grid_destroy(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_GRID_MAX || !g_ds_grids[i].used) return 0;
+    if (g_ds_grids[i].data) free(g_ds_grids[i].data);
+    memset(&g_ds_grids[i], 0, sizeof(g_ds_grids[i]));
+    return 1;
+}
+
+double gml_ds_grid_set(double id, double x, double y, double val) {
+    int i = (int)id, gx = (int)x, gy = (int)y;
+    if (i < 0 || i >= GM82_DS_GRID_MAX || !g_ds_grids[i].used || !g_ds_grids[i].data) return 0;
+    if (gx < 0 || gx >= g_ds_grids[i].w || gy < 0 || gy >= g_ds_grids[i].h) return 0;
+    g_ds_grids[i].data[gy * g_ds_grids[i].w + gx] = val;
+    return 1;
+}
+
+double gml_ds_grid_get(double id, double x, double y) {
+    int i = (int)id, gx = (int)x, gy = (int)y;
+    if (i < 0 || i >= GM82_DS_GRID_MAX || !g_ds_grids[i].used || !g_ds_grids[i].data) return 0;
+    if (gx < 0 || gx >= g_ds_grids[i].w || gy < 0 || gy >= g_ds_grids[i].h) return 0;
+    return g_ds_grids[i].data[gy * g_ds_grids[i].w + gx];
+}
+
+double gml_ds_grid_value_sum(double id, double x1, double y1, double x2, double y2) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_GRID_MAX || !g_ds_grids[i].used || !g_ds_grids[i].data) return 0;
+    int minx = (int)x1 < 0 ? 0 : (int)x1;
+    int maxx = (int)x2 >= g_ds_grids[i].w ? g_ds_grids[i].w - 1 : (int)x2;
+    int miny = (int)y1 < 0 ? 0 : (int)y1;
+    int maxy = (int)y2 >= g_ds_grids[i].h ? g_ds_grids[i].h - 1 : (int)y2;
+    double sum = 0;
+    for (int y = miny; y <= maxy; y++) {
+        for (int x = minx; x <= maxx; x++) {
+            sum += g_ds_grids[i].data[y * g_ds_grids[i].w + x];
+        }
+    }
+    return sum;
+}
+
+double gml_ds_grid_set_disk(double id, double cx, double cy, double r, double val) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_GRID_MAX || !g_ds_grids[i].used || !g_ds_grids[i].data) return 0;
+    double rsq = r * r;
+    for (int y = 0; y < g_ds_grids[i].h; y++) {
+        for (int x = 0; x < g_ds_grids[i].w; x++) {
+            double dx = (double)x - cx;
+            double dy = (double)y - cy;
+            if (dx*dx + dy*dy <= rsq) {
+                g_ds_grids[i].data[y * g_ds_grids[i].w + x] = val;
+            }
+        }
+    }
+    return 1;
+}
+
 static gm82_mp_grid_world *g_mp = NULL;
 static double g_mp_path_x[256], g_mp_path_y[256];
 static int g_mp_path_n = 0;
@@ -1455,8 +1623,8 @@ double gml_ini_open(const char *path) {
         char *sp = key + strlen(key) - 1;
         while (sp > key && (*sp == ' ' || *sp == '\t')) { *sp = 0; sp--; }
         if (g_ini_count >= GM82_INI_MAX_KEYS) break;
-        strncpy(g_ini[g_ini_count].section, cur_sec, 63);
-        strncpy(g_ini[g_ini_count].key, key, 63);
+        snprintf(g_ini[g_ini_count].section, sizeof(g_ini[g_ini_count].section), "%s", cur_sec);
+        snprintf(g_ini[g_ini_count].key, sizeof(g_ini[g_ini_count].key), "%s", key);
         g_ini[g_ini_count].value = strtod(val, NULL);
         g_ini_count++;
     }
@@ -1472,7 +1640,7 @@ double gml_ini_close(void) {
         for (int i = 0; i < g_ini_count; i++) {
             if (strcmp(g_ini[i].section, last_sec) != 0) {
                 fprintf(f, "[%s]\n", g_ini[i].section);
-                strncpy(last_sec, g_ini[i].section, 63);
+                snprintf(last_sec, sizeof(last_sec), "%s", g_ini[i].section);
             }
             fprintf(f, "%s=%.10g\n", g_ini[i].key, g_ini[i].value);
         }
@@ -1678,6 +1846,13 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
+double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
+double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
+double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
+double gml_darcsin(double x) { return asin(x) * 180.0 / M_PI; }
+double gml_darccos(double x) { return acos(x) * 180.0 / M_PI; }
+double gml_darctan(double x) { return atan(x) * 180.0 / M_PI; }
+double gml_darctan2(double y, double x) { return atan2(y, x) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;

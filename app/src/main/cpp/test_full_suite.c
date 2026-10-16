@@ -6,6 +6,7 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_runtime.h"
 #include "gm82_actions.h"
+#include "gm82_input.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -281,7 +282,129 @@ void test_advanced_gml_and_physics_suite(void) {
     assert(gm82_action_execute_named(&rt, inst, "action_wrap") == true);
     assert(inst->x == (double)(rt.room_width - 10));
 
+    /* 8. Test place_meeting with temporary (x, y) coordinates */
+    inst->x = 100.0;
+    inst->y = 200.0;
+    gm82_instance *other_inst = gm82_runtime_instance_create(&rt, 1, 150.0, 200.0);
+    assert(other_inst != NULL);
+    gm82_gml_set_self(inst);
+    /* inst is at (100, 200). testing place_meeting at (140, 200) with obj_index 1 should collide */
+    assert(gml_place_meeting(140.0, 200.0, 1.0) == 1.0);
+    /* inst position must remain unchanged at (100, 200) */
+    assert(inst->x == 100.0 && inst->y == 200.0);
+    /* testing place_meeting at (50, 50) should return 0 */
+    assert(gml_place_meeting(50.0, 50.0, 1.0) == 0.0);
+
+    /* 9. Test keyboard_check (vk_nokey, vk_anykey, specific key) */
+    gm82_input_state input_st;
+    gm82_input_init(&input_st);
+    gm82_input_bind_global(&input_st);
+
+    /* Initially no keys down */
+    assert(gml_keyboard_check(0 /* vk_nokey */) == 1.0);
+    assert(gml_keyboard_check(1 /* vk_anykey */) == 0.0);
+    assert(gml_keyboard_check(37 /* vk_left */) == 0.0);
+
+    /* Press VK_LEFT (37) */
+    gm82_input_key_down(&input_st, 37);
+    assert(gml_keyboard_check(0 /* vk_nokey */) == 0.0);
+    assert(gml_keyboard_check(1 /* vk_anykey */) == 1.0);
+    assert(gml_keyboard_check(37 /* vk_left */) == 1.0);
+    assert(gml_keyboard_check_pressed(37 /* vk_left */) == 1.0);
+    assert(gml_keyboard_check_pressed(1 /* vk_anykey */) == 1.0);
+    assert(gml_keyboard_check_pressed(0 /* vk_nokey */) == 0.0);
+
+    /* Release VK_LEFT (37) */
+    gm82_input_key_up(&input_st, 37);
+    assert(gml_keyboard_check(0 /* vk_nokey */) == 1.0);
+    assert(gml_keyboard_check(1 /* vk_anykey */) == 0.0);
+    assert(gml_keyboard_check(37 /* vk_left */) == 0.0);
+    assert(gml_keyboard_check_released(37 /* vk_left */) == 1.0);
+    assert(gml_keyboard_check_released(1 /* vk_anykey */) == 1.0);
+    assert(gml_keyboard_check_released(0 /* vk_nokey */) == 0.0);
+
     printf("[PASS] Advanced GML, Physics & DnD Actions Suite\n");
+}
+
+void test_user_events_and_drawing_suite(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+
+    gm82_decoded_object_list obj_list;
+    memset(&obj_list, 0, sizeof(obj_list));
+    gm82_decoded_object obj;
+    memset(&obj, 0, sizeof(obj));
+    strncpy(obj.name, "obj_test_user", sizeof(obj.name));
+    obj.sprite_index = 0;
+    obj.event_count = 1;
+
+    obj.events[0].main_type = 7; /* User Event */
+    obj.events[0].event_numb = 0; /* Event User 0 */
+    obj.events[0].code_snippet = "x += 50; y += 100;";
+
+    obj_list.count = 1;
+    obj_list.items = &obj;
+
+    gm82_decoded_sprite_list spr_list;
+    memset(&spr_list, 0, sizeof(spr_list));
+    gm82_decoded_frame frame;
+    memset(&frame, 0, sizeof(frame));
+    frame.width = 8;
+    frame.height = 8;
+    frame.xoffset = 2;
+    frame.yoffset = 3;
+    frame.rgba = (uint8_t *)calloc(8 * 8 * 4, 1);
+    for (int i = 0; i < 64; i++) {
+        frame.rgba[i * 4 + 0] = 255;
+        frame.rgba[i * 4 + 3] = 255;
+    }
+    spr_list.count = 1;
+    spr_list.frames = &frame;
+
+    gm82_runtime_bind_assets(&rt, &obj_list, &spr_list, NULL, NULL, NULL);
+
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 20.0);
+    assert(inst != NULL);
+
+    gm82_gml_set_runtime(&rt);
+    gm82_gml_set_self(inst);
+
+    /* Test event_user(0) via gml_event_user */
+    assert(gml_event_user(0.0) == 1.0);
+    assert(inst->x == 60.0 && inst->y == 120.0);
+
+    /* Test Sprite Origin & Origin-Aware Bounding Box */
+    inst->sprite_index = 0;
+    inst->image_xscale = 1.0;
+    inst->image_yscale = 1.0;
+    assert(gml_sprite_get_xoffset(0.0) == 2.0);
+    assert(gml_sprite_get_yoffset(0.0) == 3.0);
+    assert(gml_get_sprite_xoffset() == 2.0);
+    assert(gml_get_sprite_yoffset() == 3.0);
+    assert(gml_get_bbox_left() == 58.0);
+    assert(gml_get_bbox_right() == 65.0);
+    assert(gml_get_bbox_top() == 117.0);
+    assert(gml_get_bbox_bottom() == 124.0);
+
+    inst->image_xscale = 2.0;
+    inst->image_yscale = 2.0;
+    assert(gml_get_bbox_left() == 56.0);
+    assert(gml_get_bbox_right() == 70.0);
+    assert(gml_get_bbox_top() == 114.0);
+    assert(gml_get_bbox_bottom() == 128.0);
+
+    /* Test draw_sprite_ext soft rendering */
+    uint8_t draw_buf[32 * 32 * 4];
+    memset(draw_buf, 0, sizeof(draw_buf));
+    gm82_draw_set_target(draw_buf, 32, 32);
+
+    gml_draw_sprite_ext(0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0xFFFFFF, 1.0);
+    /* Pixel (0,0) and (1,1) in destination buffer should be red (255, 0, 0, 255) */
+    assert(draw_buf[0] == 255);
+    assert(draw_buf[3] == 255);
+
+    free(frame.rgba);
+    printf("[PASS] User Events & Extended Sprite Drawing Suite\n");
 }
 
 int main(void) {
@@ -291,6 +414,7 @@ int main(void) {
     test_gml_builtins_suite();
     test_retro_rom_suite();
     test_advanced_gml_and_physics_suite();
+    test_user_events_and_drawing_suite();
     printf("--- All Native Host Tests Passed! ---\n");
     return 0;
 }

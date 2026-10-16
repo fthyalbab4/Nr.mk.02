@@ -13,6 +13,7 @@
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
+#include "gm82_sound_runtime.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -41,6 +42,7 @@ void   gml_motion_set(double dir, double spd);
 void   gml_motion_add(double dir, double spd);
 void   gml_move_towards_point(double tx, double ty, double sp);
 double gml_point_distance(double x1, double y1, double x2, double y2);
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 
 /* ---- Collision (AABB via sprite size) ---- */
@@ -69,6 +71,10 @@ double gml_distance_to_point(double px, double py);
 double gml_sprite_get_width(double sprite);
 double gml_sprite_get_height(double sprite);
 double gml_sprite_get_number(double sprite);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
+double gml_get_sprite_xoffset(void);
+double gml_get_sprite_yoffset(void);
 double gml_sprite_exists(double sprite);
 double gml_object_exists(double object_index);
 double gml_object_get_sprite(double object_index);
@@ -98,6 +104,7 @@ double gml_draw_background_tiled(double bg, double x, double y);
 double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 void gml_draw_text(double x, double y, const char *str);
 void gml_draw_text_color(double x, double y, const char *str, double c1, double c2, double c3, double c4);
+void gml_draw_text_ext(double x, double y, const char *str, double sep, double w);
 
 /* Surfaces (CPU framebuffer targets) */
 double gml_surface_create(double w, double h);
@@ -241,6 +248,11 @@ double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
 
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
+void gml_file_find_close(void);
+
 double gml_date_current_datetime(void);
 double gml_date_get_year(double datetime);
 double gml_date_get_month(double datetime);
@@ -330,7 +342,7 @@ double gml_instance_activate_object(double object_index);
 void gm82_path_bind(gm82_path_list *paths);
 double gml_path_start(double path_index, double speed, double end_action, double absolute);
 double gml_path_end(void);
-double gml_path_get_number(void);
+double gml_path_get_number(double ind);
 void gm82_path_step_instance(gm82_instance *inst);
 void gm82_timeline_bind(gm82_timeline_list *tls);
 double gml_timeline_start(double timeline_index, double position, double step, double direction);
@@ -338,6 +350,7 @@ double gml_timeline_stop(void);
 void gm82_timeline_step_instance(gm82_runtime *rt, gm82_instance *inst);
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha);
+double gml_event_user(double numb);
 
 /* ---- Built-in variable access on self ---- */
 double gml_get_x(void);
@@ -382,9 +395,6 @@ void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
 /* Audio stubs – no device playback yet */
-double gml_sound_play(double sound_index);
-double gml_sound_stop(double sound_index);
-double gml_sound_isplaying(double sound_index);
 
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);

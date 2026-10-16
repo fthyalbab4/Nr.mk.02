@@ -1,6 +1,6 @@
 # NOR Maker → GM82 100% Parity Master Plan
 
-**تاريخ:** 2026-09-13
+**تاريخ:** 2026-09-13  
 **الهدف:** محاكاة كاملة لألعاب Game Maker 8.2 على Android بنفس سلوك النسخة الأصلية على ويندوز.
 
 ---
@@ -14,7 +14,7 @@
 | المرجع الرسمي | https://github.com/GM82Project + https://gm82.cherry-treehouse.com |
 | المرجع التقني للـ format | LateralGM + OpenGMK + strings داخل libgm82_android.so |
 
-أي ادعاء "خلص 100%" الآن = هلوسة.
+أي ادعاء "خلص 100%" الآن = هلوسة.  
 الخطة دي متتابعة وقابلة للقياس.
 
 ---

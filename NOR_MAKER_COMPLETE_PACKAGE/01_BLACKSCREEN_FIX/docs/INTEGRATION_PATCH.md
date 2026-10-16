@@ -64,7 +64,7 @@ target_include_directories(gm82_android PRIVATE include)
 
 ## Next concrete coding tasks (in order)
 
-1. **Finish sprite payload decoder** inside `gm82_materialize_sprites`
+1. **Finish sprite payload decoder** inside `gm82_materialize_sprites`  
    – walk the GMK sprite chunk, decompress the frames (zlib / proprietary), allocate `gl_textures[]`, mark status = DECODED.
 
 2. **Finish background payload decoder** the same way.

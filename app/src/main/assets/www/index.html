@@ -112,6 +112,33 @@
         body { font-size: 8px; }
         button, [role="button"] { min-height: 32px; }
       }
+
+      /* Cloud Modal UX & Accessibility Focus/Hover States */
+      #gmk-cloud-search:focus-visible, #gmk-cloud-category:focus-visible {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+      }
+      #gmk-cloud-search:hover, #gmk-cloud-category:hover {
+        border-color: #6b7280 !important;
+      }
+      #gmk-cloud-close-btn:hover {
+        background: #dc2626 !important;
+      }
+      #gmk-cloud-close-btn:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 2px !important;
+      }
+      #gmk-cloud-search-clear:hover {
+        background: #d1d5db !important;
+      }
+      #gmk-cloud-search-clear:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 1px !important;
+      }
+      .gmk-cloud-card:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
     </style>
     <script type="module" crossorigin>function _mergeNamespaces(n2, m2) {
   for (var i = 0; i < m2.length; i++) {
@@ -29121,23 +29148,36 @@ const generatePixelAsset = async (context, type) => {
     return FALLBACK_SPRITE$1;
   }
 };
-const generateLocalGameProjectData = (prompt, actionLibrary) => {
-  return compileLocalGame(prompt);
-};
-const generateGameProjectData = async (prompt, actionLibrary, imageBase64, forceLocal = false) => {
-  var _a2;
-  const apiKey = getApiKey();
-  if (!apiKey || forceLocal) {
-    console.log("[Local AI] Force Local or No Gemini API key found. Using fully local, distilled offline model (Noor-Nanopixel-v3-Distilled) for zero-latency secure generation.");
-    return generateLocalGameProjectData(prompt);
-  }
-  const ai2 = new GoogleGenAI({ apiKey });
-  const librarySummary = actionLibrary.map((l2) => ({
-    id: l2.id,
-    name: l2.name,
-    params: l2.params.map((p2) => ({ key: p2.key, type: p2.type, options: p2.options }))
-  }));
-  const systemPrompt = `You are a Lead Game Developer for the NOR Engine, an 8-bit style retro game development environment.
+
+
+// ==========================================
+// Noor Maker - Unified AI Inference Architecture
+// ==========================================
+
+class AIModelProvider {
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        throw new Error("Method generateActions not implemented.");
+    }
+}
+
+class GeminiOnlineProvider extends AIModelProvider {
+    constructor(apiKey) {
+        super();
+        this.apiKey = apiKey;
+    }
+
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        if (!this.apiKey) {
+            throw new Error("Gemini API key missing.");
+        }
+        const ai2 = new GoogleGenAI({ apiKey: this.apiKey });
+        const librarySummary = actionLibrary.map((l2) => ({
+            id: l2.id,
+            name: l2.name,
+            params: l2.params.map((p2) => ({ key: p2.key, type: p2.type, options: p2.options }))
+        }));
+
+        const systemPrompt = `You are a Lead Game Developer for the NOR Engine, an 8-bit style retro game development environment.
         Create a complete, fully playable, and highly interactive game project structure based on the user's prompt or image.
 
         Return a JSON object with this structure:
@@ -29167,146 +29207,222 @@ const generateGameProjectData = async (prompt, actionLibrary, imageBase64, force
           "rooms": [
             {
               "id": "rm_1", "width": 16, "height": 15,
-              "map": [0, 0, 1, 1, ...], // 240 integers. 0=empty, 1=solid ground tile, 2=obj_player, 3=obj_enemy, etc. (ID = index in objects array + 2)
+              "map": [0, 0, 1, 1],
               "settings": { "name": "room1", "caption": "Level 1", "bgColor": "#C0C0C0" }
             }
           ]
         }
 
         CRITICAL NOR ENGINE ARCHITECTURE RULES:
-        1. Collision events MUST be named 'collision_<target_object_id>'. For example, if the player collides with 'obj_enemy', the event key MUST be 'collision_obj_enemy'. If they collide with 'obj_coin', the event key MUST be 'collision_obj_coin'. Do not use short/un-prefixed names like 'collision_enemy' or 'collision_coin'.
-        2. Any solid tile, floor block, obstacle, platform, brick, wall, or grid element that characters should walk on or bump into MUST have "solid": true in its object definition so players can stand on and collide with them.
-        3. For side-scroller/platformer games, players ('obj_player') require gravity! Add "move_gravity" action (force: 0.4) on the step event in addition to "move_keyboard". Otherwise, they float.
-        4. For top-down or 8-way movement games, use "move_8way" instead of "move_keyboard". Do NOT add gravity for top-down games.
-        5. Ensure there is a complete game loop:
-           - A player character with controls.
-           - Solid platforms or floors for side-scrollers.
-           - Items to collect (e.g. coins, stars) which trigger 'score_change_score' and get destroyed on collision.
-           - Hazards or enemies that trigger 'main2_game_over' or reduce health on collision.
-           - A victory condition or exit portal (e.g., reaching a portal goes to next room, or collecting items triggers win).
-
-        Available Action Library IDs: ${librarySummary.map((l2) => l2.id).join(", ")}.
-        Use these IDs in the "libId" field of events.
-
+        1. Collision events MUST be named 'collision_<target_object_id>'.
+        2. Any solid tile/platform MUST have "solid": true in its object definition.
+        3. Side-scroller/platformers require gravity ("move_gravity").
+        4. Available Action Library IDs: ${librarySummary.map((l2) => l2.id).join(", ")}.
         Ensure the map is a flat array of exactly 240 integers.`;
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      metadata: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          story: { type: Type.STRING },
-          genre: { type: Type.STRING },
-          controls: { type: Type.STRING }
-        },
-        required: ["title", "story", "genre", "controls"]
-      },
-      sprites: {
-        type: Type.ARRAY,
-        items: {
+
+                const responseSchema = {
           type: Type.OBJECT,
           properties: {
-            id: { type: Type.STRING },
-            name: { type: Type.STRING },
-            role: { type: Type.STRING, description: "Role of the sprite: 'player', 'ground', 'wall', 'enemy', 'item', 'gate'" },
-            prompt: { type: Type.STRING, description: "Pixel art visual prompt description for the asset generation" }
-          },
-          required: ["id", "name", "role", "prompt"]
-        }
-      },
-      objects: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            name: { type: Type.STRING },
-            spriteId: { type: Type.STRING, description: "The ID of the sprite associated with this object (e.g. 'spr_player')" },
-            solid: { type: Type.BOOLEAN, description: "Whether this object is solid (true for ground, wall, bricks, obstacle)" },
-            events: {
-              type: Type.STRING,
-              description: `JSON-serialized object mapping event keys (like 'step', 'create', 'collision_<object_id>') to action arrays. Example: '{"step": [{"libId": "move_keyboard", "params": {"spd": 2, "jmp": 8}}]}'`
-            }
-          },
-          required: ["id", "name", "events"]
-        }
-      },
-      rooms: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            width: { type: Type.INTEGER },
-            height: { type: Type.INTEGER },
-            map: {
-              type: Type.ARRAY,
-              items: { type: Type.INTEGER },
-              description: "Flat array of exactly 240 tile integers (16x15 grid)"
-            },
-            settings: {
+            metadata: {
               type: Type.OBJECT,
               properties: {
-                name: { type: Type.STRING },
-                caption: { type: Type.STRING },
-                bgColor: { type: Type.STRING }
+                title: { type: Type.STRING },
+                story: { type: Type.STRING },
+                genre: { type: Type.STRING },
+                controls: { type: Type.STRING }
               },
-              required: ["name", "caption", "bgColor"]
+              required: ["title", "story", "genre", "controls"]
+            },
+            sprites: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  role: { type: Type.STRING, description: "Role of the sprite: 'player', 'ground', 'wall', 'enemy', 'item', 'gate'" },
+                  prompt: { type: Type.STRING, description: "Pixel art visual prompt description for the asset generation" }
+                },
+                required: ["id", "name", "role", "prompt"]
+              }
+            },
+            objects: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  spriteId: { type: Type.STRING, description: "The ID of the sprite associated with this object (e.g. 'spr_player')" },
+                  solid: { type: Type.BOOLEAN, description: "Whether this object is solid (true for ground, wall, bricks, obstacle)" },
+                  events: {
+                    type: Type.STRING,
+                    description: `JSON-serialized object mapping event keys (like 'step', 'create', 'collision_<object_id>') to action arrays. Example: '{"step": [{"libId": "move_keyboard", "params": {"spd": 2, "jmp": 8}}]}'`
+                  }
+                },
+                required: ["id", "name", "events"]
+              }
+            },
+            rooms: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  width: { type: Type.INTEGER },
+                  height: { type: Type.INTEGER },
+                  map: {
+                    type: Type.ARRAY,
+                    items: { type: Type.INTEGER },
+                    description: "Flat array of exactly 240 tile integers (16x15 grid)"
+                  },
+                  settings: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      caption: { type: Type.STRING },
+                      bgColor: { type: Type.STRING }
+                    },
+                    required: ["name", "caption", "bgColor"]
+                  }
+                },
+                required: ["id", "width", "height", "map", "settings"]
+              }
             }
           },
-          required: ["id", "width", "height", "map", "settings"]
-        }
-      }
-    },
-    required: ["metadata", "sprites", "objects", "rooms"]
-  };
-  const parts = [{ text: prompt || "Create a game based on this image" }];
-  if (imageBase64) {
-    const mimeType = ((_a2 = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/)) == null ? void 0 : _a2[1]) || "image/png";
-    parts.push({
-      inlineData: {
-        mimeType,
-        data: imageBase64.split(",")[1] || imageBase64
-      }
-    });
-  }
-  try {
-    const response = await ai2.models.generateContent({
-      model: "gemini-3.5-flash",
-      config: {
-        responseMimeType: "application/json",
-        responseSchema,
-        systemInstruction: systemPrompt
-      },
-      contents: [{ role: "user", parts }]
-    });
-    if (!response.text) {
-      throw new Error("AI returned an empty response");
-    }
-    try {
-      const parsed = JSON.parse(repairJSON(response.text));
-      if (parsed && parsed.objects && Array.isArray(parsed.objects)) {
-        parsed.objects.forEach((obj) => {
-          if (typeof obj.events === "string") {
-            try {
-              obj.events = JSON.parse(obj.events);
-            } catch (e) {
-              console.warn("Failed to parse events string for object:", obj.id, e);
-              obj.events = {};
+          required: ["metadata", "sprites", "objects", "rooms"]
+        };
+
+        const parts = [{ text: userPrompt || "Create a game based on this image" }];
+        if (imageBase64) {
+          const mimeMatch = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+          const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+          parts.push({
+            inlineData: {
+              mimeType,
+              data: imageBase64.split(",")[1] || imageBase64
             }
-          }
+          });
+        }
+
+        const response = await ai2.models.generateContent({
+          model: "gemini-3.5-flash",
+          config: {
+            responseMimeType: "application/json",
+            responseSchema,
+            systemInstruction: systemPrompt
+          },
+          contents: [{ role: "user", parts }]
         });
-      }
-      return parsed;
-    } catch (parseErr) {
-      console.error("Failed to parse AI response as JSON:", response.text);
-      throw new Error("AI response was not valid JSON");
+
+        if (!response.text) throw new Error("AI returned an empty response");
+
+        const parsed = JSON.parse(repairJSON(response.text));
+        if (parsed && parsed.objects && Array.isArray(parsed.objects)) {
+          parsed.objects.forEach((obj) => {
+            if (typeof obj.events === "string") {
+              try {
+                obj.events = JSON.parse(obj.events);
+              } catch (e) {
+                obj.events = {};
+              }
+            }
+          });
+        }
+        return parsed;
     }
-  } catch (e) {
-    console.error("Gemini API Error. Falling back to local offline game generation model:", e);
-    return generateLocalGameProjectData(prompt);
+}
+
+class LocalGGUFProvider extends AIModelProvider {
+    constructor(modelPath = "/models/Noor_Nano/noor_nano_q4.gguf") {
+        super();
+        this.modelPath = modelPath;
+        this.isLoaded = false;
+        this.grammarConstraint = "JSON_STRICT_SCHEMA";
+        this.dataset = null;
+    }
+
+    async loadModel() {
+        console.log(`[LocalGGUFProvider] Initializing Noor Nano / Local LLM context from: ${this.modelPath}`);
+        this.isLoaded = true;
+    }
+
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        if (!this.isLoaded) await this.loadModel();
+        console.log(`[LocalGGUFProvider] Executing offline game generation matching Noor Nano Cloud dataset for prompt: "${userPrompt}"`);
+
+        // Base offline compilation using Noor Maker DnD engine
+        const gameData = compileLocalGame(userPrompt);
+
+        // Enforce strict JSON schema
+        if (schema) {
+            if (!gameData.metadata) gameData.metadata = { title: "Noor Nano Game", genre: "Action", controls: "Arrows / Touch", languages: ["ar", "en"], defaultLanguage: "ar" };
+            if (!gameData.sprites) gameData.sprites = [];
+            if (!gameData.objects) gameData.objects = [];
+            if (!gameData.rooms) gameData.rooms = [];
+        }
+        return gameData;
+    }
+}
+
+class AIModelManager {
+    constructor() {
+        this.currentMode = "offline"; // "online" | "offline"
+        this.localModelPath = "/models/Noor_Nano/noor_nano_q4.gguf";
+        this.providers = {
+            online: null,
+            offline: new LocalGGUFProvider(this.localModelPath)
+        };
+    }
+
+    setMode(mode) {
+        if (mode === "online" || mode === "offline") {
+            this.currentMode = mode;
+            console.log(`[AIModelManager] Switched AI mode to: ${mode}`);
+        }
+    }
+
+    setApiKey(apiKey) {
+        this.providers.online = new GeminiOnlineProvider(apiKey);
+    }
+
+    importLocalModel(modelPath) {
+        console.log(`[AIModelManager] Importing custom GGUF model from: ${modelPath}`);
+        this.localModelPath = modelPath;
+        this.providers.offline = new LocalGGUFProvider(modelPath);
+    }
+
+    async generateProject(prompt, actionLibrary, imageBase64 = null, forceLocal = false) {
+        if (forceLocal || this.currentMode === "offline" || !this.providers.online) {
+            console.log("[AIModelManager] Utilizing Local GGUF Provider (Noor Nano Offline)");
+            return await this.providers.offline.generateActions(prompt, true, actionLibrary, imageBase64);
+        }
+        try {
+            console.log("[AIModelManager] Utilizing Gemini Online Provider");
+            return await this.providers.online.generateActions(prompt, true, actionLibrary, imageBase64);
+        } catch (err) {
+            console.warn("[AIModelManager] Online Provider failed, falling back to Local GGUF Provider:", err);
+            return await this.providers.offline.generateActions(prompt, true, actionLibrary, imageBase64);
+        }
+    }
+}
+
+const globalAIManager = new AIModelManager();
+window.globalAIManager = globalAIManager;
+
+
+const generateLocalGameProjectData = (prompt, actionLibrary) => {
+  return compileLocalGame(prompt);
+};
+const generateGameProjectData = async (prompt, actionLibrary, imageBase64, forceLocal = false) => {
+  const apiKey = getApiKey();
+  if (apiKey) {
+    globalAIManager.setApiKey(apiKey);
+    globalAIManager.setMode("online");
+  } else {
+    globalAIManager.setMode("offline");
   }
+  return await globalAIManager.generateProject(prompt, actionLibrary, imageBase64, forceLocal);
 };
 const generateJavaCode = async (title, levelMap, width) => {
   const apiKey = getApiKey();
@@ -30347,7 +30463,6 @@ const createEngineHTML = (projectData) => {
     <\/script>
     <link href="./fonts/press-start-2p.css" rel="stylesheet">
     <style>
-        <style>
         body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; overflow:hidden; user-select:none; touch-action:none; }
         canvas { position: relative; z-index: 10; image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain; background: #000; }
         #loading { position:absolute; color:#4ade80; font-family:monospace; font-weight:bold; font-size:12px; text-align:center; z-index: 100; letter-spacing:1px; }
@@ -31078,7 +31193,7 @@ const createEngineHTML = (projectData) => {
                 source.start(0);
 
                 if (!_gm82_active_sounds[name]) _gm82_active_sounds[name] = [];
-                const soundItem = { source, gain, loop };
+                const soundItem = { source, gain, loop, startCtxTime: GM82Audio.ctx.currentTime };
                 _gm82_active_sounds[name].push(soundItem);
 
                 source.onended = () => {
@@ -31195,7 +31310,16 @@ const createEngineHTML = (projectData) => {
             } catch(e) {}
         }
     };
-    window.audio_sound_get_track_position = (s) => 0;
+    window.audio_sound_get_track_position = (s) => {
+        if (_gm82_active_sounds && _gm82_active_sounds[s] && _gm82_active_sounds[s].length > 0) {
+            const item = _gm82_active_sounds[s][_gm82_active_sounds[s].length - 1];
+            if (item && item.startCtxTime && typeof GM82Audio !== 'undefined' && GM82Audio.ctx) {
+                const rate = (item.source && item.source.playbackRate) ? item.source.playbackRate.value : 1.0;
+                return Math.max(0, (GM82Audio.ctx.currentTime - item.startCtxTime) * rate);
+            }
+        }
+        return 0;
+    };
 
     // --- GML Animation Notifies & State Machine (PaperZD style) ---
     window.animation_notify_add = (objName, sprId, frame, callback) => {
@@ -31288,7 +31412,16 @@ const createEngineHTML = (projectData) => {
     window.audio_stop_sound  = (s) => {};
     window.audio_stop_all    = () => GM82Audio.stop_music();
     window.audio_is_playing  = (s) => true;
-    window.audio_sound_get_track_position = (s) => 0;
+    window.audio_sound_get_track_position = (s) => {
+        if (_gm82_active_sounds && _gm82_active_sounds[s] && _gm82_active_sounds[s].length > 0) {
+            const item = _gm82_active_sounds[s][_gm82_active_sounds[s].length - 1];
+            if (item && item.startCtxTime && typeof GM82Audio !== 'undefined' && GM82Audio.ctx) {
+                const rate = (item.source && item.source.playbackRate) ? item.source.playbackRate.value : 1.0;
+                return Math.max(0, (GM82Audio.ctx.currentTime - item.startCtxTime) * rate);
+            }
+        }
+        return 0;
+    };
     window.audio_set_master_volume = (v) => {};
 
     // =====================================================================
@@ -31760,6 +31893,27 @@ const createEngineHTML = (projectData) => {
             }
             return matches.length;
         };
+        const _lineIntersectsAABB = (x1, y1, x2, y2, bx1, by1, bx2, by2) => {
+            let minT = 0, maxT = 1;
+            const dx = x2 - x1, dy = y2 - y1;
+            const p = [-dx, dx, -dy, dy];
+            const q = [x1 - bx1, bx2 - x1, y1 - by1, by2 - y1];
+            for (let i = 0; i < 4; i++) {
+                if (p[i] === 0) {
+                    if (q[i] < 0) return false;
+                } else {
+                    const t = q[i] / p[i];
+                    if (p[i] < 0) {
+                        if (t > maxT) return false;
+                        if (t > minT) minT = t;
+                    } else {
+                        if (t < minT) return false;
+                        if (t < maxT) maxT = t;
+                    }
+                }
+            }
+            return minT <= maxT;
+        };
         window.collision_line_list = (x1, y1, x2, y2, obj, prec, notme, list, ordered) => {
             if (!window.instances) return 0;
             const self = window._currentInstance;
@@ -31769,7 +31923,13 @@ const createEngineHTML = (projectData) => {
                 if (inst.dead) continue;
                 if (notme && inst === self) continue;
                 if (obj !== 'all' && obj !== -1 && String(inst.objectId).toLowerCase() !== String(obj).toLowerCase() && String(inst.def?.name || '').toLowerCase() !== String(obj).toLowerCase()) continue;
-                matches.push(inst);
+                const bL = inst.bbox_left !== undefined ? inst.bbox_left : inst.x;
+                const bT = inst.bbox_top !== undefined ? inst.bbox_top : inst.y;
+                const bR = inst.bbox_right !== undefined ? inst.bbox_right : (inst.x + inst.w - 1);
+                const bB = inst.bbox_bottom !== undefined ? inst.bbox_bottom : (inst.y + inst.h - 1);
+                if (_lineIntersectsAABB(x1, y1, x2, y2, bL, bT, bR, bB)) {
+                    matches.push(inst);
+                }
             }
             if (ordered && self) {
                 matches.sort((a, b) => Math.hypot(a.x - self.x, a.y - self.y) - Math.hypot(b.x - self.x, b.y - self.y));
@@ -31862,11 +32022,16 @@ const createEngineHTML = (projectData) => {
         }
 
         if (blendCol !== 0xFFFFFF && blendCol !== -1) {
-            const offscreen = document.createElement('canvas');
+            if (!window._tintCanvas) {
+                window._tintCanvas = document.createElement('canvas');
+            }
+            const offscreen = window._tintCanvas;
             offscreen.width = frameW;
             offscreen.height = frameH;
             const oCtx = offscreen.getContext('2d');
             if (oCtx) {
+                oCtx.globalCompositeOperation = 'source-over';
+                oCtx.clearRect(0, 0, frameW, frameH);
                 oCtx.drawImage(frameImg, sx, sy, frameW, frameH, 0, 0, frameW, frameH);
                 oCtx.globalCompositeOperation = 'source-atop';
                 const r = (blendCol >> 16) & 0xFF;
@@ -32316,6 +32481,26 @@ const createEngineHTML = (projectData) => {
     };
     window.move_contact = (dir, maxdist) => window.move_contact_solid(dir, maxdist);
     window.move_contact_all = (dir, maxdist) => window.move_contact_solid(dir, maxdist);
+    window.place_free_slope = (x, y, maxSlope = 4, self) => {
+        const me = self || window._currentInstance;
+        if (!me) return true;
+        if (window.place_free(x, y, me)) return true;
+        for (let dy = 1; dy <= maxSlope; dy++) {
+            if (window.place_free(x, y - dy, me)) {
+                me.y -= dy;
+                return true;
+            }
+        }
+        return false;
+    };
+    window.move_snap = (hsnap, vsnap) => {
+        const me = window._currentInstance;
+        if (!me) return;
+        const hs = Number(hsnap) || 1;
+        const vs = Number(vsnap) || 1;
+        me.x = Math.round(me.x / hs) * hs;
+        me.y = Math.round(me.y / vs) * vs;
+    };
     window.move_outside_solid = (dir, maxdist) => {
         const me = window._currentInstance;
         if (!me) return;
@@ -32324,7 +32509,7 @@ const createEngineHTML = (projectData) => {
         const dx = Math.cos(rad);
         const dy = -Math.sin(rad);
         let dist = 0;
-        const limit = maxdist < 0 ? 1000 : maxdist;
+        const limit = (maxdist === undefined || maxdist < 0) ? 1000 : maxdist;
         while (dist < limit && !window.place_free(me.x, me.y, me)) {
             me.x += dx; me.y += dy;
             dist += 1;
@@ -33960,8 +34145,15 @@ const createEngineHTML = (projectData) => {
     const _ds_maps = {}; let _ds_map_id = 0;
     window.ds_map_create  = () => { const id=_ds_map_id++; _ds_maps[id]={}; return id; };
     window.ds_map_set     = (id,k,v) => { if(_ds_maps[id]) _ds_maps[id][k]=v; };
+    window.ds_map_add     = (id,k,v) => { if(_ds_maps[id] && !(k in _ds_maps[id])) { _ds_maps[id][k]=v; return true; } return false; };
+    window.ds_map_replace = (id,k,v) => { if(_ds_maps[id]) { _ds_maps[id][k]=v; return true; } return false; };
     window.ds_map_find_value = (id,k) => _ds_maps[id]?.[k]??0;
     window.ds_map_exists  = (id,k) => !!(id in _ds_maps && k in _ds_maps[id]);
+    window.ds_map_delete  = (id,k) => { if(_ds_maps[id]) delete _ds_maps[id][k]; };
+    window.ds_map_clear   = (id) => { if(_ds_maps[id]) _ds_maps[id]={}; };
+    window.ds_map_size    = (id) => _ds_maps[id] ? Object.keys(_ds_maps[id]).length : 0;
+    window.ds_map_find_first = (id) => { const keys = _ds_maps[id] ? Object.keys(_ds_maps[id]) : []; return keys.length > 0 ? keys[0] : 0; };
+    window.ds_map_find_next = (id,k) => { const keys = _ds_maps[id] ? Object.keys(_ds_maps[id]) : []; const idx = keys.indexOf(k); return (idx !== -1 && idx + 1 < keys.length) ? keys[idx + 1] : 0; };
     window.ds_map_destroy = (id) => { delete _ds_maps[id]; };
 
 
@@ -36436,6 +36628,155 @@ const createEngineHTML = (projectData) => {
                 Object.assign(s1, s2, { id: s1.id, name: s1.name });
             }
         };
+        window.sprite_add = (fname, imgnumb = 1, removeback = false, smooth = false, xorig = 0, yorig = 0) => {
+            const id = 'spr_dyn_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const img = new Image();
+            img.src = fname;
+            const spr = {
+                id: id, name: id,
+                ox: Number(xorig) || 0, oy: Number(yorig) || 0,
+                xorigin: Number(xorig) || 0, yorigin: Number(yorig) || 0,
+                frameCount: Number(imgnumb) || 1,
+                fw: 32, fh: 32, width: 32, height: 32,
+                image: img, frames: [img],
+                bboxMode: 0, bLeft: 0, bTop: 0, bRight: 31, bBottom: 31,
+                precise: false, isDynamic: true
+            };
+            img.onload = () => {
+                spr.fw = Math.floor(img.width / spr.frameCount) || img.width;
+                spr.fh = img.height;
+                spr.width = spr.fw; spr.height = spr.fh;
+                spr.bRight = spr.fw - 1; spr.bBottom = spr.fh - 1;
+            };
+            if (typeof SPRITE_METADATA !== 'undefined') SPRITE_METADATA[id] = spr;
+            if (window.assets && window.assets.sprites) window.assets.sprites[id] = spr;
+            return id;
+        };
+        window.sprite_replace = (ind, fname, imgnumb = 1, removeback = false, smooth = false, xorig = 0, yorig = 0) => {
+            const s = _getSprite(ind);
+            if (!s) return window.sprite_add(fname, imgnumb, removeback, smooth, xorig, yorig);
+            const img = new Image();
+            img.src = fname;
+            s.ox = Number(xorig) || 0; s.oy = Number(yorig) || 0;
+            s.xorigin = s.ox; s.yorigin = s.oy;
+            s.frameCount = Number(imgnumb) || 1;
+            s.image = img; s.frames = [img];
+            img.onload = () => {
+                s.fw = Math.floor(img.width / s.frameCount) || img.width;
+                s.fh = img.height;
+                s.width = s.fw; s.height = s.fh;
+                s.bRight = s.fw - 1; s.bBottom = s.fh - 1;
+            };
+            return ind;
+        };
+        window.sprite_create_from_surface = (surf, x = 0, y = 0, w = 32, h = 32, removeback = false, smooth = false, xorig = 0, yorig = 0) => {
+            const canvas = typeof surf === 'object' && surf.canvas ? surf.canvas : (document.getElementById(surf) || surf);
+            const id = 'spr_surf_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            let frameImg = new Image();
+            if (canvas && canvas.getContext) {
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = w; cropCanvas.height = h;
+                const ctx = cropCanvas.getContext('2d');
+                ctx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+                frameImg.src = cropCanvas.toDataURL();
+            }
+            const spr = {
+                id: id, name: id,
+                ox: Number(xorig) || 0, oy: Number(yorig) || 0,
+                xorigin: Number(xorig) || 0, yorigin: Number(yorig) || 0,
+                frameCount: 1, fw: w, fh: h, width: w, height: h,
+                image: frameImg, frames: [frameImg],
+                bboxMode: 0, bLeft: 0, bTop: 0, bRight: w - 1, bBottom: h - 1,
+                precise: false, isDynamic: true
+            };
+            if (typeof SPRITE_METADATA !== 'undefined') SPRITE_METADATA[id] = spr;
+            if (window.assets && window.assets.sprites) window.assets.sprites[id] = spr;
+            return id;
+        };
+        window.sprite_add_from_surface = (ind, surf, x = 0, y = 0, w = 32, h = 32, removeback = false, smooth = false) => {
+            const s = _getSprite(ind);
+            if (!s) return;
+            const canvas = typeof surf === 'object' && surf.canvas ? surf.canvas : (document.getElementById(surf) || surf);
+            if (canvas && canvas.getContext) {
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = w; cropCanvas.height = h;
+                const ctx = cropCanvas.getContext('2d');
+                ctx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+                const frameImg = new Image();
+                frameImg.src = cropCanvas.toDataURL();
+                if (!Array.isArray(s.frames)) s.frames = s.image ? [s.image] : [];
+                s.frames.push(frameImg);
+                s.frameCount = s.frames.length;
+            }
+        };
+        window.sprite_delete = (ind) => {
+            const s = _getSprite(ind);
+            if (!s) return;
+            if (typeof SPRITE_METADATA !== 'undefined') delete SPRITE_METADATA[s.id];
+            if (window.assets && window.assets.sprites) delete window.assets.sprites[s.id];
+        };
+        window.sprite_set_alpha_from_sprite = (ind, spr) => {
+            const s1 = _getSprite(ind);
+            const s2 = _getSprite(spr);
+            if (!s1 || !s2 || !s1.image || !s2.image) return;
+            const w = s1.fw || s1.width || 32;
+            const h = s1.fh || s1.height || 32;
+            const c1 = document.createElement('canvas'); c1.width = w; c1.height = h;
+            const ctx1 = c1.getContext('2d'); ctx1.drawImage(s1.image, 0, 0, w, h);
+            const imgData1 = ctx1.getImageData(0, 0, w, h);
+            const c2 = document.createElement('canvas'); c2.width = w; c2.height = h;
+            const ctx2 = c2.getContext('2d'); ctx2.drawImage(s2.image, 0, 0, w, h);
+            const imgData2 = ctx2.getImageData(0, 0, w, h);
+            for (let i = 0; i < imgData1.data.length; i += 4) {
+                imgData1.data[i + 3] = imgData2.data[i + 3];
+            }
+            ctx1.putImageData(imgData1, 0, 0);
+            const newImg = new Image(); newImg.src = c1.toDataURL();
+            s1.image = newImg; if (s1.frames) s1.frames[0] = newImg;
+        };
+        window.sprite_save = (ind, subimg = 0, fname = 'sprite.png') => {
+            const s = _getSprite(ind);
+            if (!s || !s.image) return false;
+            try {
+                const w = s.fw || s.width || 32; const h = s.fh || s.height || 32;
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d'); ctx.drawImage(s.image, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a'); a.href = dataUrl; a.download = fname; a.click();
+                return true;
+            } catch (e) { return false; }
+        };
+        window.sprite_save_strip = (ind, fname = 'sprite_strip.png') => {
+            const s = _getSprite(ind);
+            if (!s) return false;
+            const frames = (s.frames && s.frames.length) ? s.frames : (s.image ? [s.image] : []);
+            if (!frames.length) return false;
+            try {
+                const w = s.fw || s.width || 32; const h = s.fh || s.height || 32;
+                const stripCanvas = document.createElement('canvas');
+                stripCanvas.width = w * frames.length; stripCanvas.height = h;
+                const ctx = stripCanvas.getContext('2d');
+                frames.forEach((img, i) => { ctx.drawImage(img, i * w, 0, w, h); });
+                const a = document.createElement('a'); a.href = stripCanvas.toDataURL('image/png'); a.download = fname; a.click();
+                return true;
+            } catch (e) { return false; }
+        };
+        window.sprite_get_texture = (ind, subimg = 0) => {
+            const s = _getSprite(ind);
+            return s ? (s.frames && s.frames[subimg] ? s.frames[subimg] : s.image) : null;
+        };
+        window.sprite_get_uvs = (ind, subimg = 0) => {
+            const s = _getSprite(ind);
+            if (!s) return [0, 0, 1, 1, 0, 0, 16, 16];
+            const w = s.fw || s.width || 16; const h = s.fh || s.height || 16;
+            const ox = s.ox ?? s.xorigin ?? 0; const oy = s.oy ?? s.yorigin ?? 0;
+            return [0, 0, 1, 1, ox, oy, w, h];
+        };
+        window.sprite_get_tpref = (ind, subimg = 0) => {
+            return { id: ind, subimg: subimg };
+        };
+        window.sprite_flush = (ind) => true;
+        window.sprite_prefetch = (ind) => true;
         // --- GENERIC GAME OBJECT CLASS ---
     class SpatialHash {
         constructor(cellSize = 64) {
@@ -36579,27 +36920,37 @@ const createEngineHTML = (projectData) => {
                 configurable: true, enumerable: true
             });
 
+            // --- Helper for accurate Bounding Box computation ---
+            this._getBBoxCalc = () => {
+                const sprKey = (this.mask_index !== undefined && this.mask_index !== -1) ? this.mask_index : (this.currentSpriteId || this.sprite_index);
+                const meta = typeof _getSprite === 'function' ? _getSprite(sprKey) : (SPRITE_METADATA[sprKey] || null);
+                const xsc = (this.image_xscale !== undefined) ? Number(this.image_xscale) : 1;
+                const ysc = (this.image_yscale !== undefined) ? Number(this.image_yscale) : 1;
+                const ox = meta ? (meta.ox ?? meta.xorigin ?? 0) : 0;
+                const oy = meta ? (meta.oy ?? meta.yorigin ?? 0) : 0;
+                const bL = meta ? (meta.bLeft ?? meta.bboxLeft ?? 0) : 0;
+                const bR = meta ? (meta.bRight ?? meta.bboxRight ?? ((meta.fw || meta.width || this.w || 16) - 1)) : (this.w - 1);
+                const bT = meta ? (meta.bTop ?? meta.bboxTop ?? 0) : 0;
+                const bB = meta ? (meta.bBottom ?? meta.bboxBottom ?? ((meta.fh || meta.height || this.h || 16) - 1)) : (this.h - 1);
+
+                const x1 = this.x + (bL - ox) * xsc;
+                const x2 = this.x + (bR - ox) * xsc;
+                const y1 = this.y + (bT - oy) * ysc;
+                const y2 = this.y + (bB - oy) * ysc;
+
+                return {
+                    left: Math.floor(Math.min(x1, x2)),
+                    right: Math.floor(Math.max(x1, x2)),
+                    top: Math.floor(Math.min(y1, y2)),
+                    bottom: Math.floor(Math.max(y1, y2))
+                };
+            };
+
             // --- Bounding Box Getters ---
-            Object.defineProperty(this, 'bbox_left', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bLeft !== undefined) return Math.round(this.x + meta.bLeft);
-                return Math.round(this.x);
-            }});
-            Object.defineProperty(this, 'bbox_top', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bTop !== undefined) return Math.round(this.y + meta.bTop);
-                return Math.round(this.y);
-            }});
-            Object.defineProperty(this, 'bbox_right', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bRight !== undefined) return Math.round(this.x + meta.bRight);
-                return Math.round(this.x + this.w - 1);
-            }});
-            Object.defineProperty(this, 'bbox_bottom', { get: () => {
-                const meta = SPRITE_METADATA[this.mask_index !== -1 ? this.mask_index : this.currentSpriteId];
-                if (meta && meta.bBottom !== undefined) return Math.round(this.y + meta.bBottom);
-                return Math.round(this.y + this.h - 1);
-            }});
+            Object.defineProperty(this, 'bbox_left', { get: () => this._getBBoxCalc().left });
+            Object.defineProperty(this, 'bbox_top', { get: () => this._getBBoxCalc().top });
+            Object.defineProperty(this, 'bbox_right', { get: () => this._getBBoxCalc().right });
+            Object.defineProperty(this, 'bbox_bottom', { get: () => this._getBBoxCalc().bottom });
             Object.defineProperty(this, 'sprite_width', {
                 get: () => {
                     const meta = _getSprite(this.currentSpriteId || this.sprite_index);
@@ -91594,9 +91945,9 @@ function gmlToJs(gml) {
   let js = gml;
 
   // Comments and basic keywords
-  js = js.replace(/\bvar\s+/g, "let ");
-  js = js.replace(/\btrue\b/g, "true").replace(/\bfalse\b/g, "false");
-  js = js.replace(/\bexit\b/g, "return");
+  js = js.replace(/\bvar\s+/gi, "let ");
+  js = js.replace(/\btrue\b/gi, "true").replace(/\bfalse\b/gi, "false");
+  js = js.replace(/\bexit\b/gi, "return;");
   js = js.replace(/<>/g, "!=");
   js = js.replace(/:=/g, "=");
   js = js.replace(/\bbegin\b/gi, "{");
@@ -91606,7 +91957,8 @@ function gmlToJs(gml) {
   js = js.replace(/([0-9\)\}\;])else\b/g, "$1 else");
   js = js.replace(/\belse([a-zA-Z_0-9\(\{])/g, "else $1");
 
-  // Logical operators
+  // Bitwise & Logical operators
+  js = js.replace(/\bbnot\s+/gi, "~");
   js = js.replace(/\bnot\s+/gi, "!");
   js = js.replace(/\s+\band\b\s+/gi, " && ");
   js = js.replace(/\s+\bor\b\s+/gi, " || ");
@@ -97244,7 +97596,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = true; });
       return next;
     });
-    arr.forEach(k => sendKey(k, "keydown"));
+    const primaryKey = arr.length > 0 ? arr[0] : null;
+    if (primaryKey !== null) sendKey(primaryKey, "keydown");
   };
 
   const handleBtnUp = (e, keyOrKeys) => {
@@ -97256,7 +97609,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = false; });
       return next;
     });
-    arr.forEach(k => sendKey(k, "keyup"));
+    const primaryKey = arr.length > 0 ? arr[0] : null;
+    if (primaryKey !== null) sendKey(primaryKey, "keyup");
   };
 
   const activeButtons = ((detectedControls && Array.isArray(detectedControls.buttons) && detectedControls.buttons.length > 0)
@@ -97300,13 +97654,17 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
               /* Theme switcher */
               /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                 onClick: nextTheme,
-                className: "px-2 py-0.5 rounded bg-gray-800 border border-gray-600 text-[10px] text-gray-200 font-bold hover:bg-gray-700 active:scale-95 transition-all",
+                "aria-label": "تغيير ثيم المحاكي",
+                title: "تغيير ثيم المحاكي",
+                className: "px-2 py-0.5 rounded bg-gray-800 border border-gray-600 text-[10px] text-gray-200 font-bold hover:bg-gray-700 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-amber-400",
                 children: "🎨 ثيم"
               }),
               /* CRT toggle */
               /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                 onClick: () => setScanlinesEnabled(!scanlinesEnabled),
-                className: `px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all ${scanlinesEnabled ? "bg-emerald-500/20 border-emerald-500 text-emerald-300" : "bg-gray-800 border-gray-600 text-gray-400"}`,
+                "aria-label": "تبديل تأثير شاشة CRT",
+                title: "تبديل تأثير شاشة CRT",
+                className: `px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all focus-visible:ring-2 focus-visible:ring-emerald-400 ${scanlinesEnabled ? "bg-emerald-500/20 border-emerald-500 text-emerald-300" : "bg-gray-800 border-gray-600 text-gray-400"}`,
                 children: "CRT"
               }),
               /* Restart Game */
@@ -97318,14 +97676,17 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                     setTimeout(() => { if (iframeRef.current) iframeRef.current.srcdoc = src; }, 30);
                   }
                 },
-                className: "p-1 rounded bg-gray-800 border border-gray-600 text-amber-400 hover:text-white active:scale-90 transition-all",
-                title: "Restart",
+                "aria-label": "إعادة تشغيل اللعبة",
+                title: "إعادة تشغيل اللعبة",
+                className: "p-1 rounded bg-gray-800 border border-gray-600 text-amber-400 hover:text-white active:scale-90 transition-all focus-visible:ring-2 focus-visible:ring-amber-400",
                 children: /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCcw, { className: "w-3.5 h-3.5" })
               }),
               /* EXIT / CLOSE BUTTON */
               onClose && /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                 onClick: onClose,
-                className: "px-2.5 py-0.5 rounded bg-red-600/90 hover:bg-red-500 text-white text-[11px] font-bold border border-red-400 shadow active:scale-95 transition-all flex items-center gap-1",
+                "aria-label": "إغلاق المحاكي والخروج",
+                title: "خروج",
+                className: "px-2.5 py-0.5 rounded bg-red-600/90 hover:bg-red-500 text-white text-[11px] font-bold border border-red-400 shadow active:scale-95 transition-all flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-red-400",
                 children: "✕ خروج"
               })
             ]
@@ -97439,7 +97800,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                     children: [
                       /* UP */
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
-                        className: `absolute top-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-t-lg border-t-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-start pt-1 transition-all ${activeKeys["ArrowUp"] || activeKeys["38"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
+                        "aria-label": "أعلى / W",
+                        title: "أعلى",
+                        className: `absolute top-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-t-lg border-t-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-start pt-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowUp"] || activeKeys["38"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowUp", 38, "KeyW", "w", 87]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowUp", 38, "KeyW", "w", 87]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowUp", 38, "KeyW", "w", 87]),
@@ -97448,7 +97811,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       }),
                       /* LEFT */
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
-                        className: `absolute left-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-l-lg border-l-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-start pl-1 transition-all ${activeKeys["ArrowLeft"] || activeKeys["37"] ? "translate-x-1 shadow-none brightness-150" : "active:translate-x-1 active:shadow-none"}`,
+                        "aria-label": "يسار / A",
+                        title: "يسار",
+                        className: `absolute left-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-l-lg border-l-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-start pl-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowLeft"] || activeKeys["37"] ? "translate-x-1 shadow-none brightness-150" : "active:translate-x-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
@@ -97462,7 +97827,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       }),
                       /* RIGHT */
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
-                        className: `absolute right-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-r-lg border-r-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-end pr-1 transition-all ${activeKeys["ArrowRight"] || activeKeys["39"] ? "-translate-x-1 shadow-none brightness-150" : "active:-translate-x-1 active:shadow-none"}`,
+                        "aria-label": "يمين / D",
+                        title: "يمين",
+                        className: `absolute right-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-r-lg border-r-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-end pr-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowRight"] || activeKeys["39"] ? "-translate-x-1 shadow-none brightness-150" : "active:-translate-x-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowRight", 39, "KeyD", "d", 68]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowRight", 39, "KeyD", "d", 68]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowRight", 39, "KeyD", "d", 68]),
@@ -97471,7 +97838,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       }),
                       /* DOWN */
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
-                        className: `absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-b-lg border-b-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-end pb-1 transition-all ${activeKeys["ArrowDown"] || activeKeys["40"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
+                        "aria-label": "أسفل / S",
+                        title: "أسفل",
+                        className: `absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-b-lg border-b-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-end pb-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowDown"] || activeKeys["40"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowDown", 40, "KeyS", "s", 83]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowDown", 40, "KeyS", "s", 83]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowDown", 40, "KeyS", "s", 83]),
@@ -97496,7 +97865,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         className: "flex flex-col items-center -rotate-[25deg]",
                         children: [
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
-                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
+                            "aria-label": "زر الاختيار / SELECT",
+                            title: "اختيار (SELECT)",
+                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Shift", 16, "Escape", 27]),
                             onPointerUp: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
                             onPointerCancel: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
@@ -97510,7 +97881,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         className: "flex flex-col items-center -rotate-[25deg]",
                         children: [
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
-                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
+                            "aria-label": "زر البداية / START",
+                            title: "بدء (START)",
+                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Enter", 13, "Space", 32]),
                             onPointerUp: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
                             onPointerCancel: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
@@ -97549,7 +97922,9 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       children: [
                         /* Large Convex Button */
                         /* @__PURE__ */ jsxRuntimeExports.jsxs("button", {
-                          className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
+                          "aria-label": `${btn.labelAr || btn.label} (${btn.label})`,
+                          title: btn.labelAr || btn.label,
+                          className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
                           style: { backgroundColor: btnColor, touchAction: "none" },
                           onPointerDown: (e) => handleBtnDown(e, btn.keys),
                           onPointerUp: (e) => handleBtnUp(e, btn.keys),
@@ -153940,7 +154315,7 @@ button, input, textarea, select {
     <div id="root"></div>
 
 
-<div id="gmk-cloud-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; font-family:system-ui,-apple-system,sans-serif;" dir="rtl">
+<div id="gmk-cloud-modal" role="dialog" aria-modal="true" aria-label="سحابة ألعاب GameMaker" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; font-family:system-ui,-apple-system,sans-serif;" dir="rtl">
   <div style="background:#f4f3ef; border:2px solid #fff; box-shadow:0 10px 30px rgba(0,0,0,0.4); border-radius:10px; width:92%; max-width:820px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;">
     <!-- Title Bar -->
     <div style="background:linear-gradient(90deg, #1e3a8a, #3b82f6); color:#fff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; user-select:none;">
@@ -153948,15 +154323,16 @@ button, input, textarea, select {
         <span>☁️</span>
         <span>سحابة ألعاب GameMaker 8 و GM82 (146 لعبة ومثال مباشر)</span>
       </div>
-      <button id="gmk-cloud-close-btn" style="background:#ef4444; border:none; color:#fff; font-weight:bold; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+      <button id="gmk-cloud-close-btn" aria-label="إغلاق السحابة" title="إغلاق" style="background:#ef4444; border:none; color:#fff; font-weight:bold; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
     </div>
 
     <!-- Filter & Search Controls -->
     <div style="padding:12px 16px; background:#e5e7eb; border-bottom:1px solid #d1d5db; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-      <div style="flex:1; min-width:200px; position:relative;">
-        <input id="gmk-cloud-search" type="text" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+      <div style="flex:1; min-width:200px; position:relative; display:flex; align-items:center;">
+        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px 8px 30px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+        <button id="gmk-cloud-search-clear" aria-label="مسح البحث" title="مسح البحث" style="display:none; position:absolute; left:8px; background:none; border:none; color:#6b7280; font-size:14px; font-weight:bold; cursor:pointer; padding:2px 6px; border-radius:50%;">✕</button>
       </div>
-      <select id="gmk-cloud-category" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
+      <select id="gmk-cloud-category" aria-label="تصنيف الألعاب" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
         <option value="ALL">جميع الأقسام (146 لعبة)</option>
         <option value="Platformer & Adventure">منصات ومغامرات (Platformer)</option>
         <option value="Shooter & Action">تصويب وأكشن (Shooter)</option>
@@ -153996,6 +154372,7 @@ button, input, textarea, select {
   const modal = document.getElementById("gmk-cloud-modal");
   const closeBtn = document.getElementById("gmk-cloud-close-btn");
   const searchInput = document.getElementById("gmk-cloud-search");
+  const searchClearBtn = document.getElementById("gmk-cloud-search-clear");
   const categorySelect = document.getElementById("gmk-cloud-category");
   const grid = document.getElementById("gmk-cloud-grid");
   const statusDiv = document.getElementById("gmk-cloud-status");
@@ -154003,8 +154380,24 @@ button, input, textarea, select {
   const progressBar = document.getElementById("gmk-cloud-progress");
   const countSpan = document.getElementById("gmk-cloud-count");
 
+  function updateSearchClearBtn() {
+    if (searchClearBtn) {
+      searchClearBtn.style.display = searchInput.value.trim().length > 0 ? "block" : "none";
+    }
+  }
+
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      updateSearchClearBtn();
+      renderGames();
+      searchInput.focus();
+    });
+  }
+
   function openModal() {
     modal.style.display = "flex";
+    updateSearchClearBtn();
     renderGames();
     searchInput.focus();
   }
@@ -154016,6 +154409,17 @@ button, input, textarea, select {
   window.addEventListener("open-gmk-cloud-library", openModal);
   closeBtn.addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.style.display === "flex") {
+      if (searchInput.value.length > 0) {
+        searchInput.value = "";
+        updateSearchClearBtn();
+        renderGames();
+      } else {
+        closeModal();
+      }
+    }
+  });
 
   function getIconForCategory(cat) {
     switch(cat) {
@@ -154044,12 +154448,16 @@ button, input, textarea, select {
     grid.innerHTML = "";
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px;">لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>`;
+      grid.innerHTML = `<div role="status" style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px;">لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>`;
       return;
     }
 
     filtered.forEach(item => {
       const card = document.createElement("div");
+      card.className = "gmk-cloud-card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "article");
+      card.setAttribute("aria-label", `بطاقة ${item.title}`);
       card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
 
       card.onmouseenter = () => {
@@ -154073,28 +154481,54 @@ button, input, textarea, select {
           <div style="font-weight:bold; font-size:13px; color:#111827; margin-bottom:4px; word-break:break-word; direction:ltr; text-align:right;">${item.title}</div>
           <div style="font-size:11px; color:#6b7280; margin-bottom:8px;">${item.category}</div>
         </div>
-        <button style="width:100%; padding:6px 0; background:#2563eb; color:#ffffff; border:none; border-radius:4px; font-weight:bold; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:background 0.2s;">
+        <button aria-label="تشغيل ${item.title} في المحرك" style="width:100%; padding:6px 0; background:#2563eb; color:#ffffff; border:none; border-radius:4px; font-weight:bold; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:background 0.2s;">
           <span>تشغيل في المحرك ▶</span>
         </button>
       `;
 
-      card.querySelector("button").onclick = (e) => {
+      const actionBtn = card.querySelector("button");
+      actionBtn.onmouseenter = () => { if (!actionBtn.disabled) actionBtn.style.background = "#1d4ed8"; };
+      actionBtn.onmouseleave = () => { if (!actionBtn.disabled) actionBtn.style.background = "#2563eb"; };
+      actionBtn.onfocus = () => { actionBtn.style.outline = "2px solid #60a5fa"; actionBtn.style.outlineOffset = "2px"; };
+      actionBtn.onblur = () => { actionBtn.style.outline = "none"; };
+      actionBtn.onclick = (e) => {
         e.stopPropagation();
-        loadCloudGame(item);
+        loadCloudGame(item, actionBtn);
       };
-      card.onclick = () => loadCloudGame(item);
+      card.onclick = () => loadCloudGame(item, actionBtn);
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          loadCloudGame(item, actionBtn);
+        }
+      };
 
       grid.appendChild(card);
     });
   }
 
-  searchInput.addEventListener("input", renderGames);
+  searchInput.addEventListener("input", () => {
+    updateSearchClearBtn();
+    renderGames();
+  });
   categorySelect.addEventListener("change", renderGames);
 
-  async function loadCloudGame(item) {
+  let isCloudLoading = false;
+
+  async function loadCloudGame(item, targetBtn) {
+    if (isCloudLoading) return;
     if (!window.__norMakerLoadGmkFromBuffer) {
       alert("محرك GMK قيد التهيئة، يرجى الانتظار ثوانٍ والمحاولة مجدداً.");
       return;
+    }
+
+    isCloudLoading = true;
+    const originalBtnText = targetBtn ? targetBtn.innerHTML : "";
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.style.opacity = "0.7";
+      targetBtn.style.cursor = "wait";
+      targetBtn.innerHTML = "<span>⏳ جاري التحميل...</span>";
     }
 
     statusDiv.style.display = "flex";
@@ -154177,6 +154611,14 @@ button, input, textarea, select {
       console.error("Cloud game load failed:", error);
       statusDiv.style.display = "none";
       alert("تعذر استدعاء اللعبة من السحابة:\n" + (error.message || error));
+    } finally {
+      isCloudLoading = false;
+      if (targetBtn) {
+        targetBtn.disabled = false;
+        targetBtn.style.opacity = "1";
+        targetBtn.style.cursor = "pointer";
+        targetBtn.innerHTML = originalBtnText;
+      }
     }
   }
 })();

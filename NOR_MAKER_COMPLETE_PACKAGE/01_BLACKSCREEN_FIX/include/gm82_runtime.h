@@ -3,6 +3,7 @@
 
 #include "gm82_object_room_decode.h"
 #include "gm82_sprite_decode.h"
+#include "gm82_script.h"
 /* sprite groups via gm82_sprite_group_list */
 #include "gm82_background_decode.h"
 #include <stdint.h>
@@ -17,16 +18,24 @@ typedef struct gm82_action_table gm82_action_table;
 #define GM82_MAX_INSTANCES 2048
 
 typedef struct {
+    char name[32];
+    double value;
+} gm82_var;
+
+typedef struct {
     int32_t id;
     int32_t object_index;
     int32_t sprite_index;
     double  x, y;
+    double  xprevious, yprevious; /* GM: position at start of step */
     double  hspeed, vspeed;
     double  direction, speed;
     double  gravity, gravity_direction;
     double  friction;
     int32_t image_index;
     double  image_speed;
+    double  image_xscale;
+    double  image_yscale;
     int32_t depth;
     int32_t solid;
     int32_t visible;
@@ -40,6 +49,8 @@ typedef struct {
     double  timeline_position;
     double  timeline_speed;
     int32_t timeline_running;
+    gm82_var vars[32];
+    int32_t  var_count;
 } gm82_instance;
 
 typedef struct {
@@ -58,6 +69,7 @@ typedef struct {
     const gm82_decoded_background_list *backgrounds;
     const gm82_decoded_room_list       *rooms;
     const gm82_action_table            *actions;
+    const gm82_script_list             *scripts;
 
     int32_t frame;
     int32_t running;
@@ -75,13 +87,22 @@ void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_room_list *rooms,
     const gm82_action_table *actions);
 void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_list *groups);
+void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts);
 /* Fire user event 0..11 on all instances (or self if provided via events later) */
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 
 /* Load room by index: clear non-persistent instances, spawn from room data, fire Create */
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index);
 
-/* One frame: alarms → begin step → step → end step */
+/* Set target room speed (e.g., 30, 60, 90, 120 FPS) */
+void gm82_runtime_set_room_speed(gm82_runtime *rt, int speed);
+
+/* Instance snapshot and lifecycle management */
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs);
+void gm82_runtime_compact_instances(gm82_runtime *rt);
+gm82_instance *gm82_runtime_instance_find_by_id(gm82_runtime *rt, int32_t id);
+
+/* One frame: Begin Step -> Alarms -> Path/Movement -> Collision -> Step -> End Step */
 void gm82_runtime_step(gm82_runtime *rt);
 
 /* Software draw into RGBA buffer (caller owns buffer, size = room_w * room_h * 4) */

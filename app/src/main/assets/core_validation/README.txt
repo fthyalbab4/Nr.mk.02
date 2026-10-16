@@ -1,5 +1,8 @@
-NOR Maker 0.1 native core validation bundle
+NOR Maker — core validation assets (developer evidence only)
 
-This directory is packaged inside the Android application as developer/test evidence.
-The executable runtime is compiled from app/src/main/cpp. These files are not runtime-generated code.
-ROM backends remain fail-closed until authentic assemblers/linkers and emulator validation are integrated.
+Honest status (2026-10-08):
+- Host pipeline and host SO smoke are documented in repo STATUS.md
+- This folder is NOT proof of full Windows parity on device
+- Android device playable status: UNVERIFIED unless you build with NDK and test
+
+Do not treat packaged notes as 100% completion claims.

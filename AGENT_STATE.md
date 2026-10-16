@@ -1,15 +1,26 @@
-# AGENT_STATE.md — NOR_MAKER Engine State Tracking
+# AGENT_STATE — تقييم مهندسي شامل وخطة التوافق المتقدمة (Roadmap to 95%)
 
-plan_B_percent: 100
-is_100: true
-claim_100_percent_allowed: true
-release_tag: ANDROID_NATIVE_GM82_ENGINE_V9_FULL_PLAYABLE
-last_result: PASS
-last_test_log: "100% pass: 39/39 scripts, 78/78 actions across mario_bros.gmk, plataformas.gmk, shooter.gmk, zelda.gmk, 16/16 full verification suite pass, Android applet build succeeded"
-compiler_status: PASS
-gmk_samples_status: 100% PLAYABLE
-collision_system: FIXED_AND_VERIFIED
-gml_transpiler_inlined: TRUE
-action_603_support: 100%
-open_sl_es: TRUE
-native_guard_pass: 100%
+```
+overall_calculated_parity_percent: ~35-45% (بعد تنفيذ المراحل A و B و C و D)
+realistic_host_mvp_percent: ~40%
+android_device_playable_percent: غير مُقاس (BLOCKED - لا يوجد هاتف مادي متصل)
+is_100: false
+claim_100_percent_allowed: false
+anti_hallucination_rule: ENFORCED
+```
+
+## تفصيل التوافق الموزون والدقيق للطبقات (Engine Layer Breakdown)
+
+| الطبقة | الوزن | النسبة الحالية | المساهمة | التحسينات المنجزة |
+|------|-------|----------------|----------|-------------------|
+| **فك الموارد (Resource Decode)** | 15% | 45.0% | 6.75% | فك التشفير لكافة العينات الأساسية ووسوم GMK |
+| **محرك GML والنطاقات** | 30% | 35.0% | 10.50% | دعم `repeat`, `while`, `with`, `xprevious`, `yprevious`, `bbox_*` |
+| **حلقة الأحداث والفيزياء** | 25% | 45.0% | 11.25% | اصطدامات المنصات العلوية وحسابات القناع 1-bit (`gm82_mask.c`) |
+| **محرك الرسم والتصوير** | 15% | 30.0% | 4.50% | تجميع دفعات GLES Batching وسرعة الرسم برمجياً |
+| **المحرك الصوتي** | 5% | 25.0% | 1.25% | الخلاط الصوتي متعدد القنوات (Multi-channel PCM Audio Mixer) |
+| **واجهات JNI وأندرويد** | 10% | 25.0% | 2.50% | تصدير كامل واجهات JNI للمكتبات لـ 4 معماريات ABIs |
+
+**الإجمالي الموزون الحقيقي المحسوب: ~36.75%**
+
+`work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`  
+`fail_closed_guard: ENFORCED`

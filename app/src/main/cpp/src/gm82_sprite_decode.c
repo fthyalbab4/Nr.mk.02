@@ -270,6 +270,8 @@ void gm82_sprite_groups_build(const gm82_decoded_sprite_list *frames, gm82_sprit
         g->frame_count = i - start;
         g->width = frames->frames[start].width;
         g->height = frames->frames[start].height;
+        g->xoffset = frames->frames[start].xoffset;
+        g->yoffset = frames->frames[start].yoffset;
     }
     out->count = n;
     if (n > 0) {

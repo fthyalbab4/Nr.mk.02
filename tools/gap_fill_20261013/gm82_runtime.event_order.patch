@@ -1,0 +1,90 @@
+--- a/app/src/main/cpp/src/gm82_runtime.c
++++ b/app/src/main/cpp/src/gm82_runtime.c
+@@ -69,6 +69,8 @@
+     memset(inst, 0, sizeof(*inst));
+     inst->id = rt->next_id++;
+     inst->x = x; inst->y = y;
++    inst->xprevious = x; inst->yprevious = y;
++    inst->image_xscale = 1.0; inst->image_yscale = 1.0;
+     inst->alive = 1;
+     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
+     apply_object_defaults(rt, inst, object_index);
+@@ -138,14 +140,20 @@
+      * GM8 event order (Mark Overmars docs):
+      *   Begin Step → Alarm → Keyboard/Mouse → Step →
+      *   set positions → Collision → End Step → Draw
+-     * We approximate: Step (incl. behaviors) → Alarm → move → Collision resolve.
+-     * Keyboard is polled inside GML/actions via gm82_input.
++     * Keyboard polled via gm82_input inside GML/actions.
+      */
+ 
+-    /* Step events (behaviors / GML bind / object actions) */
+-    gm82_events_fire_step_all(rt);
++    /* Snapshot previous position (used by GML xprevious/yprevious) */
++    for (int i = 0; i < rt->instance_count; i++) {
++        gm82_instance *inst = &rt->instances[i];
++        if (!inst->alive) continue;
++        inst->xprevious = inst->x;
++        inst->yprevious = inst->y;
++    }
++
++    gm82_events_fire_begin_step_all(rt);
+ 
+-    /* Alarms tick */
++    /* Alarms tick (after Begin Step, before Step — GM docs) */
+     for (int i = 0; i < rt->instance_count; i++) {
+         gm82_instance *inst = &rt->instances[i];
+         if (!inst->alive) continue;
+@@ -160,6 +168,9 @@
+         }
+     }
+ 
++    /* Normal Step events (behaviors / GML / object actions) */
++    gm82_events_fire_step_all(rt);
++
+     /* Apply motion (speed/dir, gravity, friction) then move */
+     for (int i = 0; i < rt->instance_count; i++) {
+         gm82_instance *inst = &rt->instances[i];
+@@ -202,6 +213,16 @@
+             sw = rt->sprites->frames[inst->sprite_index].width;
+             sh = rt->sprites->frames[inst->sprite_index].height;
+         }
++        {
++            double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
++            double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
++            if (xs < 0) xs = -xs;
++            if (ys < 0) ys = -ys;
++            sw = (int32_t)(sw * xs);
++            sh = (int32_t)(sh * ys);
++            if (sw < 1) sw = 1;
++            if (sh < 1) sh = 1;
++        }
+         for (int j = 0; j < rt->instance_count; j++) {
+             if (i == j) continue;
+             gm82_instance *other = &rt->instances[j];
+@@ -211,6 +232,16 @@
+                 ow = rt->sprites->frames[other->sprite_index].width;
+                 oh = rt->sprites->frames[other->sprite_index].height;
+             }
++            {
++                double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
++                double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
++                if (xs < 0) xs = -xs;
++                if (ys < 0) ys = -ys;
++                ow = (int32_t)(ow * xs);
++                oh = (int32_t)(oh * ys);
++                if (ow < 1) ow = 1;
++                if (oh < 1) oh = 1;
++            }
+             double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
+             double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
+             if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
+@@ -245,6 +276,8 @@
+         /* Tiles are not solid objects in GM8 — only solid instances resolve. */
+     }
+ 
++    gm82_events_fire_end_step_all(rt);
++
+     /* Update view camera follow (Milestone 3.5) */
+     if (rt->view_enabled && rt->view_w > 0) {
+         gm82_instance *follow_inst = NULL;
