@@ -232,6 +232,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    gm82_events_fire_keyboard_all(rt);
+    gm82_events_fire_mouse_all(rt);
     gm82_events_fire_step_all(rt);
 
     const int n_move = rt->instance_count;
