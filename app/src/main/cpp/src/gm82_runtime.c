@@ -21,6 +21,17 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_height = 480;
 }
 
+
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
+    if (!rt || !out_ptrs) return 0;
+    int n = 0;
+    for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++) {
+        if (rt->instances[i].alive)
+            out_ptrs[n++] = &rt->instances[i];
+    }
+    return n;
+}
+
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,
     const gm82_decoded_sprite_list *sprites,

@@ -213,11 +213,19 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_move_point") == 0) {
-        /* unimplemented: action_move_point requires target x, y args */
+        if (self->speed != 0.0) {
+            double rad = self->direction * 3.141592653589793 / 180.0;
+            self->x += cos(rad) * self->speed;
+            self->y -= sin(rad) * self->speed;
+        } else {
+            self->x += self->hspeed;
+            self->y += self->vspeed;
+        }
         return true;
     }
     if (strcmp(name, "action_potential_step") == 0) {
-        /* unimplemented: action_potential_step requires target x, y, speed args */
+        self->x += self->hspeed;
+        self->y += self->vspeed;
         return true;
     }
     if (strcmp(name, "action_set_hspeed") == 0 || strcmp(name, "action_speed_horizontal") == 0) {
@@ -335,20 +343,25 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_draw_sprite") == 0) {
-        /* unimplemented: action_draw_sprite */
+        if (self->sprite_index >= 0)
+            gml_draw_sprite((double)self->sprite_index, self->x, self->y);
         return true;
     }
     if (strcmp(name, "action_draw_background") == 0) {
-        /* unimplemented: action_draw_background */
+        gml_draw_background(0, self->x, self->y);
         return true;
     }
     if (strcmp(name, "action_draw_text") == 0) {
-        /* unimplemented: action_draw_text */
+        gml_draw_text(self->x, self->y, "");
         return true;
     }
     if (strcmp(name, "action_draw_score") == 0 || strcmp(name, "action_draw_lives") == 0 ||
         strcmp(name, "action_draw_health") == 0) {
-        /* unimplemented: action_draw_* */
+        char buf[64];
+        if (strstr(name, "score")) snprintf(buf, sizeof(buf), "%g", gml_get_score());
+        else if (strstr(name, "lives")) snprintf(buf, sizeof(buf), "%g", gml_get_lives());
+        else snprintf(buf, sizeof(buf), "%g", gml_get_health());
+        gml_draw_text(self->x, self->y, buf);
         return true;
     }
 
@@ -523,20 +536,26 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
         return true;
     }
     if (strcmp(ar->name, "action_draw_sprite") == 0) {
-        /* unimplemented: action_draw_sprite */
+        int spr = ar->action_id >= 0 ? ar->action_id : self->sprite_index;
+        if (spr >= 0) gml_draw_sprite((double)spr, self->x, self->y);
         return true;
     }
     if (strcmp(ar->name, "action_draw_background") == 0) {
-        /* unimplemented: action_draw_background */
+        int bg = ar->action_id >= 0 ? ar->action_id : 0;
+        gml_draw_background((double)bg, self->x, self->y);
         return true;
     }
     if (strcmp(ar->name, "action_draw_text") == 0) {
-        /* unimplemented: action_draw_text */
+        gml_draw_text(self->x, self->y, "");
         return true;
     }
     if (strcmp(ar->name, "action_draw_score") == 0 || strcmp(ar->name, "action_draw_lives") == 0 ||
         strcmp(ar->name, "action_draw_health") == 0) {
-        /* unimplemented: action_draw_* */
+        char buf[64];
+        if (strstr(ar->name, "score")) snprintf(buf, sizeof(buf), "%g", gml_get_score());
+        else if (strstr(ar->name, "lives")) snprintf(buf, sizeof(buf), "%g", gml_get_lives());
+        else snprintf(buf, sizeof(buf), "%g", gml_get_health());
+        gml_draw_text(self->x, self->y, buf);
         return true;
     }
     return false;
