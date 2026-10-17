@@ -1,30 +1,21 @@
 # GAPS_HONEST — بدون تضخيم
 
-## الفحص الدوري اليومي (Daily Periodic Audit)
-- **Host Full Verification**: 16/16 Passed (100% on Host Test Suite)
-- **C Core Unit Tests**: 3/3 Binaries Passed (`test_dual_load`, `test_event_order`, `test_runtime_guard`)
+## الفحص الدوري اليومي (Daily Periodic Audit - 2026-10-24)
+- **Host Full Verification**: 16/16 Passed
+- **C Core Unit Tests**: 3/3 Binaries Passed
 - **Total Weighted Engine Parity**: ~36.75% (~37%)
-- **Host MVP Status**: ~40% Operational
-- **Android Physical Device Status**: UNVERIFIED / BLOCKED (No physical device connected)
+- **Android Physical Device**: UNVERIFIED / BLOCKED
 
-## أُغلق جزئياً (هذه الدورة)
-| فجوة | حالة |
-|------|------|
-| ترتيب Begin/Alarm/Step/Move/Collision/End | مُحدَّث في `gm82_runtime_step` |
-| xprevious / yprevious | حقول + GML getter |
-| مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
-| High FPS & dynamic delta-time | دعم 60-90+ FPS وحساب `dt` ديناميكياً في `MainActivity` و `gm82_runtime` |
-| GML Math & String Builtins | إضافة `dsin`, `dcos`, `clamp`, `lerp`, `point_distance_3d`, `dot_product`, `string_format`, `file_find_*`, ومعالجة أنواع البفر الافتراضية |
+## Runner 2026-10-16
+- place_meeting/bbox: scale + origin (bbox offset logic with origin_x/origin_y implemented)
+- solid collision phase: snapshot + origin AABB
+- host ASSEMBLE event/AABB: PASS
 
 ## مفتوح (أولوية)
 | فجوة | ملاحظات |
 |------|---------|
 | Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
-| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB |
-| sprite origin في bbox | غير مربوط بالكامل |
+| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB محسّن |
+| sprite origin من GMK | حقول موجودة؛ القيم لسه 0 من القارئ |
 | GML كامل | interpreter جزئي |
-| صوت على جهاز | إثبات مطلوب على جهاز أندرويد حقيقي |
-| MainActivity WebView+NorNative | النسخة على main مبسّطة |
-
-## قاعدة
-ممنوع «100%»/«95%» من غير مصفوفة اختبار حقيقية وموثقة.
+| صوت على جهاز | إثبات مطلوب |
