@@ -1,0 +1,21 @@
+=== /app/app/src/main/assets/www/samples/mario_bros.gmk ===
+LOADED /app/app/src/main/assets/www/samples/mario_bros.gmk bytes=92098
+STEPS 30 frame=30
+DRAW ok=1
+PIPELINE_OK
+=== /app/app/src/main/assets/www/samples/plataformas.gmk ===
+LOADED /app/app/src/main/assets/www/samples/plataformas.gmk bytes=29058
+STEPS 30 frame=30
+DRAW ok=1
+PIPELINE_OK
+=== /app/app/src/main/assets/www/samples/shooter.gmk ===
+LOADED /app/app/src/main/assets/www/samples/shooter.gmk bytes=224588
+STEPS 30 frame=30
+DRAW ok=1
+PIPELINE_OK
+=== /app/app/src/main/assets/www/samples/zelda.gmk ===
+LOADED /app/app/src/main/assets/www/samples/zelda.gmk bytes=213981
+STEPS 30 frame=30
+DRAW ok=1
+PIPELINE_OK
+SUMMARY ok=4 fail=0

@@ -381,6 +381,7 @@ static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int s
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
 
+    gm82_draw_set_target(rgba, buf_w, buf_h);
     gm82_events_fire_pre_draw_all(rt);
 
     for (int i = 0; i < buf_w * buf_h; i++) {
@@ -438,18 +439,15 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
     for (int k = 0; k < n; k++) {
         gm82_instance *inst = &rt->instances[order[k]];
-        int si = inst->sprite_index;
-        if (rt->sprite_groups)
-            si = gm82_sprite_resolve_frame(rt->sprite_groups, inst->sprite_index, inst->image_index);
-        if (!rt->sprites || si < 0 || si >= rt->sprites->count)
-            continue;
-        const gm82_decoded_frame *fr = &rt->sprites->frames[si];
-        if (!fr->rgba) continue;
-        {
-            int dx = (int)inst->x - (int)rt->view_x;
-            int dy = (int)inst->y - (int)rt->view_y;
-            blit(rgba, buf_w, buf_h, fr->rgba, fr->width, fr->height, dx, dy);
-        }
+        if (inst->sprite_index < 0) continue;
+        double dx = inst->x - rt->view_x;
+        double dy = inst->y - rt->view_y;
+        gm82_gml_set_self(inst);
+        gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                            dx, dy,
+                            inst->image_xscale,
+                            inst->image_yscale,
+                            0.0, 0xFFFFFF, 1.0);
     }
     gm82_events_fire_post_draw_all(rt);
     return true;
