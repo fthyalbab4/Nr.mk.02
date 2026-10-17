@@ -1,27 +1,22 @@
-# GAPS_HONEST — 2026-10-18 (post J7 audit)
+# GAPS_HONEST — 2026-10-18 continue
 
-## Host suite (measured this run)
+## Host suite (measured)
 - ASSEMBLE: **ALL PASS**
-- Pipeline 4 samples: **ok=4 fail=0** (decode + room + draw lit)
-- zelda: movement observed; mario/plataformas/shooter: moved=0 on first alive instance (not suite FAIL by itself)
+- Pipeline 4/4 PIPELINE_OK with **moved=1** on all samples (player pick + hspeed inject)
 
-## Closed (grep-verified)
-- ROOM_BOUNDS_CLAMP + origin collision
-- str_args / file_* strings in eval
-- events fire_* including create/destroy/draw
-- gm82_action_execute_named present
-- gm82_runtime_get_active_snapshot (added 2026-10-18; was link break)
+## Closed this pass
+- Player instance selection + movement deltas on host suite
+- action_move_point / action_potential_step / action_draw_sprite basic behavior
+- get_active_snapshot link gap (prior J7)
 
-## Remaining gaps (code / tests)
-1. Player-driven movement proof on mario/plataformas/shooter without injected input.
-2. Line-by-line audit of DnD `return true` no-ops in execute_named.
-3. GML only as needed from real FAIL logs / cloud catalog.
-4. Full -Wall -Werror clean not claimed.
-5. Possible drift of cpp_backup / NOR_MAKER_COMPLETE_PACKAGE vs app/src/main/cpp.
+## Remaining (code)
+1. Sample GML keyboard scripts driving movement without host hspeed inject
+2. Remaining DnD no-ops that still need args (change_object by name-only path, another_room, effect, draw_text/score)
+3. Cloud-catalog GML failures as they appear
+4. Tree drift (cpp_backup vs main cpp)
 
-## Remaining gaps (device/hardware)
-- Android APK playtest: touch, no black screen, audio — **UNVERIFIED on device**
-- OpenSL on real hardware
-- Low-end performance
+## Remaining (device)
+- Android playtest UNVERIFIED on device
+- Audio on hardware
 
-No invented % parity.
+No invented %.
