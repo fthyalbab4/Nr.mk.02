@@ -155,6 +155,11 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "sign") == 0) { *out = args[0] > 0 ? 1 : (args[0] < 0 ? -1 : 0); return true; }
         if (strcmp(id, "sqr") == 0) { *out = gml_sqr(args[0]); return true; }
         if (strcmp(id, "sqrt") == 0) { *out = gml_sqrt_fn(args[0]); return true; }
+        if (strcmp(id, "dsin") == 0) { *out = gml_dsin(args[0]); return true; }
+        if (strcmp(id, "dcos") == 0) { *out = gml_dcos(args[0]); return true; }
+        if (strcmp(id, "dtan") == 0) { *out = gml_dtan(args[0]); return true; }
+        if (strcmp(id, "degtorad") == 0 || strcmp(id, "deg_to_rad") == 0) { *out = gml_deg_to_rad(args[0]); return true; }
+        if (strcmp(id, "radtodeg") == 0 || strcmp(id, "rad_to_deg") == 0) { *out = gml_rad_to_deg(args[0]); return true; }
         if (strcmp(id, "power") == 0) { *out = gml_power(args[0], args[1]); return true; }
         if (strcmp(id, "frac") == 0) { *out = gml_frac(args[0]); return true; }
         if (strcmp(id, "dot_product") == 0) { *out = gml_dot_product(args[0], args[1], args[2], args[3]); return true; }
@@ -175,6 +180,19 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "move_bounce_solid") == 0) { *out = gml_move_bounce_solid(args[0]); return true; }
         if (strcmp(id, "move_wrap") == 0) { *out = gml_move_wrap(args[0], args[1], args[2]); return true; }
         if (strcmp(id, "sound_play") == 0) { *out = gml_sound_play(args[0]); return true; }
+        if (strcmp(id, "sound_play_pitch") == 0) {
+            gml_sound_pitch(args[0], arg_count >= 2 ? args[1] : 1.0);
+            *out = gml_sound_play(args[0]);
+            return true;
+        }
+        if (strcmp(id, "sound_loop") == 0) {
+            *out = gml_sound_loop(args[0]); return true;
+        }
+        if (strcmp(id, "sound_loop_pitch") == 0) {
+            gml_sound_pitch(args[0], arg_count >= 2 ? args[1] : 1.0);
+            *out = gml_sound_loop(args[0]);
+            return true;
+        }
         if (strcmp(id, "sound_stop") == 0 || strcmp(id, "sound_stop_all") == 0) { *out = gml_sound_stop_all(); return true; }
         if (strcmp(id, "sound_isplaying") == 0 || strcmp(id, "sound_is_playing") == 0) { *out = gml_sound_is_playing(args[0]); return true; }
         if (strcmp(id, "sound_volume") == 0) { *out = gml_sound_volume(args[0], args[1]); return true; }

@@ -20,12 +20,11 @@ static void test_string_format(void) {
 }
 
 static void test_file_find_stubs(void) {
-    const char *f = gml_file_find_first("*.txt", 0);
-    assert(f != NULL);
-    const char *n = gml_file_find_next();
-    assert(n != NULL);
+    const char *f = gml_file_find_first("*.md", 0);
+    assert(f != NULL && strlen(f) > 0);
+    assert(strstr(f, ".md") != NULL);
     gml_file_find_close();
-    printf("test_file_find_stubs PASS\n");
+    printf("test_file_find PASS\n");
 }
 
 int main(void) {

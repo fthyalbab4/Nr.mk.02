@@ -34,6 +34,8 @@ typedef struct {
     uint8_t released[GM82_KEY_MAX];  /* just released this frame */
     int32_t mouse_x, mouse_y;
     uint8_t mouse_button[3];         /* 0=left 1=right 2=middle */
+    uint8_t mouse_pressed[3];
+    uint8_t mouse_released[3];
 } gm82_input_state;
 
 void gm82_input_init(gm82_input_state *in);
@@ -41,6 +43,8 @@ void gm82_input_begin_frame(gm82_input_state *in); /* clears pressed/released */
 void gm82_input_key_down(gm82_input_state *in, int key);
 void gm82_input_key_up(gm82_input_state *in, int key);
 void gm82_input_set_mouse(gm82_input_state *in, int x, int y);
+void gm82_input_mouse_down(gm82_input_state *in, int button);
+void gm82_input_mouse_up(gm82_input_state *in, int button);
 
 /* GML-style queries */
 double gml_keyboard_check(double key);
@@ -49,6 +53,8 @@ double gml_keyboard_check_released(double key);
 double gml_mouse_x(void);
 double gml_mouse_y(void);
 double gml_mouse_check_button(double button);
+double gml_mouse_check_button_pressed(double button);
+double gml_mouse_check_button_released(double button);
 
 void gm82_input_bind_global(gm82_input_state *in);
 

@@ -63,7 +63,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
         /* Name heuristics when GMK solid bit is wrong/zero */
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
@@ -125,7 +125,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->view_h = room->height > 480 ? 240.0 : (double)room->height;
     if (rt->view_w > room->width) rt->view_w = room->width;
     if (rt->view_h > room->height) rt->view_h = room->height;
-    rt->view_follow_object = 0;
+    rt->view_follow_object = -1;
 
     int w = 0;
     for (int i = 0; i < rt->instance_count; i++) {
@@ -155,7 +155,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             int32_t oi = rt->instances[i].object_index;
             if (oi < 0 || oi >= rt->objects->count) continue;
             const char *n = rt->objects->items[oi].name;
-            if (!n) continue;
+            if (!n || !n[0]) continue;
             if (strstr(n, "player") || strstr(n, "Player") || strstr(n, "mario") ||
                 strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "heroe")) {
                 has_player = 1; rt->view_follow_object = oi; break;
@@ -164,7 +164,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         if (!has_player && rt->objects) {
             for (int oi = 0; oi < rt->objects->count; oi++) {
                 const char *n = rt->objects->items[oi].name;
-                if (!n) continue;
+                if (!n || !n[0]) continue;
                 if (strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "player") ||
                     strstr(n, "mario") || strstr(n, "Player")) {
                     double sx = rt->room_width > 80 ? rt->room_width * 0.35 : 64;
@@ -232,6 +232,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    gm82_events_fire_keyboard_all(rt);
+    gm82_events_fire_mouse_all(rt);
     gm82_events_fire_step_all(rt);
 
     const int n_move = rt->instance_count;
@@ -267,62 +269,82 @@ void gm82_runtime_step(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        int32_t sw = 16, sh = 16;
+
+        /* Room boundary safety verification after movement */
+        if (inst->x < -8192.0 || inst->x > rt->room_width + 8192.0 ||
+            inst->y < -8192.0 || inst->y > rt->room_height + 8192.0) {
+            gm82_runtime_instance_destroy(rt, inst);
+            continue;
+        }
+
+        double sw = 16.0, sh = 16.0, ox = 0.0, oy = 0.0;
         if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
-            sw = rt->sprites->frames[inst->sprite_index].width;
-            sh = rt->sprites->frames[inst->sprite_index].height;
+            const gm82_decoded_frame *fr = &rt->sprites->frames[inst->sprite_index];
+            sw = (double)fr->width;
+            sh = (double)fr->height;
+            ox = (double)fr->origin_x;
+            oy = (double)fr->origin_y;
         }
-        {
-            double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
-            double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
-            if (xs < 0) xs = -xs;
-            if (ys < 0) ys = -ys;
-            sw = (int32_t)(sw * xs);
-            sh = (int32_t)(sh * ys);
-            if (sw < 1) sw = 1;
-            if (sh < 1) sh = 1;
-        }
+        double xs = inst->image_xscale != 0.0 ? inst->image_xscale : 1.0;
+        double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
+
+        double left1 = inst->x - ox * xs;
+        double right1 = inst->x + (sw - ox) * xs;
+        double top1 = inst->y - oy * ys;
+        double bottom1 = inst->y + (sh - oy) * ys;
+
+        double ax1 = left1 < right1 ? left1 : right1;
+        double ax2 = left1 > right1 ? left1 : right1;
+        double ay1 = top1 < bottom1 ? top1 : bottom1;
+        double ay2 = top1 > bottom1 ? top1 : bottom1;
+
         for (int j = 0; j < rt->instance_count; j++) {
             if (i == j) continue;
             gm82_instance *other = &rt->instances[j];
             if (!other->alive) continue;
-            int32_t ow = 16, oh = 16;
+
+            double ow = 16.0, oh = 16.0, oox = 0.0, ooy = 0.0;
             if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
-                ow = rt->sprites->frames[other->sprite_index].width;
-                oh = rt->sprites->frames[other->sprite_index].height;
+                const gm82_decoded_frame *fr = &rt->sprites->frames[other->sprite_index];
+                ow = (double)fr->width;
+                oh = (double)fr->height;
+                oox = (double)fr->origin_x;
+                ooy = (double)fr->origin_y;
             }
-            {
-                double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
-                double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
-                if (xs < 0) xs = -xs;
-                if (ys < 0) ys = -ys;
-                ow = (int32_t)(ow * xs);
-                oh = (int32_t)(oh * ys);
-                if (ow < 1) ow = 1;
-                if (oh < 1) oh = 1;
-            }
-            double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-            double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
+            double oxs = other->image_xscale != 0.0 ? other->image_xscale : 1.0;
+            double oys = other->image_yscale != 0.0 ? other->image_yscale : 1.0;
+
+            double left2 = other->x - oox * oxs;
+            double right2 = other->x + (ow - oox) * oxs;
+            double top2 = other->y - ooy * oys;
+            double bottom2 = other->y + (oh - ooy) * oys;
+
+            double bx1 = left2 < right2 ? left2 : right2;
+            double bx2 = left2 > right2 ? left2 : right2;
+            double by1 = top2 < bottom2 ? top2 : bottom2;
+            double by2 = top2 > bottom2 ? top2 : bottom2;
+
             if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
                 continue;
+
             gm82_events_fire_collision(rt, inst, other);
-            if (other->solid) {
+            if (other->solid && inst->alive) {
                 double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
                 double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);
                 if (overlap_y <= overlap_x) {
-                    if (inst->y + sh/2.0 < other->y + oh/2.0) {
-                        inst->y = other->y - sh;
+                    if ((ay1 + ay2) * 0.5 < (by1 + by2) * 0.5) {
+                        inst->y = by1 - (sh - oy) * (ys > 0 ? ys : -ys);
                         if (inst->vspeed > 0) inst->vspeed = 0;
                     } else {
-                        inst->y = other->y + oh;
+                        inst->y = by2 + oy * (ys > 0 ? ys : -ys);
                         if (inst->vspeed < 0) inst->vspeed = 0;
                     }
                 } else {
-                    if (inst->x + sw/2.0 < other->x + ow/2.0) {
-                        inst->x = other->x - sw;
+                    if ((ax1 + ax2) * 0.5 < (bx1 + bx2) * 0.5) {
+                        inst->x = bx1 - (sw - ox) * (xs > 0 ? xs : -xs);
                         if (inst->hspeed > 0) inst->hspeed = 0;
                     } else {
-                        inst->x = other->x + ow;
+                        inst->x = bx2 + ox * (xs > 0 ? xs : -xs);
                         if (inst->hspeed < 0) inst->hspeed = 0;
                     }
                 }
@@ -381,6 +403,7 @@ static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int s
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
 
+    gm82_draw_set_target(rgba, buf_w, buf_h);
     gm82_events_fire_pre_draw_all(rt);
 
     for (int i = 0; i < buf_w * buf_h; i++) {
@@ -426,6 +449,8 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
         if (rt->instances[i].alive && rt->instances[i].visible)
             order[n++] = i;
+
+    /* Insertion sort: higher depth value is drawn first (behind), lower depth drawn later (in front) */
     for (int i = 1; i < n; i++) {
         int key = order[i];
         int j = i - 1;
@@ -438,18 +463,15 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
     for (int k = 0; k < n; k++) {
         gm82_instance *inst = &rt->instances[order[k]];
-        int si = inst->sprite_index;
-        if (rt->sprite_groups)
-            si = gm82_sprite_resolve_frame(rt->sprite_groups, inst->sprite_index, inst->image_index);
-        if (!rt->sprites || si < 0 || si >= rt->sprites->count)
-            continue;
-        const gm82_decoded_frame *fr = &rt->sprites->frames[si];
-        if (!fr->rgba) continue;
-        {
-            int dx = (int)inst->x - (int)rt->view_x;
-            int dy = (int)inst->y - (int)rt->view_y;
-            blit(rgba, buf_w, buf_h, fr->rgba, fr->width, fr->height, dx, dy);
-        }
+        if (!inst->alive || !inst->visible || inst->sprite_index < 0) continue;
+        double dx = inst->x - rt->view_x;
+        double dy = inst->y - rt->view_y;
+        gm82_gml_set_self(inst);
+        gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                            dx, dy,
+                            inst->image_xscale,
+                            inst->image_yscale,
+                            0.0, 0xFFFFFF, 1.0);
     }
     gm82_events_fire_post_draw_all(rt);
     return true;

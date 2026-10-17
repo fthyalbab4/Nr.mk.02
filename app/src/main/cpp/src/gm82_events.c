@@ -276,6 +276,101 @@ void gm82_events_fire_end_step_all(gm82_runtime *rt) {
     }
 }
 
+void gm82_events_fire_keyboard_all(gm82_runtime *rt) {
+    if (!rt || !rt->objects) return;
+    gm82_gml_set_runtime(rt);
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        int32_t oi = inst->object_index;
+        if (oi < 0 || oi >= rt->objects->count) continue;
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == 5) { /* Keyboard held */
+                if (ev->event_numb > 0 && gml_keyboard_check((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            } else if (ev->main_type == 9) { /* Key press */
+                if (ev->event_numb > 0 && gml_keyboard_check_pressed((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            } else if (ev->main_type == 10) { /* Key release */
+                if (ev->event_numb > 0 && gml_keyboard_check_released((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void gm82_events_fire_mouse_all(gm82_runtime *rt) {
+    if (!rt || !rt->objects) return;
+    gm82_gml_set_runtime(rt);
+    double mx = gml_mouse_x();
+    double my = gml_mouse_y();
+    const int n = rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        int32_t oi = inst->object_index;
+        if (oi < 0 || oi >= rt->objects->count) continue;
+        int32_t sw = 16, sh = 16;
+        if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
+            sw = rt->sprites->frames[inst->sprite_index].width;
+            sh = rt->sprites->frames[inst->sprite_index].height;
+        }
+        bool inside = (mx >= inst->x && mx < inst->x + sw && my >= inst->y && my < inst->y + sh);
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == 6) {
+                int ev_num = ev->event_numb;
+                bool fire = false;
+
+                if (ev_num >= 0 && ev_num <= 2) { /* Local Held Down */
+                    fire = inside && gml_mouse_check_button((double)ev_num);
+                } else if (ev_num >= 4 && ev_num <= 6) { /* Local Pressed */
+                    fire = inside && gml_mouse_check_button_pressed((double)(ev_num - 4));
+                } else if (ev_num >= 7 && ev_num <= 9) { /* Local Released */
+                    fire = inside && gml_mouse_check_button_released((double)(ev_num - 7));
+                } else if (ev_num >= 50 && ev_num <= 52) { /* Global Held Down */
+                    fire = gml_mouse_check_button((double)(ev_num - 50));
+                } else if (ev_num >= 53 && ev_num <= 55) { /* Global Pressed */
+                    fire = gml_mouse_check_button_pressed((double)(ev_num - 53));
+                } else if (ev_num >= 56 && ev_num <= 58) { /* Global Released */
+                    fire = gml_mouse_check_button_released((double)(ev_num - 56));
+                }
+
+                if (fire) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void gm82_events_fire_draw_all(gm82_runtime *rt) {
     if (!rt) return;
     gm82_gml_set_runtime(rt);
