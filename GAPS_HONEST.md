@@ -1,17 +1,13 @@
 # GAPS_HONEST
 
 ## Closed this pass
-- file_* string literal args in evaluator
-- Room bounds soft clamp
-- Prior: origin draw/collision, pipeline 4/4, file_rename
+- Evaluator string literals for file/ini paths
+- show_debug_message, show_message, randomize, random_set_seed
+- Room bounds clamp (prior)
 
 ## Open
-| Gap | Status |
-|-----|--------|
-| Full GML | Partial |
-| All GMK event code | Partial decode + fire |
-| Android physical | UNVERIFIED |
-| Audio device | UNVERIFIED |
-| DnD complete | Partial actions |
+- Full GML / arrays / with-blocks fidelity
+- Complete GMK event code execution
+- Android physical + audio
 
 No 100% claim.
