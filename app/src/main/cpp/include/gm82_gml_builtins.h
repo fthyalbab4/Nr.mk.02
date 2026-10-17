@@ -447,6 +447,9 @@ double gml_color_reverse(double color);
 double gml_ds_grid_multiply(double id, double x, double y, double val);
 double gml_ds_grid_add(double id, double x, double y, double val);
 double gml_ds_grid_copy(double id, double source_id);
+double gml_ds_grid_set_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos);
+double gml_ds_grid_add_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos);
+
 double gml_ds_list_shuffle(double id);
 double gml_ds_list_sort(double id, double ascending);
 

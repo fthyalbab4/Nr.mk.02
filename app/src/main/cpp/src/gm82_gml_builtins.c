@@ -3143,6 +3143,91 @@ double gml_ds_grid_add(double id, double x, double y, double val) {
     return 1;
 }
 
+
+double gml_ds_grid_set_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos) {
+    int dst_i = (int)id, src_i = (int)source_id;
+    if (dst_i < 0 || dst_i >= MAX_DS_GRIDS || !g_ds_grid_active[dst_i]) return 0;
+    if (src_i < 0 || src_i >= MAX_DS_GRIDS || !g_ds_grid_active[src_i]) return 0;
+    gm82_ds_grid *src = &g_ds_grids[src_i];
+    gm82_ds_grid *dst = &g_ds_grids[dst_i];
+    if (!src->data || !dst->data) return 0;
+    int sx1 = (int)x1, sy1 = (int)y1, sx2 = (int)x2, sy2 = (int)y2;
+    int dxpos = (int)xpos, dypos = (int)ypos;
+    if (sx1 > sx2) { int t = sx1; sx1 = sx2; sx2 = t; }
+    if (sy1 > sy2) { int t = sy1; sy1 = sy2; sy2 = t; }
+    int rw = sx2 - sx1 + 1;
+    int rh = sy2 - sy1 + 1;
+    if (rw <= 0 || rh <= 0) return 0;
+
+    double *temp = (double *)calloc((size_t)(rw * rh), sizeof(double));
+    if (!temp) return 0;
+
+    for (int ry = 0; ry < rh; ry++) {
+        int sy = sy1 + ry;
+        for (int rx = 0; rx < rw; rx++) {
+            int sx = sx1 + rx;
+            if (sx >= 0 && sx < src->width && sy >= 0 && sy < src->height) {
+                temp[ry * rw + rx] = src->data[sy * src->width + sx];
+            }
+        }
+    }
+
+    for (int ry = 0; ry < rh; ry++) {
+        int dy = dypos + ry;
+        if (dy < 0 || dy >= dst->height) continue;
+        for (int rx = 0; rx < rw; rx++) {
+            int dx = dxpos + rx;
+            if (dx < 0 || dx >= dst->width) continue;
+            dst->data[dy * dst->width + dx] = temp[ry * rw + rx];
+        }
+    }
+
+    free(temp);
+    return 1;
+}
+
+double gml_ds_grid_add_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos) {
+    int dst_i = (int)id, src_i = (int)source_id;
+    if (dst_i < 0 || dst_i >= MAX_DS_GRIDS || !g_ds_grid_active[dst_i]) return 0;
+    if (src_i < 0 || src_i >= MAX_DS_GRIDS || !g_ds_grid_active[src_i]) return 0;
+    gm82_ds_grid *src = &g_ds_grids[src_i];
+    gm82_ds_grid *dst = &g_ds_grids[dst_i];
+    if (!src->data || !dst->data) return 0;
+    int sx1 = (int)x1, sy1 = (int)y1, sx2 = (int)x2, sy2 = (int)y2;
+    int dxpos = (int)xpos, dypos = (int)ypos;
+    if (sx1 > sx2) { int t = sx1; sx1 = sx2; sx2 = t; }
+    if (sy1 > sy2) { int t = sy1; sy1 = sy2; sy2 = t; }
+    int rw = sx2 - sx1 + 1;
+    int rh = sy2 - sy1 + 1;
+    if (rw <= 0 || rh <= 0) return 0;
+
+    double *temp = (double *)calloc((size_t)(rw * rh), sizeof(double));
+    if (!temp) return 0;
+
+    for (int ry = 0; ry < rh; ry++) {
+        int sy = sy1 + ry;
+        for (int rx = 0; rx < rw; rx++) {
+            int sx = sx1 + rx;
+            if (sx >= 0 && sx < src->width && sy >= 0 && sy < src->height) {
+                temp[ry * rw + rx] = src->data[sy * src->width + sx];
+            }
+        }
+    }
+
+    for (int ry = 0; ry < rh; ry++) {
+        int dy = dypos + ry;
+        if (dy < 0 || dy >= dst->height) continue;
+        for (int rx = 0; rx < rw; rx++) {
+            int dx = dxpos + rx;
+            if (dx < 0 || dx >= dst->width) continue;
+            dst->data[dy * dst->width + dx] += temp[ry * rw + rx];
+        }
+    }
+
+    free(temp);
+    return 1;
+}
+
 double gml_ds_grid_copy(double id, double source_id) {
     int dst_i = (int)id, src_i = (int)source_id;
     if (dst_i < 0 || dst_i >= MAX_DS_GRIDS || !g_ds_grid_active[dst_i]) return 0;
