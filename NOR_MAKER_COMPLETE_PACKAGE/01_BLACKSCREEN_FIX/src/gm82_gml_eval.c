@@ -124,34 +124,97 @@ static bool parse_primary(gml_parser *p, double *out) {
     if (!parse_ident(p, id, sizeof(id))) return false;
     /* function call? */
     if (match(p, '(')) {
-        double arg = 0;
+        double args[8] = {0};
+        int arg_count = 0;
         if (peek(p) != ')') {
-            if (!parse_expr(p, &arg)) return false;
+            do {
+                if (arg_count < 8) {
+                    if (!parse_expr(p, &args[arg_count++])) return false;
+                } else {
+                    double dummy;
+                    if (!parse_expr(p, &dummy)) return false;
+                }
+            } while (match(p, ','));
         }
         if (!match(p, ')')) return false;
-        if (strcmp(id, "abs") == 0) { *out = fabs(arg); return true; }
-        if (strcmp(id, "sign") == 0) { *out = arg > 0 ? 1 : (arg < 0 ? -1 : 0); return true; }
-        if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
-        if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
-        if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
-        if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+
+        if (strcmp(id, "abs") == 0) { *out = fabs(args[0]); return true; }
+        if (strcmp(id, "sign") == 0) { *out = args[0] > 0 ? 1 : (args[0] < 0 ? -1 : 0); return true; }
+        if (strcmp(id, "sqr") == 0) { *out = gml_sqr(args[0]); return true; }
+        if (strcmp(id, "sqrt") == 0) { *out = gml_sqrt(args[0]); return true; }
+        if (strcmp(id, "power") == 0) { *out = gml_power(args[0], args[1]); return true; }
+        if (strcmp(id, "exp") == 0) { *out = gml_exp(args[0]); return true; }
+        if (strcmp(id, "ln") == 0) { *out = gml_ln(args[0]); return true; }
+        if (strcmp(id, "log10") == 0) { *out = gml_log10(args[0]); return true; }
+        if (strcmp(id, "logn") == 0) { *out = gml_logn(args[0], args[1]); return true; }
+        if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)args[0] + 1)); return true; }
+        if (strcmp(id, "random") == 0) { *out = ((double)rand() / (double)RAND_MAX) * args[0]; return true; }
+        if (strcmp(id, "floor") == 0) { *out = floor(args[0]); return true; }
+        if (strcmp(id, "ceil") == 0) { *out = ceil(args[0]); return true; }
+        if (strcmp(id, "round") == 0) { *out = round(args[0]); return true; }
+        if (strcmp(id, "clamp") == 0) { *out = gml_clamp(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "lerp") == 0) { *out = gml_lerp(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "approach") == 0) { *out = gml_approach(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "point_distance") == 0) { *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true; }
+        if (strcmp(id, "point_direction") == 0) { *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true; }
+        if (strcmp(id, "lengthdir_x") == 0) { *out = gml_lengthdir_x(args[0], args[1]); return true; }
+        if (strcmp(id, "lengthdir_y") == 0) { *out = gml_lengthdir_y(args[0], args[1]); return true; }
+        if (strcmp(id, "min") == 0) {
+            double m = args[0];
+            for (int k = 1; k < arg_count; k++) if (args[k] < m) m = args[k];
+            *out = m; return true;
+        }
+        if (strcmp(id, "max") == 0) {
+            double m = args[0];
+            for (int k = 1; k < arg_count; k++) if (args[k] > m) m = args[k];
+            *out = m; return true;
+        }
         if (strcmp(id, "keyboard_check") == 0) {
-            *out = gml_keyboard_check(arg); return true;
+            *out = gml_keyboard_check(args[0]); return true;
         }
         if (strcmp(id, "mouse_check_button") == 0) {
-            *out = gml_mouse_check_button(arg); return true;
+            *out = gml_mouse_check_button(args[0]); return true;
         }
         if (strcmp(id, "keyboard_check_pressed") == 0) {
-            *out = gml_keyboard_check_pressed(arg); return true;
+            *out = gml_keyboard_check_pressed(args[0]); return true;
         }
         if (strcmp(id, "place_free") == 0) {
-            /* place_free(x) only one arg – use self y */
-            *out = gml_place_free(arg, p->self ? p->self->y : 0); return true;
+            double py = (arg_count > 1) ? args[1] : (p->self ? p->self->y : 0);
+            *out = gml_place_free(args[0], py); return true;
+        }
+        if (strcmp(id, "place_meeting") == 0) {
+            *out = gml_place_meeting(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "position_meeting") == 0) {
+            *out = gml_position_meeting(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "point_in_rectangle") == 0) {
+            *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "instance_exists") == 0) {
+            *out = gml_instance_exists(args[0]); return true;
         }
         if (strcmp(id, "instance_number") == 0) {
-            *out = gml_instance_number(arg); return true;
+            *out = gml_instance_number(args[0]); return true;
         }
-        if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
+        if (strcmp(id, "ds_grid_create") == 0) {
+            *out = gml_ds_grid_create(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "ds_grid_destroy") == 0) {
+            *out = gml_ds_grid_destroy(args[0]); return true;
+        }
+        if (strcmp(id, "ds_grid_set") == 0) {
+            *out = gml_ds_grid_set(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "ds_grid_get") == 0) {
+            *out = gml_ds_grid_get(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "ds_grid_value_sum") == 0) {
+            *out = gml_ds_grid_value_sum(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "ds_grid_set_disk") == 0) {
+            *out = gml_ds_grid_set_disk(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id);
         return false;
     }
