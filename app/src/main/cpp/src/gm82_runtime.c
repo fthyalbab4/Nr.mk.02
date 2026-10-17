@@ -2,6 +2,8 @@
 #include "gm82_runtime.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_events.h"
+#include "gm82_actions.h"
+#include "gm82_gml_eval.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -60,6 +62,14 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->solid = o->solid;
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
+        /* Name heuristics when GMK solid bit is wrong/zero */
+        if (o->name) {
+            if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
+                strstr(o->name, "castillo") || strstr(o->name, "solid") ||
+                strstr(o->name, "Solid") || strstr(o->name, "wall") ||
+                strstr(o->name, "Wall") || strstr(o->name, "ground"))
+                inst->solid = 1;
+        }
     }
 }
 
@@ -68,7 +78,10 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
-    inst->x = x; inst->y = y;
+    inst->x = x;
+    inst->y = y;
+    inst->xstart = x;
+    inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0; inst->image_yscale = 1.0;
     inst->alive = 1;
@@ -78,8 +91,23 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
 }
 
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
-    (void)rt;
-    if (inst) inst->alive = 0;
+    if (!inst || !inst->alive) return;
+    /* Destroy event main_type 1 */
+    if (rt && rt->objects && inst->object_index >= 0 &&
+        inst->object_index < rt->objects->count) {
+        const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type != 1) continue;
+            if (ev->action_name0[0])
+                gm82_action_execute_named(rt, inst, ev->action_name0);
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, ev->code_snippet);
+            }
+        }
+    }
+    inst->alive = 0;
 }
 
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
@@ -110,11 +138,42 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
 
     for (int i = 0; i < room->instance_count; i++) {
         const gm82_decoded_instance *src = &room->instances[i];
+        if (rt->objects && src->object_index >= 0 && src->object_index < rt->objects->count) {
+            const char *on = rt->objects->items[src->object_index].name;
+            if (!on || !on[0]) continue;
+        }
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
     rt->running = 1;
     rt->frame = 0;
+    {
+        int has_player = 0;
+        for (int i = 0; i < rt->instance_count; i++) {
+            if (!rt->instances[i].alive || !rt->objects) continue;
+            int32_t oi = rt->instances[i].object_index;
+            if (oi < 0 || oi >= rt->objects->count) continue;
+            const char *n = rt->objects->items[oi].name;
+            if (!n) continue;
+            if (strstr(n, "player") || strstr(n, "Player") || strstr(n, "mario") ||
+                strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "heroe")) {
+                has_player = 1; rt->view_follow_object = oi; break;
+            }
+        }
+        if (!has_player && rt->objects) {
+            for (int oi = 0; oi < rt->objects->count; oi++) {
+                const char *n = rt->objects->items[oi].name;
+                if (!n) continue;
+                if (strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "player") ||
+                    strstr(n, "mario") || strstr(n, "Player")) {
+                    double sx = rt->room_width > 80 ? rt->room_width * 0.35 : 64;
+                    double sy = rt->room_height > 80 ? rt->room_height * 0.35 : 64;
+                    gm82_runtime_instance_create(rt, oi, sx, sy);
+                    rt->view_follow_object = oi; break;
+                }
+            }
+        }
+    }
     gm82_events_fire_create_all(rt);
     return true;
 }
@@ -127,20 +186,13 @@ static void update_speed_from_dir(gm82_instance *inst) {
 
 void gm82_runtime_step(gm82_runtime *rt) {
     if (!rt || !rt->running) return;
+    /* DETERMINISTIC FRAME ORDER: Begin->Alarm->Step->Move->Collision->End; Draw separate */
     rt->frame++;
     {
         double sec = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0/30.0);
         gm82_gml_set_frame_time(sec);
     }
 
-    /*
-     * GM8 event order (Mark Overmars docs):
-     *   Begin Step → Alarm → Keyboard/Mouse → Step →
-     *   set positions → Collision → End Step → Draw
-     * Keyboard polled via gm82_input inside GML/actions.
-     */
-
-    /* Snapshot previous position (used by GML xprevious/yprevious) */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -150,7 +202,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
 
     gm82_events_fire_begin_step_all(rt);
 
-    /* Alarms tick (after Begin Step, before Step — GM docs) */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -159,17 +210,33 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 inst->alarms[a]--;
                 if (inst->alarms[a] == 0) {
                     gm82_alarm_fire_scripts(rt, inst, a);
+                    /* Object Alarm event (main_type 2, event_numb = a) */
+                    if (rt->objects && inst->object_index >= 0 &&
+                        inst->object_index < rt->objects->count) {
+                        const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+                        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+                            const gm82_decoded_event *ev = &obj->events[e];
+                            if (ev->main_type != 2 || ev->event_numb != a) continue;
+                            if (ev->action_name0[0])
+                                gm82_action_execute_named(rt, inst, ev->action_name0);
+                            if (ev->code_snippet && ev->code_snippet[0]) {
+                                gm82_gml_set_self(inst);
+                                gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                            }
+                        }
+                    }
                     inst->alarms[a] = -1;
                 }
             }
         }
     }
 
-    /* Normal Step events (behaviors / GML / object actions) */
+    gm82_events_fire_keyboard_all(rt);
+    gm82_events_fire_mouse_all(rt);
     gm82_events_fire_step_all(rt);
 
-    /* Apply motion (speed/dir, gravity, friction) then move */
-    for (int i = 0; i < rt->instance_count; i++) {
+    const int n_move = rt->instance_count;
+    for (int i = 0; i < n_move; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
 
@@ -196,68 +263,100 @@ void gm82_runtime_step(gm82_runtime *rt) {
 
         inst->x += inst->hspeed;
         inst->y += inst->vspeed;
+
+        /* Room bounds clamp after move */
+        if (rt->room_width > 0) {
+            if (inst->x < 0.0) inst->x = 0.0;
+            else if (inst->x > (double)rt->room_width) inst->x = (double)rt->room_width;
+        }
+        if (rt->room_height > 0) {
+            if (inst->y < 0.0) inst->y = 0.0;
+            else if (inst->y > (double)rt->room_height) inst->y = (double)rt->room_height;
+        }
     }
 
-    /* Collision phase: AABB + image scale */
-    for (int i = 0; i < rt->instance_count; i++) {
+    /* Snapshot count for safe iteration during collision */
+    const int n_col = rt->instance_count;
+    for (int i = 0; i < n_col; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        int32_t sw = 16, sh = 16;
+
+        double sw = 16.0, sh = 16.0, ox = 0.0, oy = 0.0;
         if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
-            sw = rt->sprites->frames[inst->sprite_index].width;
-            sh = rt->sprites->frames[inst->sprite_index].height;
+            int frame_idx = inst->sprite_index;
+            if (rt->sprite_groups) {
+                int f = gm82_sprite_resolve_frame(rt->sprite_groups, inst->sprite_index, inst->image_index);
+                if (f >= 0 && f < rt->sprites->count) frame_idx = f;
+            }
+            const gm82_decoded_frame *fr = &rt->sprites->frames[frame_idx];
+            sw = (double)fr->width;
+            sh = (double)fr->height;
+            ox = (double)fr->origin_x;
+            oy = (double)fr->origin_y;
         }
-        {
-            double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
-            double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
-            if (xs < 0) xs = -xs;
-            if (ys < 0) ys = -ys;
-            sw = (int32_t)(sw * xs);
-            sh = (int32_t)(sh * ys);
-            if (sw < 1) sw = 1;
-            if (sh < 1) sh = 1;
-        }
-        for (int j = 0; j < rt->instance_count; j++) {
+        double xs = fabs(inst->image_xscale != 0.0 ? inst->image_xscale : 1.0);
+        double ys = fabs(inst->image_yscale != 0.0 ? inst->image_yscale : 1.0);
+        double scaled_w = sw * xs; if (scaled_w < 1.0) scaled_w = 1.0;
+        double scaled_h = sh * ys; if (scaled_h < 1.0) scaled_h = 1.0;
+        double scaled_ox = ox * xs;
+        double scaled_oy = oy * ys;
+
+        double ax1 = inst->x - scaled_ox;
+        double ay1 = inst->y - scaled_oy;
+        double ax2 = ax1 + scaled_w;
+        double ay2 = ay1 + scaled_h;
+
+        for (int j = 0; j < n_col; j++) {
             if (i == j) continue;
             gm82_instance *other = &rt->instances[j];
             if (!other->alive) continue;
-            int32_t ow = 16, oh = 16;
+
+            double ow = 16.0, oh = 16.0, oox = 0.0, ooy = 0.0;
             if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
-                ow = rt->sprites->frames[other->sprite_index].width;
-                oh = rt->sprites->frames[other->sprite_index].height;
+                int frame_idx = other->sprite_index;
+                if (rt->sprite_groups) {
+                    int f = gm82_sprite_resolve_frame(rt->sprite_groups, other->sprite_index, other->image_index);
+                    if (f >= 0 && f < rt->sprites->count) frame_idx = f;
+                }
+                const gm82_decoded_frame *fr = &rt->sprites->frames[frame_idx];
+                ow = (double)fr->width;
+                oh = (double)fr->height;
+                oox = (double)fr->origin_x;
+                ooy = (double)fr->origin_y;
             }
-            {
-                double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
-                double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
-                if (xs < 0) xs = -xs;
-                if (ys < 0) ys = -ys;
-                ow = (int32_t)(ow * xs);
-                oh = (int32_t)(oh * ys);
-                if (ow < 1) ow = 1;
-                if (oh < 1) oh = 1;
-            }
-            double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-            double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
+            double oxs = fabs(other->image_xscale != 0.0 ? other->image_xscale : 1.0);
+            double oys = fabs(other->image_yscale != 0.0 ? other->image_yscale : 1.0);
+            double o_scaled_w = ow * oxs; if (o_scaled_w < 1.0) o_scaled_w = 1.0;
+            double o_scaled_h = oh * oys; if (o_scaled_h < 1.0) o_scaled_h = 1.0;
+            double o_scaled_ox = oox * oxs;
+            double o_scaled_oy = ooy * oys;
+
+            double bx1 = other->x - o_scaled_ox;
+            double by1 = other->y - o_scaled_oy;
+            double bx2 = bx1 + o_scaled_w;
+            double by2 = by1 + o_scaled_h;
+
             if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
                 continue;
+
             gm82_events_fire_collision(rt, inst, other);
             if (other->solid) {
                 double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
                 double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);
                 if (overlap_y <= overlap_x) {
-                    if (inst->y + sh/2.0 < other->y + oh/2.0) {
-                        inst->y = other->y - sh;
+                    if (ay1 + scaled_h / 2.0 < by1 + o_scaled_h / 2.0) {
+                        inst->y = by1 - scaled_h + scaled_oy;
                         if (inst->vspeed > 0) inst->vspeed = 0;
                     } else {
-                        inst->y = other->y + oh;
+                        inst->y = by2 + scaled_oy;
                         if (inst->vspeed < 0) inst->vspeed = 0;
                     }
                 } else {
-                    if (inst->x + sw/2.0 < other->x + ow/2.0) {
-                        inst->x = other->x - sw;
+                    if (ax1 + scaled_w / 2.0 < bx1 + o_scaled_w / 2.0) {
+                        inst->x = bx1 - scaled_w + scaled_ox;
                         if (inst->hspeed > 0) inst->hspeed = 0;
                     } else {
-                        inst->x = other->x + ow;
+                        inst->x = bx2 + scaled_ox;
                         if (inst->hspeed < 0) inst->hspeed = 0;
                     }
                 }
@@ -293,8 +392,21 @@ void gm82_runtime_step(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        if (inst->image_speed != 0.0)
+        if (inst->image_speed != 0.0) {
             inst->image_index += (int32_t)(inst->image_speed > 0 ? 1 : -1);
+            int sub_count = 0;
+            if (rt->sprite_groups && inst->sprite_index >= 0 && inst->sprite_index < rt->sprite_groups->count) {
+                sub_count = rt->sprite_groups->items[inst->sprite_index].frame_count;
+            } else if (rt->sprites) {
+                sub_count = rt->sprites->count;
+            }
+            if (sub_count > 0) {
+                if (inst->image_index >= sub_count) inst->image_index %= sub_count;
+                else if (inst->image_index < 0) {
+                    inst->image_index = (inst->image_index % sub_count + sub_count) % sub_count;
+                }
+            }
+        }
     }
 }
 
@@ -315,6 +427,9 @@ static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int s
 
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
+
+    gm82_draw_set_target(rgba, buf_w, buf_h);
+    gm82_events_fire_pre_draw_all(rt);
 
     for (int i = 0; i < buf_w * buf_h; i++) {
         rgba[i*4+0]=20; rgba[i*4+1]=20; rgba[i*4+2]=40; rgba[i*4+3]=255;
@@ -352,6 +467,8 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
+    gm82_events_fire_draw_all(rt);
+
     int order[GM82_MAX_INSTANCES];
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
@@ -369,23 +486,49 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
     for (int k = 0; k < n; k++) {
         gm82_instance *inst = &rt->instances[order[k]];
-        int si = inst->sprite_index;
-        if (rt->sprite_groups)
-            si = gm82_sprite_resolve_frame(rt->sprite_groups, inst->sprite_index, inst->image_index);
-        if (!rt->sprites || si < 0 || si >= rt->sprites->count)
-            continue;
-        const gm82_decoded_frame *fr = &rt->sprites->frames[si];
-        if (!fr->rgba) continue;
-        {
-            int dx = (int)inst->x - (int)rt->view_x;
-            int dy = (int)inst->y - (int)rt->view_y;
-            blit(rgba, buf_w, buf_h, fr->rgba, fr->width, fr->height, dx, dy);
-        }
+        if (inst->sprite_index < 0) continue;
+        double dx = inst->x - rt->view_x;
+        double dy = inst->y - rt->view_y;
+        gm82_gml_set_self(inst);
+        gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                            dx, dy,
+                            inst->image_xscale,
+                            inst->image_yscale,
+                            0.0, 0xFFFFFF, 1.0);
     }
+    gm82_events_fire_post_draw_all(rt);
     return true;
 }
 
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index) {
     if (!rt || user_event_index < 0 || user_event_index > 11) return;
-    (void)user_event_index;
+    gm82_instance *self = gm82_gml_get_self();
+    if (self && self->alive && rt->objects && self->object_index >= 0 && self->object_index < rt->objects->count) {
+        const gm82_decoded_object *obj = &rt->objects->items[self->object_index];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type != 7 || ev->event_numb != user_event_index) continue;
+            if (ev->action_name0[0])
+                gm82_action_execute_named(rt, self, ev->action_name0);
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_eval_block(rt, self, ev->code_snippet);
+            }
+        }
+    } else if (rt->objects) {
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive || inst->object_index < 0 || inst->object_index >= rt->objects->count) continue;
+            const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+            for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+                const gm82_decoded_event *ev = &obj->events[e];
+                if (ev->main_type != 7 || ev->event_numb != user_event_index) continue;
+                if (ev->action_name0[0])
+                    gm82_action_execute_named(rt, inst, ev->action_name0);
+                if (ev->code_snippet && ev->code_snippet[0]) {
+                    gm82_gml_set_self(inst);
+                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                }
+            }
+        }
+    }
 }

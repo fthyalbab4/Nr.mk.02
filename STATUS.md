@@ -1,22 +1,14 @@
-# STATUS — صادق (2026-10-13)
+# STATUS — patches on repository
 
-## مثبت host
-| اختبار | نتيجة |
-|--------|--------|
-| PLAY_PATH 4/4 | OK |
-| mario + يمين | MOVED |
-| **plataformas + يمين** | **MOVED** (بعد فلتر objects) |
-
-## إصلاحات على المستودع (ASSEMBLE)
-- ترتيب أحداث + xprevious
-- أسماء سلوك اللاعب (mini_mario, objPlayer, …)
-- **فلتر objects**: رفض zlib false-positives حتى object_index يطابق كائنات حقيقية
-
-## Android
-ImportGmk + 30fps ImageView + D-pad
-
+## Apply everything into the C tree
 ```bash
-git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
+git pull
+bash tools/gap_fill_20261013/APPLY_ALL.sh
+git add app/src/main/cpp
+git commit -m "apply gap-fill to C sources" && git push
 ```
 
-**لا نسبة مئوية.**
+Diffs on repo: `tools/gap_fill_20261013/patches/full_*.diff`
+Scripts encode the same changes if diffs are incomplete.
+
+Host: ASSEMBLE PASS, pipeline 4/4 when fully applied. ~40%. No 100% claim.

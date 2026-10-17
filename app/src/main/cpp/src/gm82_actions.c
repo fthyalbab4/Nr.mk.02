@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_sound_runtime.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -180,20 +181,44 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
     if (!rt || !self || !name) return false;
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
+
+    /* Instance creation and destruction */
     if (strcmp(name, "action_kill_object") == 0 || strcmp(name, "action_destroy") == 0) {
-        gml_instance_destroy();
+        gm82_runtime_instance_destroy(rt, self);
         return true;
     }
-    if (strcmp(name, "action_sprite_set") == 0) return true;
+    if (strcmp(name, "action_create_object") == 0) {
+        gm82_runtime_instance_create(rt, self->object_index, self->x, self->y);
+        return true;
+    }
+    if (strcmp(name, "action_change_object") == 0) {
+        return true;
+    }
+
+    /* Movement & Direction actions */
     if (strcmp(name, "action_move") == 0) return true;
+    if (strcmp(name, "action_move_start") == 0) {
+        self->x = self->xstart;
+        self->y = self->ystart;
+        return true;
+    }
+    if (strcmp(name, "action_move_to") == 0) return true;
+    if (strcmp(name, "action_move_point") == 0) return true;
     if (strcmp(name, "action_set_hspeed") == 0) return true;
     if (strcmp(name, "action_set_vspeed") == 0) return true;
+    if (strcmp(name, "action_speed_horizontal") == 0) return true;
+    if (strcmp(name, "action_speed_vertical") == 0) return true;
+    if (strcmp(name, "action_reverse_xdir") == 0) {
+        self->hspeed = -self->hspeed;
+        return true;
+    }
+    if (strcmp(name, "action_reverse_ydir") == 0) {
+        self->vspeed = -self->vspeed;
+        return true;
+    }
     if (strcmp(name, "action_set_gravity") == 0) return true;
-    if (strcmp(name, "action_set_health") == 0) return true;
-    if (strcmp(name, "action_sound") == 0) return true; /* no audio backend yet */
-    if (strcmp(name, "action_end_sound") == 0) return true;
-    if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
-    if (strcmp(name, "action_end_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_set_friction") == 0) return true;
+    if (strcmp(name, "action_set_motion") == 0 || strcmp(name, "action_motion_set") == 0) return true;
     if (strcmp(name, "action_bounce") == 0) {
         if (self->vspeed*self->vspeed >= self->hspeed*self->hspeed)
             self->vspeed = -self->vspeed;
@@ -201,10 +226,7 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
             self->hspeed = -self->hspeed;
         return true;
     }
-    if (strcmp(name, "action_set_cursor") == 0) return true;
-    if (strcmp(name, "action_change_object") == 0) return true;
-    if (strcmp(name, "action_set_motion") == 0 || strcmp(name, "action_motion_set") == 0) return true;
-    if (strcmp(name, "action_move_point") == 0) return true;
+    if (strcmp(name, "action_snap") == 0) return true;
     if (strcmp(name, "action_wrap") == 0) {
         int rw = (rt->room_width > 0) ? rt->room_width : 640;
         int rh = (rt->room_height > 0) ? rt->room_height : 480;
@@ -214,12 +236,49 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         else if (self->y > rh) self->y -= rh;
         return true;
     }
+
+    /* Room management */
+    if (strcmp(name, "action_next_room") == 0 || strcmp(name, "action_if_next_room") == 0) {
+        if (rt->rooms && rt->current_room + 1 < rt->rooms->count)
+            gm82_runtime_goto_room(rt, rt->current_room + 1);
+        return true;
+    }
+    if (strcmp(name, "action_previous_room") == 0) {
+        if (rt->rooms && rt->current_room > 0)
+            gm82_runtime_goto_room(rt, rt->current_room - 1);
+        return true;
+    }
+    if (strcmp(name, "action_restart_room") == 0 || strcmp(name, "action_current_room") == 0) {
+        gm82_runtime_goto_room(rt, rt->current_room);
+        return true;
+    }
+    if (strcmp(name, "action_another_room") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_end_game") == 0) { rt->running = 0; return true; }
+
+    /* Audio / Sound */
+    if (strcmp(name, "action_sound") == 0 || strcmp(name, "action_play_sound") == 0 || strcmp(name, "action_snd_play") == 0) {
+        gml_sound_play(0);
+        return true;
+    }
+    if (strcmp(name, "action_end_sound") == 0) return true;
+
+    /* Score & Health & Sprite & Misc */
+    if (strcmp(name, "action_sprite_set") == 0) return true;
+    if (strcmp(name, "action_set_health") == 0) return true;
+    if (strcmp(name, "action_set_score") == 0) return true;
+    if (strcmp(name, "action_set_lives") == 0) return true;
+    if (strcmp(name, "action_set_alarm") == 0) return true;
+    if (strcmp(name, "action_set_cursor") == 0) return true;
     if (strcmp(name, "action_effect") == 0) return true;
     if (strcmp(name, "action_draw_sprite") == 0) return true;
     if (strcmp(name, "action_draw_background") == 0) return true;
     if (strcmp(name, "action_draw_text") == 0) return true;
     if (strcmp(name, "action_draw_score") == 0 || strcmp(name, "action_draw_lives") == 0 ||
         strcmp(name, "action_draw_health") == 0) return true;
+
     return false;
 }
 
@@ -248,8 +307,8 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         self->vspeed = (double)ar->action_id;
         return true;
     }
-    if (strcmp(ar->name, "action_kill_object") == 0) {
-        gml_instance_destroy();
+    if (strcmp(ar->name, "action_kill_object") == 0 || strcmp(ar->name, "action_destroy") == 0) {
+        gm82_runtime_instance_destroy(rt, self);
         return true;
     }
     if (strcmp(ar->name, "action_set_cursor") == 0) return true;
@@ -270,6 +329,11 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     if (strcmp(ar->name, "action_move_to") == 0) {
         self->x = (double)ar->action_id;
         self->y = (double)ar->kind;
+        return true;
+    }
+    if (strcmp(ar->name, "action_move_start") == 0) {
+        self->x = self->xstart;
+        self->y = self->ystart;
         return true;
     }
     if (strcmp(ar->name, "action_snap") == 0) {
@@ -313,8 +377,13 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
             gm82_runtime_goto_room(rt, rt->current_room - 1);
         return true;
     }
-    if (strcmp(ar->name, "action_restart_room") == 0) {
+    if (strcmp(ar->name, "action_restart_room") == 0 || strcmp(ar->name, "action_current_room") == 0) {
         gm82_runtime_goto_room(rt, rt->current_room);
+        return true;
+    }
+    if (strcmp(ar->name, "action_another_room") == 0) {
+        int r_idx = ar->action_id >= 0 ? ar->action_id : ar->kind;
+        if (r_idx >= 0) gm82_runtime_goto_room(rt, r_idx);
         return true;
     }
     if (strcmp(ar->name, "action_reverse_xdir") == 0) {
