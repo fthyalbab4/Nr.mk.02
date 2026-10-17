@@ -42,6 +42,7 @@ void   gml_motion_set(double dir, double spd);
 void   gml_motion_add(double dir, double spd);
 void   gml_move_towards_point(double tx, double ty, double sp);
 double gml_point_distance(double x1, double y1, double x2, double y2);
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 
 /* ---- Collision (AABB via sprite size) ---- */
@@ -69,6 +70,8 @@ double gml_move_bounce_all(double advanced);
 double gml_distance_to_point(double px, double py);
 double gml_sprite_get_width(double sprite);
 double gml_sprite_get_height(double sprite);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 double gml_sprite_get_number(double sprite);
 double gml_sprite_exists(double sprite);
 double gml_object_exists(double object_index);
@@ -242,6 +245,13 @@ double gml_file_text_writeln(double id);
 double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
+double gml_file_rename(const char *oldname, const char *newname);
+double gml_directory_rename(const char *oldname, const char *newname);
+
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
+void gml_file_find_close(void);
 
 double gml_date_current_datetime(void);
 double gml_date_get_year(double datetime);
@@ -299,6 +309,10 @@ double gml_alarm_set_script(double index, const char *code);
 void gm82_alarm_fire_scripts(gm82_runtime *rt, gm82_instance *inst, int alarm_index);
 
 /* Debug / string helpers (C-side; not full GML strings) */
+void gml_show_debug_message(const char *msg);
+double gml_randomize(void);
+double gml_random_set_seed(double seed);
+double gml_random_get_seed(void);
 void gm82_debug_log(const char *msg);
 int  gm82_debug_log_count(void);
 const char *gm82_debug_log_get(int index);
@@ -340,6 +354,7 @@ double gml_timeline_stop(void);
 void gm82_timeline_step_instance(gm82_runtime *rt, gm82_instance *inst);
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha);
+double gml_event_user(double numb);
 
 /* ---- Built-in variable access on self ---- */
 double gml_get_x(void);

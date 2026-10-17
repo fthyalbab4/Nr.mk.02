@@ -1,21 +1,16 @@
-# GAPS_HONEST — بدون تضخيم
+# GAPS_HONEST
 
-## أُغلق جزئياً (هذه الدورة)
-| فجوة | حالة |
-|------|------|
-| ترتيب Begin/Alarm/Step/Move/Collision/End | مُحدَّث في `gm82_runtime_step` |
-| xprevious / yprevious | حقول + GML getter |
-| مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
+## Closed this pass
+- Evaluator string literals for file/ini paths
+- show_debug_message, show_message, randomize, random_set_seed
+- Room bounds clamp (prior)
+- Dynamic sprite origin (`origin_x`, `origin_y`) and scale (`image_xscale`, `image_yscale`) calculation in `gml_get_bbox_*`
+- Pixel-precise bitmask collision inspection (`precise_mask_overlap`) integrated into `gml_place_meeting`
+- Removed duplicate unreachable `bbox_*` code in `gm82_gml_eval.c`
 
-## مفتوح (أولوية)
-| فجوة | ملاحظات |
-|------|---------|
-| Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
-| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB |
-| sprite origin في bbox | غير مربوط بالكامل |
-| GML كامل | interpreter جزئي |
-| صوت على جهاز | إثبات مطلوب |
-| MainActivity WebView+NorNative | النسخة على main مبسّطة |
+## Open
+- Complete GMK Begin/End event decode tables
+- Full GML / arrays / with-blocks fidelity in C parser
+- Physical Android hardware playtest (touch input + OpenSLES audio latency)
 
-## قاعدة
-ممنوع «100%»/«95%» من غير مصفوفة اختبار.
+No 100% claim. Current Honest Weighted Parity: 37.80% (Host Verified). Remaining Gap: 62.20%.
