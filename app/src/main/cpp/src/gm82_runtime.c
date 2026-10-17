@@ -73,6 +73,31 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     }
 }
 
+int gm82_runtime_get_active_snapshot(const gm82_runtime *rt, gm82_instance **out_snapshot) {
+    if (!rt || !out_snapshot) return 0;
+    int count = 0;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive) {
+            out_snapshot[count++] = (gm82_instance *)&rt->instances[i];
+        }
+    }
+    return count;
+}
+
+void gm82_runtime_compact_instances(gm82_runtime *rt) {
+    if (!rt) return;
+    int w = 0;
+    for (int r = 0; r < rt->instance_count; r++) {
+        if (rt->instances[r].alive) {
+            if (w != r) {
+                rt->instances[w] = rt->instances[r];
+            }
+            w++;
+        }
+    }
+    rt->instance_count = w;
+}
+
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
     if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
     gm82_instance *inst = &rt->instances[rt->instance_count++];
@@ -232,6 +257,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    gm82_events_fire_keyboard_all(rt);
+    gm82_events_fire_mouse_all(rt);
     gm82_events_fire_step_all(rt);
 
     const int n_move = rt->instance_count;

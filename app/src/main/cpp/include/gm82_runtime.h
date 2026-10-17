@@ -93,6 +93,8 @@ void gm82_runtime_step(gm82_runtime *rt);
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h);
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y);
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst);
+int gm82_runtime_get_active_snapshot(const gm82_runtime *rt, gm82_instance **out_snapshot);
+void gm82_runtime_compact_instances(gm82_runtime *rt);
 
 #ifdef __cplusplus
 }

@@ -2437,6 +2437,8 @@ void gml_file_find_close(void) {
     g_file_find_buf[0] = '\0';
 }
 
+const char *gml_file_find_next(void);
+
 const char *gml_file_find_first(const char *mask, double attr) {
     (void)attr;
     gml_file_find_close();
@@ -3405,3 +3407,16 @@ int gml_script_find(const char *name) {
     if (!g_scripts || !name) return -1;
     return gm82_script_find(g_scripts, name);
 }
+
+void gml_show_debug_message(const char *msg) {
+    if (msg) fprintf(stderr, "[GML] %s\n", msg);
+}
+double gml_randomize(void) {
+    srand((unsigned)time(NULL));
+    return 1;
+}
+double gml_random_set_seed(double seed) {
+    srand((unsigned)seed);
+    return seed;
+}
+double gml_random_get_seed(void) { return 0; }
