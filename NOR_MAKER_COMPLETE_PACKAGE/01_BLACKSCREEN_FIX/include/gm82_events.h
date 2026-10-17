@@ -38,13 +38,12 @@ typedef struct {
 } gm82_behavior;
 
 void gm82_events_register_defaults(void);
-void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst);
 void gm82_events_fire_create_all(gm82_runtime *rt);
-void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst);
-void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_index);
 void gm82_events_fire_begin_step_all(gm82_runtime *rt);
 void gm82_events_fire_step_all(gm82_runtime *rt);
 void gm82_events_fire_end_step_all(gm82_runtime *rt);
+void gm82_events_fire_keyboard_all(gm82_runtime *rt);
+void gm82_events_fire_mouse_all(gm82_runtime *rt);
 void gm82_events_fire_pre_draw_all(gm82_runtime *rt);
 void gm82_events_fire_draw_all(gm82_runtime *rt);
 void gm82_events_fire_post_draw_all(gm82_runtime *rt);
