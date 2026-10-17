@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import base64, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-parts = sorted(ROOT.glob("docs/RESTORE_BUILTINS_H_*.b64"))
-if not parts:
-    raise SystemExit("no restore parts")
-data = base64.b64decode("".join(p.read_text() for p in parts))
+a = (ROOT/"docs/HDR_B64_A.txt").read_text().strip()
+b = (ROOT/"docs/HDR_B64_B.txt").read_text().strip()
 out = ROOT / "app/src/main/cpp/include/gm82_gml_builtins.h"
-out.write_bytes(data)
-print("RESTORED", out, len(data))
+out.write_bytes(base64.b64decode(a+b))
+print("RESTORED", out.stat().st_size)
