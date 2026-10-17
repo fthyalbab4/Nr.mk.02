@@ -44,6 +44,10 @@ python3 "$DIR/skip_empty_obj.py" || true
 python3 "$DIR/alarm_object_events.py" || true
 python3 "$DIR/destroy_events.py" || true
 python3 "$DIR/autobind_restore.py" || true
+python3 "$DIR/mm_action_aliases.py" || true
+python3 "$DIR/mm_xstart.py" || true
+python3 "$DIR/apply_deterministic_pipeline.py" || true
+python3 "$DIR/gm82core_instance_helpers.py" || true
 
 gcc -O2 -Wall -o /tmp/test_event_order "$DIR/test_event_order.c"
 /tmp/test_event_order

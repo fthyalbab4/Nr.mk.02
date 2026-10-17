@@ -100,6 +100,7 @@ void gm82_runtime_set_room_speed(gm82_runtime *rt, int speed);
 /* Instance snapshot and lifecycle management */
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs);
 void gm82_runtime_compact_instances(gm82_runtime *rt);
+gm82_instance *gm82_runtime_instance_find_by_id(gm82_runtime *rt, int32_t id);
 
 /* One frame: Begin Step -> Alarms -> Path/Movement -> Collision -> Step -> End Step */
 void gm82_runtime_step(gm82_runtime *rt);

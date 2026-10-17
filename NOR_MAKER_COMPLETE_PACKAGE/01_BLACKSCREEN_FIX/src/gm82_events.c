@@ -185,6 +185,46 @@ void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst) {
     }
 }
 
+void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_index) {
+    if (!rt || !inst || !inst->alive || alarm_index < 0 || alarm_index >= 12) return;
+    gm82_gml_set_runtime(rt);
+    int32_t oi = inst->object_index;
+    if (oi >= 0 && rt->objects && oi < rt->objects->count) {
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == 2 && ev->event_numb == alarm_index) { /* GM82_EV_ALARM */
+                if (ev->code_snippet) {
+                    gm82_gml_set_self(inst);
+                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                } else if (ev->action_name0[0]) {
+                    gm82_action_execute_named(rt, inst, ev->action_name0);
+                }
+            }
+        }
+    }
+    gm82_alarm_fire_scripts(rt, inst, alarm_index);
+}
+
+void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive) return;
+    gm82_gml_set_runtime(rt);
+    const char *gcode = find_gml(g_gml_create, g_gml_create_n, rt, inst->object_index);
+    if (gcode) {
+        gm82_gml_set_self(inst);
+        gm82_gml_eval_block(rt, inst, gcode);
+    } else {
+        const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
+        if (b && b->on_create) {
+            gm82_gml_set_self(inst);
+            b->on_create(rt, inst);
+        }
+    }
+    fire_object_create_actions(rt, inst);
+    if (rt->actions)
+        gm82_actions_fire_create(rt, inst, rt->actions);
+}
+
 void gm82_events_fire_create_all(gm82_runtime *rt) {
     if (!rt) return;
     gm82_instance *snapshot[GM82_MAX_INSTANCES];
@@ -193,20 +233,7 @@ void gm82_events_fire_create_all(gm82_runtime *rt) {
     for (int i = 0; i < count; i++) {
         gm82_instance *inst = snapshot[i];
         if (!inst || !inst->alive) continue;
-        const char *gcode = find_gml(g_gml_create, g_gml_create_n, rt, inst->object_index);
-        if (gcode) {
-            gm82_gml_set_self(inst);
-            gm82_gml_eval_block(rt, inst, gcode);
-        } else {
-            const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
-            if (b && b->on_create) {
-                gm82_gml_set_self(inst);
-                b->on_create(rt, inst);
-            }
-        }
-        fire_object_create_actions(rt, inst);
-        if (rt->actions)
-            gm82_actions_fire_create(rt, inst, rt->actions);
+        gm82_events_fire_create_single(rt, inst);
     }
 }
 
