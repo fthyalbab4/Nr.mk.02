@@ -1,21 +1,29 @@
 === /app/app/src/main/assets/www/samples/mario_bros.gmk ===
 LOADED /app/app/src/main/assets/www/samples/mario_bros.gmk bytes=92098
-STEPS 30 frame=30
-DRAW ok=1
+DECODE sprites=47 bgs=24 objs=21 rooms=2
+ROOM 0 inst=181 w=1500 h=208
+STEPS 30 frame=30 moved=0 delta=(0.0,0.0)
+DRAW ok=1 lit=2176
 PIPELINE_OK
 === /app/app/src/main/assets/www/samples/plataformas.gmk ===
 LOADED /app/app/src/main/assets/www/samples/plataformas.gmk bytes=29058
-STEPS 30 frame=30
-DRAW ok=1
+DECODE sprites=42 bgs=6 objs=7 rooms=4
+ROOM 0 inst=60 w=640 h=480
+STEPS 30 frame=30 moved=0 delta=(0.0,0.0)
+DRAW ok=1 lit=41537
 PIPELINE_OK
 === /app/app/src/main/assets/www/samples/shooter.gmk ===
 LOADED /app/app/src/main/assets/www/samples/shooter.gmk bytes=224588
-STEPS 30 frame=30
-DRAW ok=1
+DECODE sprites=14 bgs=1 objs=12 rooms=2
+ROOM 0 inst=308 w=1000 h=800
+STEPS 30 frame=30 moved=0 delta=(0.0,0.0)
+DRAW ok=1 lit=165817
 PIPELINE_OK
 === /app/app/src/main/assets/www/samples/zelda.gmk ===
 LOADED /app/app/src/main/assets/www/samples/zelda.gmk bytes=213981
-STEPS 30 frame=30
-DRAW ok=1
+DECODE sprites=49 bgs=13 objs=11 rooms=3
+ROOM 0 inst=40 w=240 h=160
+STEPS 30 frame=30 moved=1 delta=(52.0,-22.0)
+DRAW ok=1 lit=7597
 PIPELINE_OK
 SUMMARY ok=4 fail=0
