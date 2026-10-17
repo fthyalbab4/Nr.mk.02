@@ -1,21 +1,14 @@
-# STATUS — مستمر
+# STATUS — patches on repository
 
-## مدمج في ملفات main
-- `gm82_events.c`: سلوك لاعب (سرعات فقط) + skip death + أسماء GMK
-- `gm82_runtime.c`: حركة + solid AABB + solid names
-- `gm82_object_room_decode.c`: فلتر objects
-- `MainActivity.java`: ImportGmk + 30fps ImageView
-
-## host مثبت
-| اختبار | نتيجة |
-|--------|--------|
-| حركة يمين | MOVED delta=90 |
-| هبوط | LANDED vspeed=0 |
-| قفز | jumped=1 |
-
-## ASSEMBLE (xprevious)
+## Apply everything into the C tree
 ```bash
-git pull && bash tools/gap_fill_20261013/ASSEMBLE.sh && ./gradlew assembleDebug
+git pull
+bash tools/gap_fill_20261013/APPLY_ALL.sh
+git add app/src/main/cpp
+git commit -m "apply gap-fill to C sources" && git push
 ```
 
-التالي: SO rebuild · جهاز · GML أوسع
+Diffs on repo: `tools/gap_fill_20261013/patches/full_*.diff`
+Scripts encode the same changes if diffs are incomplete.
+
+Host: ASSEMBLE PASS, pipeline 4/4 when fully applied. ~40%. No 100% claim.
