@@ -1,0 +1,17 @@
+diff --git a/app/src/main/cpp/src/gm82_gml_eval.c b/app/src/main/cpp/src/gm82_gml_eval.c
+index 1111111..2222222 100644
+--- a/app/src/main/cpp/src/gm82_gml_eval.c
++++ b/app/src/main/cpp/src/gm82_gml_eval.c
+@@ -1155,6 +1155,12 @@
+         if (strcmp(id, "sprite_get_width") == 0) {
+             *out = gml_sprite_get_width(arg); return true;
+         }
++        if (strcmp(id, "sprite_get_xoffset") == 0) {
++            *out = gml_sprite_get_xoffset(arg); return true;
++        }
++        if (strcmp(id, "sprite_get_yoffset") == 0) {
++            *out = gml_sprite_get_yoffset(arg); return true;
++        }
+         if (strcmp(id, "sprite_get_height") == 0) {
+             *out = gml_sprite_get_height(arg); return true;
+         }
