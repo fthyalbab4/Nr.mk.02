@@ -221,6 +221,18 @@ double gml_draw_clear(double color) {
     }
     return 1;
 }
+
+double gml_draw_clear_alpha(double color, double alpha) {
+    if (!g_draw_buf || g_draw_w <= 0 || g_draw_h <= 0) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+    uint8_t a = (uint8_t)(alpha <= 0 ? 0 : (alpha >= 1.0 ? 255 : (alpha * 255.0)));
+    size_t n = (size_t)g_draw_w * (size_t)g_draw_h;
+    for (size_t i = 0; i < n; i++) {
+        g_draw_buf[i*4]=r; g_draw_buf[i*4+1]=g; g_draw_buf[i*4+2]=b; g_draw_buf[i*4+3]=a;
+    }
+    return 1;
+}
 void gml_draw_sprite(double sprite, double x, double y) {
     if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
     int si = (int)sprite;
@@ -317,7 +329,48 @@ double gml_room(void) {
     return g_rt ? (double)g_rt->current_room : 0;
 }
 
-/* Audio delegation - see gm82_sound_runtime.c for actual queue handling */
+/* Math & Physics additions */
+double gml_sqr(double v) { return v * v; }
+double gml_sqrt_fn(double v) { return sqrt(v < 0 ? 0 : v); }
+double gml_power(double x, double y) { return pow(x, y); }
+double gml_frac(double v) { return v - floor(v); }
+double gml_dot_product(double x1, double y1, double x2, double y2) { return x1*x2 + y1*y2; }
+double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2) { return x1*x2 + y1*y2 + z1*z2; }
+
+double gml_move_bounce_solid(double adv) {
+    (void)adv;
+    if (!g_self || !g_rt) return 0;
+    double orig_x = g_self->x, orig_y = g_self->y;
+    double try_x = orig_x + g_self->hspeed;
+    double try_y = orig_y + g_self->vspeed;
+
+    bool h_col = !gml_place_free(try_x, orig_y);
+    bool v_col = !gml_place_free(orig_x, try_y);
+
+    if (h_col) g_self->hspeed = -g_self->hspeed;
+    if (v_col) g_self->vspeed = -g_self->vspeed;
+    if (!h_col && !v_col) {
+        g_self->hspeed = -g_self->hspeed;
+        g_self->vspeed = -g_self->vspeed;
+    }
+    return 1;
+}
+
+double gml_move_wrap(double hor, double vert, double margin) {
+    if (!g_self || !g_rt) return 0;
+    double rw = g_rt->room_width > 0 ? (double)g_rt->room_width : 640;
+    double rh = g_rt->room_height > 0 ? (double)g_rt->room_height : 480;
+    if (hor) {
+        if (g_self->x < -margin) g_self->x = rw + margin;
+        else if (g_self->x > rw + margin) g_self->x = -margin;
+    }
+    if (vert) {
+        if (g_self->y < -margin) g_self->y = rh + margin;
+        else if (g_self->y > rh + margin) g_self->y = -margin;
+    }
+    return 1;
+}
+
 
 double gml_room_restart(void) {
     if (!g_rt) return 0;
@@ -618,6 +671,25 @@ double gml_string_length(const char *s) {
 double gml_real(const char *s) {
     if (!s) return 0;
     return strtod(s, NULL);
+}
+
+void gml_string_format(double val, double total, double dec, char *dst, size_t max_len) {
+    if (!dst || max_len == 0) return;
+    int tot = (int)total;
+    int d = (int)dec;
+    if (tot < 0) tot = 0;
+    if (d < 0) d = 0;
+    snprintf(dst, max_len, "%*.*f", tot, d, val);
+}
+
+double gml_colour_get_red(double col) { return (double)(((uint32_t)col) & 0xFF); }
+double gml_colour_get_green(double col) { return (double)((((uint32_t)col) >> 8) & 0xFF); }
+double gml_colour_get_blue(double col) { return (double)((((uint32_t)col) >> 16) & 0xFF); }
+double gml_make_colour_rgb(double r, double g, double b) {
+    uint32_t ur = (uint32_t)gml_clamp(r, 0, 255);
+    uint32_t ug = (uint32_t)gml_clamp(g, 0, 255);
+    uint32_t ub = (uint32_t)gml_clamp(b, 0, 255);
+    return (double)(ur | (ug << 8) | (ub << 16));
 }
 
 

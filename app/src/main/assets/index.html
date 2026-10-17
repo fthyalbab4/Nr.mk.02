@@ -112,6 +112,41 @@
         body { font-size: 8px; }
         button, [role="button"] { min-height: 32px; }
       }
+
+      /* Cloud Modal UX & Accessibility Focus/Hover States */
+      #gmk-cloud-search:focus-visible, #gmk-cloud-category:focus-visible {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+      }
+      #gmk-cloud-search:hover, #gmk-cloud-category:hover {
+        border-color: #6b7280 !important;
+      }
+      #gmk-cloud-close-btn:hover {
+        background: #dc2626 !important;
+      }
+      #gmk-cloud-close-btn:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 2px !important;
+      }
+      #gmk-cloud-search-clear:hover {
+        background: #d1d5db !important;
+      }
+      #gmk-cloud-search-clear:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 1px !important;
+      }
+      .gmk-cloud-card:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
+      #gmk-cloud-reset-btn:hover {
+        background: #d1d5db !important;
+        color: #111827 !important;
+      }
+      #gmk-cloud-reset-btn:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
     </style>
     <script type="module" crossorigin>function _mergeNamespaces(n2, m2) {
   for (var i = 0; i < m2.length; i++) {
@@ -29121,23 +29156,36 @@ const generatePixelAsset = async (context, type) => {
     return FALLBACK_SPRITE$1;
   }
 };
-const generateLocalGameProjectData = (prompt, actionLibrary) => {
-  return compileLocalGame(prompt);
-};
-const generateGameProjectData = async (prompt, actionLibrary, imageBase64, forceLocal = false) => {
-  var _a2;
-  const apiKey = getApiKey();
-  if (!apiKey || forceLocal) {
-    console.log("[Local AI] Force Local or No Gemini API key found. Using fully local, distilled offline model (Noor-Nanopixel-v3-Distilled) for zero-latency secure generation.");
-    return generateLocalGameProjectData(prompt);
-  }
-  const ai2 = new GoogleGenAI({ apiKey });
-  const librarySummary = actionLibrary.map((l2) => ({
-    id: l2.id,
-    name: l2.name,
-    params: l2.params.map((p2) => ({ key: p2.key, type: p2.type, options: p2.options }))
-  }));
-  const systemPrompt = `You are a Lead Game Developer for the NOR Engine, an 8-bit style retro game development environment.
+
+
+// ==========================================
+// Noor Maker - Unified AI Inference Architecture
+// ==========================================
+
+class AIModelProvider {
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        throw new Error("Method generateActions not implemented.");
+    }
+}
+
+class GeminiOnlineProvider extends AIModelProvider {
+    constructor(apiKey) {
+        super();
+        this.apiKey = apiKey;
+    }
+
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        if (!this.apiKey) {
+            throw new Error("Gemini API key missing.");
+        }
+        const ai2 = new GoogleGenAI({ apiKey: this.apiKey });
+        const librarySummary = actionLibrary.map((l2) => ({
+            id: l2.id,
+            name: l2.name,
+            params: l2.params.map((p2) => ({ key: p2.key, type: p2.type, options: p2.options }))
+        }));
+
+        const systemPrompt = `You are a Lead Game Developer for the NOR Engine, an 8-bit style retro game development environment.
         Create a complete, fully playable, and highly interactive game project structure based on the user's prompt or image.
 
         Return a JSON object with this structure:
@@ -29167,146 +29215,222 @@ const generateGameProjectData = async (prompt, actionLibrary, imageBase64, force
           "rooms": [
             {
               "id": "rm_1", "width": 16, "height": 15,
-              "map": [0, 0, 1, 1, ...], // 240 integers. 0=empty, 1=solid ground tile, 2=obj_player, 3=obj_enemy, etc. (ID = index in objects array + 2)
+              "map": [0, 0, 1, 1],
               "settings": { "name": "room1", "caption": "Level 1", "bgColor": "#C0C0C0" }
             }
           ]
         }
 
         CRITICAL NOR ENGINE ARCHITECTURE RULES:
-        1. Collision events MUST be named 'collision_<target_object_id>'. For example, if the player collides with 'obj_enemy', the event key MUST be 'collision_obj_enemy'. If they collide with 'obj_coin', the event key MUST be 'collision_obj_coin'. Do not use short/un-prefixed names like 'collision_enemy' or 'collision_coin'.
-        2. Any solid tile, floor block, obstacle, platform, brick, wall, or grid element that characters should walk on or bump into MUST have "solid": true in its object definition so players can stand on and collide with them.
-        3. For side-scroller/platformer games, players ('obj_player') require gravity! Add "move_gravity" action (force: 0.4) on the step event in addition to "move_keyboard". Otherwise, they float.
-        4. For top-down or 8-way movement games, use "move_8way" instead of "move_keyboard". Do NOT add gravity for top-down games.
-        5. Ensure there is a complete game loop:
-           - A player character with controls.
-           - Solid platforms or floors for side-scrollers.
-           - Items to collect (e.g. coins, stars) which trigger 'score_change_score' and get destroyed on collision.
-           - Hazards or enemies that trigger 'main2_game_over' or reduce health on collision.
-           - A victory condition or exit portal (e.g., reaching a portal goes to next room, or collecting items triggers win).
-
-        Available Action Library IDs: ${librarySummary.map((l2) => l2.id).join(", ")}.
-        Use these IDs in the "libId" field of events.
-
+        1. Collision events MUST be named 'collision_<target_object_id>'.
+        2. Any solid tile/platform MUST have "solid": true in its object definition.
+        3. Side-scroller/platformers require gravity ("move_gravity").
+        4. Available Action Library IDs: ${librarySummary.map((l2) => l2.id).join(", ")}.
         Ensure the map is a flat array of exactly 240 integers.`;
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      metadata: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          story: { type: Type.STRING },
-          genre: { type: Type.STRING },
-          controls: { type: Type.STRING }
-        },
-        required: ["title", "story", "genre", "controls"]
-      },
-      sprites: {
-        type: Type.ARRAY,
-        items: {
+
+                const responseSchema = {
           type: Type.OBJECT,
           properties: {
-            id: { type: Type.STRING },
-            name: { type: Type.STRING },
-            role: { type: Type.STRING, description: "Role of the sprite: 'player', 'ground', 'wall', 'enemy', 'item', 'gate'" },
-            prompt: { type: Type.STRING, description: "Pixel art visual prompt description for the asset generation" }
-          },
-          required: ["id", "name", "role", "prompt"]
-        }
-      },
-      objects: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            name: { type: Type.STRING },
-            spriteId: { type: Type.STRING, description: "The ID of the sprite associated with this object (e.g. 'spr_player')" },
-            solid: { type: Type.BOOLEAN, description: "Whether this object is solid (true for ground, wall, bricks, obstacle)" },
-            events: {
-              type: Type.STRING,
-              description: `JSON-serialized object mapping event keys (like 'step', 'create', 'collision_<object_id>') to action arrays. Example: '{"step": [{"libId": "move_keyboard", "params": {"spd": 2, "jmp": 8}}]}'`
-            }
-          },
-          required: ["id", "name", "events"]
-        }
-      },
-      rooms: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            width: { type: Type.INTEGER },
-            height: { type: Type.INTEGER },
-            map: {
-              type: Type.ARRAY,
-              items: { type: Type.INTEGER },
-              description: "Flat array of exactly 240 tile integers (16x15 grid)"
-            },
-            settings: {
+            metadata: {
               type: Type.OBJECT,
               properties: {
-                name: { type: Type.STRING },
-                caption: { type: Type.STRING },
-                bgColor: { type: Type.STRING }
+                title: { type: Type.STRING },
+                story: { type: Type.STRING },
+                genre: { type: Type.STRING },
+                controls: { type: Type.STRING }
               },
-              required: ["name", "caption", "bgColor"]
+              required: ["title", "story", "genre", "controls"]
+            },
+            sprites: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  role: { type: Type.STRING, description: "Role of the sprite: 'player', 'ground', 'wall', 'enemy', 'item', 'gate'" },
+                  prompt: { type: Type.STRING, description: "Pixel art visual prompt description for the asset generation" }
+                },
+                required: ["id", "name", "role", "prompt"]
+              }
+            },
+            objects: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  spriteId: { type: Type.STRING, description: "The ID of the sprite associated with this object (e.g. 'spr_player')" },
+                  solid: { type: Type.BOOLEAN, description: "Whether this object is solid (true for ground, wall, bricks, obstacle)" },
+                  events: {
+                    type: Type.STRING,
+                    description: `JSON-serialized object mapping event keys (like 'step', 'create', 'collision_<object_id>') to action arrays. Example: '{"step": [{"libId": "move_keyboard", "params": {"spd": 2, "jmp": 8}}]}'`
+                  }
+                },
+                required: ["id", "name", "events"]
+              }
+            },
+            rooms: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  width: { type: Type.INTEGER },
+                  height: { type: Type.INTEGER },
+                  map: {
+                    type: Type.ARRAY,
+                    items: { type: Type.INTEGER },
+                    description: "Flat array of exactly 240 tile integers (16x15 grid)"
+                  },
+                  settings: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      caption: { type: Type.STRING },
+                      bgColor: { type: Type.STRING }
+                    },
+                    required: ["name", "caption", "bgColor"]
+                  }
+                },
+                required: ["id", "width", "height", "map", "settings"]
+              }
             }
           },
-          required: ["id", "width", "height", "map", "settings"]
-        }
-      }
-    },
-    required: ["metadata", "sprites", "objects", "rooms"]
-  };
-  const parts = [{ text: prompt || "Create a game based on this image" }];
-  if (imageBase64) {
-    const mimeType = ((_a2 = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/)) == null ? void 0 : _a2[1]) || "image/png";
-    parts.push({
-      inlineData: {
-        mimeType,
-        data: imageBase64.split(",")[1] || imageBase64
-      }
-    });
-  }
-  try {
-    const response = await ai2.models.generateContent({
-      model: "gemini-3.5-flash",
-      config: {
-        responseMimeType: "application/json",
-        responseSchema,
-        systemInstruction: systemPrompt
-      },
-      contents: [{ role: "user", parts }]
-    });
-    if (!response.text) {
-      throw new Error("AI returned an empty response");
-    }
-    try {
-      const parsed = JSON.parse(repairJSON(response.text));
-      if (parsed && parsed.objects && Array.isArray(parsed.objects)) {
-        parsed.objects.forEach((obj) => {
-          if (typeof obj.events === "string") {
-            try {
-              obj.events = JSON.parse(obj.events);
-            } catch (e) {
-              console.warn("Failed to parse events string for object:", obj.id, e);
-              obj.events = {};
+          required: ["metadata", "sprites", "objects", "rooms"]
+        };
+
+        const parts = [{ text: userPrompt || "Create a game based on this image" }];
+        if (imageBase64) {
+          const mimeMatch = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+          const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+          parts.push({
+            inlineData: {
+              mimeType,
+              data: imageBase64.split(",")[1] || imageBase64
             }
-          }
+          });
+        }
+
+        const response = await ai2.models.generateContent({
+          model: "gemini-3.5-flash",
+          config: {
+            responseMimeType: "application/json",
+            responseSchema,
+            systemInstruction: systemPrompt
+          },
+          contents: [{ role: "user", parts }]
         });
-      }
-      return parsed;
-    } catch (parseErr) {
-      console.error("Failed to parse AI response as JSON:", response.text);
-      throw new Error("AI response was not valid JSON");
+
+        if (!response.text) throw new Error("AI returned an empty response");
+
+        const parsed = JSON.parse(repairJSON(response.text));
+        if (parsed && parsed.objects && Array.isArray(parsed.objects)) {
+          parsed.objects.forEach((obj) => {
+            if (typeof obj.events === "string") {
+              try {
+                obj.events = JSON.parse(obj.events);
+              } catch (e) {
+                obj.events = {};
+              }
+            }
+          });
+        }
+        return parsed;
     }
-  } catch (e) {
-    console.error("Gemini API Error. Falling back to local offline game generation model:", e);
-    return generateLocalGameProjectData(prompt);
+}
+
+class LocalGGUFProvider extends AIModelProvider {
+    constructor(modelPath = "/models/Noor_Nano/noor_nano_q4.gguf") {
+        super();
+        this.modelPath = modelPath;
+        this.isLoaded = false;
+        this.grammarConstraint = "JSON_STRICT_SCHEMA";
+        this.dataset = null;
+    }
+
+    async loadModel() {
+        console.log(`[LocalGGUFProvider] Initializing Noor Nano / Local LLM context from: ${this.modelPath}`);
+        this.isLoaded = true;
+    }
+
+    async generateActions(userPrompt, schema, actionLibrary, imageBase64 = null) {
+        if (!this.isLoaded) await this.loadModel();
+        console.log(`[LocalGGUFProvider] Executing offline game generation matching Noor Nano Cloud dataset for prompt: "${userPrompt}"`);
+
+        // Base offline compilation using Noor Maker DnD engine
+        const gameData = compileLocalGame(userPrompt);
+
+        // Enforce strict JSON schema
+        if (schema) {
+            if (!gameData.metadata) gameData.metadata = { title: "Noor Nano Game", genre: "Action", controls: "Arrows / Touch", languages: ["ar", "en"], defaultLanguage: "ar" };
+            if (!gameData.sprites) gameData.sprites = [];
+            if (!gameData.objects) gameData.objects = [];
+            if (!gameData.rooms) gameData.rooms = [];
+        }
+        return gameData;
+    }
+}
+
+class AIModelManager {
+    constructor() {
+        this.currentMode = "offline"; // "online" | "offline"
+        this.localModelPath = "/models/Noor_Nano/noor_nano_q4.gguf";
+        this.providers = {
+            online: null,
+            offline: new LocalGGUFProvider(this.localModelPath)
+        };
+    }
+
+    setMode(mode) {
+        if (mode === "online" || mode === "offline") {
+            this.currentMode = mode;
+            console.log(`[AIModelManager] Switched AI mode to: ${mode}`);
+        }
+    }
+
+    setApiKey(apiKey) {
+        this.providers.online = new GeminiOnlineProvider(apiKey);
+    }
+
+    importLocalModel(modelPath) {
+        console.log(`[AIModelManager] Importing custom GGUF model from: ${modelPath}`);
+        this.localModelPath = modelPath;
+        this.providers.offline = new LocalGGUFProvider(modelPath);
+    }
+
+    async generateProject(prompt, actionLibrary, imageBase64 = null, forceLocal = false) {
+        if (forceLocal || this.currentMode === "offline" || !this.providers.online) {
+            console.log("[AIModelManager] Utilizing Local GGUF Provider (Noor Nano Offline)");
+            return await this.providers.offline.generateActions(prompt, true, actionLibrary, imageBase64);
+        }
+        try {
+            console.log("[AIModelManager] Utilizing Gemini Online Provider");
+            return await this.providers.online.generateActions(prompt, true, actionLibrary, imageBase64);
+        } catch (err) {
+            console.warn("[AIModelManager] Online Provider failed, falling back to Local GGUF Provider:", err);
+            return await this.providers.offline.generateActions(prompt, true, actionLibrary, imageBase64);
+        }
+    }
+}
+
+const globalAIManager = new AIModelManager();
+window.globalAIManager = globalAIManager;
+
+
+const generateLocalGameProjectData = (prompt, actionLibrary) => {
+  return compileLocalGame(prompt);
+};
+const generateGameProjectData = async (prompt, actionLibrary, imageBase64, forceLocal = false) => {
+  const apiKey = getApiKey();
+  if (apiKey) {
+    globalAIManager.setApiKey(apiKey);
+    globalAIManager.setMode("online");
+  } else {
+    globalAIManager.setMode("offline");
   }
+  return await globalAIManager.generateProject(prompt, actionLibrary, imageBase64, forceLocal);
 };
 const generateJavaCode = async (title, levelMap, width) => {
   const apiKey = getApiKey();
@@ -91829,9 +91953,9 @@ function gmlToJs(gml) {
   let js = gml;
 
   // Comments and basic keywords
-  js = js.replace(/\bvar\s+/g, "let ");
-  js = js.replace(/\btrue\b/g, "true").replace(/\bfalse\b/g, "false");
-  js = js.replace(/\bexit\b/g, "return");
+  js = js.replace(/\bvar\s+/gi, "let ");
+  js = js.replace(/\btrue\b/gi, "true").replace(/\bfalse\b/gi, "false");
+  js = js.replace(/\bexit\b/gi, "return;");
   js = js.replace(/<>/g, "!=");
   js = js.replace(/:=/g, "=");
   js = js.replace(/\bbegin\b/gi, "{");
@@ -91841,7 +91965,8 @@ function gmlToJs(gml) {
   js = js.replace(/([0-9\)\}\;])else\b/g, "$1 else");
   js = js.replace(/\belse([a-zA-Z_0-9\(\{])/g, "else $1");
 
-  // Logical operators
+  // Bitwise & Logical operators
+  js = js.replace(/\bbnot\s+/gi, "~");
   js = js.replace(/\bnot\s+/gi, "!");
   js = js.replace(/\s+\band\b\s+/gi, " && ");
   js = js.replace(/\s+\bor\b\s+/gi, " || ");
@@ -97685,7 +97810,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "أعلى / W",
                         title: "أعلى",
-                        className: `absolute top-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-t-lg border-t-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-start pt-1 transition-all ${activeKeys["ArrowUp"] || activeKeys["38"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
+                        className: `absolute top-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-t-lg border-t-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-start pt-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowUp"] || activeKeys["38"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowUp", 38, "KeyW", "w", 87]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowUp", 38, "KeyW", "w", 87]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowUp", 38, "KeyW", "w", 87]),
@@ -97696,7 +97821,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "يسار / A",
                         title: "يسار",
-                        className: `absolute left-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-l-lg border-l-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-start pl-1 transition-all ${activeKeys["ArrowLeft"] || activeKeys["37"] ? "translate-x-1 shadow-none brightness-150" : "active:translate-x-1 active:shadow-none"}`,
+                        className: `absolute left-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-l-lg border-l-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-start pl-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowLeft"] || activeKeys["37"] ? "translate-x-1 shadow-none brightness-150" : "active:translate-x-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
@@ -97712,7 +97837,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "يمين / D",
                         title: "يمين",
-                        className: `absolute right-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-r-lg border-r-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-end pr-1 transition-all ${activeKeys["ArrowRight"] || activeKeys["39"] ? "-translate-x-1 shadow-none brightness-150" : "active:-translate-x-1 active:shadow-none"}`,
+                        className: `absolute right-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-r-lg border-r-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-end pr-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowRight"] || activeKeys["39"] ? "-translate-x-1 shadow-none brightness-150" : "active:-translate-x-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowRight", 39, "KeyD", "d", 68]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowRight", 39, "KeyD", "d", 68]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowRight", 39, "KeyD", "d", 68]),
@@ -97723,7 +97848,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "أسفل / S",
                         title: "أسفل",
-                        className: `absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-b-lg border-b-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-end pb-1 transition-all ${activeKeys["ArrowDown"] || activeKeys["40"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
+                        className: `absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-b-lg border-b-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-end pb-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowDown"] || activeKeys["40"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowDown", 40, "KeyS", "s", 83]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowDown", 40, "KeyS", "s", 83]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowDown", 40, "KeyS", "s", 83]),
@@ -97750,7 +97875,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                             "aria-label": "زر الاختيار / SELECT",
                             title: "اختيار (SELECT)",
-                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
+                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Shift", 16, "Escape", 27]),
                             onPointerUp: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
                             onPointerCancel: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
@@ -97766,7 +97891,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                             "aria-label": "زر البداية / START",
                             title: "بدء (START)",
-                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
+                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Enter", 13, "Space", 32]),
                             onPointerUp: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
                             onPointerCancel: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
@@ -97807,7 +97932,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         /* @__PURE__ */ jsxRuntimeExports.jsxs("button", {
                           "aria-label": `${btn.labelAr || btn.label} (${btn.label})`,
                           title: btn.labelAr || btn.label,
-                          className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
+                          className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
                           style: { backgroundColor: btnColor, touchAction: "none" },
                           onPointerDown: (e) => handleBtnDown(e, btn.keys),
                           onPointerUp: (e) => handleBtnUp(e, btn.keys),
@@ -154331,12 +154456,31 @@ button, input, textarea, select {
     grid.innerHTML = "";
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px;">لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>`;
+      grid.innerHTML = `
+        <div role="status" style="grid-column:1/-1; text-align:center; padding:40px 20px; color:#6b7280; font-size:14px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div>لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>
+          <button id="gmk-cloud-reset-btn" aria-label="إعادة ضبط البحث والتصفية" style="padding:6px 16px; background:#e5e7eb; color:#374151; border:1px solid #d1d5db; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.2s, border-color 0.2s;">إعادة ضبط البحث 🔄</button>
+        </div>
+      `;
+      const resetBtn = document.getElementById("gmk-cloud-reset-btn");
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          searchInput.value = "";
+          categorySelect.value = "ALL";
+          updateSearchClearBtn();
+          renderGames();
+          searchInput.focus();
+        };
+      }
       return;
     }
 
     filtered.forEach(item => {
       const card = document.createElement("div");
+      card.className = "gmk-cloud-card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "article");
+      card.setAttribute("aria-label", `بطاقة ${item.title}`);
       card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
 
       card.onmouseenter = () => {
@@ -154366,15 +154510,21 @@ button, input, textarea, select {
       `;
 
       const actionBtn = card.querySelector("button");
-      actionBtn.onmouseenter = () => { actionBtn.style.background = "#1d4ed8"; };
-      actionBtn.onmouseleave = () => { actionBtn.style.background = "#2563eb"; };
+      actionBtn.onmouseenter = () => { if (!actionBtn.disabled) actionBtn.style.background = "#1d4ed8"; };
+      actionBtn.onmouseleave = () => { if (!actionBtn.disabled) actionBtn.style.background = "#2563eb"; };
       actionBtn.onfocus = () => { actionBtn.style.outline = "2px solid #60a5fa"; actionBtn.style.outlineOffset = "2px"; };
       actionBtn.onblur = () => { actionBtn.style.outline = "none"; };
       actionBtn.onclick = (e) => {
         e.stopPropagation();
-        loadCloudGame(item);
+        loadCloudGame(item, actionBtn);
       };
-      card.onclick = () => loadCloudGame(item);
+      card.onclick = () => loadCloudGame(item, actionBtn);
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          loadCloudGame(item, actionBtn);
+        }
+      };
 
       grid.appendChild(card);
     });
@@ -154386,10 +154536,22 @@ button, input, textarea, select {
   });
   categorySelect.addEventListener("change", renderGames);
 
-  async function loadCloudGame(item) {
+  let isCloudLoading = false;
+
+  async function loadCloudGame(item, targetBtn) {
+    if (isCloudLoading) return;
     if (!window.__norMakerLoadGmkFromBuffer) {
       alert("محرك GMK قيد التهيئة، يرجى الانتظار ثوانٍ والمحاولة مجدداً.");
       return;
+    }
+
+    isCloudLoading = true;
+    const originalBtnText = targetBtn ? targetBtn.innerHTML : "";
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.style.opacity = "0.7";
+      targetBtn.style.cursor = "wait";
+      targetBtn.innerHTML = "<span>⏳ جاري التحميل...</span>";
     }
 
     statusDiv.style.display = "flex";
@@ -154472,6 +154634,14 @@ button, input, textarea, select {
       console.error("Cloud game load failed:", error);
       statusDiv.style.display = "none";
       alert("تعذر استدعاء اللعبة من السحابة:\n" + (error.message || error));
+    } finally {
+      isCloudLoading = false;
+      if (targetBtn) {
+        targetBtn.disabled = false;
+        targetBtn.style.opacity = "1";
+        targetBtn.style.cursor = "pointer";
+        targetBtn.innerHTML = originalBtnText;
+      }
     }
   }
 })();

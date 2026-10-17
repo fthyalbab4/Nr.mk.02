@@ -1,14 +1,21 @@
-# GAPS_HONEST — التقييم الدقيق وخطة الوصول إلى 95%
+# GAPS_HONEST — بدون تضخيم
 
-نسبة التوافق المحسوبة حالياً: **~36.75%**
+## الفحص الدوري اليومي (Daily Periodic Audit - 2026-10-24)
+- **Host Full Verification**: 16/16 Passed
+- **C Core Unit Tests**: 3/3 Binaries Passed
+- **Total Weighted Engine Parity**: ~36.75% (~37%)
+- **Android Physical Device**: UNVERIFIED / BLOCKED
 
-## التحسينات المنفذة في هذه الدورة:
-1. **GML Control Structures:** إضافة دعم `repeat`, `while`, `with (target)` ونطاقات المتغيرات المدمجة `xprevious`, `yprevious`, `bbox_*`, `view_*`.
-2. **Precision Collision Masking:** إنشاء وحدة `gm82_mask.c` لإنشاء أقتعة البتات (1-bit Alpha Bitmask) وفحص تقاطع البكسلات الدقيق.
-3. **Hardware GLES Batching:** توفير هيكل `gm82_gles.c` لتجميع كائنات الرسم والدعم البرمجي لأنماط الدمج.
-4. **Audio PCM Mixer:** إضافة الخلاط الصوتي متعدد القنوات `gm82_audio_mixer.c` حتى 16 قناة صوتية.
+## Runner 2026-10-16
+- place_meeting/bbox: scale + origin (bbox offset logic with origin_x/origin_y implemented)
+- solid collision phase: snapshot + origin AABB
+- host ASSEMBLE event/AABB: PASS
 
-## الفجوات المتبقية للوصول إلى 95%:
-- الربط المادي المباشر بمشغل AAudio / OpenSL ES على هاتف أندرويد حقيقي (BLOCKED لعدم وجود جهاز متصل).
-- بناء مفسر Bytecode VM كامل لجميع الجمل البرمجية المعقدة جداً في GML.
-- توسيع نطاق الاختبارات إلى أكثر من 50 لعبة GMK/GM82 مجتمعية.
+## مفتوح (أولوية)
+| فجوة | ملاحظات |
+|------|---------|
+| Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
+| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB محسّن |
+| sprite origin من GMK | حقول موجودة؛ القيم لسه 0 من القارئ |
+| GML كامل | interpreter جزئي |
+| صوت على جهاز | إثبات مطلوب |

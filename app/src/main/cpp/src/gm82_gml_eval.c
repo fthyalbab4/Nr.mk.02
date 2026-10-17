@@ -76,6 +76,8 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
+    if (strcmp(name, "yprevious") == 0) { *out = s ? s->yprevious : 0; return true; }
     if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
     if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
     if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
@@ -750,6 +752,95 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "instance_exists") == 0) {
             *out = gml_instance_exists(arg); return true;
         }
+
+        /* GM82Project/gm82core instances.gml (open source) — clean reimpl */
+        if (strcmp(id, "instance_create_depth") == 0) {
+            double ox = nargs >= 1 ? args[0] : 0, oy = nargs >= 2 ? args[1] : 0;
+            double dep = nargs >= 3 ? args[2] : 0, oi = nargs >= 4 ? args[3] : 0;
+            double idv = gml_instance_create(ox, oy, oi);
+            if (idv >= 0 && p->rt) {
+                for (int i = 0; i < p->rt->instance_count; i++) {
+                    if (p->rt->instances[i].alive && (double)p->rt->instances[i].id == idv) {
+                        p->rt->instances[i].depth = (int32_t)dep; break;
+                    }
+                }
+            }
+            *out = idv; return true;
+        }
+        if (strcmp(id, "direction_to_object") == 0) {
+            *out = 0;
+            if (p->rt && p->self) {
+                int32_t oi = (int32_t)arg; double best = 1e300; int found = 0;
+                double bx = 0, by = 0;
+                for (int i = 0; i < p->rt->instance_count; i++) {
+                    gm82_instance *o = &p->rt->instances[i];
+                    if (!o->alive || o->object_index != oi) continue;
+                    double dx = o->x - p->self->x, dy = o->y - p->self->y;
+                    double d = dx*dx + dy*dy;
+                    if (!found || d < best) { best = d; bx = o->x; by = o->y; found = 1; }
+                }
+                if (found) *out = gml_point_direction(p->self->x, p->self->y, bx, by);
+            }
+            return true;
+        }
+        if (strcmp(id, "distance_to_center") == 0) {
+            *out = -1;
+            if (p->rt && p->self) {
+                int32_t oi = (int32_t)arg; double best = 1e300; int found = 0;
+                for (int i = 0; i < p->rt->instance_count; i++) {
+                    gm82_instance *o = &p->rt->instances[i];
+                    if (!o->alive || o == p->self) continue;
+                    if (oi < 100000 && o->object_index != oi) continue;
+                    if (oi >= 100000 && o->id != oi) continue;
+                    double dx = o->x - p->self->x, dy = o->y - p->self->y;
+                    double d = sqrt(dx*dx + dy*dy);
+                    if (!found || d < best) { best = d; found = 1; }
+                }
+                if (found) *out = best;
+            }
+            return true;
+        }
+
+        /* GML Math Builtins */
+        if (strcmp(id, "dsin") == 0) {
+            *out = gml_dsin(arg); return true;
+        }
+        if (strcmp(id, "dcos") == 0) {
+            *out = gml_dcos(arg); return true;
+        }
+        if (strcmp(id, "clamp") == 0) {
+            double v = arg;
+            double lo = nargs >= 2 ? args[1] : 0;
+            double hi = nargs >= 3 ? args[2] : 0;
+            *out = gml_clamp(v, lo, hi); return true;
+        }
+        if (strcmp(id, "lerp") == 0) {
+            double a = arg;
+            double b = nargs >= 2 ? args[1] : 0;
+            double t = nargs >= 3 ? args[2] : 0;
+            *out = gml_lerp(a, b, t); return true;
+        }
+        if (strcmp(id, "point_distance_3d") == 0) {
+            double x1 = arg, y1 = nargs >= 2 ? args[1] : 0, z1 = nargs >= 3 ? args[2] : 0;
+            double x2 = nargs >= 4 ? args[3] : 0, y2 = nargs >= 5 ? args[4] : 0, z2 = nargs >= 6 ? args[5] : 0;
+            *out = gml_point_distance_3d(x1, y1, z1, x2, y2, z2); return true;
+        }
+        if (strcmp(id, "dot_product") == 0) {
+            double x1 = arg, y1 = nargs >= 2 ? args[1] : 0;
+            double x2 = nargs >= 3 ? args[2] : 0, y2 = nargs >= 4 ? args[3] : 0;
+            *out = gml_dot_product(x1, y1, x2, y2); return true;
+        }
+        if (strcmp(id, "move_towards_fixed") == 0) {
+            double tx = nargs >= 1 ? args[0] : 0, ty = nargs >= 2 ? args[1] : 0;
+            double sp = nargs >= 3 ? args[2] : 0;
+            if (p->self) {
+                double dist = gml_point_distance(p->self->x, p->self->y, tx, ty);
+                double use = sp < dist ? sp : dist;
+                gml_move_towards_point(tx, ty, use);
+            }
+            *out = 0; return true;
+        }
+
         if (strcmp(id, "instance_create") == 0) {
             double xarg = arg;
             double yarg = (nargs >= 2) ? args[1] : 0;
@@ -920,8 +1011,87 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "motion_add") == 0) {
             gml_motion_add(arg, nargs >= 2 ? args[1] : 0); *out = 0; return true;
         }
+
+        /* DnD action_* aliases (ported from NM.Maker.0..1.0) */
+        if (strcmp(id, "action_move_to") == 0) {
+            if (p->self) { p->self->x = nargs >= 1 ? args[0] : p->self->x;
+                           p->self->y = nargs >= 2 ? args[1] : p->self->y; }
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_move_start") == 0) {
+            if (p->self) { p->self->x = p->self->xstart; p->self->y = p->self->ystart; }
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_set_hspeed") == 0) {
+            if (p->self) p->self->hspeed = arg; *out = 1; return true;
+        }
+        if (strcmp(id, "action_set_vspeed") == 0) {
+            if (p->self) p->self->vspeed = arg; *out = 1; return true;
+        }
+        if (strcmp(id, "action_set_gravity") == 0) {
+            if (p->self) { p->self->gravity = arg;
+                if (nargs >= 2) p->self->gravity_direction = args[1]; }
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_set_friction") == 0) {
+            if (p->self) p->self->friction = arg; *out = 1; return true;
+        }
+        if (strcmp(id, "action_set_motion") == 0) {
+            if (p->self && nargs >= 2) {
+                double dir = args[0], sp = args[1];
+                p->self->direction = dir; p->self->speed = sp;
+                p->self->hspeed = sp * cos(dir * 3.14159265358979323846 / 180.0);
+                p->self->vspeed = -sp * sin(dir * 3.14159265358979323846 / 180.0);
+            }
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_kill_object") == 0) {
+            gml_instance_destroy(); *out = 1; return true;
+        }
+        if (strcmp(id, "action_create_object") == 0) {
+            double oi = arg;
+            double ox = nargs >= 2 ? args[1] : (p->self ? p->self->x : 0);
+            double oy = nargs >= 3 ? args[2] : (p->self ? p->self->y : 0);
+            *out = gml_instance_create(ox, oy, oi); return true;
+        }
+        if (strcmp(id, "action_sprite_set") == 0) {
+            if (p->self) p->self->sprite_index = (int32_t)arg; *out = 1; return true;
+        }
+        if (strcmp(id, "action_sound") == 0) { *out = 1; return true; }
+        if (strcmp(id, "action_restart_game") == 0 || strcmp(id, "action_current_room") == 0) {
+            if (p->rt) gm82_runtime_goto_room(p->rt, p->rt->current_room);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_next_room") == 0) {
+            if (p->rt) gm82_runtime_goto_room(p->rt, p->rt->current_room + 1);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_previous_room") == 0) {
+            if (p->rt && p->rt->current_room > 0) gm82_runtime_goto_room(p->rt, p->rt->current_room - 1);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_another_room") == 0) {
+            if (p->rt) gm82_runtime_goto_room(p->rt, (int)arg);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_bounce") == 0) {
+            if (p->self) { p->self->hspeed = -p->self->hspeed; p->self->vspeed = -p->self->vspeed; }
+            *out = 1; return true;
+        }
+        if (strcmp(id, "action_move_point") == 0) {
+            gml_move_towards_point(nargs >= 1 ? args[0] : 0, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 1);
+            *out = 1; return true;
+        }
+
         if (strcmp(id, "move_towards_point") == 0) {
             gml_move_towards_point(args[0], args[1], nargs >= 3 ? args[2] : 0); *out = 0; return true;
+        }
+        if (strcmp(id, "mp_potential_step") == 0 || strcmp(id, "action_potential_step") == 0) {
+            double tx = nargs >= 1 ? args[0] : 0;
+            double ty = nargs >= 2 ? args[1] : 0;
+            double sp = nargs >= 3 ? args[2] : 1;
+            gml_move_towards_point(tx, ty, sp);
+            *out = 1; return true;
         }
         if (strcmp(id, "choose") == 0) {
             if (nargs > 0) *out = args[rand() % nargs]; else *out = 0; return true;
@@ -943,6 +1113,14 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "sound_play") == 0) {
             *out = gml_sound_play(arg); return true;
+        }
+        if (strcmp(id, "sound_play_pitch") == 0) {
+            gml_sound_pitch(arg, nargs >= 2 ? args[1] : 1.0);
+            *out = gml_sound_play(arg); return true;
+        }
+        if (strcmp(id, "sound_loop_pitch") == 0) {
+            gml_sound_pitch(arg, nargs >= 2 ? args[1] : 1.0);
+            *out = gml_sound_loop(arg); return true;
         }
         if (strcmp(id, "sound_stop") == 0) {
             *out = gml_sound_stop(arg); return true;
@@ -1279,6 +1457,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "game_has_ended") == 0) {
             *out = gml_game_has_ended(); return true;
+        }
+        if (strcmp(id, "event_user") == 0) {
+            *out = gml_event_user(arg); return true;
         }
         if (strcmp(id, "get_x") == 0) {
             *out = gml_get_x(); return true;

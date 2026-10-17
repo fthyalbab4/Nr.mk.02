@@ -91,6 +91,7 @@ else if(!strcmp(n->text,"is_array")&&c==1){r=gml_value_bool(a[0].kind==GML_V_ARR
 else if(!strcmp(n->text,"is_undefined")&&c==1){r=gml_value_bool(a[0].kind==GML_V_UNDEFINED);}
 else if(!strcmp(n->text,"typeof")&&c==1){switch(a[0].kind){case GML_V_REAL:r=gml_value_string("number");break;case GML_V_BOOL:r=gml_value_string("bool");break;case GML_V_STRING:r=gml_value_string("string");break;case GML_V_ARRAY:r=gml_value_string("array");break;default:r=gml_value_string("undefined");break;}}
 else if(!strcmp(n->text,"string_replace_all")&&c==3){const char*src=text_of(a[0]);const char*find=text_of(a[1]);const char*rep=text_of(a[2]);size_t nf=strlen(find),nr=strlen(rep),ns=strlen(src);if(nf==0)r=gml_value_string(src);else{size_t occurrences=0;for(const char*p=src;(p=strstr(p,find));p+=nf)occurrences++;size_t outlen=ns;if(nr>=nf)outlen += occurrences*(nr-nf);else outlen -= occurrences*(nf-nr);char*buf=malloc(outlen+1);if(buf){const char*p=src;char*w=buf;while(*p){const char*q=strstr(p,find);if(!q){strcpy(w,p);break;}size_t n=(size_t)(q-p);memcpy(w,p,n);w+=n;memcpy(w,rep,nr);w+=nr;p=q+nf;}buf[outlen]=0;r=gml_value_string(buf);free(buf);}}}
+else if(!strcmp(n->text,"event_user")&&c==1){extern double gml_event_user(double);r=gml_value_real(gml_event_user(num(a[0])));}
 else if(vm->native_call && vm->native_call(vm->native_userdata,n->text,a,c,&r)){}
 else if(vm->script_call && vm->script_call(vm->script_userdata,n->text,a,c,&r)){}
 else snprintf(vm->error,sizeof vm->error,"unknown function: %s",n->text);
@@ -117,4 +118,38 @@ static gml_value eval(gml_vm*vm,const gml_ast*n){if(!n)return undef();switch(n->
  }
  gml_value b=eval(vm,n->right);double x=num(a),y=num(b),z=0;int bo=0;gml_value r=undef();switch(n->op){case GML_T_PLUS:if(a.kind==GML_V_STRING||b.kind==GML_V_STRING){const char*as=a.kind==GML_V_STRING?(a.string?a.string:""):"";const char*bs=b.kind==GML_V_STRING?(b.string?b.string:""):"";size_t na=strlen(as),nb=strlen(bs);char*joined=malloc(na+nb+1);if(joined){memcpy(joined,as,na);memcpy(joined+na,bs,nb+1);r=gml_value_string(joined);free(joined);}else r=undef();}else z=x+y;break;case GML_T_MINUS:z=x-y;break;case GML_T_STAR:z=x*y;break;case GML_T_SLASH:z=y==0?0:x/y;break;case GML_T_PERCENT:z=fmod(x,y);break;case GML_T_EQ:bo=(a.kind==GML_V_STRING||b.kind==GML_V_STRING)?!strcmp(a.string?a.string:"",b.string?b.string:""):x==y;break;case GML_T_NE:bo=(a.kind==GML_V_STRING||b.kind==GML_V_STRING)?strcmp(a.string?a.string:"",b.string?b.string:"")!=0:x!=y;break;case GML_T_LT:bo=x<y;break;case GML_T_LE:bo=x<=y;break;case GML_T_GT:bo=x>y;break;case GML_T_GE:bo=x>=y;break;case GML_T_AND:bo=truth(a)&&truth(b);break;case GML_T_OR:bo=truth(a)||truth(b);break;default:break;}r=(n->op==GML_T_PLUS&&(a.kind==GML_V_STRING||b.kind==GML_V_STRING))?r:(((n->op>=GML_T_EQ&&n->op<=GML_T_GE)||n->op==GML_T_AND||n->op==GML_T_OR)?gml_value_bool(bo):gml_value_real(z));gml_value_free(&a);gml_value_free(&b);return r;}default:return undef();}}
 static void exec(gml_vm*vm,const gml_ast*n){if(!n||vm->returned||vm->error[0])return;switch(n->kind){case GML_AST_BLOCK:for(size_t i=0;i<n->count&&!vm->returned&&!vm->break_pending&&!vm->continue_pending&&!vm->error[0];i++)exec(vm,n->items[i]);break;case GML_AST_EXPR_STMT:{gml_value v=eval(vm,n->left);gml_value_free(&v);break;}case GML_AST_RETURN:vm->return_value=eval(vm,n->left);vm->returned=1;break;case GML_AST_EXIT:gml_value_free(&vm->return_value);vm->return_value=undef();vm->returned=1;break;case GML_AST_BREAK:vm->break_pending=1;break;case GML_AST_CONTINUE:vm->continue_pending=1;break;case GML_AST_IF:{gml_value c=eval(vm,n->left);if(truth(c))exec(vm,n->right);else if(n->count)exec(vm,n->items[0]);gml_value_free(&c);break;}case GML_AST_WHILE:{size_t guard=0;while(!vm->returned&&!vm->error[0]&&!vm->break_pending&&guard++<100000){gml_value c=eval(vm,n->left);int ok=truth(c);gml_value_free(&c);if(!ok)break;vm->continue_pending=0;exec(vm,n->right);if(vm->break_pending){vm->break_pending=0;break;}if(vm->continue_pending){vm->continue_pending=0;continue;}}if(guard>=100000&&!vm->returned)snprintf(vm->error,sizeof vm->error,"while loop limit exceeded");break;}case GML_AST_DO_UNTIL:{size_t guard=0;do{if(vm->returned||vm->error[0])break;vm->continue_pending=0;exec(vm,n->right);if(vm->break_pending){vm->break_pending=0;break;}if(vm->continue_pending)vm->continue_pending=0;gml_value c=eval(vm,n->left);int done=truth(c);gml_value_free(&c);if(done)break;}while(++guard<100000);if(guard>=100000&&!vm->returned&&!vm->error[0])snprintf(vm->error,sizeof vm->error,"do-until loop limit exceeded");break;}case GML_AST_SWITCH:{gml_value key=eval(vm,n->left);size_t match=(size_t)-1,def=(size_t)-1;for(size_t i=0;i<n->count;i++){const gml_ast*c=n->items[i];if(!c||c->kind!=GML_AST_SWITCH_CASE)continue;if(!c->left){def=i;continue;}gml_value cv=eval(vm,c->left);int same=(key.kind==GML_V_STRING||cv.kind==GML_V_STRING)?!strcmp(key.string?key.string:"",cv.string?cv.string:""):num(key)==num(cv);gml_value_free(&cv);if(same){match=i;break;}}if(match==(size_t)-1)match=def;if(match!=(size_t)-1){for(size_t i=match;i<n->count&&!vm->returned&&!vm->error[0];i++){const gml_ast*c=n->items[i];if(!c||c->kind!=GML_AST_SWITCH_CASE)continue;vm->continue_pending=0;exec(vm,c->right);if(vm->break_pending){vm->break_pending=0;break;}}}gml_value_free(&key);break;}case GML_AST_FOR:{if(n->count<4)break;gml_value init=eval(vm,n->items[0]);gml_value_free(&init);size_t guard=0;while(!vm->returned&&!vm->error[0]&&!vm->break_pending&&guard++<100000){gml_value c=eval(vm,n->items[1]);int ok=truth(c);gml_value_free(&c);if(!ok)break;vm->continue_pending=0;exec(vm,n->items[3]);if(vm->break_pending){vm->break_pending=0;break;}vm->continue_pending=0;gml_value post=eval(vm,n->items[2]);gml_value_free(&post);}if(guard>=100000&&!vm->returned)snprintf(vm->error,sizeof vm->error,"for loop limit exceeded");break;}case GML_AST_WITH:{gml_value target=eval(vm,n->left);if(vm->with_call)vm->with_call(vm->with_userdata,vm,&target,n->right);else snprintf(vm->error,sizeof vm->error,"with callback unavailable");gml_value_free(&target);break;}case GML_AST_REPEAT:{gml_value count=eval(vm,n->left);double raw=num(count);gml_value_free(&count);size_t limit=raw>0?(size_t)raw:0;if(limit>100000)limit=100000;for(size_t i=0;i<limit&&!vm->returned&&!vm->error[0];i++){vm->break_pending=0;vm->continue_pending=0;exec(vm,n->right);if(vm->break_pending){vm->break_pending=0;break;}if(vm->continue_pending)vm->continue_pending=0;}break;}default:break;}}
-int gml_vm_execute(gml_vm*vm,const gml_ast*root){if(!vm||!root)return 0;vm->error[0]=0;vm->returned=0;vm->break_pending=0;vm->continue_pending=0;gml_value_free(&vm->return_value);exec(vm,root);return vm->error[0]==0;} int gml_vm_invoke(gml_vm*vm,const gml_ast*root,const gml_value*args,size_t count,gml_value*out){if(!vm||!root)return 0;int old_returned=vm->returned,old_break=vm->break_pending,old_continue=vm->continue_pending;gml_value old_return=copyv(&vm->return_value);char old_error[160];memcpy(old_error,vm->error,sizeof old_error);vm->returned=0;vm->break_pending=0;vm->continue_pending=0;vm->error[0]=0;gml_vm_push_scope(vm);for(size_t i=0;i<count&&i<16;i++){char name[16];snprintf(name,sizeof name,"arg%zu",i);gml_vm_set(vm,name,args[i]);}gml_value_free(&vm->return_value);vm->return_value=undef();exec(vm,root);if(out)*out=copyv(&vm->return_value);int ok=vm->error[0]==0;gml_vm_pop_scope(vm);gml_value_free(&vm->return_value);vm->return_value=old_return;vm->returned=old_returned;vm->break_pending=old_break;vm->continue_pending=old_continue;if(!ok)memcpy(old_error,vm->error,sizeof old_error);memcpy(vm->error,old_error,sizeof vm->error);return ok;}
+int gml_vm_execute(gml_vm*vm,const gml_ast*root){if(!vm||!root)return 0;vm->error[0]=0;vm->returned=0;vm->break_pending=0;vm->continue_pending=0;gml_value_free(&vm->return_value);exec(vm,root);return vm->error[0]==0;}
+
+int gml_vm_invoke(gml_vm*vm,const gml_ast*root,const gml_value*args,size_t count,gml_value*out){
+    if(!vm||!root)return 0;
+    int old_returned=vm->returned,old_break=vm->break_pending,old_continue=vm->continue_pending;
+    gml_value old_return=copyv(&vm->return_value);
+    char old_error[160];
+    memcpy(old_error,vm->error,sizeof old_error);
+    vm->returned=0;
+    vm->break_pending=0;
+    vm->continue_pending=0;
+    vm->error[0]=0;
+    gml_vm_push_scope(vm);
+    for(size_t i=0;i<count&&i<16;i++){
+        char name1[16], name2[16];
+        snprintf(name1,sizeof name1,"arg%zu",i);
+        snprintf(name2,sizeof name2,"argument%zu",i);
+        gml_vm_set(vm,name1,args[i]);
+        gml_vm_set(vm,name2,args[i]);
+    }
+    gml_value_free(&vm->return_value);
+    vm->return_value=undef();
+    exec(vm,root);
+    if(out)*out=copyv(&vm->return_value);
+    int ok=vm->error[0]==0;
+    gml_vm_pop_scope(vm);
+    gml_value_free(&vm->return_value);
+    vm->return_value=old_return;
+    vm->returned=old_returned;
+    vm->break_pending=old_break;
+    vm->continue_pending=old_continue;
+    if(!ok)memcpy(old_error,vm->error,sizeof old_error);
+    memcpy(vm->error,old_error,sizeof vm->error);
+    return ok;
+}
