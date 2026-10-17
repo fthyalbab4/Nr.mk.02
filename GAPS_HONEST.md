@@ -1,21 +1,20 @@
-# GAPS_HONEST — بدون تضخيم
+# GAPS_HONEST — 2026-10-17
 
-## الفحص الدوري اليومي (Daily Periodic Audit - 2026-10-24)
-- **Host Full Verification**: 16/16 Passed
-- **C Core Unit Tests**: 3/3 Binaries Passed
-- **Total Weighted Engine Parity**: ~36.75% (~37%)
-- **Android Physical Device**: UNVERIFIED / BLOCKED
+## Done this pass
+- Origin decode heuristic + draw offset
+- Collision AABB origin + optional mask
+- image_index wrap
+- file_rename/directory_rename
+- Host pipeline 4/4 samples step/draw
 
-## Runner 2026-10-16
-- place_meeting/bbox: scale + origin (origin decode from GMK still open)
-- solid collision phase: snapshot + origin AABB
-- host ASSEMBLE event/AABB: PASS
+## Still open
+| Gap | Notes |
+|-----|-------|
+| GML full interpreter | Partial eval |
+| String args file_* | Stubs empty path in one dispatch path |
+| Object event table full GMK decode | Structure exists |
+| Android device | UNVERIFIED |
+| Audio device | UNVERIFIED |
+| Save/load multi-room | Partial |
 
-## مفتوح (أولوية)
-| فجوة | ملاحظات |
-|------|---------|
-| Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
-| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB محسّن |
-| sprite origin من GMK | حقول موجودة؛ القيم لسه 0 من القارئ |
-| GML كامل | interpreter جزئي |
-| صوت على جهاز | إثبات مطلوب |
+Do not claim 100% until device + broad GML suites pass honestly.
