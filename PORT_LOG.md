@@ -1,32 +1,26 @@
 # PORT_LOG — keep-review → main (2026-10-18)
 
-**Rule:** complete existing engine; do not replace whole core. **No branches deleted.**
+**No branches deleted.** Complete existing code; no full-branch merges.
 
-## Method
-1. keep-review branches (ahead of main + three-dot code under cpp/java/tools).
-2. Listed **added** files missing on main tip.
-3. Compared `gml_*` symbols on top keep branch vs main → **0 missing functions** (main already has offsets, ds_grid region, place_meeting helpers, etc.).
+## Ported to main
+### tools
+- `tools/run_engine_suite.py` ← feature/sync-external-repos-gm82-*
 
-## Theme: tools
-| Source | File | Action |
-|--------|------|--------|
-| feature/sync-external-repos-gm82-15609141469483167260 | `tools/run_engine_suite.py` | **ported** |
+### tests
+- `app/src/main/cpp/tests/test_4_game_smoke.c`
+- `app/src/main/cpp/tests/test_paths_particles_mpgrid.c` (paths smoke)
 
-## Theme: tests
-| Source | File | Action |
-|--------|------|--------|
-| feature/sync-external-repos-gm82-* | `tests/test_4_game_smoke.c` | **ported** |
-| same | `tests/test_mario_physics_parity.c` | **ported** |
-| same | `tests/test_paths_particles_mpgrid.c` | **ported** |
-| feat/gm82-core-refactor / builtins-bbox | `tests/test_gml_gm82_core_expanded.c` | **ported** |
+## Core runtime/events/gml/android
+Symbol audit: top keep-review branch had **0 gml_* functions missing** vs current main.
+Main already contains ROOM_BOUNDS, origin collision, events fire_*, actions, str_args, ds_grid region APIs, place_meeting helpers.
 
-## Theme: runtime / events / gml / android
-- No unique **new** core source files beyond main.
-- Branch diffs on runtime/events/gml/MainActivity largely already on main or merge noise; **no blind full-branch merge**.
+**Not** blindly merged: jules-147943…, ds-grid-region, architecture refactors (would reintroduce drift).
 
-## Not done
-- Full merge of keep-review branches
-- Branch deletion
+## Still optional to port as files (local tree had them; push if needed)
+- `test_mario_physics_parity.c`
+- `test_gml_gm82_core_expanded.c`
+(require full native link lines / may need gm82_loader)
 
-## Follow-up
-Name a missing runtime symbol to port that symbol only from a branch tip.
+## Next
+1. Spot-check discard branches then delete.
+2. Port individual missing **symbols** only if a game FAIL names them.
