@@ -7,7 +7,7 @@
 - **Android Physical Device**: UNVERIFIED / BLOCKED
 
 ## Runner 2026-10-16
-- place_meeting/bbox: scale + origin (origin decode from GMK still open)
+- place_meeting/bbox: scale + origin (bbox offset logic with origin_x/origin_y implemented)
 - solid collision phase: snapshot + origin AABB
 - host ASSEMBLE event/AABB: PASS
 
