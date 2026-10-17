@@ -1,14 +1,21 @@
-# STATUS — 2026-10-17
+# STATUS — 2026-10-17 continue
 
-## Host
-- origin: mario 23/47 non-zero
-- place_meeting scale+origin+mask: OK
-- ASSEMBLE: PASS
+## Host verified (this session)
+- Sprite origin heuristic: mario **23/47** frames non-zero origin
+- place_meeting: scale + origin AABB + pixel mask when bitmasks exist
+- Solid collision: phase snapshot + origin boxes
+- sprite_get_xoffset / yoffset
+- ASSEMBLE event/AABB: **PASS**
+- Compile: sprite_decode, builtins, runtime, eval OK
 
-## Critical after pull
+## After git pull (required)
 ```bash
+git fetch --depth=80 origin
 python3 tools/gap_fill_20261013/restore_builtins_h.py
 python3 tools/gap_fill_20261013/patch_origin_decode.py
 bash tools/gap_fill_20261013/ASSEMBLE.sh
 ```
-Parity ~37%. Android UNVERIFIED.
+
+If header still stub/empty, restore from commit `02d7da5`.
+
+Weighted parity still ~37%. Android physical: **UNVERIFIED**.
