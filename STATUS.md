@@ -1,18 +1,15 @@
-# STATUS — 2026-10-17 runner continue
+# STATUS — 2026-10-17
 
-## Host verified
-- Sprite origin heuristic: mario **23/47** non-zero origins
-- place_meeting: scale + origin AABB + pixel mask
-- Solid collision: snapshot + origin resolution
-- sprite_get_xoffset / yoffset
-- ASSEMBLE: **PASS**
+## Host
+- Origin + collision patches: ASSEMBLE PASS
+- file_rename/directory_rename: ported from Nr.mk.01
 
-## Apply on your machine (one shot)
+## Apply
 ```bash
 git pull
-git fetch --depth=80 origin   # for restore from 02d7da5
+git fetch --depth=80 origin
 bash tools/gap_fill_20261013/apply_runner_patches.sh
+python3 tools/gap_fill_20261013/port_file_rename_from_nr01.py
 ```
-This restores `gm82_gml_builtins.h`, applies origin/collision patches, runs ASSEMBLE.
 
-Weighted parity still ~37%. Android: **UNVERIFIED**.
+Parity still ~37% weighted. Android UNVERIFIED. No 100% claims.
