@@ -126,6 +126,10 @@ static bool sprite_size(gm82_runtime *rt, int32_t sprite_index, int32_t *w, int3
     return true;
 }
 
+static bool precise_mask_overlap(const gm82_runtime *rt,
+                                 int32_t spr1, double x1, double y1,
+                                 int32_t spr2, double x2, double y2);
+
 static bool aabb_overlap(double ax, double ay, int aw, int ah,
                          double bx, double by, int bw, int bh) {
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
@@ -142,7 +146,14 @@ double gml_place_meeting(double x, double y, double object_index) {
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) return 1;
+        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
+            if (precise_mask_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y))
+                return 1;
+            /* If precise mask not available or returned false but sprites lack pixel data, fallback to AABB */
+            if (!g_rt->sprites || g_self->sprite_index < 0 || g_self->sprite_index >= g_rt->sprites->count ||
+                !g_rt->sprites->frames[g_self->sprite_index].rgba)
+                return 1;
+        }
     }
     /* also solid tiles when object_index < 0 (all) */
     if (oi < 0 && g_rt->rooms && g_rt->current_room >= 0 && g_rt->current_room < g_rt->rooms->count) {
@@ -380,21 +391,37 @@ double gml_event_user(double numb) {
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
-double gml_get_bbox_left(void) { return g_self ? g_self->x : 0; }
+double gml_get_bbox_left(void) {
+    if (!g_self) return 0;
+    int32_t ox = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    return g_self->x - ox * g_self->image_xscale;
+}
 double gml_get_bbox_right(void) {
     if (!g_self) return 0;
-    int32_t sw = 16;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+    int32_t sw = 16, ox = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sw = g_rt->sprites->frames[g_self->sprite_index].width;
-    return g_self->x + sw - 1;
+        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    }
+    return g_self->x + (sw - ox) * g_self->image_xscale - 1;
 }
-double gml_get_bbox_top(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_top(void) {
+    if (!g_self) return 0;
+    int32_t oy = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    return g_self->y - oy * g_self->image_yscale;
+}
 double gml_get_bbox_bottom(void) {
     if (!g_self) return 0;
-    int32_t sh = 16;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+    int32_t sh = 16, oy = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sh = g_rt->sprites->frames[g_self->sprite_index].height;
-    return g_self->y + sh - 1;
+        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    }
+    return g_self->y + (sh - oy) * g_self->image_yscale - 1;
 }
 void gml_set_x(double v) { if (g_self) g_self->x = v; }
 void gml_set_y(double v) { if (g_self) g_self->y = v; }
