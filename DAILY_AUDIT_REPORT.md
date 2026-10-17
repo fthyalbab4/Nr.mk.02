@@ -1,4 +1,4 @@
-# Daily Audit & Gap Fill Report — 2026-10-24
+# Daily Audit & Gap Fill Report — 2026-10-25
 
 ## 1. Executive Summary
 - **Host Linux Engine Verification**: PASS (Native C host binaries & test suite `test_dual_load`, `test_event_order`, `test_runtime_guard` passing 3/3).
@@ -12,7 +12,7 @@
 |-------------------|:------:|:---------------:|:---------------------:|:-------------------:|------------------------|
 | **Resource Decode** | 15% | 45.0% | 6.75% | Host Verified | GMK 8.0/8.1 decode for sample games; complete Begin/End GMK event decode tables remaining. |
 | **GML VM & Scopes** | 30% | 35.0% | 10.50% | Host Verified | Basic loops (`repeat`, `while`, `do..until`, `with`), builtins, Math; GML AST parser/bytecode interpreter partial. |
-| **Physics & Events** | 25% | 45.0% | 11.25% | Host Verified | Platform collisions & 1-bit masks (`gm82_mask.c`) with AABB scale; precise masks in `place_meeting` incomplete. |
+| **Physics & Events** | 25% | 45.0% | 11.25% | Host Verified | Platform collisions & 1-bit masks (`gm82_mask.c`) with AABB scale; precise masks in `place_meeting` fallback incomplete. |
 | **Rendering Engine**| 15% | 30.0% | 4.50% | Host Verified | Batch software/GLES surface rendering; sprite origin bbox binding needs full alignment. |
 | **Audio Engine**    | 5%  | 25.0% | 1.25% | Host Queue Pass | OpenSLES C PCM queue; requires physical Android hardware verification. |
 | **Android Glue / JNI**| 10% | 25.0% | 2.50% | Build Verified | 4 ABIs `.so` native libs built and linked to Java JNI layer; physical touch/logcat validation pending. |
