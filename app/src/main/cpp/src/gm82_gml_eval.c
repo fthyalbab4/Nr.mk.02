@@ -1175,6 +1175,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "sprite_get_width") == 0) {
             *out = gml_sprite_get_width(arg); return true;
         }
+        if (strcmp(id, "sprite_get_xoffset") == 0) {
+            *out = gml_sprite_get_xoffset(arg); return true;
+        }
+        if (strcmp(id, "sprite_get_yoffset") == 0) {
+            *out = gml_sprite_get_yoffset(arg); return true;
+        }
         if (strcmp(id, "sprite_get_height") == 0) {
             *out = gml_sprite_get_height(arg); return true;
         }
