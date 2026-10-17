@@ -14,6 +14,20 @@ void gm82_input_begin_frame(gm82_input_state *in) {
     if (!in) return;
     memset(in->pressed, 0, sizeof(in->pressed));
     memset(in->released, 0, sizeof(in->released));
+    memset(in->mouse_pressed, 0, sizeof(in->mouse_pressed));
+    memset(in->mouse_released, 0, sizeof(in->mouse_released));
+}
+
+void gm82_input_mouse_down(gm82_input_state *in, int button) {
+    if (!in || button < 0 || button > 2) return;
+    if (!in->mouse_button[button]) in->mouse_pressed[button] = 1;
+    in->mouse_button[button] = 1;
+}
+
+void gm82_input_mouse_up(gm82_input_state *in, int button) {
+    if (!in || button < 0 || button > 2) return;
+    if (in->mouse_button[button]) in->mouse_released[button] = 1;
+    in->mouse_button[button] = 0;
 }
 
 void gm82_input_key_down(gm82_input_state *in, int key) {
@@ -101,6 +115,13 @@ double gml_mouse_check_button(double button) {
 }
 
 double gml_mouse_check_button_pressed(double button) {
-    /* pressed edge not tracked separately for mouse yet – approximate with down */
-    return gml_mouse_check_button(button);
+    int b = (int)button;
+    if (!g_input || b < 0 || b > 2) return 0;
+    return g_input->mouse_pressed[b] ? 1.0 : 0.0;
+}
+
+double gml_mouse_check_button_released(double button) {
+    int b = (int)button;
+    if (!g_input || b < 0 || b > 2) return 0;
+    return g_input->mouse_released[b] ? 1.0 : 0.0;
 }
