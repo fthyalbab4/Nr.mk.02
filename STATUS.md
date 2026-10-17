@@ -1,14 +1,6 @@
-# STATUS — sequential plan 2026-10-18
+# STATUS — after hygiene 2026-10-18
 
-Host: ASSEMBLE PASS, pipeline 4/4 moved=1.
-
-```bash
-git pull
-python3 tools/gap_fill_20261013/patch_get_active_snapshot.py
-python3 tools/gap_fill_20261013/patch_actions_move_draw.py
-python3 tools/gap_fill_20261013/patch_actions_draw_score.py
-bash tools/gap_fill_20261013/APPLY_ALL.sh
-bash tools/run_host_pipeline.sh
-```
-
-Android: docs/ANDROID_BUILD.md — device UNVERIFIED.
+- Removed APK/bin/tar from main tree.
+- ~90 remote branches still exist (delete via GitHub Branches page or Jules with ref-delete permission).
+- Engine path: `app/src/main/cpp` + `tools/`.
+- Device APK: build/release outside source tree.
