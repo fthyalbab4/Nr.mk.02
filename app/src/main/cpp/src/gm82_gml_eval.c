@@ -1114,6 +1114,14 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "sound_play") == 0) {
             *out = gml_sound_play(arg); return true;
         }
+        if (strcmp(id, "sound_play_pitch") == 0) {
+            gml_sound_pitch(arg, nargs >= 2 ? args[1] : 1.0);
+            *out = gml_sound_play(arg); return true;
+        }
+        if (strcmp(id, "sound_loop_pitch") == 0) {
+            gml_sound_pitch(arg, nargs >= 2 ? args[1] : 1.0);
+            *out = gml_sound_loop(arg); return true;
+        }
         if (strcmp(id, "sound_stop") == 0) {
             *out = gml_sound_stop(arg); return true;
         }

@@ -139,6 +139,14 @@
         outline: 2px solid #2563eb !important;
         outline-offset: 2px !important;
       }
+      #gmk-cloud-reset-btn:hover {
+        background: #d1d5db !important;
+        color: #111827 !important;
+      }
+      #gmk-cloud-reset-btn:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
     </style>
     <script type="module" crossorigin>function _mergeNamespaces(n2, m2) {
   for (var i = 0; i < m2.length; i++) {
@@ -154448,7 +154456,22 @@ button, input, textarea, select {
     grid.innerHTML = "";
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div role="status" style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px;">لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>`;
+      grid.innerHTML = `
+        <div role="status" style="grid-column:1/-1; text-align:center; padding:40px 20px; color:#6b7280; font-size:14px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div>لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>
+          <button id="gmk-cloud-reset-btn" aria-label="إعادة ضبط البحث والتصفية" style="padding:6px 16px; background:#e5e7eb; color:#374151; border:1px solid #d1d5db; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.2s, border-color 0.2s;">إعادة ضبط البحث 🔄</button>
+        </div>
+      `;
+      const resetBtn = document.getElementById("gmk-cloud-reset-btn");
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          searchInput.value = "";
+          categorySelect.value = "ALL";
+          updateSearchClearBtn();
+          renderGames();
+          searchInput.focus();
+        };
+      }
       return;
     }
 
