@@ -15,6 +15,8 @@ typedef struct {
     gm82_runtime *rt;
     gm82_instance *self;
     char err[128];
+    char str_args[8][256];
+    int str_mask;
 } gml_parser;
 
 static void skip_ws(gml_parser *p) {
@@ -342,10 +344,31 @@ static bool parse_primary(gml_parser *p, double *out) {
     if (match(p, '(')) {
         double args[8] = {0,0,0,0,0,0,0,0};
         int nargs = 0;
+        p->str_mask = 0;
+        memset(p->str_args, 0, sizeof(p->str_args));
         if (peek(p) != ')') {
             for (;;) {
                 if (nargs >= 8) return false;
-                if (!parse_expr(p, &args[nargs])) return false;
+                skip_ws(p);
+                if (peek(p) == '"' || peek(p) == '\'') {
+                    char quote = (char)peek(p);
+                    getc_(p);
+                    size_t j = 0;
+                    while (p->i < p->n && p->s[p->i] != quote && j + 1 < sizeof(p->str_args[0])) {
+                        if (p->s[p->i] == '\\' && p->i + 1 < p->n) {
+                            p->i++;
+                            p->str_args[nargs][j++] = p->s[p->i++];
+                        } else {
+                            p->str_args[nargs][j++] = p->s[p->i++];
+                        }
+                    }
+                    p->str_args[nargs][j] = 0;
+                    if (p->i < p->n && p->s[p->i] == quote) p->i++;
+                    args[nargs] = 0;
+                    p->str_mask |= (1 << nargs);
+                } else {
+                    if (!parse_expr(p, &args[nargs])) return false;
+                }
                 nargs++;
                 if (peek(p) != ',') break;
                 getc_(p);
@@ -1146,8 +1169,31 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "game_end") == 0) {
             *out = gml_game_end(); return true;
         }
+        if (strcmp(id, "show_debug_message") == 0) {
+            gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
+            *out = 0; return true;
+        }
+        if (strcmp(id, "show_message") == 0) {
+            gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
+            *out = 1; return true;
+        }
+        if (strcmp(id, "randomize") == 0) {
+            *out = gml_randomize(); return true;
+        }
+        if (strcmp(id, "random_set_seed") == 0) {
+            *out = gml_random_set_seed(arg); return true;
+        }
+        if (strcmp(id, "random_get_seed") == 0) {
+            *out = gml_random_get_seed(); return true;
+        }
         if (strcmp(id, "sprite_get_width") == 0) {
             *out = gml_sprite_get_width(arg); return true;
+        }
+        if (strcmp(id, "sprite_get_xoffset") == 0) {
+            *out = gml_sprite_get_xoffset(arg); return true;
+        }
+        if (strcmp(id, "sprite_get_yoffset") == 0) {
+            *out = gml_sprite_get_yoffset(arg); return true;
         }
         if (strcmp(id, "sprite_get_height") == 0) {
             *out = gml_sprite_get_height(arg); return true;
@@ -1372,7 +1418,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_path_end(); return true;
         }
         if (strcmp(id, "path_get_number") == 0) {
-            *out = gml_path_get_number(arg); return true;
+            *out = gml_path_get_number(args[0]); return true;
         }
         if (strcmp(id, "timeline_start") == 0) {
             *out = gml_timeline_start(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 1, nargs >= 4 ? args[3] : 1); return true;
@@ -1540,13 +1586,21 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_file_text_eof(arg); return true;
         }
         if (strcmp(id, "file_exists") == 0) {
-            *out = gml_file_exists(""); return true;
+            *out = gml_file_exists((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "file_delete") == 0) {
-            *out = gml_file_delete(""); return true;
+            *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
+        if (strcmp(id, "file_rename") == 0) {
+            *out = gml_file_rename((p->str_mask & 1) ? p->str_args[0] : "",
+                                  (p->str_mask & 2) ? p->str_args[1] : ""); return true;
+        }
+        if (strcmp(id, "directory_rename") == 0) {
+            *out = gml_directory_rename((p->str_mask & 1) ? p->str_args[0] : "",
+                                       (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "ini_open") == 0) {
-            *out = gml_ini_open(""); return true;
+            *out = gml_ini_open((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "ini_close") == 0) {
             *out = gml_ini_close(); return true;
