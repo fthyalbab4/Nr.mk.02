@@ -12,9 +12,9 @@
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **فك الموارد (Resource Decode)** | 15% | 45.0% | 6.75% | Host Verified | دعم فك تشفير وسوم GMK 8.0/8.1 الرئيسية للعينات؛ يتبقى استكمال الأحداث المعقدة كاملة |
 | **محرك GML والنطاقات (GML VM)** | 30% | 35.0% | 10.50% | Host Verified | دعم `repeat`, `while`, `do..until`, `with`, `point_distance_3d`, والمتغيرات الخاصة؛ المفسر حالياً جزئي |
-| **حلقة الأحداث والفيزياء (Physics)** | 25% | 45.0% | 11.25% | Host Verified | دعم تصادم المنصات وأقنعة 1-bit (`gm82_mask.c`) بـ AABB مع دعم الحجم السلمي |
+| **حلقة الأحداث والفيزياء (Physics)** | 25% | 45.0% | 11.25% | Host Verified | دعم تصادم المنصات وأقنعة 1-bit (`gm82_mask.c`) بـ AABB مع دعم الحجم السلمي؛ اختبار ماريو 100 إطار PASS |
 | **محرك الرسم (Rendering Engine)** | 15% | 30.0% | 4.50% | Host Verified | تجميع دفعات الرسم برمجياً وإمكانية الرسم على الأسطح |
-| **المحرك الصوتي (Audio Engine)** | 5% | 25.0% | 1.25% | Host Verified (Local Queue) | الخلاط الصوتي متعدد القنوات C PCM Queue؛ يحتاج إثبات تشغيل صوتي حقيقي على الهاتف |
+| **المحرك الصوتي (Audio Engine)** | 5% | 25.0% | 1.25% | Host Verified (Local Queue) | الخلاط الصوتي متعدد القنوات C PCM Queue؛ يحتاج إثبات تشغيل صوتي حقيقي على الهاتف (BLOCKED) |
 | **واجهات JNI وأندرويد (Android Glue)** | 10% | 25.0% | 2.50% | Build Verified (4 ABIs) | تصدير كامل واجهات JNI للمكتبات لـ 4 معماريات ABIs |
 
 **الإجمالي الموزون الحقيقي المحسوب:** **36.75%**
@@ -23,7 +23,9 @@
 ---
 
 ## نتيجة الاختبارات الموثقة (Host Suite Results)
-- **C Host Test Suite (`make test`)**: 3/3 Binaries Passed (`test_dual_load`, `test_event_order`, `test_runtime_guard`)
+- **C Host Test Suite (`make test`)**: 6/6 Binaries Passed (`test_dual_load`, `test_event_order`, `test_runtime_guard`, `test_mario_playable`, `test_audio_queue`, `test_gml_eval`)
+- **Mario Host Playable Verification**: `MARIO_PLAYABLE_PASS_HOST` (100 frames simulation, dx=128.0, nonzero soft render pixels=45157)
+- **Audio Queue Verification**: `AUDIO_QUEUE_PASS_HOST` (10 sound assets decoded, audio ring buffer queue ok)
 - **Python Comprehensive Verification (`run_full_verification.py`)**: 16/16 Tests Passed (100% Host Pass)
 - **JS GMK Parser Pipeline (`test_all_games_inlined.js`)**: 39/39 Scripts Parsed (100%), 78/78 DnD Actions Executed
 - **Android Physical Hardware**: **UNVERIFIED / BLOCKED** (لم يتم الاختبار على جهاز أندرويد حقيقي في هذه الدورة)
