@@ -1,16 +1,27 @@
-# GAPS_HONEST
+# GAPS_HONEST — 2026-10-18 (post J7 audit)
 
-## Closed this pass
-- Evaluator string literals for file/ini paths
-- show_debug_message, show_message, randomize, random_set_seed
-- Room bounds clamp (prior)
-- Dynamic sprite origin (`origin_x`, `origin_y`) and scale (`image_xscale`, `image_yscale`) calculation in `gml_get_bbox_*`
-- Pixel-precise bitmask collision inspection (`precise_mask_overlap`) integrated into `gml_place_meeting`
-- Removed duplicate unreachable `bbox_*` code in `gm82_gml_eval.c`
+## Host suite (measured this run)
+- ASSEMBLE: **ALL PASS**
+- Pipeline 4 samples: **ok=4 fail=0** (decode + room + draw lit)
+- zelda: movement observed; mario/plataformas/shooter: moved=0 on first alive instance (not suite FAIL by itself)
 
-## Open
-- Complete GMK Begin/End event decode tables
-- Full GML / arrays / with-blocks fidelity in C parser
-- Physical Android hardware playtest (touch input + OpenSLES audio latency)
+## Closed (grep-verified)
+- ROOM_BOUNDS_CLAMP + origin collision
+- str_args / file_* strings in eval
+- events fire_* including create/destroy/draw
+- gm82_action_execute_named present
+- gm82_runtime_get_active_snapshot (added 2026-10-18; was link break)
 
-No 100% claim. Current Honest Weighted Parity: 37.80% (Host Verified). Remaining Gap: 62.20%.
+## Remaining gaps (code / tests)
+1. Player-driven movement proof on mario/plataformas/shooter without injected input.
+2. Line-by-line audit of DnD `return true` no-ops in execute_named.
+3. GML only as needed from real FAIL logs / cloud catalog.
+4. Full -Wall -Werror clean not claimed.
+5. Possible drift of cpp_backup / NOR_MAKER_COMPLETE_PACKAGE vs app/src/main/cpp.
+
+## Remaining gaps (device/hardware)
+- Android APK playtest: touch, no black screen, audio — **UNVERIFIED on device**
+- OpenSL on real hardware
+- Low-end performance
+
+No invented % parity.
