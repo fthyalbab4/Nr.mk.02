@@ -1,19 +1,19 @@
-# GAPS_HONEST
+# GAPS_HONEST — after parallel pass
 
-## Closed recently
-- path_* vars + endaction behavior
-- sprite offsets, instance_count, room_* basics
-- keyboard_key / mouse button codes
-- action_another_room (next), change_object defaults refresh
-- alarm0-11 variables
+## Closed in parallel this pass
+- action_effect → part_particles_create burst (basic)
+- keyboard_string / lastkey / lastchar scaffolding
+- pipeline: no pre-forced hspeed before steps (key + behavior; fallback if still 0)
+- prior: path endaction, fnames vars, rooms actions, alarms
 
-## Open
-- action_effect particles
-- full DnD arg tables for every action
-- keyboard_string (string VM)
-- pure sample GML movement without host inject
-- cloud games case-by-case
-- Android device playtest UNVERIFIED
-- PE RE of GameMaker.exe (needs Ghidra elsewhere)
+## Host measured
+- SUMMARY ok=4 fail=0; mario/zelda moved=1 with keyboard path
 
-No invented percentages.
+## Still open
+- Full particle visual pipeline on Android
+- Complete DnD argument tables
+- Cloud games one-by-one
+- Device APK playtest UNVERIFIED
+- Pure GML without any host fallback for every sample
+
+No invented %.
