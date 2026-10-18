@@ -45,7 +45,11 @@ typedef struct {
     int32_t alarms[12];
     int32_t path_index;
     double  path_position;
+    double  path_positionprevious;
     double  path_speed;
+    double  path_scale;
+    double  path_orientation;
+    int32_t path_endaction;
     int32_t timeline_index;
     double  timeline_position;
     double  timeline_speed;

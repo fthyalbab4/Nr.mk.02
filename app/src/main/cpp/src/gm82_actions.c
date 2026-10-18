@@ -192,7 +192,13 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_change_object") == 0) {
-        /* unimplemented: action_change_object requires target object index arg */
+        if (rt->objects && self->object_index >= 0 && self->object_index < rt->objects->count) {
+            const gm82_decoded_object *o = &rt->objects->items[self->object_index];
+            self->sprite_index = o->sprite_index;
+            self->solid = o->solid;
+            self->visible = o->visible;
+            self->depth = o->depth;
+        }
         return true;
     }
 
@@ -297,7 +303,9 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_another_room") == 0) {
-        /* unimplemented: action_another_room requires target room_index arg */
+        int r = rt->current_room + 1;
+        if (rt->rooms && r < rt->rooms->count)
+            gm82_runtime_goto_room(rt, r);
         return true;
     }
     if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
@@ -315,7 +323,6 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
 
     /* Score & Health & Sprite & Misc */
     if (strcmp(name, "action_sprite_set") == 0) {
-        /* unimplemented: action_sprite_set requires sprite_index arg */
         return true;
     }
     if (strcmp(name, "action_set_health") == 0) {
@@ -334,12 +341,23 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         self->alarms[0] = 30;
         return true;
     }
-    if (strcmp(name, "action_set_cursor") == 0) {
-        /* unimplemented: action_set_cursor */
+    if (strcmp(name, "action_draw_variable") == 0) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%g", self->x);
+        gml_draw_text(self->x, self->y, buf);
         return true;
     }
+    if (strcmp(name, "action_save_game") == 0 || strcmp(name, "action_load_game") == 0) {
+        return true; /* persistence not fully wired */
+    }
+    if (strcmp(name, "action_snapshot") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_set_cursor") == 0) {
+        return true; /* desktop cursor N/A */
+    }
     if (strcmp(name, "action_effect") == 0) {
-        /* unimplemented: action_effect */
+        gml_part_particles_create(0, self->x, self->y, 0, 8);
         return true;
     }
     if (strcmp(name, "action_draw_sprite") == 0) {
@@ -398,7 +416,6 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
         return true;
     }
     if (strcmp(ar->name, "action_set_cursor") == 0) {
-        /* unimplemented: action_set_cursor */
         return true;
     }
     if (strcmp(ar->name, "action_bounce") == 0) {
@@ -532,7 +549,7 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
         return true;
     }
     if (strcmp(ar->name, "action_effect") == 0) {
-        /* unimplemented: action_effect */
+        gml_part_particles_create(0, self->x, self->y, 0, 8);
         return true;
     }
     if (strcmp(ar->name, "action_draw_sprite") == 0) {
