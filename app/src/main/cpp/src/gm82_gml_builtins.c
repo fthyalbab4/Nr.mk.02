@@ -3584,3 +3584,12 @@ double gml_random_set_seed(double seed) {
     return seed;
 }
 double gml_random_get_seed(void) { return 0; }
+
+/* Game Maker 8.2 DirectX & Angle Stubs Implementation */
+double gml_argb_get_alpha(double color) { return (double)(((unsigned int)color >> 24) & 0xFF); }
+double gml_argb_get_color(double color) { return (double)((unsigned int)color & 0xFFFFFF); }
+double gml_argb_make_color(double color, double alpha) { return (double)(((unsigned int)alpha << 24) | ((unsigned int)color & 0xFFFFFF)); }
+double gml_color_to_d3dcolor(double color, double alpha) { return gml_argb_make_color(color, alpha); }
+double gml_d3d_clear_depth_buffer(void) { return 1.0; }
+double gml_d3d_get_fog_color(void) { return 0.0; }
+double gml_d3d_get_fog_enabled(void) { return 0.0; }

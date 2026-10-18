@@ -493,3 +493,12 @@ int gml_script_find(const char *name);
 #endif
 
 #endif
+
+/* Game Maker 8.2 DirectX & Angle Stubs for GML Engine Parity */
+double gml_argb_get_alpha(double color);
+double gml_argb_get_color(double color);
+double gml_argb_make_color(double color, double alpha);
+double gml_color_to_d3dcolor(double color, double alpha);
+double gml_d3d_clear_depth_buffer(void);
+double gml_d3d_get_fog_color(void);
+double gml_d3d_get_fog_enabled(void);
