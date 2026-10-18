@@ -76,7 +76,6 @@ int main(int argc, char **argv) {
     double x0 = 0, y0 = 0;
     if (pi >= 0) {
         x0 = rt.instances[pi].x; y0 = rt.instances[pi].y;
-        rt.instances[pi].hspeed = 2.0;
         printf("PLAYER_IDX %d obj=%d start=(%.1f,%.1f)\n", pi, rt.instances[pi].object_index, x0, y0);
     }
     for (int i = 0; i < frames; i++) {
