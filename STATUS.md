@@ -1,13 +1,11 @@
-# STATUS — parallel gaps 1–3
+# STATUS — parallel gaps 1–4
 
-Host: 4/4 moved=1.
+Host 4/4.
 
 ```bash
-python3 tools/gap_fill_20261013/patch_fnames_builtin_vars.py
-python3 tools/gap_fill_20261013/patch_path_endaction.py
-python3 tools/gap_fill_20261013/patch_actions_rooms.py
-python3 tools/gap_fill_20261013/patch_parallel_gaps.py
-python3 tools/gap_fill_20261013/patch_parallel_gaps2.py
-python3 tools/gap_fill_20261013/patch_parallel_gaps3.py
+for p in patch_fnames_builtin_vars patch_path_endaction patch_actions_rooms \
+  patch_parallel_gaps patch_parallel_gaps2 patch_parallel_gaps3 patch_parallel_gaps4; do
+  python3 tools/gap_fill_20261013/${p}.py
+done
 bash tools/run_host_pipeline.sh
 ```

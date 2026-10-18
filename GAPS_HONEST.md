@@ -1,12 +1,12 @@
 # GAPS_HONEST
 
-## Closed parallel (1–3)
-effect particles, keyboard_string, path/room/alarms, position_empty, timeline vars, player prefixes, is_real/is_string, room_exists, object_exists, event_inherited stubs, cursor N/A
+## Parallel closed (1–4)
+particles effect, keyboard_string, path/room/alarms, position_empty, timeline vars, player prefixes, is_real/room_exists/object_exists, background/sound/font/path/timeline_exists stubs, variable_*_exists stubs, object_get_depth/persistent, merge_color
 
 ## Host
 4/4 PIPELINE_OK
 
 ## Open
-DnD full args, Android particles draw, cloud games, device APK, pure GML zero-fallback everywhere
+Full DnD args, real sound/font registries, Android APK playtest, cloud games, pure GML zero-fallback
 
 No fake %.
