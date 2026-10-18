@@ -1220,11 +1220,6 @@ static bool parse_primary(gml_parser *p, double *out) {
             return true;
         }
         if (strcmp(id, "event_inherited") == 0) { *out = 1; return true; }
-        if (strcmp(id, "object_exists") == 0) {
-            int o = (int)arg;
-            *out = (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count) ? 1.0 : 0.0;
-            return true;
-        }
         if (strcmp(id, "object_get_parent") == 0) { *out = -1; return true; }
         if (strcmp(id, "object_get_name") == 0) { *out = arg; return true; }
                 if (strcmp(id, "fps") == 0) {
