@@ -70,6 +70,8 @@ double gml_move_bounce_all(double advanced);
 double gml_distance_to_point(double px, double py);
 double gml_sprite_get_width(double sprite);
 double gml_sprite_get_height(double sprite);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 double gml_sprite_get_number(double sprite);
 double gml_sprite_exists(double sprite);
 double gml_object_exists(double object_index);
@@ -118,6 +120,8 @@ double gml_part_system_destroy(double sys);
 double gml_part_type_create(void);
 double gml_part_particles_create(double sys, double x, double y, double type, double number);
 double gml_part_system_update(double sys);
+double gml_effect_create_above(double kind, double x, double y, double size, double color);
+double gml_effect_create_below(double kind, double x, double y, double size, double color);
 
 /* ds_list (subset) */
 double gml_ds_list_create(void);
@@ -243,6 +247,8 @@ double gml_file_text_writeln(double id);
 double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
+double gml_file_rename(const char *oldname, const char *newname);
+double gml_directory_rename(const char *oldname, const char *newname);
 
 void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
 const char *gml_file_find_first(const char *mask, double attr);
@@ -305,6 +311,7 @@ double gml_alarm_set_script(double index, const char *code);
 void gm82_alarm_fire_scripts(gm82_runtime *rt, gm82_instance *inst, int alarm_index);
 
 /* Debug / string helpers (C-side; not full GML strings) */
+void gml_show_debug_message(const char *msg);
 void gm82_debug_log(const char *msg);
 int  gm82_debug_log_count(void);
 const char *gm82_debug_log_get(int index);
@@ -427,6 +434,9 @@ double gml_clerp2(double fromA, double fromB, double toA, double toB, double val
 double gml_cosine(double a, double b, double amount);
 double gml_darccos(double x);
 double gml_darcsin(double x);
+double gml_randomize(void);
+double gml_random_set_seed(double seed);
+double gml_random_get_seed(void);
 double gml_darctan(double x);
 double gml_darctan2(double y, double x);
 double gml_dcos(double angle);

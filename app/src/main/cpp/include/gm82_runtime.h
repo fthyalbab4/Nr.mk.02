@@ -79,6 +79,7 @@ typedef struct {
 } gm82_runtime;
 
 void gm82_runtime_init(gm82_runtime *rt);
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs);
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,
     const gm82_decoded_sprite_list *sprites,

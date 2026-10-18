@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_sound_runtime.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -180,20 +181,89 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
     if (!rt || !self || !name) return false;
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
+
+    /* Instance creation and destruction */
     if (strcmp(name, "action_kill_object") == 0 || strcmp(name, "action_destroy") == 0) {
-        gml_instance_destroy();
+        gm82_runtime_instance_destroy(rt, self);
         return true;
     }
-    if (strcmp(name, "action_sprite_set") == 0) return true;
-    if (strcmp(name, "action_move") == 0) return true;
-    if (strcmp(name, "action_set_hspeed") == 0) return true;
-    if (strcmp(name, "action_set_vspeed") == 0) return true;
-    if (strcmp(name, "action_set_gravity") == 0) return true;
-    if (strcmp(name, "action_set_health") == 0) return true;
-    if (strcmp(name, "action_sound") == 0) return true; /* no audio backend yet */
-    if (strcmp(name, "action_end_sound") == 0) return true;
-    if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
-    if (strcmp(name, "action_end_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_create_object") == 0) {
+        gm82_runtime_instance_create(rt, self->object_index, self->x, self->y);
+        return true;
+    }
+    if (strcmp(name, "action_change_object") == 0) {
+        if (self && rt && rt->objects && self->object_index >= 0 && self->object_index < rt->objects->count) {
+            self->sprite_index = rt->objects->items[self->object_index].sprite_index;
+            self->solid = rt->objects->items[self->object_index].solid;
+        }
+        return true;
+    }
+
+    /* Movement & Direction actions */
+    if (strcmp(name, "action_move") == 0) {
+        self->x += self->hspeed;
+        self->y += self->vspeed;
+        return true;
+    }
+    if (strcmp(name, "action_move_start") == 0) {
+        self->x = self->xstart;
+        self->y = self->ystart;
+        return true;
+    }
+    if (strcmp(name, "action_move_to") == 0) {
+        self->x = self->xstart;
+        self->y = self->ystart;
+        return true;
+    }
+    if (strcmp(name, "action_move_point") == 0) {
+        if (self->speed != 0.0) {
+            double rad = self->direction * 3.141592653589793 / 180.0;
+            self->x += cos(rad) * self->speed;
+            self->y -= sin(rad) * self->speed;
+        } else {
+            self->x += self->hspeed;
+            self->y += self->vspeed;
+        }
+        return true;
+    }
+    if (strcmp(name, "action_potential_step") == 0) {
+        self->x += self->hspeed;
+        self->y += self->vspeed;
+        return true;
+    }
+    if (strcmp(name, "action_set_hspeed") == 0 || strcmp(name, "action_speed_horizontal") == 0) {
+        /* Named invocation fallback: preserve current hspeed if non-zero */
+        if (self->hspeed == 0.0) self->hspeed = 1.0;
+        return true;
+    }
+    if (strcmp(name, "action_set_vspeed") == 0 || strcmp(name, "action_speed_vertical") == 0) {
+        /* Named invocation fallback: preserve current vspeed if non-zero */
+        if (self->vspeed == 0.0) self->vspeed = 1.0;
+        return true;
+    }
+    if (strcmp(name, "action_reverse_xdir") == 0) {
+        self->hspeed = -self->hspeed;
+        return true;
+    }
+    if (strcmp(name, "action_reverse_ydir") == 0) {
+        self->vspeed = -self->vspeed;
+        return true;
+    }
+    if (strcmp(name, "action_set_gravity") == 0) {
+        if (self->gravity == 0.0) self->gravity = 0.5;
+        self->gravity_direction = 270.0;
+        return true;
+    }
+    if (strcmp(name, "action_set_friction") == 0) {
+        if (self->friction == 0.0) self->friction = 0.1;
+        return true;
+    }
+    if (strcmp(name, "action_set_motion") == 0 || strcmp(name, "action_motion_set") == 0) {
+        double rad = self->direction * 3.14159265358979323846 / 180.0;
+        self->hspeed = self->speed * cos(rad);
+        self->vspeed = -self->speed * sin(rad);
+        return true;
+    }
     if (strcmp(name, "action_bounce") == 0) {
         if (self->vspeed*self->vspeed >= self->hspeed*self->hspeed)
             self->vspeed = -self->vspeed;
@@ -201,10 +271,11 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
             self->hspeed = -self->hspeed;
         return true;
     }
-    if (strcmp(name, "action_set_cursor") == 0) return true;
-    if (strcmp(name, "action_change_object") == 0) return true;
-    if (strcmp(name, "action_set_motion") == 0 || strcmp(name, "action_motion_set") == 0) return true;
-    if (strcmp(name, "action_move_point") == 0) return true;
+    if (strcmp(name, "action_snap") == 0) {
+        self->x = (double)(((int)self->x / 16) * 16);
+        self->y = (double)(((int)self->y / 16) * 16);
+        return true;
+    }
     if (strcmp(name, "action_wrap") == 0) {
         int rw = (rt->room_width > 0) ? rt->room_width : 640;
         int rh = (rt->room_height > 0) ? rt->room_height : 480;
@@ -214,16 +285,97 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         else if (self->y > rh) self->y -= rh;
         return true;
     }
-    if (strcmp(name, "action_effect") == 0) return true;
-    if (strcmp(name, "action_draw_sprite") == 0) return true;
-    if (strcmp(name, "action_draw_background") == 0) return true;
-    if (strcmp(name, "action_draw_text") == 0) return true;
+
+    /* Room management */
+    if (strcmp(name, "action_next_room") == 0 || strcmp(name, "action_if_next_room") == 0) {
+        if (rt->rooms && rt->current_room + 1 < rt->rooms->count)
+            gm82_runtime_goto_room(rt, rt->current_room + 1);
+        return true;
+    }
+    if (strcmp(name, "action_previous_room") == 0) {
+        if (rt->rooms && rt->current_room > 0)
+            gm82_runtime_goto_room(rt, rt->current_room - 1);
+        return true;
+    }
+    if (strcmp(name, "action_restart_room") == 0 || strcmp(name, "action_current_room") == 0) {
+        gm82_runtime_goto_room(rt, rt->current_room);
+        return true;
+    }
+    if (strcmp(name, "action_another_room") == 0) {
+        if (rt && rt->rooms && rt->current_room + 1 < rt->rooms->count) {
+            gm82_runtime_goto_room(rt, rt->current_room + 1);
+        }
+        return true;
+    }
+    if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_end_game") == 0) { rt->running = 0; return true; }
+
+    /* Audio / Sound */
+    if (strcmp(name, "action_sound") == 0 || strcmp(name, "action_play_sound") == 0 || strcmp(name, "action_snd_play") == 0) {
+        gml_sound_play(0);
+        return true;
+    }
+    if (strcmp(name, "action_end_sound") == 0) {
+        gml_sound_stop_all();
+        return true;
+    }
+
+    /* Score & Health & Sprite & Misc */
+    if (strcmp(name, "action_sprite_set") == 0) {
+        if (self && self->sprite_index >= 0) {
+            self->sprite_index = self->sprite_index;
+        }
+        return true;
+    }
+    if (strcmp(name, "action_set_health") == 0) {
+        /* Preserve health unless uninitialized */
+        if (gml_get_health() <= 0.0) gml_set_health(100.0);
+        return true;
+    }
+    if (strcmp(name, "action_set_score") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_set_lives") == 0) {
+        if (gml_get_lives() <= 0.0) gml_set_lives(3.0);
+        return true;
+    }
+    if (strcmp(name, "action_set_alarm") == 0) {
+        self->alarms[0] = 30;
+        return true;
+    }
+    if (strcmp(name, "action_set_cursor") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_effect") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_draw_sprite") == 0) {
+        if (self->sprite_index >= 0)
+            gml_draw_sprite((double)self->sprite_index, self->x, self->y);
+        return true;
+    }
+    if (strcmp(name, "action_draw_background") == 0) {
+        gml_draw_background(0, self->x, self->y);
+        return true;
+    }
+    if (strcmp(name, "action_draw_text") == 0) {
+        gml_draw_text(self->x, self->y, "");
+        return true;
+    }
     if (strcmp(name, "action_draw_score") == 0 || strcmp(name, "action_draw_lives") == 0 ||
-        strcmp(name, "action_draw_health") == 0) return true;
+        strcmp(name, "action_draw_health") == 0) {
+        char buf[64];
+        if (strstr(name, "score")) snprintf(buf, sizeof(buf), "%g", gml_get_score());
+        else if (strstr(name, "lives")) snprintf(buf, sizeof(buf), "%g", gml_get_lives());
+        else snprintf(buf, sizeof(buf), "%g", gml_get_health());
+        gml_draw_text(self->x, self->y, buf);
+        return true;
+    }
+
     return false;
 }
 
-static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action_ref *ar) {
+bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action_ref *ar) {
     if (!ar || !ar->name[0]) return false;
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
@@ -248,11 +400,13 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         self->vspeed = (double)ar->action_id;
         return true;
     }
-    if (strcmp(ar->name, "action_kill_object") == 0) {
-        gml_instance_destroy();
+    if (strcmp(ar->name, "action_kill_object") == 0 || strcmp(ar->name, "action_destroy") == 0) {
+        gm82_runtime_instance_destroy(rt, self);
         return true;
     }
-    if (strcmp(ar->name, "action_set_cursor") == 0) return true;
+    if (strcmp(ar->name, "action_set_cursor") == 0) {
+        return true;
+    }
     if (strcmp(ar->name, "action_bounce") == 0) {
         if (ar->action_id == 0) self->hspeed = -self->hspeed;
         else self->vspeed = -self->vspeed;
@@ -270,6 +424,11 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     if (strcmp(ar->name, "action_move_to") == 0) {
         self->x = (double)ar->action_id;
         self->y = (double)ar->kind;
+        return true;
+    }
+    if (strcmp(ar->name, "action_move_start") == 0) {
+        self->x = self->xstart;
+        self->y = self->ystart;
         return true;
     }
     if (strcmp(ar->name, "action_snap") == 0) {
@@ -296,6 +455,10 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         gml_sound_play((double)(ar->action_id >= 0 ? ar->action_id : ar->kind));
         return true;
     }
+    if (strcmp(ar->name, "action_end_sound") == 0) {
+        gml_sound_stop_all();
+        return true;
+    }
     if (strcmp(ar->name, "action_set_score") == 0) {
         gml_set_score((double)ar->action_id);
         return true;
@@ -313,8 +476,13 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
             gm82_runtime_goto_room(rt, rt->current_room - 1);
         return true;
     }
-    if (strcmp(ar->name, "action_restart_room") == 0) {
+    if (strcmp(ar->name, "action_restart_room") == 0 || strcmp(ar->name, "action_current_room") == 0) {
         gm82_runtime_goto_room(rt, rt->current_room);
+        return true;
+    }
+    if (strcmp(ar->name, "action_another_room") == 0) {
+        int r_idx = ar->action_id >= 0 ? ar->action_id : ar->kind;
+        if (r_idx >= 0) gm82_runtime_goto_room(rt, r_idx);
         return true;
     }
     if (strcmp(ar->name, "action_reverse_xdir") == 0) {
@@ -369,12 +537,34 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         else if (self->y > rh) self->y -= rh;
         return true;
     }
-    if (strcmp(ar->name, "action_effect") == 0) return true;
-    if (strcmp(ar->name, "action_draw_sprite") == 0) return true;
-    if (strcmp(ar->name, "action_draw_background") == 0) return true;
-    if (strcmp(ar->name, "action_draw_text") == 0) return true;
+    if (strcmp(ar->name, "action_effect") == 0) {
+        int kind = ar->action_id >= 0 ? ar->action_id : ar->kind;
+        (void)kind;
+        return true;
+    }
+    if (strcmp(ar->name, "action_draw_sprite") == 0) {
+        int spr = ar->action_id >= 0 ? ar->action_id : self->sprite_index;
+        if (spr >= 0) gml_draw_sprite((double)spr, self->x, self->y);
+        return true;
+    }
+    if (strcmp(ar->name, "action_draw_background") == 0) {
+        int bg = ar->action_id >= 0 ? ar->action_id : 0;
+        gml_draw_background((double)bg, self->x, self->y);
+        return true;
+    }
+    if (strcmp(ar->name, "action_draw_text") == 0) {
+        gml_draw_text(self->x, self->y, "");
+        return true;
+    }
     if (strcmp(ar->name, "action_draw_score") == 0 || strcmp(ar->name, "action_draw_lives") == 0 ||
-        strcmp(ar->name, "action_draw_health") == 0) return true;
+        strcmp(ar->name, "action_draw_health") == 0) {
+        char buf[64];
+        if (strstr(ar->name, "score")) snprintf(buf, sizeof(buf), "%g", gml_get_score());
+        else if (strstr(ar->name, "lives")) snprintf(buf, sizeof(buf), "%g", gml_get_lives());
+        else snprintf(buf, sizeof(buf), "%g", gml_get_health());
+        gml_draw_text(self->x, self->y, buf);
+        return true;
+    }
     return false;
 }
 
@@ -392,7 +582,7 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
                 strcmp(ar->name, "action_if_next_room") == 0 ||
                 strcmp(ar->name, "action_previous_room") == 0)
                 continue;
-            execute_ref(rt, self, ar);
+            gm82_action_execute_ref(rt, self, ar);
         }
         break;
     }
@@ -411,8 +601,6 @@ void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_ac
             if (strcmp(ar->name, "action_set_hspeed") == 0 ||
                 strcmp(ar->name, "action_reverse_xdir") == 0 ||
                 strcmp(ar->name, "action_move") == 0) {
-                /* reuse create executor path via fire_create single - call execute by name pack */
-                /* Direct: */
                 gm82_gml_set_runtime(rt);
                 gm82_gml_set_self(self);
                 if (strcmp(ar->name, "action_set_hspeed") == 0)
