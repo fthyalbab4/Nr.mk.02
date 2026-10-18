@@ -1,6 +1,6 @@
-# STATUS — after hygiene 2026-10-18
+# STATUS
 
-- Removed APK/bin/tar from main tree.
-- ~90 remote branches still exist (delete via GitHub Branches page or Jules with ref-delete permission).
-- Engine path: `app/src/main/cpp` + `tools/`.
-- Device APK: build/release outside source tree.
+- Host pipeline: 4/4 after fnames builtin-var wiring.
+- Apply: `python3 tools/gap_fill_20261013/patch_fnames_builtin_vars.py`
+- REA PE decompile: needs Ghidra on a workstation; agent used fnames + clean-room vars instead.
+- Device APK: UNVERIFIED here.
