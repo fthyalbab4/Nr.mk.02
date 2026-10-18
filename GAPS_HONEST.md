@@ -1,19 +1,12 @@
-# GAPS_HONEST — parallel pass 2
+# GAPS_HONEST
 
-## Closed this pass (parallel)
-- position_empty binding
-- timeline_index/position/speed/running vars
-- extra player behavior prefixes (ship/guy/jugador)
-- prior parallel: effect particles, keyboard_string, path/room/alarms/fnames
+## Closed parallel (1–3)
+effect particles, keyboard_string, path/room/alarms, position_empty, timeline vars, player prefixes, is_real/is_string, room_exists, object_exists, event_inherited stubs, cursor N/A
 
 ## Host
-- 4/4 PIPELINE_OK, moved=1 on samples including shooter/plataformas
+4/4 PIPELINE_OK
 
-## Still open
-- Full DnD arg tables
-- Android particle draw
-- Cloud catalog case-by-case
-- Device APK UNVERIFIED
-- Pure GML zero-fallback for all titles
+## Open
+DnD full args, Android particles draw, cloud games, device APK, pure GML zero-fallback everywhere
 
 No fake %.
