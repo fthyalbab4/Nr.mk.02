@@ -1,15 +1,10 @@
-# STATUS — parallel batch complete on host
-
-Host **4/4** after APPLY all parallel patches 1–6 + earlier gap-fill.
+# STATUS — host parallel capacity exhausted
 
 ```bash
 bash tools/gap_fill_20261013/APPLY_PARALLEL_ALL.sh
+python3 tools/gap_fill_20261013/patch_parallel_gaps7.py
 ```
 
-## Cannot finish without your device / cloud cases
-- Android APK playtest
-- Per-cloud-game FAIL logs
-- Full proprietary PE decompile (Ghidra)
-- Perfect savegame / real font+sound asset registries
+Host: **4/4**.
 
-Those are not "one parallel C pass".
+Next work needs: APK on device, or a concrete cloud-game FAIL log — not another blind stub pass.
