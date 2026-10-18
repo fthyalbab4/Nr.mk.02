@@ -1,13 +1,15 @@
-# STATUS — parallel gaps 1–5
+# STATUS — parallel batch complete on host
 
-Host 4/4.
+Host **4/4** after APPLY all parallel patches 1–6 + earlier gap-fill.
 
 ```bash
-for n in "" 2 3 4 5; do
-  python3 tools/gap_fill_20261013/patch_parallel_gaps${n}.py 2>/dev/null || true
-done
-python3 tools/gap_fill_20261013/patch_fnames_builtin_vars.py
-python3 tools/gap_fill_20261013/patch_path_endaction.py
-python3 tools/gap_fill_20261013/patch_actions_rooms.py
-bash tools/run_host_pipeline.sh
+bash tools/gap_fill_20261013/APPLY_PARALLEL_ALL.sh
 ```
+
+## Cannot finish without your device / cloud cases
+- Android APK playtest
+- Per-cloud-game FAIL logs
+- Full proprietary PE decompile (Ghidra)
+- Perfect savegame / real font+sound asset registries
+
+Those are not "one parallel C pass".
