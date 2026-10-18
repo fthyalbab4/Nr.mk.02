@@ -55,6 +55,11 @@ double gml_sound_loop(double sound_index) {
     return gm82_sound_play(g_sr, (int)sound_index, 1) ? 1.0 : 0.0;
 }
 
+double gml_sound_stop(double sound_index) {
+    (void)sound_index;
+    return 1;
+}
+
 double gml_sound_stop_all(void) {
     if (!g_sr) return 0;
     gm82_sound_stop_all(g_sr);
@@ -65,6 +70,16 @@ double gml_sound_is_playing(double sound_index) {
     (void)sound_index;
     /* Without audio device we cannot know – return 0 honestly */
     return 0;
+}
+
+double gml_sound_isplaying(double sound_index) {
+    return gml_sound_is_playing(sound_index);
+}
+
+double gml_sound_pan(double sound_index, double pan) {
+    (void)sound_index;
+    (void)pan;
+    return 1;
 }
 
 double gml_sound_exists(double sound_index) {

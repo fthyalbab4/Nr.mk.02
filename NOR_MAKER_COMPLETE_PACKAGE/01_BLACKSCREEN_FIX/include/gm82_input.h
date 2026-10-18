@@ -49,6 +49,8 @@ double gml_keyboard_check_released(double key);
 double gml_mouse_x(void);
 double gml_mouse_y(void);
 double gml_mouse_check_button(double button);
+double gml_mouse_check_button_pressed(double button);
+double gml_mouse_check_button_released(double button);
 
 void gm82_input_bind_global(gm82_input_state *in);
 
