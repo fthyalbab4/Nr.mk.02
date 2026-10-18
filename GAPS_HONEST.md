@@ -1,19 +1,19 @@
-# GAPS_HONEST — after parallel pass
+# GAPS_HONEST — parallel pass 2
 
-## Closed in parallel this pass
-- action_effect → part_particles_create burst (basic)
-- keyboard_string / lastkey / lastchar scaffolding
-- pipeline: no pre-forced hspeed before steps (key + behavior; fallback if still 0)
-- prior: path endaction, fnames vars, rooms actions, alarms
+## Closed this pass (parallel)
+- position_empty binding
+- timeline_index/position/speed/running vars
+- extra player behavior prefixes (ship/guy/jugador)
+- prior parallel: effect particles, keyboard_string, path/room/alarms/fnames
 
-## Host measured
-- SUMMARY ok=4 fail=0; mario/zelda moved=1 with keyboard path
+## Host
+- 4/4 PIPELINE_OK, moved=1 on samples including shooter/plataformas
 
 ## Still open
-- Full particle visual pipeline on Android
-- Complete DnD argument tables
-- Cloud games one-by-one
-- Device APK playtest UNVERIFIED
-- Pure GML without any host fallback for every sample
+- Full DnD arg tables
+- Android particle draw
+- Cloud catalog case-by-case
+- Device APK UNVERIFIED
+- Pure GML zero-fallback for all titles
 
-No invented %.
+No fake %.
