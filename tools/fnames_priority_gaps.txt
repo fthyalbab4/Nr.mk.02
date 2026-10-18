@@ -1,0 +1,25 @@
+# Priority-ish symbols from portable `fnames` not clearly bound in Nr.mk.02 tree (scan 2026-10-18).
+# Many are built-in *variables* (path_*, keyboard_*, room_*) needing instance/room fields, not only gml_* functions.
+instance_count
+instance_id
+keyboard_key
+keyboard_lastchar
+keyboard_lastkey
+keyboard_string
+mouse_button
+mouse_lastbutton
+path_endaction
+path_index
+path_orientation
+path_position
+path_positionprevious
+path_scale
+path_speed
+room_caption
+room_first
+room_last
+room_persistent
+sprite_xoffset
+sprite_yoffset
+# Full GML surface from fnames is much larger (~hundreds of unbound names).
+# Fill only when a sample/cloud game fails and names the symbol.
