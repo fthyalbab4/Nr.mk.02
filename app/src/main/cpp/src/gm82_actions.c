@@ -347,8 +347,11 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         gml_draw_text(self->x, self->y, buf);
         return true;
     }
-    if (strcmp(name, "action_save_game") == 0 || strcmp(name, "action_load_game") == 0) {
-        return true; /* persistence not fully wired */
+    if (strcmp(name, "action_save_game") == 0) {
+        return gml_game_save("nor_save.dat") > 0;
+    }
+    if (strcmp(name, "action_load_game") == 0) {
+        return gml_game_load("nor_save.dat") > 0;
     }
     if (strcmp(name, "action_snapshot") == 0) {
         return true;

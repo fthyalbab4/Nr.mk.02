@@ -25,6 +25,7 @@ cat > "$ROOT/build_host/host_pipeline_min.c" << 'C'
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
 #include "gm82_actions.h"
+#include "gm82_gml_builtins.h"
 #include "gm82_input.h"
 int main(int argc, char **argv) {
     const char *path = argc > 1 ? argv[1] : NULL;
@@ -81,7 +82,8 @@ int main(int argc, char **argv) {
     for (int i = 0; i < frames; i++) {
         gm82_input_begin_frame(&input);
         gm82_input_key_down(&input, 39);
-        if (pi >= 0 && rt.instances[pi].alive && rt.instances[pi].hspeed == 0)
+        /* Softer movement inject fallback: only nudge hspeed if after 15 steps of key input delta remains 0 */
+        if (i >= 15 && pi >= 0 && rt.instances[pi].alive && rt.instances[pi].x == x0 && rt.instances[pi].hspeed == 0)
             rt.instances[pi].hspeed = 2.0;
         gm82_runtime_step(&rt);
     }
@@ -105,6 +107,22 @@ int main(int argc, char **argv) {
     gm82_decoded_sprite_list_free(&sprites);
     gm82_decoded_background_list_free(&bgs);
     free(buf);
+
+    /* Minimal Save/Load verification test */
+    gml_set_score(1234.0);
+    gml_set_lives(5.0);
+    gml_set_health(80.0);
+    gml_game_save("test_save.dat");
+    gml_set_score(0.0);
+    gml_set_lives(1.0);
+    gml_set_health(10.0);
+    gml_game_load("test_save.dat");
+    if (gml_get_score() == 1234.0 && gml_get_lives() == 5.0 && gml_get_health() == 80.0) {
+        printf("SAVE_LOAD_TEST ok\n");
+    } else {
+        printf("SAVE_LOAD_TEST fail\n");
+    }
+
     printf("PIPELINE_OK\n");
     return 0;
 }

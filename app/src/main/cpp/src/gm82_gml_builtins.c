@@ -2709,6 +2709,57 @@ double gml_game_restart(void) {
 }
 double gml_game_has_ended(void) { return g_game_ended ? 1.0 : 0.0; }
 
+double gml_game_save(const char *filename) {
+    if (!filename || !filename[0]) filename = "nor_save.dat";
+    FILE *f = fopen(filename, "w");
+    if (!f) return 0;
+    double px = 0, py = 0;
+    int oi = -1;
+    if (g_rt) {
+        for (int i = 0; i < g_rt->instance_count; i++) {
+            if (g_rt->instances[i].alive) {
+                px = g_rt->instances[i].x;
+                py = g_rt->instances[i].y;
+                oi = g_rt->instances[i].object_index;
+                break;
+            }
+        }
+    }
+    fprintf(f, "score=%f\nlives=%f\nhealth=%f\npx=%f\npy=%f\noi=%d\n",
+            g_score, g_lives, g_health, px, py, oi);
+    fclose(f);
+    return 1;
+}
+
+double gml_game_load(const char *filename) {
+    if (!filename || !filename[0]) filename = "nor_save.dat";
+    FILE *f = fopen(filename, "r");
+    if (!f) return 0;
+    double s = g_score, l = g_lives, h = g_health, px = 0, py = 0;
+    int oi = -1;
+    char line[128];
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "score=", 6) == 0) s = atof(line + 6);
+        else if (strncmp(line, "lives=", 6) == 0) l = atof(line + 6);
+        else if (strncmp(line, "health=", 7) == 0) h = atof(line + 7);
+        else if (strncmp(line, "px=", 3) == 0) px = atof(line + 3);
+        else if (strncmp(line, "py=", 3) == 0) py = atof(line + 3);
+        else if (strncmp(line, "oi=", 3) == 0) oi = atoi(line + 3);
+    }
+    fclose(f);
+    g_score = s; g_lives = l; g_health = h;
+    if (g_rt) {
+        for (int i = 0; i < g_rt->instance_count; i++) {
+            if (g_rt->instances[i].alive && (oi < 0 || g_rt->instances[i].object_index == oi)) {
+                g_rt->instances[i].x = px;
+                g_rt->instances[i].y = py;
+                break;
+            }
+        }
+    }
+    return 1;
+}
+
 static gm82_script_list *g_scripts = NULL;
 void gm82_scripts_bind(gm82_script_list *scripts) { g_scripts = scripts; }
 

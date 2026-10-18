@@ -1252,6 +1252,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "game_end") == 0) {
             *out = gml_game_end(); return true;
         }
+        if (strcmp(id, "game_save") == 0) {
+            *out = gml_game_save((p->str_mask & 1) ? p->str_args[0] : "nor_save.dat"); return true;
+        }
+        if (strcmp(id, "game_load") == 0) {
+            *out = gml_game_load((p->str_mask & 1) ? p->str_args[0] : "nor_save.dat"); return true;
+        }
         if (strcmp(id, "show_debug_message") == 0) {
             gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
             *out = 0; return true;
