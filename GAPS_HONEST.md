@@ -1,16 +1,19 @@
-# GAPS_HONEST — 2026-10-18 sequential plan
+# GAPS_HONEST
 
-## Host measured
-- ASSEMBLE ALL PASS
-- Pipeline 4/4 moved=1
-- Draw/score actions wired where GML APIs exist
+## Closed recently
+- path_* vars + endaction behavior
+- sprite offsets, instance_count, room_* basics
+- keyboard_key / mouse button codes
+- action_another_room (next), change_object defaults refresh
+- alarm0-11 variables
 
-## Still open
-1. Pure sample GML keyboard movement (no host hspeed inject)
-2. change_object / another_room without full arg tables
-3. action_effect particles
-4. Cloud catalog case-by-case
-5. Android device UNVERIFIED
-6. cpp_backup drift risk
+## Open
+- action_effect particles
+- full DnD arg tables for every action
+- keyboard_string (string VM)
+- pure sample GML movement without host inject
+- cloud games case-by-case
+- Android device playtest UNVERIFIED
+- PE RE of GameMaker.exe (needs Ghidra elsewhere)
 
-No invented %.
+No invented percentages.
