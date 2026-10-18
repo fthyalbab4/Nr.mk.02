@@ -1175,6 +1175,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "sprite_get_width") == 0) {
             *out = gml_sprite_get_width(arg); return true;
         }
+        if (strcmp(id, "sprite_get_xoffset") == 0) {
+            *out = gml_sprite_get_xoffset(arg); return true;
+        }
+        if (strcmp(id, "sprite_get_yoffset") == 0) {
+            *out = gml_sprite_get_yoffset(arg); return true;
+        }
         if (strcmp(id, "sprite_get_height") == 0) {
             *out = gml_sprite_get_height(arg); return true;
         }
@@ -1219,6 +1225,20 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "part_particles_create") == 0) {
             *out = gml_part_particles_create(args[0], args[1], args[2], args[3], nargs >= 5 ? args[4] : 1); return true;
+        }
+        if (strcmp(id, "effect_create_above") == 0) {
+            *out = gml_effect_create_above(args[0], args[1], args[2], nargs >= 4 ? args[3] : 1, nargs >= 5 ? args[4] : 16777215); return true;
+        }
+        if (strcmp(id, "effect_create_below") == 0) {
+            *out = gml_effect_create_below(args[0], args[1], args[2], nargs >= 4 ? args[3] : 1, nargs >= 5 ? args[4] : 16777215); return true;
+        }
+        if (strcmp(id, "action_effect") == 0) {
+            double kind = nargs >= 1 ? args[0] : 0;
+            double ox = nargs >= 2 ? args[1] : (p->self ? p->self->x : 0);
+            double oy = nargs >= 3 ? args[2] : (p->self ? p->self->y : 0);
+            double size = nargs >= 4 ? args[3] : 1;
+            double col = nargs >= 5 ? args[4] : 16777215;
+            *out = gml_effect_create_above(kind, ox, oy, size, col); return true;
         }
         if (strcmp(id, "ds_list_clear") == 0) {
             *out = gml_ds_list_clear(arg); return true;

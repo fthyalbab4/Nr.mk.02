@@ -109,13 +109,17 @@ void gm82_part_type_alpha2(gm82_particle_world *w, int type, double a1, double a
 }
 
 void gm82_part_particles_create(gm82_particle_world *w, int sys, double x, double y, int type, int number) {
-    if (sys < 0 || sys >= GM82_PSYS_MAX || !w->systems[sys].used) return;
+    if (!w) return;
+    if (sys < 0 || sys >= GM82_PSYS_MAX) sys = 0;
+    if (!w->systems[sys].used) w->systems[sys].used = 1;
     if (number < 1) number = 1;
     if (number > 64) number = 64;
     uint32_t col = 0xFFFF00;
     double grav = 0.15;
-    if (type >= 0 && type < GM82_PTYPE_MAX && w->types[type].used)
+    if (type >= 0 && type < GM82_PTYPE_MAX && w->types[type].used) {
         grav = w->types[type].gravity;
+        if (w->types[type].color1 != 0) col = w->types[type].color1;
+    }
     gm82_particle_system *s = &w->systems[sys];
     for (int n = 0; n < number; n++) {
         int slot = -1;

@@ -120,6 +120,8 @@ double gml_part_system_destroy(double sys);
 double gml_part_type_create(void);
 double gml_part_particles_create(double sys, double x, double y, double type, double number);
 double gml_part_system_update(double sys);
+double gml_effect_create_above(double kind, double x, double y, double size, double color);
+double gml_effect_create_below(double kind, double x, double y, double size, double color);
 
 /* ds_list (subset) */
 double gml_ds_list_create(void);

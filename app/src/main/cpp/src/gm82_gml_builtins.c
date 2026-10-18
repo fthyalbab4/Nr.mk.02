@@ -1712,6 +1712,19 @@ double gml_part_system_update(double sys) {
     return 1;
 }
 
+double gml_effect_create_above(double kind, double x, double y, double size, double color) {
+    if (!g_particles) return 0;
+    int sys = 0;
+    int ptype = (int)kind % GM82_PTYPE_MAX;
+    gm82_part_type_color1(g_particles, ptype, (uint32_t)color);
+    gm82_part_particles_create(g_particles, sys, x, y, ptype, (int)size > 0 ? (int)size * 8 : 8);
+    return 1;
+}
+
+double gml_effect_create_below(double kind, double x, double y, double size, double color) {
+    return gml_effect_create_above(kind, x, y, size, color);
+}
+
 #define GM82_DS_LIST_MAX 32
 #define GM82_DS_LIST_CAP 256
 typedef struct {

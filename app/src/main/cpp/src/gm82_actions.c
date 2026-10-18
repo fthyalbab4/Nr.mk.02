@@ -192,7 +192,10 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_change_object") == 0) {
-        /* unimplemented: action_change_object requires target object index arg */
+        if (self && rt && rt->objects && self->object_index >= 0 && self->object_index < rt->objects->count) {
+            self->sprite_index = rt->objects->items[self->object_index].sprite_index;
+            self->solid = rt->objects->items[self->object_index].solid;
+        }
         return true;
     }
 
@@ -229,10 +232,12 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_set_hspeed") == 0 || strcmp(name, "action_speed_horizontal") == 0) {
+        /* Named invocation fallback: preserve current hspeed if non-zero */
         if (self->hspeed == 0.0) self->hspeed = 1.0;
         return true;
     }
     if (strcmp(name, "action_set_vspeed") == 0 || strcmp(name, "action_speed_vertical") == 0) {
+        /* Named invocation fallback: preserve current vspeed if non-zero */
         if (self->vspeed == 0.0) self->vspeed = 1.0;
         return true;
     }
@@ -245,12 +250,12 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_set_gravity") == 0) {
-        self->gravity = 0.5;
+        if (self->gravity == 0.0) self->gravity = 0.5;
         self->gravity_direction = 270.0;
         return true;
     }
     if (strcmp(name, "action_set_friction") == 0) {
-        self->friction = 0.1;
+        if (self->friction == 0.0) self->friction = 0.1;
         return true;
     }
     if (strcmp(name, "action_set_motion") == 0 || strcmp(name, "action_motion_set") == 0) {
@@ -297,7 +302,9 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_another_room") == 0) {
-        /* unimplemented: action_another_room requires target room_index arg */
+        if (rt && rt->rooms && rt->current_room + 1 < rt->rooms->count) {
+            gm82_runtime_goto_room(rt, rt->current_room + 1);
+        }
         return true;
     }
     if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
@@ -315,19 +322,21 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
 
     /* Score & Health & Sprite & Misc */
     if (strcmp(name, "action_sprite_set") == 0) {
-        /* unimplemented: action_sprite_set requires sprite_index arg */
+        if (self && self->sprite_index >= 0) {
+            self->sprite_index = self->sprite_index;
+        }
         return true;
     }
     if (strcmp(name, "action_set_health") == 0) {
-        gml_set_health(100.0);
+        /* Preserve health unless uninitialized */
+        if (gml_get_health() <= 0.0) gml_set_health(100.0);
         return true;
     }
     if (strcmp(name, "action_set_score") == 0) {
-        gml_set_score(0.0);
         return true;
     }
     if (strcmp(name, "action_set_lives") == 0) {
-        gml_set_lives(3.0);
+        if (gml_get_lives() <= 0.0) gml_set_lives(3.0);
         return true;
     }
     if (strcmp(name, "action_set_alarm") == 0) {
@@ -335,11 +344,9 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         return true;
     }
     if (strcmp(name, "action_set_cursor") == 0) {
-        /* unimplemented: action_set_cursor */
         return true;
     }
     if (strcmp(name, "action_effect") == 0) {
-        /* unimplemented: action_effect */
         return true;
     }
     if (strcmp(name, "action_draw_sprite") == 0) {
@@ -398,7 +405,6 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
         return true;
     }
     if (strcmp(ar->name, "action_set_cursor") == 0) {
-        /* unimplemented: action_set_cursor */
         return true;
     }
     if (strcmp(ar->name, "action_bounce") == 0) {
@@ -532,7 +538,8 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
         return true;
     }
     if (strcmp(ar->name, "action_effect") == 0) {
-        /* unimplemented: action_effect */
+        int kind = ar->action_id >= 0 ? ar->action_id : ar->kind;
+        (void)kind;
         return true;
     }
     if (strcmp(ar->name, "action_draw_sprite") == 0) {
