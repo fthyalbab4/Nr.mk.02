@@ -297,6 +297,8 @@ double gml_room_goto_previous(void);
 double gml_room_restart(void);
 double gml_game_end(void);
 double gml_game_restart(void);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
 void gm82_window_set_size(int w, int h);
 double gml_game_has_ended(void);
 void gm82_scripts_bind(gm82_script_list *scripts);
