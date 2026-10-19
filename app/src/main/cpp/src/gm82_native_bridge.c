@@ -597,12 +597,12 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         return 1;
     }
     if (strcmp(name, "game_save") == 0) {
-        const char *fn = (count >= 1 && args[0].type == GML_VAL_STRING) ? args[0].s_val : "nor_save.dat";
+        const char *fn = (count >= 1 && args[0].kind == GML_V_STRING && args[0].string) ? args[0].string : "nor_save.dat";
         *out = gml_value_real(gml_game_save(fn));
         return 1;
     }
     if (strcmp(name, "game_load") == 0) {
-        const char *fn = (count >= 1 && args[0].type == GML_VAL_STRING) ? args[0].s_val : "nor_save.dat";
+        const char *fn = (count >= 1 && args[0].kind == GML_V_STRING && args[0].string) ? args[0].string : "nor_save.dat";
         *out = gml_value_real(gml_game_load(fn));
         return 1;
     }
