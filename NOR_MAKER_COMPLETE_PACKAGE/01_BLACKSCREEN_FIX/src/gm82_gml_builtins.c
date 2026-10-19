@@ -3171,7 +3171,8 @@ double gml_ds_grid_value_exists(double id, double x1, double y1, double x2, doub
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3186,7 +3187,8 @@ double gml_ds_grid_value_x(double id, double x1, double y1, double x2, double y2
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return -1;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3201,7 +3203,8 @@ double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return -1;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3359,9 +3362,12 @@ double gml_window_center(void) {
 /* Color functions & Blend modes */
 double gml_make_color_rgb(double r, double g, double b) {
     int ir = (int)r, ig = (int)g, ib = (int)b;
-    if (ir < 0) ir = 0; if (ir > 255) ir = 255;
-    if (ig < 0) ig = 0; if (ig > 255) ig = 255;
-    if (ib < 0) ib = 0; if (ib > 255) ib = 255;
+    if (ir < 0) ir = 0;
+    if (ir > 255) ir = 255;
+    if (ig < 0) ig = 0;
+    if (ig > 255) ig = 255;
+    if (ib < 0) ib = 0;
+    if (ib > 255) ib = 255;
     return (double)(ir | (ig << 8) | (ib << 16));
 }
 
@@ -3418,7 +3424,8 @@ double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2,
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
     int ix1 = (int)x1, iy1 = (int)y1, ix2 = (int)x2, iy2 = (int)y2;
-    if (ix1 < 0) ix1 = 0; if (iy1 < 0) iy1 = 0;
+    if (ix1 < 0) ix1 = 0;
+    if (iy1 < 0) iy1 = 0;
     if (ix2 >= g_ds_grids[i].width) ix2 = g_ds_grids[i].width - 1;
     if (iy2 >= g_ds_grids[i].height) iy2 = g_ds_grids[i].height - 1;
     if (ix1 > ix2 || iy1 > iy2) return 0;

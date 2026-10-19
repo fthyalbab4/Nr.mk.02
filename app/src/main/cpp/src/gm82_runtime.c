@@ -74,7 +74,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
         /* Name heuristics when GMK solid bit is wrong/zero */
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
@@ -305,10 +305,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
         {
             double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
             double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
-            if (xs < 0) xs = -xs; if (ys < 0) ys = -ys;
+            if (xs < 0) xs = -xs;
+            if (ys < 0) ys = -ys;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
+            if (sw < 1) sw = 1;
+            if (sh < 1) sh = 1;
         }
         for (int j = 0; j < n_col; j++) {
             if (i == j) continue;
@@ -324,10 +326,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
             {
                 double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
                 double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
-                if (xs < 0) xs = -xs; if (ys < 0) ys = -ys;
+                if (xs < 0) xs = -xs;
+                if (ys < 0) ys = -ys;
                 ow = (int32_t)(ow * xs); oh = (int32_t)(oh * ys);
                 oox = (int32_t)(oox * xs); ooy = (int32_t)(ooy * ys);
-                if (ow < 1) ow = 1; if (oh < 1) oh = 1;
+                if (ow < 1) ow = 1;
+                if (oh < 1) oh = 1;
             }
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
             double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
