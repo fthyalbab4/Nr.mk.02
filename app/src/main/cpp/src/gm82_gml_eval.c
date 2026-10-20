@@ -77,6 +77,13 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
             return true;
         }
     }
+    if (strncmp(name, "arg", 3) == 0 && isdigit((unsigned char)name[3])) {
+        int idx = atoi(name + 3);
+        if (idx >= 0 && idx < 16) {
+            *out = g_script_args[idx];
+            return true;
+        }
+    }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
     if (strcmp(name, "xprevious") == 0) { *out = s ? s->xprevious : 0; return true; }
