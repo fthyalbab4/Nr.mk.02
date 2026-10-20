@@ -596,6 +596,60 @@ double gml_point_in_rectangle(double px, double py, double x1, double y1, double
     return (px >= x1 && px <= x2 && py >= y1 && py <= y2) ? 1.0 : 0.0;
 }
 
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad) {
+    double dx = px - cx;
+    double dy = py - cy;
+    return (dx * dx + dy * dy <= rad * rad) ? 1.0 : 0.0;
+}
+
+static double sign_tri(double px, double py, double x1, double y1, double x2, double y2) {
+    return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2);
+}
+
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3) {
+    double d1 = sign_tri(px, py, x1, y1, x2, y2);
+    double d2 = sign_tri(px, py, x2, y2, x3, y3);
+    double d3 = sign_tri(px, py, x3, y3, x1, y1);
+    bool has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    bool has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+    return !(has_neg && has_pos) ? 1.0 : 0.0;
+}
+
+double gml_color_to_html(double color, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = c & 0xFF;
+    uint8_t g = (c >> 8) & 0xFF;
+    uint8_t b = (c >> 16) & 0xFF;
+    snprintf(out, out_sz, "#%02X%02X%02X", r, g, b);
+    return (double)strlen(out);
+}
+
+double gml_hex_to_color(const char *hex_str) {
+    if (!hex_str) return 0;
+    const char *p = hex_str;
+    if (*p == '#') p++;
+    else if (*p == '$') p++;
+    else if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) p += 2;
+    unsigned int raw = 0;
+    if (sscanf(p, "%x", &raw) != 1) return 0;
+    if (strlen(p) == 6) {
+        uint32_t r = (raw >> 16) & 0xFF;
+        uint8_t g = (raw >> 8) & 0xFF;
+        uint32_t b = raw & 0xFF;
+        return (double)((b << 16) | (g << 8) | r);
+    }
+    return (double)raw;
+}
+
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double dz = z2 - z1;
+    double horiz = sqrt(dx * dx + dy * dy);
+    return atan2(-dz, horiz) * 180.0 / M_PI;
+}
+
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     if (!g_rt) return -4;
     if (x1 > x2) { double t=x1; x1=x2; x2=t; }

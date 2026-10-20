@@ -483,6 +483,11 @@ double gml_make_color_hsv(double h, double s, double v);
 double gml_color_get_red(double c);
 double gml_color_get_green(double c);
 double gml_color_get_blue(double c);
+double gml_color_to_html(double color, char *out, size_t out_sz);
+double gml_hex_to_color(const char *hex_str);
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_draw_set_blend_mode_ext(double src, double dest);
 double gml_draw_set_circle_precision(double prec);
 
