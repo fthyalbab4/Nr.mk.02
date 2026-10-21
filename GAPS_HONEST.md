@@ -1,14 +1,16 @@
-# GAPS_HONEST — التقييم الدقيق وخطة الوصول إلى 95%
+# GAPS_HONEST — stop condition for parallel stubs
 
-نسبة التوافق المحسوبة حالياً: **~36.75%**
+## Done on host (parallel 1–7 + prior)
+Nearly all generic GML/DnD soft gaps that do not require assets, device, or per-game binary args.
 
-## التحسينات المنفذة في هذه الدورة:
-1. **GML Control Structures:** إضافة دعم `repeat`, `while`, `with (target)` ونطاقات المتغيرات المدمجة `xprevious`, `yprevious`, `bbox_*`, `view_*`.
-2. **Precision Collision Masking:** إنشاء وحدة `gm82_mask.c` لإنشاء أقتعة البتات (1-bit Alpha Bitmask) وفحص تقاطع البكسلات الدقيق.
-3. **Hardware GLES Batching:** توفير هيكل `gm82_gles.c` لتجميع كائنات الرسم والدعم البرمجي لأنماط الدمج.
-4. **Audio PCM Mixer:** إضافة الخلاط الصوتي متعدد القنوات `gm82_audio_mixer.c` حتى 16 قناة صوتية.
+## Remaining (real blockers)
+1. Android APK playtest
+2. Cloud game FAIL → specific missing symbol
+3. Full DnD arg tables from action library layouts
+4. Real save/load + sound/font asset E2E
+5. Host pipeline movement inject: Keyboard input arrow right (VK 39) drives movement natively for samples; host pipeline soft fallback only nudges `hspeed` after 15 steps if position remains completely unchanged.
+6. Pure GML zero host-fallback for every title
 
-## الفجوات المتبقية للوصول إلى 95%:
-- الربط المادي المباشر بمشغل AAudio / OpenSL ES على هاتف أندرويد حقيقي (BLOCKED لعدم وجود جهاز متصل).
-- بناء مفسر Bytecode VM كامل لجميع الجمل البرمجية المعقدة جداً في GML.
-- توسيع نطاق الاختبارات إلى أكثر من 50 لعبة GMK/GM82 مجتمعية.
+**Repeating "fill all gaps in parallel" without a FAIL log only adds stubs that do not move device parity.**
+
+No 100% claim.

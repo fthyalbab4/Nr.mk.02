@@ -596,6 +596,20 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_game_end());
         return 1;
     }
+    if (strcmp(name, "game_save") == 0) {
+        const char *fn = (count >= 1 && args[0].kind == GML_V_STRING && args[0].string) ? args[0].string : "nor_save.dat";
+        *out = gml_value_real(gml_game_save(fn));
+        return 1;
+    }
+    if (strcmp(name, "game_load") == 0) {
+        const char *fn = (count >= 1 && args[0].kind == GML_V_STRING && args[0].string) ? args[0].string : "nor_save.dat";
+        *out = gml_value_real(gml_game_load(fn));
+        return 1;
+    }
+    if (strcmp(name, "event_user") == 0 && count >= 1) {
+        *out = gml_value_real(gml_event_user(ARG_R(0)));
+        return 1;
+    }
 
     #undef ARG_R
     #undef ARG_S

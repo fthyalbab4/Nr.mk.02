@@ -15,6 +15,8 @@ void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     rt->next_id = 100001;
     rt->room_speed = 30;
+    rt->room_width = 640;
+    rt->room_height = 480;
 }
 
 void gm82_runtime_set_room_speed(gm82_runtime *rt, int speed) {
@@ -42,6 +44,12 @@ void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_l
     rt->sprite_groups = groups;
 }
 
+void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts) {
+    if (!rt) return;
+    rt->scripts = scripts;
+    if (scripts) gm82_scripts_bind((gm82_script_list *)scripts);
+}
+
 static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t object_index) {
     inst->object_index = object_index;
     inst->sprite_index = -1;
@@ -50,14 +58,56 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     inst->depth = 0;
     inst->persistent = 0;
     inst->image_index = 0;
+    inst->image_xscale = 1.0;
+    inst->image_yscale = 1.0;
     inst->image_speed = 1.0;
     if (rt->objects && object_index >= 0 && object_index < rt->objects->count) {
         const gm82_decoded_object *o = &rt->objects->items[object_index];
         inst->sprite_index = o->sprite_index;
         inst->solid = o->solid;
-        inst->visible = o->visible ? 1 : 1; /* default visible if flag weird */
+        inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
+        if (o->name) {
+            if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
+                strstr(o->name, "castillo") || strstr(o->name, "solid") ||
+                strstr(o->name, "Solid") || strstr(o->name, "wall") ||
+                strstr(o->name, "Wall") || strstr(o->name, "ground"))
+                inst->solid = 1;
+        }
     }
+}
+
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
+    if (!rt || !out_ptrs) return 0;
+    int count = 0;
+    for (int i = 0; i < rt->instance_count && count < GM82_MAX_INSTANCES; i++) {
+        if (rt->instances[i].alive) {
+            out_ptrs[count++] = &rt->instances[i];
+        }
+    }
+    return count;
+}
+
+void gm82_runtime_compact_instances(gm82_runtime *rt) {
+    if (!rt) return;
+    int w = 0;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive) {
+            if (w != i) rt->instances[w] = rt->instances[i];
+            w++;
+        }
+    }
+    rt->instance_count = w;
+}
+
+gm82_instance *gm82_runtime_instance_find_by_id(gm82_runtime *rt, int32_t id) {
+    if (!rt || id <= 0) return NULL;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive && rt->instances[i].id == id) {
+            return &rt->instances[i];
+        }
+    }
+    return NULL;
 }
 
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
@@ -66,16 +116,20 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
     inst->x = x; inst->y = y;
+    inst->xstart = x; inst->ystart = y;
+    inst->xprevious = x; inst->yprevious = y;
+    inst->image_xscale = 1.0; inst->image_yscale = 1.0;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
-    /* Create event: minimal – nothing yet (no GML). Hook point for later. */
+    gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
-    (void)rt;
-    if (inst) inst->alive = 0;
+    if (!inst || !inst->alive) return;
+    gm82_events_fire_destroy(rt, inst);
+    inst->alive = 0;
 }
 
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
@@ -95,7 +149,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     if (rt->view_h > room->height) rt->view_h = room->height;
     rt->view_follow_object = 0;
 
-    /* Destroy non-persistent */
     int w = 0;
     for (int i = 0; i < rt->instance_count; i++) {
         if (rt->instances[i].alive && rt->instances[i].persistent) {
@@ -105,7 +158,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     }
     rt->instance_count = w;
 
-    /* Spawn room instances + Create */
     for (int i = 0; i < room->instance_count; i++) {
         const gm82_decoded_instance *src = &room->instances[i];
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
@@ -120,7 +172,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
 static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
-    inst->vspeed = -sin(rad) * inst->speed; /* GM: direction 90 = up */
+    inst->vspeed = -sin(rad) * inst->speed;
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {
@@ -131,161 +183,189 @@ void gm82_runtime_step(gm82_runtime *rt) {
         gm82_gml_set_frame_time(sec);
     }
 
-    /* Object Step events (behaviors / future GML) */
-    gm82_events_fire_step_all(rt);
+    /* Update xprevious / yprevious for all active instances */
+    {
+        gm82_instance *snapshot[GM82_MAX_INSTANCES];
+        int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+        for (int i = 0; i < count; i++) {
+            gm82_instance *inst = snapshot[i];
+            if (!inst->alive) continue;
+            inst->xprevious = inst->x;
+            inst->yprevious = inst->y;
+        }
+    }
 
-    /* Alarms */
-    for (int i = 0; i < rt->instance_count; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        for (int a = 0; a < 12; a++) {
-            if (inst->alarms[a] > 0) {
-                inst->alarms[a]--;
-                if (inst->alarms[a] == 0) {
-                    gm82_alarm_fire_scripts(rt, inst, a);
-                    inst->alarms[a] = -1;
+    /* 1. Begin Step */
+    gm82_events_fire_begin_step_all(rt);
+
+    /* 2. Alarm Events */
+    {
+        gm82_instance *snapshot[GM82_MAX_INSTANCES];
+        int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+        for (int i = 0; i < count; i++) {
+            gm82_instance *inst = snapshot[i];
+            if (!inst->alive) continue;
+            for (int a = 0; a < 12; a++) {
+                if (inst->alarms[a] > 0) {
+                    inst->alarms[a]--;
+                    if (inst->alarms[a] == 0) {
+                        gm82_events_fire_alarm(rt, inst, a);
+                        inst->alarms[a] = -1;
+                    }
                 }
             }
         }
     }
 
-    /* Begin Step / Step: apply velocity */
-    for (int i = 0; i < rt->instance_count; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
+    /* 3. Path & Movement Updates */
+    {
+        gm82_instance *snapshot[GM82_MAX_INSTANCES];
+        int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+        for (int i = 0; i < count; i++) {
+            gm82_instance *inst = snapshot[i];
+            if (!inst->alive) continue;
 
-        if (inst->speed != 0.0)
-            update_speed_from_dir(inst);
+            if (inst->speed != 0.0)
+                update_speed_from_dir(inst);
 
-        if (inst->path_index >= 0 && inst->path_speed != 0.0) {
-            gm82_path_step_instance(inst);
-        }
-        if (inst->timeline_running) {
-            gm82_timeline_step_instance(rt, inst);
-        }
+            if (inst->path_index >= 0 && inst->path_speed != 0.0)
+                gm82_path_step_instance(inst);
+            if (inst->timeline_running)
+                gm82_timeline_step_instance(rt, inst);
 
-        if (inst->gravity != 0.0) {
-            double rad = inst->gravity_direction * 3.141592653589793 / 180.0;
-            inst->hspeed += cos(rad) * inst->gravity;
-            inst->vspeed -= sin(rad) * inst->gravity;
-        }
-        if (inst->friction != 0.0) {
-            double f = inst->friction;
-            if (inst->hspeed > 0) { inst->hspeed -= f; if (inst->hspeed < 0) inst->hspeed = 0; }
-            else if (inst->hspeed < 0) { inst->hspeed += f; if (inst->hspeed > 0) inst->hspeed = 0; }
-            if (inst->vspeed > 0) { inst->vspeed -= f; if (inst->vspeed < 0) inst->vspeed = 0; }
-            else if (inst->vspeed < 0) { inst->vspeed += f; if (inst->vspeed > 0) inst->vspeed = 0; }
-        }
-
-        inst->x += inst->hspeed;
-        inst->y += inst->vspeed;
-
-        /* Simple solid collision against other solids (AABB using sprite size) */
-        if (inst->solid && rt->sprites) {
-            int32_t sw = 16, sh = 16;
-            if (inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
-                sw = rt->sprites->frames[inst->sprite_index].width;
-                sh = rt->sprites->frames[inst->sprite_index].height;
+            if (inst->gravity != 0.0) {
+                double rad = inst->gravity_direction * M_PI / 180.0;
+                inst->hspeed += cos(rad) * inst->gravity;
+                inst->vspeed -= sin(rad) * inst->gravity;
             }
-            for (int j = 0; j < rt->instance_count; j++) {
-                if (i == j) continue;
-                gm82_instance *other = &rt->instances[j];
-                if (!other->alive || !other->solid) continue;
-                int32_t ow = 16, oh = 16;
-                if (other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
-                    ow = rt->sprites->frames[other->sprite_index].width;
-                    oh = rt->sprites->frames[other->sprite_index].height;
-                }
-                double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-                double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
-                if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-                    if (inst->vspeed > 0) {
-                        inst->y = other->y - sh;
-                        inst->vspeed = 0;
-                    }
-                }
+            if (inst->friction != 0.0) {
+                double f = inst->friction;
+                if (inst->hspeed > 0) { inst->hspeed -= f; if (inst->hspeed < 0) inst->hspeed = 0; }
+                else if (inst->hspeed < 0) { inst->hspeed += f; if (inst->hspeed > 0) inst->hspeed = 0; }
+                if (inst->vspeed > 0) { inst->vspeed -= f; if (inst->vspeed < 0) inst->vspeed = 0; }
+                else if (inst->vspeed < 0) { inst->vspeed += f; if (inst->vspeed < 0) inst->vspeed = 0; }
             }
-        }
 
-        /* Tile collision (treat tiles as vertical top platforms only, not side walls) */
-        if (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
-            const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
+            inst->x += inst->hspeed;
+            inst->y += inst->vspeed;
+        }
+    }
+
+    /* 4. Collision Detection */
+    {
+        gm82_instance *snapshot[GM82_MAX_INSTANCES];
+        int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+        for (int i = 0; i < count; i++) {
+            gm82_instance *inst = snapshot[i];
+            if (!inst->alive) continue;
             int32_t sw = 16, sh = 16;
             if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
                 sw = rt->sprites->frames[inst->sprite_index].width;
                 sh = rt->sprites->frames[inst->sprite_index].height;
             }
-            for (int ti = 0; ti < room->tile_count; ti++) {
-                const gm82_decoded_tile *tile = &room->tiles[ti];
+            {
+                double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
+                double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
+                if (xs < 0) xs = -xs;
+                if (ys < 0) ys = -ys;
+                sw = (int32_t)(sw * xs);
+                sh = (int32_t)(sh * ys);
+                if (sw < 1) sw = 1;
+                if (sh < 1) sh = 1;
+            }
+            for (int j = 0; j < count; j++) {
+                if (i == j) continue;
+                gm82_instance *other = snapshot[j];
+                if (!other->alive || !inst->alive) continue;
+                int32_t ow = 16, oh = 16;
+                if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
+                    ow = rt->sprites->frames[other->sprite_index].width;
+                    oh = rt->sprites->frames[other->sprite_index].height;
+                }
+                {
+                    double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
+                    double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
+                    if (xs < 0) xs = -xs;
+                    if (ys < 0) ys = -ys;
+                    ow = (int32_t)(ow * xs);
+                    oh = (int32_t)(oh * ys);
+                    if (ow < 1) ow = 1;
+                    if (oh < 1) oh = 1;
+                }
                 double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-                double bx1 = tile->x, by1 = tile->y, bx2 = tile->x + tile->width, by2 = tile->y + tile->height;
-                if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-                    if (inst->vspeed > 0 && (inst->y - inst->vspeed + sh) <= by1 + 4) {
-                        inst->y = by1 - sh;
-                        inst->vspeed = 0;
-                    }
-                }
-            }
-        }
-
-        /* image_index advance (animation) */
-        if (inst->image_speed != 0.0) {
-            static double accum[512];
-            int slot = (inst->id > 0) ? (inst->id % 512) : 0;
-            accum[slot] += inst->image_speed;
-            while (accum[slot] >= 1.0) {
-                inst->image_index++;
-                accum[slot] -= 1.0;
-            }
-            while (accum[slot] <= -1.0) {
-                inst->image_index--;
-                accum[slot] += 1.0;
-            }
-            if (rt->sprite_groups && inst->sprite_index >= 0) {
-                int gi = gm82_sprite_group_index_for_frame(rt->sprite_groups, inst->sprite_index);
-                if (gi >= 0) {
-                    int fc = rt->sprite_groups->items[gi].frame_count;
-                    if (fc > 0) {
-                        int rel = inst->image_index % fc;
-                        if (rel < 0) rel += fc;
-                        inst->image_index = rel;
+                double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
+                if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
+                    continue;
+                gm82_events_fire_collision(rt, inst, other);
+                if (other->solid && inst->alive) {
+                    double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
+                    double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);
+                    if (overlap_y <= overlap_x) {
+                        if (inst->y + sh/2.0 < other->y + oh/2.0) {
+                            inst->y = other->y - sh;
+                            if (inst->vspeed > 0) inst->vspeed = 0;
+                        } else {
+                            inst->y = other->y + oh;
+                            if (inst->vspeed < 0) inst->vspeed = 0;
+                        }
+                    } else {
+                        if (inst->x + sw/2.0 < other->x + ow/2.0) {
+                            inst->x = other->x - sw;
+                            if (inst->hspeed > 0) inst->hspeed = 0;
+                        } else {
+                            inst->x = other->x + ow;
+                            if (inst->hspeed < 0) inst->hspeed = 0;
+                        }
                     }
                 }
             }
         }
     }
 
-    /* Camera follow */
-    if (rt->view_enabled && rt->view_follow_object >= 0) {
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *tgt = &rt->instances[i];
-            if (!tgt->alive || tgt->object_index != rt->view_follow_object) continue;
-            double margin = 64;
-            if (tgt->x < rt->view_x + margin) rt->view_x = tgt->x - margin;
-            if (tgt->x > rt->view_x + rt->view_w - margin) rt->view_x = tgt->x - rt->view_w + margin;
-            if (tgt->y < rt->view_y + margin) rt->view_y = tgt->y - margin;
-            if (tgt->y > rt->view_y + rt->view_h - margin) rt->view_y = tgt->y - rt->view_h + margin;
-            if (rt->view_x < 0) rt->view_x = 0;
-            if (rt->view_y < 0) rt->view_y = 0;
-            if (rt->view_x + rt->view_w > rt->room_width) rt->view_x = rt->room_width - rt->view_w;
-            if (rt->view_y + rt->view_h > rt->room_height) rt->view_y = rt->room_height - rt->view_h;
-            if (rt->view_x < 0) rt->view_x = 0;
-            if (rt->view_y < 0) rt->view_y = 0;
-            break;
-        }
-    }
+    /* 5. Main Step */
+    gm82_events_fire_step_all(rt);
 
-    /* Compact dead instances periodically */
-    if ((rt->frame & 31) == 0) {
-        int w = 0;
+    /* 6. End Step */
+    gm82_events_fire_end_step_all(rt);
+
+    /* Camera view updates */
+    if (rt->view_enabled && rt->view_w > 0) {
+        gm82_instance *follow_inst = NULL;
         for (int i = 0; i < rt->instance_count; i++) {
             if (rt->instances[i].alive) {
-                if (w != i) rt->instances[w] = rt->instances[i];
-                w++;
+                if (rt->view_follow_object >= 0 && rt->instances[i].object_index == rt->view_follow_object) {
+                    follow_inst = &rt->instances[i];
+                    break;
+                }
+                if (!follow_inst) follow_inst = &rt->instances[i];
             }
         }
-        rt->instance_count = w;
+        if (follow_inst) {
+            double hborder = rt->view_w * 0.4;
+            double left = rt->view_x + hborder;
+            double right = rt->view_x + rt->view_w - hborder;
+            if (follow_inst->x < left) rt->view_x -= (left - follow_inst->x);
+            if (follow_inst->x > right) rt->view_x += (follow_inst->x - right);
+            if (rt->view_x < 0) rt->view_x = 0;
+            if (rt->room_width > rt->view_w && rt->view_x + rt->view_w > rt->room_width)
+                rt->view_x = rt->room_width - rt->view_w;
+        }
     }
+
+    /* Update animation frame index */
+    {
+        gm82_instance *snapshot[GM82_MAX_INSTANCES];
+        int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+        for (int i = 0; i < count; i++) {
+            gm82_instance *inst = snapshot[i];
+            if (!inst->alive) continue;
+            if (inst->image_speed != 0.0)
+                inst->image_index += (int32_t)(inst->image_speed > 0 ? 1 : -1);
+        }
+    }
+
+    /* End-of-step pool compaction */
+    gm82_runtime_compact_instances(rt);
 }
 
 static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int sh, int dx, int dy) {
@@ -306,12 +386,13 @@ static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int s
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
 
-    /* clear */
+    /* 7. Pre-Draw: Surface Clear & Buffer Setup */
     for (int i = 0; i < buf_w * buf_h; i++) {
         rgba[i*4+0]=20; rgba[i*4+1]=20; rgba[i*4+2]=40; rgba[i*4+3]=255;
     }
+    gm82_events_fire_pre_draw_all(rt);
 
-    /* background 0 */
+    /* 8. Draw Pipeline: Background, Tile layers & Instances */
     if (rt->backgrounds && rt->backgrounds->count > 0 && rt->backgrounds->items[0].rgba) {
         const gm82_decoded_background *bg = &rt->backgrounds->items[0];
         int has_tiles = (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count
@@ -320,11 +401,23 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
             blit(rgba, buf_w, buf_h, bg->rgba, bg->width, bg->height, 0, 0);
     }
 
-    /* tiles from current room */
     if (rt->rooms && rt->backgrounds && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
         const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
-        for (int ti = 0; ti < room->tile_count; ti++) {
-            const gm82_decoded_tile *tile = &room->tiles[ti];
+        int tile_order[2048];
+        int tc = room->tile_count < 2048 ? room->tile_count : 2048;
+        for (int i = 0; i < tc; i++) tile_order[i] = i;
+        for (int i = 1; i < tc; i++) {
+            int key = tile_order[i];
+            int j = i - 1;
+            while (j >= 0 && room->tiles[tile_order[j]].depth < room->tiles[key].depth) {
+                tile_order[j+1] = tile_order[j];
+                j--;
+            }
+            tile_order[j+1] = key;
+        }
+
+        for (int k = 0; k < tc; k++) {
+            const gm82_decoded_tile *tile = &room->tiles[tile_order[k]];
             if (tile->background_index < 0 || tile->background_index >= rt->backgrounds->count)
                 continue;
             const gm82_decoded_background *bg = &rt->backgrounds->items[tile->background_index];
@@ -345,16 +438,20 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    /* sort by depth – draw high depth first */
+    gm82_events_fire_draw_all(rt);
+
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
     int order[GM82_MAX_INSTANCES];
     int n = 0;
-    for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
-        if (rt->instances[i].alive && rt->instances[i].visible)
+    for (int i = 0; i < count; i++) {
+        if (snapshot[i]->alive && snapshot[i]->visible)
             order[n++] = i;
+    }
     for (int i = 1; i < n; i++) {
         int key = order[i];
         int j = i - 1;
-        while (j >= 0 && rt->instances[order[j]].depth < rt->instances[key].depth) {
+        while (j >= 0 && snapshot[order[j]]->depth < snapshot[key]->depth) {
             order[j+1] = order[j];
             j--;
         }
@@ -362,7 +459,8 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
     }
 
     for (int k = 0; k < n; k++) {
-        gm82_instance *inst = &rt->instances[order[k]];
+        gm82_instance *inst = snapshot[order[k]];
+        if (!inst->alive || !inst->visible) continue;
         int si = inst->sprite_index;
         if (rt->sprite_groups)
             si = gm82_sprite_resolve_frame(rt->sprite_groups, inst->sprite_index, inst->image_index);
@@ -376,12 +474,14 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
             blit(rgba, buf_w, buf_h, fr->rgba, fr->width, fr->height, dx, dy);
         }
     }
+
+    /* 9. Post-Draw / Draw GUI */
+    gm82_events_fire_post_draw_all(rt);
+
     return true;
 }
 
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index) {
     if (!rt || user_event_index < 0 || user_event_index > 11) return;
-    /* Placeholder: user events need GML scripts bound per object.
-       Currently counts as a successful no-op path so callers don't crash. */
     (void)user_event_index;
 }

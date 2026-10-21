@@ -1,0 +1,7 @@
+[
+  {"path": "app/src/main/cpp/src/gm82_sprite_decode.c", "full": "gm82_sprite_decode.c.FULL.b64"},
+  {"path": "app/src/main/cpp/src/gm82_runtime.c", "full": "gm82_runtime.c.FULL.b64"},
+  {"path": "app/src/main/cpp/include/gm82_gml_builtins.h", "full": "gm82_gml_builtins.h.FULL.b64"},
+  {"path": "app/src/main/cpp/src/gm82_gml_eval.c", "full": "gm82_gml_eval.c.FULL.b64"},
+  {"path": "app/src/main/cpp/src/gm82_gml_builtins.c", "full": "gm82_gml_builtins.c.FULL.b64"}
+]

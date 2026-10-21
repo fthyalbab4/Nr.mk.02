@@ -13,6 +13,7 @@
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
+#include "gm82_sound_runtime.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -41,6 +42,7 @@ void   gml_motion_set(double dir, double spd);
 void   gml_motion_add(double dir, double spd);
 void   gml_move_towards_point(double tx, double ty, double sp);
 double gml_point_distance(double x1, double y1, double x2, double y2);
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 
 /* ---- Collision (AABB via sprite size) ---- */
@@ -68,6 +70,8 @@ double gml_move_bounce_all(double advanced);
 double gml_distance_to_point(double px, double py);
 double gml_sprite_get_width(double sprite);
 double gml_sprite_get_height(double sprite);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 double gml_sprite_get_number(double sprite);
 double gml_sprite_exists(double sprite);
 double gml_object_exists(double object_index);
@@ -241,6 +245,13 @@ double gml_file_text_writeln(double id);
 double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
+double gml_file_rename(const char *oldname, const char *newname);
+double gml_directory_rename(const char *oldname, const char *newname);
+
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
+void gml_file_find_close(void);
 
 double gml_date_current_datetime(void);
 double gml_date_get_year(double datetime);
@@ -286,6 +297,8 @@ double gml_room_goto_previous(void);
 double gml_room_restart(void);
 double gml_game_end(void);
 double gml_game_restart(void);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
 void gm82_window_set_size(int w, int h);
 double gml_game_has_ended(void);
 void gm82_scripts_bind(gm82_script_list *scripts);
@@ -298,6 +311,7 @@ double gml_alarm_set_script(double index, const char *code);
 void gm82_alarm_fire_scripts(gm82_runtime *rt, gm82_instance *inst, int alarm_index);
 
 /* Debug / string helpers (C-side; not full GML strings) */
+void gml_show_debug_message(const char *msg);
 void gm82_debug_log(const char *msg);
 int  gm82_debug_log_count(void);
 const char *gm82_debug_log_get(int index);
@@ -339,6 +353,7 @@ double gml_timeline_stop(void);
 void gm82_timeline_step_instance(gm82_runtime *rt, gm82_instance *inst);
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha);
+double gml_event_user(double numb);
 
 /* ---- Built-in variable access on self ---- */
 double gml_get_x(void);
@@ -383,9 +398,6 @@ void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
 /* Audio stubs – no device playback yet */
-double gml_sound_play(double sound_index);
-double gml_sound_stop(double sound_index);
-double gml_sound_isplaying(double sound_index);
 
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);
@@ -422,6 +434,9 @@ double gml_clerp2(double fromA, double fromB, double toA, double toB, double val
 double gml_cosine(double a, double b, double amount);
 double gml_darccos(double x);
 double gml_darcsin(double x);
+double gml_randomize(void);
+double gml_random_set_seed(double seed);
+double gml_random_get_seed(void);
 double gml_darctan(double x);
 double gml_darctan2(double y, double x);
 double gml_dcos(double angle);
