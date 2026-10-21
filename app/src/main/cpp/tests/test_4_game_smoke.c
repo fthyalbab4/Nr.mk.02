@@ -22,14 +22,23 @@ int main(void) {
     printf("--- Running 4-Game Smoke Test Suite ---\n");
 
     for (int i = 0; i < 4; i++) {
-        printf("Loading sample %d: %s ...\n", i + 1, samples[i]);
+        char path_buf[512];
+        const char *path = samples[i];
+        FILE *f_check = fopen(path, "rb");
+        if (f_check) { fclose(f_check); }
+        else {
+            snprintf(path_buf, sizeof(path_buf), "../../%s", samples[i]);
+            path = path_buf;
+        }
+
+        printf("Loading sample %d: %s ...\n", i + 1, path);
         char err[512] = {0};
         gm82_project_ir *ir = NULL;
-        bool playable = gm82_load_and_prepare(samples[i], &ir, err, sizeof(err));
+        bool playable = gm82_load_and_prepare(path, &ir, err, sizeof(err));
         assert(playable == true);
         assert(ir != NULL);
 
-        FILE *f = fopen(samples[i], "rb");
+        FILE *f = fopen(path, "rb");
         assert(f != NULL);
         fseek(f, 0, SEEK_END);
         long fsize = ftell(f);
@@ -55,6 +64,7 @@ int main(void) {
 
         int n_spr = gm82_decode_sprites_from_gmk(gmk_data, (size_t)fsize, &sprs);
         int n_bg = gm82_decode_backgrounds_from_gmk(gmk_data, (size_t)fsize, &bgs);
+        (void)n_bg;
         int n_obj = gm82_decode_objects_from_gmk(gmk_data, (size_t)fsize, &objs);
         int n_rm = gm82_decode_rooms_from_gmk(gmk_data, (size_t)fsize, &rms);
         gm82_actions_scan_gmk(gmk_data, (size_t)fsize, &actions);

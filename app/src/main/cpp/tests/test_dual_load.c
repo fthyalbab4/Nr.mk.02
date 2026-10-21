@@ -31,8 +31,18 @@ static void test_auto_detect(void) {
 
 int main(int argc, char **argv) {
     const char *sample = NULL;
-    if (argc > 1) sample = argv[1];
-    else sample = "app/src/main/assets/www/samples/mario_bros.gmk";
+    char path_buf[512];
+    if (argc > 1) {
+        sample = argv[1];
+    } else {
+        sample = "app/src/main/assets/www/samples/mario_bros.gmk";
+        FILE *f = fopen(sample, "rb");
+        if (f) { fclose(f); }
+        else {
+            snprintf(path_buf, sizeof(path_buf), "../../%s", sample);
+            sample = path_buf;
+        }
+    }
 
     test_auto_detect();
     test_gmk_sample(sample);

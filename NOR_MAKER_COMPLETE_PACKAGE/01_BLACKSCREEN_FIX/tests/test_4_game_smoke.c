@@ -55,6 +55,7 @@ int main(void) {
 
         int n_spr = gm82_decode_sprites_from_gmk(gmk_data, (size_t)fsize, &sprs);
         int n_bg = gm82_decode_backgrounds_from_gmk(gmk_data, (size_t)fsize, &bgs);
+        (void)n_bg;
         int n_obj = gm82_decode_objects_from_gmk(gmk_data, (size_t)fsize, &objs);
         int n_rm = gm82_decode_rooms_from_gmk(gmk_data, (size_t)fsize, &rms);
         gm82_actions_scan_gmk(gmk_data, (size_t)fsize, &actions);

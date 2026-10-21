@@ -328,8 +328,7 @@ static bool set_var(gml_parser *p, const char *name, double v) {
             }
         }
         if (s->var_count < 32) {
-            strncpy(s->vars[s->var_count].name, name, 31);
-            s->vars[s->var_count].name[31] = 0;
+            snprintf(s->vars[s->var_count].name, sizeof(s->vars[s->var_count].name), "%.31s", name);
             s->vars[s->var_count].value = v;
             s->var_count++;
             return true;
