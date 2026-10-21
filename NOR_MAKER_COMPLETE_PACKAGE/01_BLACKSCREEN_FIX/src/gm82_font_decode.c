@@ -24,7 +24,9 @@ static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol=strm.total_out;inflateEnd(&strm);return dst;
 }
 void gm82_decoded_font_list_free(gm82_decoded_font_list *L) {
-    if(!L)return; free(L->items); memset(L,0,sizeof(*L));
+    if (!L) return;
+    free(L->items);
+    memset(L, 0, sizeof(*L));
 }
 int gm82_decode_fonts_from_gmk(const uint8_t *data, size_t size, gm82_decoded_font_list *out) {
     memset(out,0,sizeof(*out));
