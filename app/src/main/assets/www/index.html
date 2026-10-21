@@ -154409,7 +154409,19 @@ button, input, textarea, select {
     });
   }
 
+  let lastActiveElement = null;
+
+  if (searchInput) {
+    searchInput.onfocus = () => { searchInput.style.borderColor = "#2563eb"; searchInput.style.boxShadow = "0 0 0 2px rgba(37,99,235,0.2)"; };
+    searchInput.onblur = () => { searchInput.style.borderColor = "#9ca3af"; searchInput.style.boxShadow = "none"; };
+  }
+  if (categorySelect) {
+    categorySelect.onfocus = () => { categorySelect.style.borderColor = "#2563eb"; categorySelect.style.boxShadow = "0 0 0 2px rgba(37,99,235,0.2)"; };
+    categorySelect.onblur = () => { categorySelect.style.borderColor = "#9ca3af"; categorySelect.style.boxShadow = "none"; };
+  }
+
   function openModal() {
+    lastActiveElement = document.activeElement;
     modal.style.display = "flex";
     updateSearchClearBtn();
     renderGames();
@@ -154418,6 +154430,9 @@ button, input, textarea, select {
 
   function closeModal() {
     modal.style.display = "none";
+    if (lastActiveElement && typeof lastActiveElement.focus === "function") {
+      try { lastActiveElement.focus(); } catch (e) {}
+    }
   }
 
   window.addEventListener("open-gmk-cloud-library", openModal);
@@ -154495,8 +154510,19 @@ button, input, textarea, select {
         card.style.borderColor = "#93c5fd";
       };
       card.onmouseleave = () => {
-        card.style.transform = "none";
-        card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+        if (document.activeElement !== card) {
+          card.style.transform = "none";
+          card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+          card.style.borderColor = "#e5e7eb";
+        }
+      };
+      card.onfocus = () => {
+        card.style.outline = "2px solid #2563eb";
+        card.style.outlineOffset = "2px";
+        card.style.borderColor = "#2563eb";
+      };
+      card.onblur = () => {
+        card.style.outline = "none";
         card.style.borderColor = "#e5e7eb";
       };
 
