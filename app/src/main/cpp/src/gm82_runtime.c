@@ -481,8 +481,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    gm82_events_fire_draw_all(rt);
-
     int order[GM82_MAX_INSTANCES];
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
@@ -500,15 +498,19 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
     for (int k = 0; k < n; k++) {
         gm82_instance *inst = &rt->instances[order[k]];
-        if (inst->sprite_index < 0) continue;
-        double dx = inst->x - rt->view_x;
-        double dy = inst->y - rt->view_y;
+        if (!inst->alive || !inst->visible) continue;
         gm82_gml_set_self(inst);
-        gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
-                            dx, dy,
-                            inst->image_xscale,
-                            inst->image_yscale,
-                            0.0, 0xFFFFFF, 1.0);
+        if (gm82_events_has_draw_event(rt, inst)) {
+            gm82_events_fire_draw_single(rt, inst);
+        } else if (inst->sprite_index >= 0) {
+            double dx = inst->x - rt->view_x;
+            double dy = inst->y - rt->view_y;
+            gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                                dx, dy,
+                                inst->image_xscale,
+                                inst->image_yscale,
+                                0.0, 0xFFFFFF, 1.0);
+        }
     }
     gm82_events_fire_post_draw_all(rt);
     return true;
