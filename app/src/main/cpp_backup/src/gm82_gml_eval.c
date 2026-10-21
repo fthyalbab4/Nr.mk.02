@@ -1111,18 +1111,27 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = 1; return true;
         }
         if (strcmp(id, "action_set_hspeed") == 0) {
-            if (p->self) p->self->hspeed = arg; *out = 1; return true;
+            if (p->self) p->self->hspeed = arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_vspeed") == 0) {
-            if (p->self) p->self->vspeed = arg; *out = 1; return true;
+            if (p->self) p->self->vspeed = arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_gravity") == 0) {
-            if (p->self) { p->self->gravity = arg;
-                if (nargs >= 2) p->self->gravity_direction = args[1]; }
-            *out = 1; return true;
+            if (p->self) {
+                p->self->gravity = arg;
+                if (nargs >= 2) p->self->gravity_direction = args[1];
+            }
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_friction") == 0) {
-            if (p->self) p->self->friction = arg; *out = 1; return true;
+            if (p->self) p->self->friction = arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_motion") == 0) {
             if (p->self && nargs >= 2) {
@@ -1143,7 +1152,9 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_instance_create(ox, oy, oi); return true;
         }
         if (strcmp(id, "action_sprite_set") == 0) {
-            if (p->self) p->self->sprite_index = (int32_t)arg; *out = 1; return true;
+            if (p->self) p->self->sprite_index = (int32_t)arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_sound") == 0) { *out = 1; return true; }
         if (strcmp(id, "action_restart_game") == 0 || strcmp(id, "action_current_room") == 0) {
@@ -1341,7 +1352,8 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "merge_color") == 0 || strcmp(id, "merge_colour") == 0) {
             double c1 = args[0], c2 = nargs >= 2 ? args[1] : 0, a = nargs >= 3 ? args[2] : 0.5;
-            if (a < 0) a = 0; if (a > 1) a = 1;
+            if (a < 0) a = 0;
+            if (a > 1) a = 1;
             int r1 = ((int)c1) & 255, g1 = (((int)c1)>>8)&255, b1 = (((int)c1)>>16)&255;
             int r2 = ((int)c2) & 255, g2 = (((int)c2)>>8)&255, b2 = (((int)c2)>>16)&255;
             int r = (int)(r1 + (r2-r1)*a), g = (int)(g1 + (g2-g1)*a), b = (int)(b1 + (b2-b1)*a);

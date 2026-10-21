@@ -103,7 +103,7 @@ double nor_export_gbc_native(const char *project, const char *output) {
     uint8_t rom[32768];
     memset(rom, 0, sizeof(rom));
     /* Cartridge title at 0x134 */
-    strncpy((char *)rom + 0x134, "NORMAKER", 8);
+    memcpy(rom + 0x134, "NORMAKER", 8);
     rom[0x143] = 0x80; /* GBC supported */
     rom[0x147] = 0x00; /* ROM ONLY */
     rom[0x148] = 0x00; /* 32KB */
@@ -124,7 +124,7 @@ double nor_export_gba_native(const char *project, const char *output) {
     /* GBA branch instruction at start */
     rom[0] = 0x2E; rom[1] = 0x00; rom[2] = 0x00; rom[3] = 0xEA;
     /* Game title at 0xA0 */
-    strncpy((char *)rom + 0xA0, "NORMAKERGBA", 11);
+    memcpy(rom + 0xA0, "NORMAKERGBA", 11);
     rom[0xB2] = 0x96; /* Fixed 96h */
     fwrite(rom, 1, sizeof(rom), f);
     fclose(f);
@@ -247,6 +247,16 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "sound_pitch") == 0 && count >= 2) {
         *out = gml_value_real(gml_sound_pitch(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "sound_play_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_play(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "sound_loop_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_loop(ARG_R(0)));
         return 1;
     }
     if (strcmp(name, "sound_pan") == 0 && count >= 2) {
