@@ -65,20 +65,19 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
         if (slen < 3 || slen > 48 || 8+(size_t)slen+20 > ol) { free(d); continue; }
         char name[64]; memcpy(name, d+8, (size_t)slen); name[slen]=0;
         int ok=1; for(int k=0;k<slen;k++) if(name[k]<32||name[k]>126) ok=0;
-        if (!ok) { free(d); continue; }
-        size_t off = 8 + (size_t)slen + 8;
-        if (off + 8 > ol) { free(d); continue; }
-        int32_t ver = rd_i32(d + off); off += 4;
-        if (ver != 800 && ver != 400 && ver != 520) { free(d); continue; }
-        int32_t n = rd_i32(d + off); off += 4;
-        if (n < 0 || off + (size_t)n > ol) { free(d); continue; }
-        if (strncmp(name, "scr", 3) != 0 && strncmp(name, "script", 6) != 0) {
-            if (off + (size_t)n != ol) { free(d); continue; }
+        if (!ok || (strncmp(name,"scr",3)!=0 && strncmp(name,"script",6)!=0)) {
+            free(d); continue;
         }
+        /* after name + lastChanged(8) + ver(4): script code string */
+        size_t off = 8+(size_t)slen+8+4;
         char code[GM82_SCRIPT_CODE_MAX] = "";
-        size_t copy_len = (size_t)n < (GM82_SCRIPT_CODE_MAX - 1) ? (size_t)n : (GM82_SCRIPT_CODE_MAX - 1);
-        memcpy(code, d + off, copy_len);
-        code[copy_len] = 0;
+        if (off+4 <= ol) {
+            int32_t n = rd_i32(d + off); off += 4;
+            if (n > 0 && n < GM82_SCRIPT_CODE_MAX-1 && off+(size_t)n <= ol) {
+                memcpy(code, d+off, (size_t)n);
+                code[n] = 0;
+            }
+        }
         gm82_script_add(out, name, code);
         free(d);
     }
