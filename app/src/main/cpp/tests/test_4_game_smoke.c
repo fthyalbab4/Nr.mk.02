@@ -18,18 +18,31 @@ static const char *samples[4] = {
     "app/src/main/assets/www/samples/zelda.gmk"
 };
 
+static const char *get_sample_path(const char *rel, char *buf, size_t sz) {
+    FILE *f = fopen(rel, "rb");
+    if (f) {
+        fclose(f);
+        snprintf(buf, sz, "%s", rel);
+        return buf;
+    }
+    snprintf(buf, sz, "../../%s", rel);
+    return buf;
+}
+
 int main(void) {
     printf("--- Running 4-Game Smoke Test Suite ---\n");
 
     for (int i = 0; i < 4; i++) {
-        printf("Loading sample %d: %s ...\n", i + 1, samples[i]);
+        char resolved_path[512];
+        const char *path = get_sample_path(samples[i], resolved_path, sizeof(resolved_path));
+        printf("Loading sample %d: %s ...\n", i + 1, path);
         char err[512] = {0};
         gm82_project_ir *ir = NULL;
-        bool playable = gm82_load_and_prepare(samples[i], &ir, err, sizeof(err));
+        bool playable = gm82_load_and_prepare(path, &ir, err, sizeof(err));
         assert(playable == true);
         assert(ir != NULL);
 
-        FILE *f = fopen(samples[i], "rb");
+        FILE *f = fopen(path, "rb");
         assert(f != NULL);
         fseek(f, 0, SEEK_END);
         long fsize = ftell(f);
