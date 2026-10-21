@@ -249,6 +249,16 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_sound_pitch(ARG_R(0), ARG_R(1)));
         return 1;
     }
+    if (strcmp(name, "sound_play_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_play(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "sound_loop_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_loop(ARG_R(0)));
+        return 1;
+    }
     if (strcmp(name, "sound_pan") == 0 && count >= 2) {
         *out = gml_value_real(gml_sound_pan(ARG_R(0), ARG_R(1)));
         return 1;

@@ -70,8 +70,21 @@ double gm82_gml_get_script_arg(int index) {
 
 static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "global.", 7) == 0) {
+        return get_var(p, name + 7, out);
+    }
+    if (strncmp(name, "self.", 5) == 0) {
+        return get_var(p, name + 5, out);
+    }
     if (strncmp(name, "argument", 8) == 0 && isdigit((unsigned char)name[8])) {
         int idx = atoi(name + 8);
+        if (idx >= 0 && idx < 16) {
+            *out = g_script_args[idx];
+            return true;
+        }
+    }
+    if (strncmp(name, "arg", 3) == 0 && isdigit((unsigned char)name[3])) {
+        int idx = atoi(name + 3);
         if (idx >= 0 && idx < 16) {
             *out = g_script_args[idx];
             return true;
@@ -265,6 +278,12 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
 
 static bool set_var(gml_parser *p, const char *name, double v) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "global.", 7) == 0) {
+        return set_var(p, name + 7, v);
+    }
+    if (strncmp(name, "self.", 5) == 0) {
+        return set_var(p, name + 5, v);
+    }
     if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
         return false;
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
@@ -1092,18 +1111,27 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = 1; return true;
         }
         if (strcmp(id, "action_set_hspeed") == 0) {
-            if (p->self) p->self->hspeed = arg; *out = 1; return true;
+            if (p->self) p->self->hspeed = arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_vspeed") == 0) {
-            if (p->self) p->self->vspeed = arg; *out = 1; return true;
+            if (p->self) p->self->vspeed = arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_gravity") == 0) {
-            if (p->self) { p->self->gravity = arg;
-                if (nargs >= 2) p->self->gravity_direction = args[1]; }
-            *out = 1; return true;
+            if (p->self) {
+                p->self->gravity = arg;
+                if (nargs >= 2) p->self->gravity_direction = args[1];
+            }
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_friction") == 0) {
-            if (p->self) p->self->friction = arg; *out = 1; return true;
+            if (p->self) p->self->friction = arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_set_motion") == 0) {
             if (p->self && nargs >= 2) {
@@ -1124,7 +1152,9 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_instance_create(ox, oy, oi); return true;
         }
         if (strcmp(id, "action_sprite_set") == 0) {
-            if (p->self) p->self->sprite_index = (int32_t)arg; *out = 1; return true;
+            if (p->self) p->self->sprite_index = (int32_t)arg;
+            *out = 1;
+            return true;
         }
         if (strcmp(id, "action_sound") == 0) { *out = 1; return true; }
         if (strcmp(id, "action_restart_game") == 0 || strcmp(id, "action_current_room") == 0) {
