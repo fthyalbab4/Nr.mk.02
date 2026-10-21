@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
     private boolean loopRunning = false;
     private String lastImportJson = "";
     private int frameCount = 0;
-    private boolean holdLeft, holdRight, holdUp, holdSpace;
+    private boolean holdLeft, holdRight, holdUp, holdDown, holdSpace;
 
     public static native String nativeCoreIdentity();
     public static native String nativeImportGmkSnapshot(byte[] bArr, String str);
@@ -138,6 +138,7 @@ public class MainActivity extends Activity {
         boolean left = x < w / 3.0f;
         boolean right = x > w * 2.0f / 3.0f;
         boolean up = y < h / 2.0f;
+        boolean down = y >= h / 2.0f && !left && !right;
 
         if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
             setKey(VK_LEFT, left);
@@ -146,12 +147,15 @@ public class MainActivity extends Activity {
             if (up && (left || right)) setKey(VK_SPACE, true); // diagonal jump ok
             if (up) setKey(VK_UP, true);
             else setKey(VK_UP, false);
+            if (down) setKey(VK_DOWN, true);
+            else setKey(VK_DOWN, false);
             return true;
         }
         if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
             setKey(VK_LEFT, false);
             setKey(VK_RIGHT, false);
             setKey(VK_UP, false);
+            setKey(VK_DOWN, false);
             setKey(VK_SPACE, false);
             return true;
         }
@@ -163,6 +167,7 @@ public class MainActivity extends Activity {
         if (vk == VK_LEFT) { was = holdLeft; holdLeft = down; }
         else if (vk == VK_RIGHT) { was = holdRight; holdRight = down; }
         else if (vk == VK_UP) { was = holdUp; holdUp = down; }
+        else if (vk == VK_DOWN) { was = holdDown; holdDown = down; }
         else if (vk == VK_SPACE) { was = holdSpace; holdSpace = down; }
         else was = !down;
         if (was != down) {
