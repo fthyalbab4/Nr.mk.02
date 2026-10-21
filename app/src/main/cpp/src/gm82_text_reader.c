@@ -19,7 +19,7 @@ static int is_dir(const char *path) {
 }
 
 static int count_files_in_subdir(const char *root, const char *subdir, const char *ext) {
-    char subpath[512];
+    char subpath[1024];
     snprintf(subpath, sizeof(subpath), "%s/%s", root, subdir);
     DIR *d = opendir(subpath);
     if (!d) return 0;
@@ -34,7 +34,7 @@ static int count_files_in_subdir(const char *root, const char *subdir, const cha
 }
 
 static void load_scripts_from_dir(const char *root, gm82_script_list *list) {
-    char subpath[512];
+    char subpath[1024];
     snprintf(subpath, sizeof(subpath), "%s/scripts", root);
     DIR *d = opendir(subpath);
     if (!d) return;
@@ -42,7 +42,7 @@ static void load_scripts_from_dir(const char *root, gm82_script_list *list) {
     while ((ent = readdir(d)) != NULL) {
         if (ent->d_name[0] == '.') continue;
         if (strstr(ent->d_name, ".gml")) {
-            char fpath[512];
+            char fpath[2048];
             snprintf(fpath, sizeof(fpath), "%s/%s", subpath, ent->d_name);
             FILE *f = fopen(fpath, "r");
             if (f) {

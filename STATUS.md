@@ -1,11 +1,11 @@
-# STATUS — صادق
+# STATUS — host parallel capacity exhausted
 
-## مسار SO الموجود (بدون NDK جديد)
-- التطبيق يحمّل `libgm82_android` مسبقاً
-- JS: `nor_native_loop_bridge.js` + patch في `assets/www/`
-- باتش MainActivity: `tools/MainActivity.native_loop.patch`
+```bash
+bash tools/run_host_pipeline.sh
+```
 
-## تنبيه
-إن كان `MainActivity.java` = PLACEHOLDER، طبّق `tools/RECOVER_MAINACTIVITY.md`
+Host: **4/4**.
 
-Host ~55–65%. ليس 100%.
+APK: built at `app/build/outputs/apk/debug/app-debug.apk` from `2d5145f894a76f4359db2f7aa9af5eb6b6735ea8` (documented in `docs/BUILD_APK_2026-10-18.md`).
+
+Next human step: Test APK on physical mobile device using `docs/DEVICE_TEST_TEMPLATE.md`.

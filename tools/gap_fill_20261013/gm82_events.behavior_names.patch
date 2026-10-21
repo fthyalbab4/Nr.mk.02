@@ -1,0 +1,50 @@
+--- a/app/src/main/cpp/src/gm82_events.c
++++ b/app/src/main/cpp/src/gm82_events.c
+@@ -95,11 +95,24 @@
+ }
+ 
+ static const gm82_behavior g_behaviors[] = {
++    /* Match real GMK names (prefix / substring via find_behavior) */
++    { "mini_mario",    beh_player_create, beh_player_step },
++    { "minimario",     beh_player_create, beh_player_step },
+     { "obj_minimario", beh_player_create, beh_player_step },
+     { "obj_mario",     beh_player_create, beh_player_step },
++    { "mario",         beh_player_create, beh_player_step },
++    { "objPlayer",     beh_player_create, beh_player_step },
++    { "obj_player",    beh_player_create, beh_player_step },
++    { "Player",        beh_player_create, beh_player_step },
++    { "heroe",         beh_player_create, beh_player_step },
+     { "obj_enemigo",   NULL,              beh_enemy_step },
++    { "enemigo",       NULL,              beh_enemy_step },
++    { "objEnemigo",    NULL,              beh_enemy_step },
+     { "obj_bloque",    beh_solid_create,  NULL },
++    { "bloque",        beh_solid_create,  NULL },
++    { "objBloque",     beh_solid_create,  NULL },
+     { "obj_castillo",  beh_solid_create,  NULL },
++    { "castillo",      beh_solid_create,  NULL },
+     { NULL, NULL, NULL }
+ };
+ 
+@@ -110,12 +123,20 @@
+     if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count)
+         return NULL;
+     const char *name = rt->objects->items[object_index].name;
++    if (!name || !name[0]) return NULL;
++    /* Prefer longest prefix match so "mini_mario" wins over "mario" */
++    const gm82_behavior *best = NULL;
++    size_t best_len = 0;
+     for (int i = 0; g_behaviors[i].object_name_prefix; i++) {
+-        if (strncmp(name, g_behaviors[i].object_name_prefix,
+-                    strlen(g_behaviors[i].object_name_prefix)) == 0)
+-            return &g_behaviors[i];
++        const char *pre = g_behaviors[i].object_name_prefix;
++        size_t pl = strlen(pre);
++        if (pl == 0) continue;
++        if ((strncmp(name, pre, pl) == 0 || strstr(name, pre) != NULL) && pl >= best_len) {
++            best = &g_behaviors[i];
++            best_len = pl;
++        }
+     }
+-    return NULL;
++    return best;
+ }
