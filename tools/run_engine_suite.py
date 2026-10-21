@@ -24,8 +24,17 @@ def run_test(name, src):
     if not os.path.isfile(src_path):
         print(f"  SKIP missing {src}")
         return True
-    # Host pipeline remains the primary green check; individual tests need local link lines.
-    print(f"  listed: {src}")
+    bin_path = f"/tmp/{name}_bin"
+    cmd_build = f"gcc -O2 -Iapp/src/main/cpp/include -Iapp/src/main/cpp {src_path} app/src/main/cpp/gml_vm.c app/src/main/cpp/src/*.c -lz -lm -o {bin_path}"
+    res_build = subprocess.run(cmd_build, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
+    if res_build.returncode != 0:
+        print(f"  FAIL build {src}:\n{res_build.stderr}")
+        return False
+    res_run = subprocess.run(bin_path, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
+    if res_run.returncode != 0:
+        print(f"  FAIL run {bin_path}:\n{res_run.stderr}")
+        return False
+    print(f"  PASS {src}")
     return True
 
 def main():
