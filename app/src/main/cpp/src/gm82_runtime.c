@@ -139,20 +139,6 @@ void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
     inst->alive = 0;
 }
 
-void gm82_runtime_compact_instances(gm82_runtime *rt) {
-    if (!rt) return;
-    int w = 0;
-    for (int i = 0; i < rt->instance_count; i++) {
-        if (rt->instances[i].alive) {
-            if (w != i) {
-                rt->instances[w] = rt->instances[i];
-            }
-            w++;
-        }
-    }
-    rt->instance_count = w;
-}
-
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     if (!rt || !rt->rooms || room_index < 0 || room_index >= rt->rooms->count)
         return false;
