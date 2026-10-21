@@ -196,14 +196,23 @@ cmd2 = dequeue_audio()
 record("Low-Latency Audio Ring Queue", cmd1["id"] == 101 and cmd2["loop"] == 1 and len(audio_queue) == 0, f"cmd1_id={cmd1['id']}, cmd2_loop={cmd2['loop']}")
 
 # 10. Check Runtime Guard Executable
-guard_bin = "app/src/main/cpp/tests/test_guard"
-if os.path.exists(guard_bin):
-    import subprocess
+import subprocess
+guard_bin = "app/src/main/cpp/tests/test_guard_tmp"
+import glob
+compile_cmd = [
+    "gcc", "-O2", "-Iapp/src/main/cpp", "-Iapp/src/main/cpp/include",
+    "-o", guard_bin,
+    "app/src/main/cpp/tests/test_runtime_guard.c",
+    "app/src/main/cpp/gml_vm.c"
+] + glob.glob("app/src/main/cpp/src/*.c") + ["-lz", "-lm"]
+comp = subprocess.run(compile_cmd, capture_output=True, text=True)
+if comp.returncode == 0 and os.path.exists(guard_bin):
     os.chmod(guard_bin, 0o755)
     r = subprocess.run([guard_bin], capture_output=True, text=True)
     record("Native Runtime Guard Executable", r.returncode == 0, r.stdout.strip())
+    os.remove(guard_bin)
 else:
-    record("Native Runtime Guard Executable", False, "Missing test_guard binary")
+    record("Native Runtime Guard Executable", False, f"Compilation failed: {comp.stderr.strip()}")
 
 # 6. Verify Android Native Library Assets
 so_files = [

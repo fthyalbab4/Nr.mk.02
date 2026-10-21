@@ -74,7 +74,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
         /* Name heuristics when GMK solid bit is wrong/zero */
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
@@ -84,8 +84,26 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     }
 }
 
+void gm82_runtime_compact_instances(gm82_runtime *rt) {
+    if (!rt) return;
+    int write_idx = 0;
+    for (int read_idx = 0; read_idx < rt->instance_count; read_idx++) {
+        if (rt->instances[read_idx].alive) {
+            if (write_idx != read_idx) {
+                rt->instances[write_idx] = rt->instances[read_idx];
+            }
+            write_idx++;
+        }
+    }
+    rt->instance_count = write_idx;
+}
+
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
-    if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    if (!rt) return NULL;
+    if (rt->instance_count >= GM82_MAX_INSTANCES) {
+        gm82_runtime_compact_instances(rt);
+        if (rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    }
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
@@ -319,10 +337,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
         {
             double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
             double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
-            if (xs < 0) xs = -xs; if (ys < 0) ys = -ys;
+            if (xs < 0) xs = -xs;
+            if (ys < 0) ys = -ys;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
+            if (sw < 1) sw = 1;
+            if (sh < 1) sh = 1;
         }
         for (int j = 0; j < n_col; j++) {
             if (i == j) continue;
@@ -338,10 +358,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
             {
                 double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
                 double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
-                if (xs < 0) xs = -xs; if (ys < 0) ys = -ys;
+                if (xs < 0) xs = -xs;
+                if (ys < 0) ys = -ys;
                 ow = (int32_t)(ow * xs); oh = (int32_t)(oh * ys);
                 oox = (int32_t)(oox * xs); ooy = (int32_t)(ooy * ys);
-                if (ow < 1) ow = 1; if (oh < 1) oh = 1;
+                if (ow < 1) ow = 1;
+                if (oh < 1) oh = 1;
             }
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
             double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
@@ -473,8 +495,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    gm82_events_fire_draw_all(rt);
-
     int order[GM82_MAX_INSTANCES];
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
@@ -492,15 +512,19 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
     for (int k = 0; k < n; k++) {
         gm82_instance *inst = &rt->instances[order[k]];
-        if (inst->sprite_index < 0) continue;
-        double dx = inst->x - rt->view_x;
-        double dy = inst->y - rt->view_y;
+        if (!inst->alive || !inst->visible) continue;
         gm82_gml_set_self(inst);
-        gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
-                            dx, dy,
-                            inst->image_xscale,
-                            inst->image_yscale,
-                            0.0, 0xFFFFFF, 1.0);
+        if (gm82_events_has_draw_event(rt, inst)) {
+            gm82_events_fire_draw_single(rt, inst);
+        } else if (inst->sprite_index >= 0) {
+            double dx = inst->x - rt->view_x;
+            double dy = inst->y - rt->view_y;
+            gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                                dx, dy,
+                                inst->image_xscale,
+                                inst->image_yscale,
+                                0.0, 0xFFFFFF, 1.0);
+        }
     }
     gm82_events_fire_post_draw_all(rt);
     return true;
