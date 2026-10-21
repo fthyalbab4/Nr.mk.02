@@ -65,9 +65,9 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         const gm82_decoded_object *o = &rt->objects->items[object_index];
         inst->sprite_index = o->sprite_index;
         inst->solid = o->solid;
-        inst->visible = o->visible ? 1 : 1;
+        inst->visible = o->visible ? 1 : 0;
         inst->depth = o->depth;
-        if (o->name) {
+        if (o->name[0] != '\0') {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||

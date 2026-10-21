@@ -44,12 +44,43 @@ static bool parse_ident(gml_parser *p, char *buf, size_t buflen) {
     skip_ws(p);
     if (p->i >= p->n || !isalpha((unsigned char)p->s[p->i])) return false;
     size_t j = 0;
-    while (p->i < p->n && (isalnum((unsigned char)p->s[p->i]) || p->s[p->i]=='_')) {
+    while (p->i < p->n && (isalnum((unsigned char)p->s[p->i]) || p->s[p->i]=='_' || p->s[p->i]=='.')) {
         if (j + 1 < buflen) buf[j++] = p->s[p->i];
         p->i++;
     }
     buf[j] = 0;
     return j > 0;
+}
+
+typedef struct {
+    char name[64];
+    double value;
+} gml_global_var;
+
+static gml_global_var g_globals[64];
+static int g_global_count = 0;
+
+static double get_global_var(const char *name) {
+    for (int i = 0; i < g_global_count; i++) {
+        if (strcmp(g_globals[i].name, name) == 0)
+            return g_globals[i].value;
+    }
+    return 0.0;
+}
+
+static void set_global_var(const char *name, double val) {
+    for (int i = 0; i < g_global_count; i++) {
+        if (strcmp(g_globals[i].name, name) == 0) {
+            g_globals[i].value = val;
+            return;
+        }
+    }
+    if (g_global_count < 64) {
+        strncpy(g_globals[g_global_count].name, name, 63);
+        g_globals[g_global_count].name[63] = 0;
+        g_globals[g_global_count].value = val;
+        g_global_count++;
+    }
 }
 
 static double g_script_args[16] = {0};
@@ -69,6 +100,10 @@ double gm82_gml_get_script_arg(int index) {
 
 static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "global.", 7) == 0) {
+        *out = get_global_var(name + 7);
+        return true;
+    }
     if (strncmp(name, "argument", 8) == 0 && isdigit((unsigned char)name[8])) {
         int idx = atoi(name + 8);
         if (idx >= 0 && idx < 16) {
@@ -182,6 +217,13 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
                 }
             }
         }
+        if (p->rt->rooms) {
+            for (int i = 0; i < p->rt->rooms->count; i++) {
+                if (strcmp(p->rt->rooms->items[i].name, name) == 0) {
+                    *out = (double)i; return true;
+                }
+            }
+        }
         if (p->rt->sprites) {
             for (int i = 0; i < p->rt->sprites->count; i++) {
                 if (p->rt->sprites->frames[i].name[0] &&
@@ -215,6 +257,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
 
 static bool set_var(gml_parser *p, const char *name, double v) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "global.", 7) == 0) {
+        set_global_var(name + 7, v);
+        return true;
+    }
     if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
         return false;
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
@@ -1032,10 +1078,12 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = 1; return true;
         }
         if (strcmp(id, "action_set_hspeed") == 0) {
-            if (p->self) p->self->hspeed = arg; *out = 1; return true;
+            if (p->self) p->self->hspeed = arg;
+            *out = 1; return true;
         }
         if (strcmp(id, "action_set_vspeed") == 0) {
-            if (p->self) p->self->vspeed = arg; *out = 1; return true;
+            if (p->self) p->self->vspeed = arg;
+            *out = 1; return true;
         }
         if (strcmp(id, "action_set_gravity") == 0) {
             if (p->self) { p->self->gravity = arg;
@@ -1043,7 +1091,8 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = 1; return true;
         }
         if (strcmp(id, "action_set_friction") == 0) {
-            if (p->self) p->self->friction = arg; *out = 1; return true;
+            if (p->self) p->self->friction = arg;
+            *out = 1; return true;
         }
         if (strcmp(id, "action_set_motion") == 0) {
             if (p->self && nargs >= 2) {
@@ -1064,7 +1113,8 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_instance_create(ox, oy, oi); return true;
         }
         if (strcmp(id, "action_sprite_set") == 0) {
-            if (p->self) p->self->sprite_index = (int32_t)arg; *out = 1; return true;
+            if (p->self) p->self->sprite_index = (int32_t)arg;
+            *out = 1; return true;
         }
         if (strcmp(id, "action_sound") == 0) { *out = 1; return true; }
         if (strcmp(id, "action_restart_game") == 0 || strcmp(id, "action_current_room") == 0) {
@@ -1726,6 +1776,7 @@ static bool parse_comparison(gml_parser *p, double *out) {
         else if (p->i + 1 < p->n && p->s[p->i] == '>' && p->s[p->i+1] == '=') { op = 4; p->i += 2; }
         else if (p->i + 1 < p->n && p->s[p->i] == '=' && p->s[p->i+1] == '=') { op = 5; p->i += 2; }
         else if (p->i + 1 < p->n && p->s[p->i] == '!' && p->s[p->i+1] == '=') { op = 6; p->i += 2; }
+        else if (peek(p) == '=') { op = 5; p->i++; }
         else if (peek(p) == '<') { op = 1; p->i++; }
         else if (peek(p) == '>') { op = 2; p->i++; }
         else break;
