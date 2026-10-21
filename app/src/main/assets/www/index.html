@@ -154409,7 +154409,10 @@ button, input, textarea, select {
     });
   }
 
+  let previousActiveElement = null;
+
   function openModal() {
+    previousActiveElement = document.activeElement;
     modal.style.display = "flex";
     updateSearchClearBtn();
     renderGames();
@@ -154418,6 +154421,9 @@ button, input, textarea, select {
 
   function closeModal() {
     modal.style.display = "none";
+    if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+      previousActiveElement.focus();
+    }
   }
 
   window.addEventListener("open-gmk-cloud-library", openModal);
@@ -154498,6 +154504,19 @@ button, input, textarea, select {
         card.style.transform = "none";
         card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
         card.style.borderColor = "#e5e7eb";
+      };
+      card.onfocus = () => {
+        card.style.transform = "translateY(-2px)";
+        card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+        card.style.borderColor = "#2563eb";
+        card.style.outline = "2px solid #60a5fa";
+        card.style.outlineOffset = "2px";
+      };
+      card.onblur = () => {
+        card.style.transform = "none";
+        card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+        card.style.borderColor = "#e5e7eb";
+        card.style.outline = "none";
       };
 
       const icon = getIconForCategory(item.category);
