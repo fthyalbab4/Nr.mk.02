@@ -326,6 +326,9 @@ double gml_sound_play(double sound_index);
 double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
 double gml_sound_volume(double sound_index, double vol);
+double gml_sound_loop(double sound_index);
+double gml_sound_pitch(double sound_index, double pitch);
+double gml_sound_pan(double sound_index, double pan);
 
 /* ---- Math & Physics helpers ---- */
 double gml_sqr(double v);
@@ -396,6 +399,8 @@ double gml_ds_priority_delete_min(double id);
 double gml_ds_priority_change_priority(double id, double value, double new_priority);
 void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
 void gml_file_find_close(void);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
 double gml_math_min(double a, double b);
 double gml_math_max(double a, double b);
 double gml_arctan2(double y, double x);

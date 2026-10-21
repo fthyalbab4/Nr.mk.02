@@ -393,33 +393,39 @@ double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
 double gml_get_bbox_left(void) {
     if (!g_self) return 0;
-    int32_t ox = 0;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
-        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    double ox = 0;
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
+    }
     return g_self->x - ox * g_self->image_xscale;
 }
 double gml_get_bbox_right(void) {
     if (!g_self) return 0;
-    int32_t sw = 16, ox = 0;
+    int32_t sw = 16; double ox = 0;
     if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sw = g_rt->sprites->frames[g_self->sprite_index].width;
-        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    }
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
     }
     return g_self->x + (sw - ox) * g_self->image_xscale - 1;
 }
 double gml_get_bbox_top(void) {
     if (!g_self) return 0;
-    int32_t oy = 0;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
-        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    double oy = 0;
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
+    }
     return g_self->y - oy * g_self->image_yscale;
 }
 double gml_get_bbox_bottom(void) {
     if (!g_self) return 0;
-    int32_t sh = 16, oy = 0;
+    int32_t sh = 16; double oy = 0;
     if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sh = g_rt->sprites->frames[g_self->sprite_index].height;
-        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    }
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
     }
     return g_self->y + (sh - oy) * g_self->image_yscale - 1;
 }
@@ -3438,12 +3444,24 @@ int gml_script_find(const char *name) {
 void gml_show_debug_message(const char *msg) {
     if (msg) fprintf(stderr, "[GML] %s\n", msg);
 }
+static double g_random_seed = 0;
+
 double gml_randomize(void) {
-    srand((unsigned)time(NULL));
-    return 1;
+    g_random_seed = (double)time(NULL);
+    srand((unsigned)g_random_seed);
+    return g_random_seed;
 }
 double gml_random_set_seed(double seed) {
+    g_random_seed = seed;
     srand((unsigned)seed);
     return seed;
 }
-double gml_random_get_seed(void) { return 0; }
+double gml_random_get_seed(void) { return g_random_seed; }
+
+double gml_sound_pan(double sound_index, double pan) { (void)sound_index; (void)pan; return 1; }
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
+__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }
