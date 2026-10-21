@@ -21,6 +21,17 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_height = 480;
 }
 
+
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
+    if (!rt || !out_ptrs) return 0;
+    int n = 0;
+    for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++) {
+        if (rt->instances[i].alive)
+            out_ptrs[n++] = &rt->instances[i];
+    }
+    return n;
+}
+
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,
     const gm82_decoded_sprite_list *sprites,
@@ -74,7 +85,25 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
 }
 
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
-    if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    if (!rt) return NULL;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (!rt->instances[i].alive) {
+            gm82_instance *inst = &rt->instances[i];
+            memset(inst, 0, sizeof(*inst));
+            inst->id = rt->next_id++;
+            inst->x = x;
+            inst->y = y;
+            inst->xstart = x;
+            inst->ystart = y;
+            inst->xprevious = x; inst->yprevious = y;
+            inst->image_xscale = 1.0; inst->image_yscale = 1.0;
+            inst->alive = 1;
+            for (int a = 0; a < 12; a++) inst->alarms[a] = -1;
+            apply_object_defaults(rt, inst, object_index);
+            return inst;
+        }
+    }
+    if (rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;

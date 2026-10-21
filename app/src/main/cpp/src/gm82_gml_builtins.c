@@ -1424,13 +1424,16 @@ static gm82_path_list *g_paths = NULL;
 void gm82_path_bind(gm82_path_list *paths) { g_paths = paths; }
 
 double gml_path_start(double path_index, double speed, double end_action, double absolute) {
-    (void)end_action; (void)absolute;
+    (void)absolute;
     if (!g_self || !g_paths) return 0;
     int pi = (int)path_index;
     if (pi < 0 || pi >= g_paths->count) return 0;
     g_self->path_index = pi;
     g_self->path_position = 0;
+    g_self->path_positionprevious = 0;
     g_self->path_speed = speed;
+    g_self->path_endaction = (int32_t)end_action;
+    if (g_self->path_scale == 0) g_self->path_scale = 1;
     if (g_paths->items[pi].count > 0) {
         g_self->x = g_paths->items[pi].points[0].x;
         g_self->y = g_paths->items[pi].points[0].y;
@@ -1455,7 +1458,21 @@ void gm82_path_step_instance(gm82_instance *inst) {
     if (!inst || !g_paths || inst->path_index < 0) return;
     if (inst->path_index >= g_paths->count) return;
     const gm82_path *path = &g_paths->items[inst->path_index];
-    gm82_path_advance(path, &inst->x, &inst->y, &inst->path_position, inst->path_speed);
+    inst->path_positionprevious = inst->path_position;
+    double pos = inst->path_position;
+    gm82_path_advance(path, &inst->x, &inst->y, &pos, inst->path_speed);
+    inst->path_position = pos;
+    if (inst->path_position >= 1.0 - 1e-9) {
+        if (inst->path_endaction == 1) {
+            inst->path_position = 0;
+        } else if (inst->path_endaction == 3) {
+            inst->path_speed = -inst->path_speed;
+            inst->path_position = 1.0;
+        } else {
+            inst->path_speed = 0;
+            inst->path_index = -1;
+        }
+    }
 }
 
 static gm82_timeline_list *g_timelines = NULL;
@@ -2691,6 +2708,57 @@ double gml_game_restart(void) {
     return gm82_runtime_goto_room(g_rt, 0) ? 1.0 : 0.0;
 }
 double gml_game_has_ended(void) { return g_game_ended ? 1.0 : 0.0; }
+
+double gml_game_save(const char *filename) {
+    if (!filename || !filename[0]) filename = "nor_save.dat";
+    FILE *f = fopen(filename, "w");
+    if (!f) return 0;
+    double px = 0, py = 0;
+    int oi = -1;
+    if (g_rt) {
+        for (int i = 0; i < g_rt->instance_count; i++) {
+            if (g_rt->instances[i].alive) {
+                px = g_rt->instances[i].x;
+                py = g_rt->instances[i].y;
+                oi = g_rt->instances[i].object_index;
+                break;
+            }
+        }
+    }
+    fprintf(f, "score=%f\nlives=%f\nhealth=%f\npx=%f\npy=%f\noi=%d\n",
+            g_score, g_lives, g_health, px, py, oi);
+    fclose(f);
+    return 1;
+}
+
+double gml_game_load(const char *filename) {
+    if (!filename || !filename[0]) filename = "nor_save.dat";
+    FILE *f = fopen(filename, "r");
+    if (!f) return 0;
+    double s = g_score, l = g_lives, h = g_health, px = 0, py = 0;
+    int oi = -1;
+    char line[128];
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "score=", 6) == 0) s = atof(line + 6);
+        else if (strncmp(line, "lives=", 6) == 0) l = atof(line + 6);
+        else if (strncmp(line, "health=", 7) == 0) h = atof(line + 7);
+        else if (strncmp(line, "px=", 3) == 0) px = atof(line + 3);
+        else if (strncmp(line, "py=", 3) == 0) py = atof(line + 3);
+        else if (strncmp(line, "oi=", 3) == 0) oi = atoi(line + 3);
+    }
+    fclose(f);
+    g_score = s; g_lives = l; g_health = h;
+    if (g_rt) {
+        for (int i = 0; i < g_rt->instance_count; i++) {
+            if (g_rt->instances[i].alive && (oi < 0 || g_rt->instances[i].object_index == oi)) {
+                g_rt->instances[i].x = px;
+                g_rt->instances[i].y = py;
+                break;
+            }
+        }
+    }
+    return 1;
+}
 
 static gm82_script_list *g_scripts = NULL;
 void gm82_scripts_bind(gm82_script_list *scripts) { g_scripts = scripts; }
