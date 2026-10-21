@@ -14,8 +14,7 @@ static void test_paths(void) {
     assert(pidx == 0);
     gm82_path_add_point(&plist, pidx, 0.0, 0.0, 1.0);
     gm82_path_add_point(&plist, pidx, 100.0, 0.0, 1.0);
-    assert(plist.items[pidx].point_count >= 2);
-    gm82_path_list_free(&plist);
+    assert(plist.items[pidx].count >= 2);
     printf("  paths OK\n");
 }
 

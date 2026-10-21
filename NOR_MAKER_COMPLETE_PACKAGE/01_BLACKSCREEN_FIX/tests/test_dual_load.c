@@ -12,11 +12,12 @@ static void test_gmk_sample(const char *path) {
     gm82_project_ir *ir = NULL;
     bool playable = gm82_load_and_prepare(path, &ir, err, sizeof(err));
 
+    /* Should be playable when sprites/backgrounds materialize */
+    assert(playable == true);
     assert(ir != NULL);
+    assert(ir->complete == true);
     printf("  playable=%d, complete=%d, partial_count=%d\n",
            playable, ir->complete, ir->partial_count);
-    printf("  ok=false (expected), complete=%d, partial_count=%d\n",
-           ir->complete, ir->partial_count);
     printf("  message: %s\n", err);
     gm82_project_ir_free(ir);
     puts("test_gmk_sample PASS");
@@ -28,13 +29,28 @@ static void test_auto_detect(void) {
     puts("test_auto_detect (missing file) PASS");
 }
 
+static bool resolve_path(const char *path, char *out, size_t out_sz) {
+    FILE *f = fopen(path, "rb");
+    if (f) { fclose(f); snprintf(out, out_sz, "%s", path); return true; }
+    snprintf(out, out_sz, "../../%s", path);
+    f = fopen(out, "rb");
+    if (f) { fclose(f); return true; }
+    snprintf(out, out_sz, "%s", path);
+    return false;
+}
+
 int main(int argc, char **argv) {
     const char *sample = NULL;
-    if (argc > 1) sample = argv[1];
-    else sample = "../../app/src/main/assets/www/samples/mario_bros.gmk";
+    char resolved[512];
+    if (argc > 1) {
+        sample = argv[1];
+        resolve_path(sample, resolved, sizeof(resolved));
+    } else {
+        resolve_path("app/src/main/assets/www/samples/mario_bros.gmk", resolved, sizeof(resolved));
+    }
 
     test_auto_detect();
-    test_gmk_sample(sample);
+    test_gmk_sample(resolved);
     puts("ALL_DUAL_LOAD_TESTS_PASS");
     return 0;
 }
