@@ -112,6 +112,41 @@
         body { font-size: 8px; }
         button, [role="button"] { min-height: 32px; }
       }
+
+      /* Cloud Modal UX & Accessibility Focus/Hover States */
+      #gmk-cloud-search:focus-visible, #gmk-cloud-category:focus-visible {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+      }
+      #gmk-cloud-search:hover, #gmk-cloud-category:hover {
+        border-color: #6b7280 !important;
+      }
+      #gmk-cloud-close-btn:hover {
+        background: #dc2626 !important;
+      }
+      #gmk-cloud-close-btn:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 2px !important;
+      }
+      #gmk-cloud-search-clear:hover {
+        background: #d1d5db !important;
+      }
+      #gmk-cloud-search-clear:focus-visible {
+        outline: 2px solid #93c5fd !important;
+        outline-offset: 1px !important;
+      }
+      .gmk-cloud-card:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
+      #gmk-cloud-reset-btn:hover {
+        background: #d1d5db !important;
+        color: #111827 !important;
+      }
+      #gmk-cloud-reset-btn:focus-visible {
+        outline: 2px solid #2563eb !important;
+        outline-offset: 2px !important;
+      }
     </style>
     <script type="module" crossorigin>function _mergeNamespaces(n2, m2) {
   for (var i = 0; i < m2.length; i++) {
@@ -97775,7 +97810,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "أعلى / W",
                         title: "أعلى",
-                        className: `absolute top-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-t-lg border-t-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-start pt-1 transition-all ${activeKeys["ArrowUp"] || activeKeys["38"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
+                        className: `absolute top-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-t-lg border-t-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-start pt-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowUp"] || activeKeys["38"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowUp", 38, "KeyW", "w", 87]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowUp", 38, "KeyW", "w", 87]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowUp", 38, "KeyW", "w", 87]),
@@ -97786,7 +97821,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "يسار / A",
                         title: "يسار",
-                        className: `absolute left-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-l-lg border-l-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-start pl-1 transition-all ${activeKeys["ArrowLeft"] || activeKeys["37"] ? "translate-x-1 shadow-none brightness-150" : "active:translate-x-1 active:shadow-none"}`,
+                        className: `absolute left-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-l-lg border-l-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-start pl-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowLeft"] || activeKeys["37"] ? "translate-x-1 shadow-none brightness-150" : "active:translate-x-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowLeft", 37, "KeyA", "a", 65]),
@@ -97802,7 +97837,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "يمين / D",
                         title: "يمين",
-                        className: `absolute right-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-r-lg border-r-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-end pr-1 transition-all ${activeKeys["ArrowRight"] || activeKeys["39"] ? "-translate-x-1 shadow-none brightness-150" : "active:-translate-x-1 active:shadow-none"}`,
+                        className: `absolute right-0 top-1/2 -translate-y-1/2 w-11 h-10 sm:w-12 sm:h-11 ${currentTheme.dpadColor} rounded-r-lg border-r-2 border-y-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex items-center justify-end pr-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowRight"] || activeKeys["39"] ? "-translate-x-1 shadow-none brightness-150" : "active:-translate-x-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowRight", 39, "KeyD", "d", 68]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowRight", 39, "KeyD", "d", 68]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowRight", 39, "KeyD", "d", 68]),
@@ -97813,7 +97848,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                       /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                         "aria-label": "أسفل / S",
                         title: "أسفل",
-                        className: `absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-b-lg border-b-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-end pb-1 transition-all ${activeKeys["ArrowDown"] || activeKeys["40"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
+                        className: `absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-11 sm:w-11 sm:h-12 ${currentTheme.dpadColor} rounded-b-lg border-b-2 border-x-2 border-white/20 shadow-[0_4px_0_rgba(0,0,0,0.8)] flex flex-col items-center justify-end pb-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 z-10 ${activeKeys["ArrowDown"] || activeKeys["40"] ? "translate-y-1 shadow-none brightness-150" : "active:translate-y-1 active:shadow-none"}`,
                         onPointerDown: (e) => handleBtnDown(e, ["ArrowDown", 40, "KeyS", "s", 83]),
                         onPointerUp: (e) => handleBtnUp(e, ["ArrowDown", 40, "KeyS", "s", 83]),
                         onPointerCancel: (e) => handleBtnUp(e, ["ArrowDown", 40, "KeyS", "s", 83]),
@@ -97840,7 +97875,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                             "aria-label": "زر الاختيار / SELECT",
                             title: "اختيار (SELECT)",
-                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
+                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${activeKeys["Shift"] || activeKeys["16"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Shift", 16, "Escape", 27]),
                             onPointerUp: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
                             onPointerCancel: (e) => handleBtnUp(e, ["Shift", 16, "Escape", 27]),
@@ -97856,7 +97891,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                           /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
                             "aria-label": "زر البداية / START",
                             title: "بدء (START)",
-                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
+                            className: `w-9 h-3 sm:w-10 sm:h-3.5 bg-[#4a4c58] rounded-full border border-black shadow-[0_2px_0_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${activeKeys["Enter"] || activeKeys["13"] ? "translate-y-0.5 shadow-none brightness-150" : "active:translate-y-0.5 active:shadow-none"}`,
                             onPointerDown: (e) => handleBtnDown(e, ["Enter", 13, "Space", 32]),
                             onPointerUp: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
                             onPointerCancel: (e) => handleBtnUp(e, ["Enter", 13, "Space", 32]),
@@ -97897,7 +97932,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                         /* @__PURE__ */ jsxRuntimeExports.jsxs("button", {
                           "aria-label": `${btn.labelAr || btn.label} (${btn.label})`,
                           title: btn.labelAr || btn.label,
-                          className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
+                          className: `w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white/40 flex flex-col items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${isPressed ? "translate-y-1 shadow-none brightness-125 scale-95" : "shadow-[0_4px_0_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] active:translate-y-1 active:shadow-none"}`,
                           style: { backgroundColor: btnColor, touchAction: "none" },
                           onPointerDown: (e) => handleBtnDown(e, btn.keys),
                           onPointerUp: (e) => handleBtnUp(e, btn.keys),
@@ -154319,9 +154354,9 @@ button, input, textarea, select {
     </div>
 
     <!-- Status Bar -->
-    <div id="gmk-cloud-status" style="display:none; padding:8px 16px; background:#fef3c7; color:#92400e; font-size:12px; font-weight:bold; border-bottom:1px solid #fde68a; display:flex; align-items:center; justify-content:space-between;">
+    <div id="gmk-cloud-status" role="status" aria-live="polite" style="display:none; padding:8px 16px; background:#fef3c7; color:#92400e; font-size:12px; font-weight:bold; border-bottom:1px solid #fde68a; display:flex; align-items:center; justify-content:space-between;">
       <span id="gmk-cloud-status-text">جاري التحميل...</span>
-      <div style="width:120px; height:6px; background:#fde68a; border-radius:3px; overflow:hidden;">
+      <div id="gmk-cloud-progress-wrapper" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="تقدم تحميل اللعبة" style="width:120px; height:6px; background:#fde68a; border-radius:3px; overflow:hidden;">
         <div id="gmk-cloud-progress" style="width:0%; height:100%; background:#d97706; transition:width 0.2s;"></div>
       </div>
     </div>
@@ -154351,6 +154386,12 @@ button, input, textarea, select {
   const statusDiv = document.getElementById("gmk-cloud-status");
   const statusText = document.getElementById("gmk-cloud-status-text");
   const progressBar = document.getElementById("gmk-cloud-progress");
+  const progressWrapper = document.getElementById("gmk-cloud-progress-wrapper");
+
+  function setCloudProgress(val) {
+    if (progressBar) progressBar.style.width = val + "%";
+    if (progressWrapper) progressWrapper.setAttribute("aria-valuenow", val);
+  }
   const countSpan = document.getElementById("gmk-cloud-count");
 
   function updateSearchClearBtn() {
@@ -154368,7 +154409,10 @@ button, input, textarea, select {
     });
   }
 
+  let previousActiveElement = null;
+
   function openModal() {
+    previousActiveElement = document.activeElement;
     modal.style.display = "flex";
     updateSearchClearBtn();
     renderGames();
@@ -154377,6 +154421,9 @@ button, input, textarea, select {
 
   function closeModal() {
     modal.style.display = "none";
+    if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+      previousActiveElement.focus();
+    }
   }
 
   window.addEventListener("open-gmk-cloud-library", openModal);
@@ -154421,12 +154468,31 @@ button, input, textarea, select {
     grid.innerHTML = "";
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#6b7280; font-size:14px;">لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>`;
+      grid.innerHTML = `
+        <div role="status" style="grid-column:1/-1; text-align:center; padding:40px 20px; color:#6b7280; font-size:14px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div>لم يتم العثور على أي ألعاب مطابقة لبحثك 🔍</div>
+          <button id="gmk-cloud-reset-btn" aria-label="إعادة ضبط البحث والتصفية" style="padding:6px 16px; background:#e5e7eb; color:#374151; border:1px solid #d1d5db; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.2s, border-color 0.2s;">إعادة ضبط البحث 🔄</button>
+        </div>
+      `;
+      const resetBtn = document.getElementById("gmk-cloud-reset-btn");
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          searchInput.value = "";
+          categorySelect.value = "ALL";
+          updateSearchClearBtn();
+          renderGames();
+          searchInput.focus();
+        };
+      }
       return;
     }
 
     filtered.forEach(item => {
       const card = document.createElement("div");
+      card.className = "gmk-cloud-card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "article");
+      card.setAttribute("aria-label", `بطاقة ${item.title}`);
       card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
 
       card.onmouseenter = () => {
@@ -154438,6 +154504,19 @@ button, input, textarea, select {
         card.style.transform = "none";
         card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
         card.style.borderColor = "#e5e7eb";
+      };
+      card.onfocus = () => {
+        card.style.transform = "translateY(-2px)";
+        card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+        card.style.borderColor = "#2563eb";
+        card.style.outline = "2px solid #60a5fa";
+        card.style.outlineOffset = "2px";
+      };
+      card.onblur = () => {
+        card.style.transform = "none";
+        card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+        card.style.borderColor = "#e5e7eb";
+        card.style.outline = "none";
       };
 
       const icon = getIconForCategory(item.category);
@@ -154455,11 +154534,22 @@ button, input, textarea, select {
         </button>
       `;
 
-      card.querySelector("button").onclick = (e) => {
+      const actionBtn = card.querySelector("button");
+      actionBtn.onmouseenter = () => { if (!actionBtn.disabled) actionBtn.style.background = "#1d4ed8"; };
+      actionBtn.onmouseleave = () => { if (!actionBtn.disabled) actionBtn.style.background = "#2563eb"; };
+      actionBtn.onfocus = () => { actionBtn.style.outline = "2px solid #60a5fa"; actionBtn.style.outlineOffset = "2px"; };
+      actionBtn.onblur = () => { actionBtn.style.outline = "none"; };
+      actionBtn.onclick = (e) => {
         e.stopPropagation();
-        loadCloudGame(item);
+        loadCloudGame(item, actionBtn);
       };
-      card.onclick = () => loadCloudGame(item);
+      card.onclick = () => loadCloudGame(item, actionBtn);
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          loadCloudGame(item, actionBtn);
+        }
+      };
 
       grid.appendChild(card);
     });
@@ -154471,15 +154561,27 @@ button, input, textarea, select {
   });
   categorySelect.addEventListener("change", renderGames);
 
-  async function loadCloudGame(item) {
+  let isCloudLoading = false;
+
+  async function loadCloudGame(item, targetBtn) {
+    if (isCloudLoading) return;
     if (!window.__norMakerLoadGmkFromBuffer) {
       alert("محرك GMK قيد التهيئة، يرجى الانتظار ثوانٍ والمحاولة مجدداً.");
       return;
     }
 
+    isCloudLoading = true;
+    const originalBtnText = targetBtn ? targetBtn.innerHTML : "";
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.style.opacity = "0.7";
+      targetBtn.style.cursor = "wait";
+      targetBtn.innerHTML = "<span>⏳ جاري التحميل...</span>";
+    }
+
     statusDiv.style.display = "flex";
     statusText.textContent = `جاري استدعاء "${item.title}" من السحابة...`;
-    progressBar.style.width = "25%";
+    setCloudProgress(25);
 
     try {
       const localSampleMap = {
@@ -154529,7 +154631,7 @@ button, input, textarea, select {
       for (const src of sources) {
         try {
           statusText.textContent = `جاري جلب ${item.title} (${item.sizeFormatted})...`;
-          progressBar.style.width = "50%";
+          setCloudProgress(50);
           buffer = await readBuffer(src);
           if (buffer && buffer.byteLength > 100) break;
         } catch (err) {
@@ -154541,12 +154643,12 @@ button, input, textarea, select {
         throw lastErr || new Error("فشل الاتصال برابط اللعبة في السحابة");
       }
 
-      progressBar.style.width = "85%";
+      setCloudProgress(85);
       statusText.textContent = `جاري فك ضغط واستيراد موارد المشروع (${item.title})...`;
 
       await window.__norMakerLoadGmkFromBuffer(buffer, item.filename);
 
-      progressBar.style.width = "100%";
+      setCloudProgress(100);
       statusText.textContent = `تم استيراد ${item.title} وتهيئة أزرار التحكم اللمسية تلقائياً! 🎮`;
       setTimeout(() => {
         statusDiv.style.display = "none";
@@ -154557,6 +154659,14 @@ button, input, textarea, select {
       console.error("Cloud game load failed:", error);
       statusDiv.style.display = "none";
       alert("تعذر استدعاء اللعبة من السحابة:\n" + (error.message || error));
+    } finally {
+      isCloudLoading = false;
+      if (targetBtn) {
+        targetBtn.disabled = false;
+        targetBtn.style.opacity = "1";
+        targetBtn.style.cursor = "pointer";
+        targetBtn.innerHTML = originalBtnText;
+      }
     }
   }
 })();

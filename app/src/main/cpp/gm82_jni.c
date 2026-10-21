@@ -18,6 +18,7 @@
 #include "gm82_events.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_actions.h"
+#include "gm82_script.h"
 
 #define LOG_TAG "NOR_NATIVE"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -37,6 +38,7 @@ static gm82_decoded_object_list g_engine_objs;
 static gm82_decoded_room_list g_engine_rooms;
 static gm82_sprite_group_list g_engine_sprite_groups;
 static gm82_action_table g_engine_actions;
+static gm82_script_list g_engine_scripts;
 static gm82_input_state g_engine_input;
 static int g_engine_loaded = 0;
 
@@ -201,6 +203,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeDestroy(JNIEnv *env, jcla
         free(g_engine_rooms.items);
         gm82_sprite_group_list_free(&g_engine_sprite_groups);
         gm82_action_table_free(&g_engine_actions);
+        memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
         g_engine_loaded = 0;
     }
     LOGI("Runtime destroyed");
@@ -210,6 +213,7 @@ JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass clazz, jfloat delta) {
     if (!g_runtime_active) return;
     float dt = delta > 0.0f ? delta : 0.016667f;
+    gm82_input_bind_global(&g_engine_input);
     if (g_engine_loaded && g_engine_rt.running) {
         gm82_input_begin_frame(&g_engine_input);
         gm82_runtime_step(&g_engine_rt);
@@ -222,11 +226,17 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass 
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeKey(JNIEnv *env, jclass clazz, jint keyCode, jboolean down) {
+    gm82_input_bind_global(&g_engine_input);
     if (down) {
         gm82_input_key_down(&g_engine_input, (int)keyCode);
     } else {
         gm82_input_key_up(&g_engine_input, (int)keyCode);
     }
+}
+
+JNIEXPORT void JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetRoomSpeed(JNIEnv *env, jclass clazz, jint speed) {
+    gm82_runtime_set_room_speed(&g_engine_rt, speed);
 }
 
 JNIEXPORT void JNICALL
@@ -568,8 +578,22 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
     void *pixels = NULL;
     if (AndroidBitmap_lockPixels(env, target, &pixels) < 0 || !pixels) return JNI_FALSE;
 
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.running) {
-        gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height);
+    int room_valid = (g_engine_loaded && g_engine_rooms.count > 0 &&
+                      g_engine_rt.current_room >= 0 &&
+                      g_engine_rt.current_room < g_engine_rooms.count);
+
+    if (g_engine_loaded && g_runtime_active && g_engine_rt.running && room_valid) {
+        if (!gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height)) {
+            /* Fallback background clear on draw error */
+            uint8_t *rgba = (uint8_t *)pixels;
+            size_t total = (size_t)info.width * (size_t)info.height;
+            for (size_t i = 0; i < total; i++) {
+                rgba[i * 4 + 0] = 20;
+                rgba[i * 4 + 1] = 20;
+                rgba[i * 4 + 2] = 40;
+                rgba[i * 4 + 3] = 255;
+            }
+        }
     } else {
         uint8_t *rgba = (uint8_t *)pixels;
         size_t total = (size_t)info.width * (size_t)info.height;
@@ -871,6 +895,7 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
         free(g_engine_rooms.items);
         gm82_sprite_group_list_free(&g_engine_sprite_groups);
         gm82_action_table_free(&g_engine_actions);
+        memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
         g_engine_loaded = 0;
     }
 
@@ -879,12 +904,16 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     memset(&g_engine_objs, 0, sizeof(g_engine_objs));
     memset(&g_engine_rooms, 0, sizeof(g_engine_rooms));
     memset(&g_engine_actions, 0, sizeof(g_engine_actions));
+    memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
 
     int n_spr = gm82_decode_sprites_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_sprites);
     int n_bg = gm82_decode_backgrounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_bgs);
     int n_obj = gm82_decode_objects_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_objs);
     int n_rm = gm82_decode_rooms_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_rooms);
     gm82_actions_scan_gmk((const uint8_t *)data, (size_t)len, &g_engine_actions);
+    memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
+    gm82_decode_scripts_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_scripts);
+    gm82_events_autobind_gml_from_gmk((const uint8_t *)data, (size_t)len);
 
     gm82_sprite_groups_build(&g_engine_sprites, &g_engine_sprite_groups);
 
@@ -898,6 +927,7 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
         &g_engine_rooms,
         &g_engine_actions);
     gm82_runtime_bind_sprite_groups(&g_engine_rt, &g_engine_sprite_groups);
+    gm82_runtime_bind_scripts(&g_engine_rt, &g_engine_scripts);
     gm82_input_init(&g_engine_input);
     gm82_input_bind_global(&g_engine_input);
 

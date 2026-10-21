@@ -1,0 +1,11 @@
+--- a/app/src/main/cpp/src/gm82_events.c
++++ b/app/src/main/cpp/src/gm82_events.c
+@@ -110,6 +110,11 @@
+     if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count)
+         return NULL;
+     const char *name = rt->objects->items[object_index].name;
++    if (!name || !name[0]) return NULL;
++    /* Skip death/lose variants so they are not controlled as the player. */
++    if (strstr(name, "pierde") || strstr(name, "dead") || strstr(name, "lose") ||
++        strstr(name, "muerte") || strstr(name, "die"))
++        return NULL;
