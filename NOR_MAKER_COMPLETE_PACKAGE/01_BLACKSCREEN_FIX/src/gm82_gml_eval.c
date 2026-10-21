@@ -588,6 +588,18 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "point_in_rectangle") == 0) {
             *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
         }
+        if (strcmp(id, "point_in_circle") == 0) {
+            *out = gml_point_in_circle(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "point_in_triangle") == 0) {
+            *out = gml_point_in_triangle(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
+        }
+        if (strcmp(id, "point_direction_3d") == 0) {
+            *out = gml_point_direction_3d(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "hex_to_color") == 0) {
+            *out = gml_hex_to_color((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
         if (strcmp(id, "collision_rectangle") == 0) {
             *out = gml_collision_rectangle(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return true;
         }
