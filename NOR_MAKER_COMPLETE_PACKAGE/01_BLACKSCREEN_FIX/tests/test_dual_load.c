@@ -12,11 +12,12 @@ static void test_gmk_sample(const char *path) {
     gm82_project_ir *ir = NULL;
     bool playable = gm82_load_and_prepare(path, &ir, err, sizeof(err));
 
+    /* Should be playable when sprites/backgrounds materialize */
+    assert(playable == true);
     assert(ir != NULL);
+    assert(ir->complete == true);
     printf("  playable=%d, complete=%d, partial_count=%d\n",
            playable, ir->complete, ir->partial_count);
-    printf("  ok=false (expected), complete=%d, partial_count=%d\n",
-           ir->complete, ir->partial_count);
     printf("  message: %s\n", err);
     gm82_project_ir_free(ir);
     puts("test_gmk_sample PASS");
@@ -31,7 +32,7 @@ static void test_auto_detect(void) {
 int main(int argc, char **argv) {
     const char *sample = NULL;
     if (argc > 1) sample = argv[1];
-    else sample = "../../app/src/main/assets/www/samples/mario_bros.gmk";
+    else sample = "app/src/main/assets/www/samples/mario_bros.gmk";
 
     test_auto_detect();
     test_gmk_sample(sample);

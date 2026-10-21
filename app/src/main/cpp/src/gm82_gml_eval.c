@@ -1352,7 +1352,8 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "merge_color") == 0 || strcmp(id, "merge_colour") == 0) {
             double c1 = args[0], c2 = nargs >= 2 ? args[1] : 0, a = nargs >= 3 ? args[2] : 0.5;
-            if (a < 0) a = 0; if (a > 1) a = 1;
+            if (a < 0) a = 0;
+            if (a > 1) a = 1;
             int r1 = ((int)c1) & 255, g1 = (((int)c1)>>8)&255, b1 = (((int)c1)>>16)&255;
             int r2 = ((int)c2) & 255, g2 = (((int)c2)>>8)&255, b2 = (((int)c2)>>16)&255;
             int r = (int)(r1 + (r2-r1)*a), g = (int)(g1 + (g2-g1)*a), b = (int)(b1 + (b2-b1)*a);
