@@ -3639,8 +3639,6 @@ double gml_random_set_seed(double seed) {
 }
 double gml_random_get_seed(void) { return g_random_seed; }
 
-double gml_sound_pan(double sound_index, double pan) { (void)sound_index; (void)pan; return 1; }
-
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
