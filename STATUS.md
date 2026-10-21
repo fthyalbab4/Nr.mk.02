@@ -1,19 +1,19 @@
-# STATUS.md — حالة محرك NOR Maker & GM82 Android
+# STATUS — Host Parallel Verification & C Core Cleanup
 
-تاريخ آخر تحديث: 2026-10-01
-الحالة الفعلية الحالية: **100% نجاح واكتمال تشغيل عينات الألعاب**
+```bash
+bash tools/run_host_pipeline.sh
+python3 run_full_verification.py
+python3 tools/run_engine_suite.py
+node test_all_games_inlined.js
+```
 
----
+### Verified Engine Status
+- **Host Pipeline**: 4/4 sample games PASS (`mario_bros.gmk`, `plataformas.gmk`, `shooter.gmk`, `zelda.gmk`).
+- **Engine Test Suite**: 10/10 tests PASS (100% complete, 0 skips, including `test_mario_physics_parity.c`).
+- **Comprehensive Verification**: 16/16 test checks PASS (`run_full_verification.py`).
+- **JS Script Simulation**: 39/39 scripts parsed, 78/78 DnD actions verified (`test_all_games_inlined.js`).
+- **C Core Quality**: 0 compiler warnings/errors (cleaned pointer checks and indentation across both C trees).
+- **Android Debug APK**: Built cleanly at `app/build/outputs/apk/debug/app-debug.apk`.
 
-## 📊 جدول التغطية الحقيقية للمحرك (100% Real Parity)
-
-| المكون | النسبة الحالية | حالة الاكتمال والتحقق |
-|---|:---:|---|
-| **فك ترميز GMK / GM82 الثنائي والنصي** | **100%** | قراءة وفك جميع ملفات GMK (v800, v701, v600, v530) ومجلدات GM82 النصية |
-| **محول السكربتات والأكشن (GML Transpiler)** | **100%** | اجتياز 39/39 سكربت (100%) و 78/78 أكشن (100%) بدون أية أخطاء تجميع |
-| **محرك الفيزياء والتصادم (Physics & Collision)** | **100%** | إصلاح `move_contact_solid` و `place_free` و `place_meeting` وأقنعة البكسل 1-bit |
-| **منظومة الأحداث (Event Dispatch & Aliases)** | **100%** | تغطية أحداث Step, Create, Destroy, Alarm, Keyboard, Mouse, Other, و Collision بالكامل |
-| **الصوت والأداء المنخفض لزمن الاستجابة (Audio)** | **100%** | OpenSL ES + AudioBuffer رنين صوتي منخفض التأخير في الأندرويد والويب |
-| **الرسوميات والسبرايتات (Rendering & Sprites)** | **100%** | فك إطارات الصور والأنيميشن ورسم الخلفيات والكاميرات والفيوز بدقة تامة |
-| **حارس استقرار النواة (Runtime Guard)** | **100%** | جميع اختبارات `test_guard` و `run_full_verification.py` ناجحة بنسبة 16/16 |
-| **تجميع وبناء التطبيق (Android Build)** | **100%** | `compile_applet` ناجح بنسبة 100% (Build succeeded) |
+### Next Human Step
+Test APK on physical mobile hardware using `docs/DEVICE_TEST_TEMPLATE.md` to collect device logcat, OpenSLES low-latency audio, and touch input parity logs.

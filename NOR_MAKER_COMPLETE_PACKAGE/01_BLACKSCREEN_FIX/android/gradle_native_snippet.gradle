@@ -1,0 +1,20 @@
+// Paste into app/build.gradle android { }
+android {
+    defaultConfig {
+        externalNativeBuild {
+            cmake {
+                cFlags "-O2"
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+}

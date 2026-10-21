@@ -41,7 +41,16 @@ static void blit_rgba(gm82_framebuffer *fb, const uint8_t *src,
             const uint8_t *s = src + ((size_t)y * (size_t)sw + (size_t)x) * 4;
             uint8_t *d = fb->rgba + ((size_t)dy2 * (size_t)fb->width + (size_t)dx2) * 4;
             if (use_alpha && s[3] == 0) continue;
-            d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
+            if (use_alpha && s[3] < 255) {
+                uint32_t sa = s[3];
+                uint32_t da = 255 - sa;
+                d[0] = (uint8_t)((s[0] * sa + d[0] * da) / 255);
+                d[1] = (uint8_t)((s[1] * sa + d[1] * da) / 255);
+                d[2] = (uint8_t)((s[2] * sa + d[2] * da) / 255);
+                d[3] = 255;
+            } else {
+                d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
+            }
         }
     }
 }

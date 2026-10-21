@@ -1,6 +1,6 @@
 # NOR Maker / GM82 Android Runtime – Progress Report
 
-**تاريخ:** 2026-09-15
+**تاريخ:** 2026-09-15  
 **الهدف النهائي:** محاكاة كاملة لألعاب Game Maker 8.2 / GMK بحيث تُلعب تماماً كما في نسخة الويندوز (نفس الـ timing، events، collision، draw order، GML).
 
 ---
@@ -27,12 +27,12 @@
 
 ## ما تم إنجازه في هذه الجلسة (تنفيذ فعلي)
 
-1. **تأكيد حالة الـ Sprite Decoder**
-   - mario_bros.gmk → 78 frames مفكوكة بنجاح (BGRA→RGBA).
-   - shooter.gmk → 1 frame.
+1. **تأكيد حالة الـ Sprite Decoder**  
+   - mario_bros.gmk → 78 frames مفكوكة بنجاح (BGRA→RGBA).  
+   - shooter.gmk → 1 frame.  
    - zelda / plataformas → 0 (يحتاج توسيع نمط المسح).
 
-2. **الـ Runtime Guard يعمل كما يجب**
+2. **الـ Runtime Guard يعمل كما يجب**  
    - يمنع أي تشغيل إذا `complete == false` → لا هلوسة ولا شاشة سوداء وهمية.
 
 3. **تحسينات مباشرة تم إدخالها:**
@@ -67,5 +67,5 @@
 - لا يُعلن 100% إلا بعد نجاح corpus من 20+ لعبة حقيقية بدون freeze أو partial rendering.
 - كل مرحلة لها اختبار regression.
 
-**النسبة الحالية: 22%**
+**النسبة الحالية: 22%**  
 الهدف التالي القريب: **35%** بعد إكمال decode الـ sprites/backgrounds لمعظم العينات.

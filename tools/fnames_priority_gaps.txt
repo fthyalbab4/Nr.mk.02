@@ -1,0 +1,3 @@
+# After maximal parallel host pass — priority symbols largely wired.
+# Wired: instance_count/id, keyboard_*, path_*, room_*, sprite offsets, dialogs soft
+# Hundreds of other fnames remain; fill when a real game FAILs and names the symbol.
