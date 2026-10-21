@@ -17,3 +17,7 @@
 ## 2026-10-15 - Accessible Live Status & ARIA Progress Reporting in Async Modals
 **Learning:** Async status messages and progress bars inside overlay modals are silent to screen reader users unless the status container uses `role="status"` and `aria-live="polite"`, and the progress bar element defines `role="progressbar"` with dynamic `aria-valuenow` updates.
 **Action:** Always wrap async loading feedback in a `role="status"` `aria-live="polite"` container and bind percentage updates to `aria-valuenow` on `role="progressbar"` wrappers.
+
+## 2026-10-20 - Modal Dialog Focus Restoration & Accessible Tab Trapping
+**Learning:** Dismissing an overlay modal dialog without restoring focus to `document.activeElement` leaves keyboard and screen reader users lost at `document.body`, breaking navigation flow. Additionally, allowing `Tab` navigation to bleed into background elements outside the modal violates WAI-ARIA modal dialog focus trap requirements.
+**Action:** Always capture `lastFocusedElement` when opening a modal, restore focus on modal dismissal, and trap `Tab`/`Shift+Tab` keyboard focus cycles within the modal container elements.
