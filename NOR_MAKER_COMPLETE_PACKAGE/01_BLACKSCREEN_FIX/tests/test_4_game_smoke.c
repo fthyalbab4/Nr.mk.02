@@ -12,10 +12,10 @@
 #include <stdint.h>
 
 static const char *samples[4] = {
-    "app/src/main/assets/www/samples/mario_bros.gmk",
-    "app/src/main/assets/www/samples/plataformas.gmk",
-    "app/src/main/assets/www/samples/shooter.gmk",
-    "app/src/main/assets/www/samples/zelda.gmk"
+    "../../app/src/main/assets/www/samples/mario_bros.gmk",
+    "../../app/src/main/assets/www/samples/plataformas.gmk",
+    "../../app/src/main/assets/www/samples/shooter.gmk",
+    "../../app/src/main/assets/www/samples/zelda.gmk"
 };
 
 static bool resolve_path(const char *path, char *out, size_t out_sz) {
