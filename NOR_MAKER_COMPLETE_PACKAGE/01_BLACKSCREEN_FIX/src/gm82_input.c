@@ -104,3 +104,8 @@ double gml_mouse_check_button_pressed(double button) {
     /* pressed edge not tracked separately for mouse yet – approximate with down */
     return gml_mouse_check_button(button);
 }
+
+double gml_mouse_check_button_released(double button) {
+    (void)button;
+    return 0.0;
+}

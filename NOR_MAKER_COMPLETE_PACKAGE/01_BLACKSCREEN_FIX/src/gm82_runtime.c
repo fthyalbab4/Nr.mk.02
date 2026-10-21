@@ -67,7 +67,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->solid = o->solid;
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
@@ -116,6 +116,7 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
     inst->x = x; inst->y = y;
+    inst->xstart = x; inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0; inst->image_yscale = 1.0;
     inst->alive = 1;

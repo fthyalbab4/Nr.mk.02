@@ -1,21 +1,16 @@
-# GAPS_HONEST — بدون تضخيم
+# GAPS_HONEST — stop condition for parallel stubs
 
-## الفحص الدوري اليومي (Daily Periodic Audit - 2026-10-24)
-- **Host Full Verification**: 16/16 Passed
-- **C Core Unit Tests**: 3/3 Binaries Passed
-- **Total Weighted Engine Parity**: ~36.75% (~37%)
-- **Android Physical Device**: UNVERIFIED / BLOCKED
+## Done on host (parallel 1–7 + prior)
+Nearly all generic GML/DnD soft gaps that do not require assets, device, or per-game binary args.
 
-## Runner 2026-10-16
-- place_meeting/bbox: scale + origin (origin decode from GMK still open)
-- solid collision phase: snapshot + origin AABB
-- host ASSEMBLE event/AABB: PASS
+## Remaining (real blockers)
+1. Android APK playtest
+2. Cloud game FAIL → specific missing symbol
+3. Full DnD arg tables from action library layouts
+4. Real save/load + sound/font asset E2E
+5. Host pipeline movement inject: Keyboard input arrow right (VK 39) drives movement natively for samples; host pipeline soft fallback only nudges `hspeed` after 15 steps if position remains completely unchanged.
+6. Pure GML zero host-fallback for every title
 
-## مفتوح (أولوية)
-| فجوة | ملاحظات |
-|------|---------|
-| Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
-| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB محسّن |
-| sprite origin من GMK | حقول موجودة؛ القيم لسه 0 من القارئ |
-| GML كامل | interpreter جزئي |
-| صوت على جهاز | إثبات مطلوب |
+**Repeating "fill all gaps in parallel" without a FAIL log only adds stubs that do not move device parity.**
+
+No 100% claim.

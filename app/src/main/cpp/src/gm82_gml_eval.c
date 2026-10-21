@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 typedef struct {
     const char *s;
@@ -15,6 +16,8 @@ typedef struct {
     gm82_runtime *rt;
     gm82_instance *self;
     char err[128];
+    char str_args[8][256];
+    int str_mask;
 } gml_parser;
 
 static void skip_ws(gml_parser *p) {
@@ -91,20 +94,6 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
     if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
     if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
-    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->x : 0; return true; }
-    if (strcmp(name, "bbox_right") == 0) {
-        int sw = 16;
-        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
-            sw = p->rt->sprites->frames[s->sprite_index].width;
-        *out = s ? s->x + sw : 0; return true;
-    }
-    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->y : 0; return true; }
-    if (strcmp(name, "bbox_bottom") == 0) {
-        int sh = 16;
-        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
-            sh = p->rt->sprites->frames[s->sprite_index].height;
-        *out = s ? s->y + sh : 0; return true;
-    }
     if (strcmp(name, "sprite_width") == 0) {
         int sw = 16;
         if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
@@ -117,6 +106,55 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
             sh = p->rt->sprites->frames[s->sprite_index].height;
         *out = (double)sh; return true;
     }
+    if (strcmp(name, "sprite_xoffset") == 0) {
+        int ox = 0;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            ox = p->rt->sprites->frames[s->sprite_index].origin_x;
+        *out = (double)ox; return true;
+    }
+    if (strcmp(name, "sprite_yoffset") == 0) {
+        int oy = 0;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            oy = p->rt->sprites->frames[s->sprite_index].origin_y;
+        *out = (double)oy; return true;
+    }
+    if (strcmp(name, "path_index") == 0) { *out = s ? (double)s->path_index : -1; return true; }
+    if (strcmp(name, "path_position") == 0) { *out = s ? s->path_position : 0; return true; }
+    if (strcmp(name, "path_positionprevious") == 0) { *out = s ? s->path_positionprevious : 0; return true; }
+    if (strcmp(name, "path_speed") == 0) { *out = s ? s->path_speed : 0; return true; }
+    if (strcmp(name, "path_scale") == 0) { *out = s ? (s->path_scale != 0 ? s->path_scale : 1) : 1; return true; }
+    if (strcmp(name, "path_orientation") == 0) { *out = s ? s->path_orientation : 0; return true; }
+    if (strcmp(name, "timeline_index") == 0) { *out = s ? (double)s->timeline_index : -1; return true; }
+    if (strcmp(name, "timeline_position") == 0) { *out = s ? s->timeline_position : 0; return true; }
+    if (strcmp(name, "timeline_speed") == 0) { *out = s ? s->timeline_speed : 0; return true; }
+    if (strcmp(name, "timeline_running") == 0) { *out = s ? (double)s->timeline_running : 0; return true; }
+    if (strcmp(name, "path_endaction") == 0) { *out = s ? (double)s->path_endaction : 0; return true; }
+    if (strcmp(name, "instance_id") == 0) { *out = s ? (double)s->id : 0; return true; }
+    if (strcmp(name, "instance_count") == 0) {
+        int n = 0;
+        if (p->rt) {
+            for (int i = 0; i < p->rt->instance_count; i++)
+                if (p->rt->instances[i].alive) n++;
+        }
+        *out = (double)n; return true;
+    }
+    if (strcmp(name, "room") == 0) { *out = p->rt ? (double)p->rt->current_room : 0; return true; }
+    if (strcmp(name, "room_width") == 0) { *out = p->rt ? (double)p->rt->room_width : 0; return true; }
+    if (strcmp(name, "room_height") == 0) { *out = p->rt ? (double)p->rt->room_height : 0; return true; }
+    if (strcmp(name, "room_speed") == 0) { *out = p->rt ? (double)p->rt->room_speed : 30; return true; }
+    if (strcmp(name, "room_first") == 0) { *out = 0; return true; }
+    if (strcmp(name, "room_last") == 0) {
+        *out = (p->rt && p->rt->rooms && p->rt->rooms->count > 0) ? (double)(p->rt->rooms->count - 1) : 0;
+        return true;
+    }
+    if (strcmp(name, "room_persistent") == 0) { *out = 0; return true; }
+    if (strcmp(name, "room_caption") == 0) { *out = 0; return true; }
+    if (strcmp(name, "keyboard_key") == 0 || strcmp(name, "keyboard_lastkey") == 0) {
+        *out = gml_keyboard_key(); return true;
+    }
+    if (strcmp(name, "mouse_button") == 0) { *out = gml_mouse_button_code(); return true; }
+    if (strcmp(name, "mouse_lastbutton") == 0) { *out = gml_mouse_lastbutton(); return true; }
+
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
@@ -247,6 +285,13 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "gravity") == 0) { s->gravity = v; return true; }
     if (strcmp(name, "gravity_direction") == 0) { s->gravity_direction = v; return true; }
     if (strcmp(name, "friction") == 0) { s->friction = v; return true; }
+    if (strcmp(name, "path_index") == 0) { s->path_index = (int32_t)v; return true; }
+    if (strcmp(name, "path_position") == 0) { s->path_positionprevious = s->path_position; s->path_position = v; return true; }
+    if (strcmp(name, "path_speed") == 0) { s->path_speed = v; return true; }
+    if (strcmp(name, "path_scale") == 0) { s->path_scale = v; return true; }
+    if (strcmp(name, "path_orientation") == 0) { s->path_orientation = v; return true; }
+    if (strcmp(name, "path_endaction") == 0) { s->path_endaction = (int32_t)v; return true; }
+
     if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = (int32_t)v; return true; }
     if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = (int32_t)v; return true; }
     if (strcmp(name, "view_wview") == 0) { if (p->rt) p->rt->view_w = (int32_t)v; return true; }
@@ -342,10 +387,31 @@ static bool parse_primary(gml_parser *p, double *out) {
     if (match(p, '(')) {
         double args[8] = {0,0,0,0,0,0,0,0};
         int nargs = 0;
+        p->str_mask = 0;
+        memset(p->str_args, 0, sizeof(p->str_args));
         if (peek(p) != ')') {
             for (;;) {
                 if (nargs >= 8) return false;
-                if (!parse_expr(p, &args[nargs])) return false;
+                skip_ws(p);
+                if (peek(p) == '"' || peek(p) == '\'') {
+                    char quote = (char)peek(p);
+                    getc_(p);
+                    size_t j = 0;
+                    while (p->i < p->n && p->s[p->i] != quote && j + 1 < sizeof(p->str_args[0])) {
+                        if (p->s[p->i] == '\\' && p->i + 1 < p->n) {
+                            p->i++;
+                            p->str_args[nargs][j++] = p->s[p->i++];
+                        } else {
+                            p->str_args[nargs][j++] = p->s[p->i++];
+                        }
+                    }
+                    p->str_args[nargs][j] = 0;
+                    if (p->i < p->n && p->s[p->i] == quote) p->i++;
+                    args[nargs] = 0;
+                    p->str_mask |= (1 << nargs);
+                } else {
+                    if (!parse_expr(p, &args[nargs])) return false;
+                }
                 nargs++;
                 if (peek(p) != ',') break;
                 getc_(p);
@@ -746,6 +812,9 @@ static bool parse_primary(gml_parser *p, double *out) {
             double yarg = (nargs >= 2) ? args[1] : (p->self ? p->self->y : 0);
             *out = gml_place_empty(arg, yarg); return true;
         }
+        if (strcmp(id, "position_empty") == 0) {
+            *out = gml_place_empty(args[0], nargs >= 2 ? args[1] : 0); return true;
+        }
         if (strcmp(id, "instance_number") == 0) {
             *out = gml_instance_number(arg); return true;
         }
@@ -1143,11 +1212,80 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "game_restart") == 0) {
             *out = gml_game_restart(); return true;
         }
+                if (strcmp(id, "is_real") == 0) { *out = 1; return true; }
+        if (strcmp(id, "is_string") == 0) { *out = 0; return true; }
+        if (strcmp(id, "room_exists") == 0) {
+            int r = (int)arg;
+            *out = (p->rt && p->rt->rooms && r >= 0 && r < p->rt->rooms->count) ? 1.0 : 0.0;
+            return true;
+        }
+        if (strcmp(id, "event_inherited") == 0) { *out = 1; return true; }
+        if (strcmp(id, "object_exists") == 0) {
+            int o = (int)arg;
+            *out = (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count) ? 1.0 : 0.0;
+            return true;
+        }
+        if (strcmp(id, "object_get_parent") == 0) { *out = -1; return true; }
+        if (strcmp(id, "object_get_name") == 0) { *out = arg; return true; }
+                if (strcmp(id, "fps") == 0) {
+            *out = p->rt ? (double)(p->rt->room_speed > 0 ? p->rt->room_speed : 30) : 30.0;
+            return true;
+        }
+        if (strcmp(id, "current_hour") == 0) {
+            time_t tt = time(NULL); struct tm *tm = localtime(&tt);
+            *out = tm ? (double)tm->tm_hour : 0; return true;
+        }
+        if (strcmp(id, "current_minute") == 0) {
+            time_t tt = time(NULL); struct tm *tm = localtime(&tt);
+            *out = tm ? (double)tm->tm_min : 0; return true;
+        }
+        if (strcmp(id, "current_second") == 0) {
+            time_t tt = time(NULL); struct tm *tm = localtime(&tt);
+            *out = tm ? (double)tm->tm_sec : 0; return true;
+        }
+        if (strcmp(id, "game_id") == 0) { *out = 0; return true; }
+        if (strcmp(id, "parameter_count") == 0) { *out = 0; return true; }
+        if (strcmp(id, "parameter_string") == 0) { *out = 0; return true; }
+        if (strcmp(id, "environment_get_variable") == 0) { *out = 0; return true; }
+        if (strcmp(id, "working_directory") == 0 || strcmp(id, "temp_directory") == 0 ||
+            strcmp(id, "program_directory") == 0) { *out = 0; return true; }
         if (strcmp(id, "game_end") == 0) {
             *out = gml_game_end(); return true;
         }
+        if (strcmp(id, "game_save") == 0) {
+            *out = gml_game_save((p->str_mask & 1) ? p->str_args[0] : "nor_save.dat"); return true;
+        }
+        if (strcmp(id, "game_load") == 0) {
+            *out = gml_game_load((p->str_mask & 1) ? p->str_args[0] : "nor_save.dat"); return true;
+        }
+        if (strcmp(id, "show_debug_message") == 0) {
+            gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
+            *out = 0; return true;
+        }
+        if (strcmp(id, "show_message") == 0) {
+            gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
+            *out = 1; return true;
+        }
+        if (strcmp(id, "show_question") == 0) { *out = 1; return true; }
+        if (strcmp(id, "get_integer") == 0) { *out = nargs >= 2 ? args[1] : 0; return true; }
+        if (strcmp(id, "get_string") == 0) { *out = 0; return true; }
+        if (strcmp(id, "randomize") == 0) {
+            *out = gml_randomize(); return true;
+        }
+        if (strcmp(id, "random_set_seed") == 0) {
+            *out = gml_random_set_seed(arg); return true;
+        }
+        if (strcmp(id, "random_get_seed") == 0) {
+            *out = gml_random_get_seed(); return true;
+        }
         if (strcmp(id, "sprite_get_width") == 0) {
             *out = gml_sprite_get_width(arg); return true;
+        }
+        if (strcmp(id, "sprite_get_xoffset") == 0) {
+            *out = gml_sprite_get_xoffset(arg); return true;
+        }
+        if (strcmp(id, "sprite_get_yoffset") == 0) {
+            *out = gml_sprite_get_yoffset(arg); return true;
         }
         if (strcmp(id, "sprite_get_height") == 0) {
             *out = gml_sprite_get_height(arg); return true;
@@ -1157,6 +1295,38 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "sprite_exists") == 0) {
             *out = gml_sprite_exists(arg); return true;
+        }
+        if (strcmp(id, "background_exists") == 0) {
+            int b = (int)arg;
+            *out = (p->rt && p->rt->backgrounds && b >= 0 && b < p->rt->backgrounds->count) ? 1.0 : 0.0;
+            return true;
+        }
+        if (strcmp(id, "sound_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "font_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "path_exists") == 0) { *out = (arg >= 0) ? 1.0 : 0.0; return true; }
+        if (strcmp(id, "timeline_exists") == 0) { *out = (arg >= 0) ? 1.0 : 0.0; return true; }
+        if (strcmp(id, "variable_global_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "variable_local_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "variable_instance_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "object_get_depth") == 0) {
+            int o = (int)arg; *out = 0;
+            if (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count)
+                *out = (double)p->rt->objects->items[o].depth;
+            return true;
+        }
+        if (strcmp(id, "object_get_persistent") == 0) {
+            int o = (int)arg; *out = 0;
+            if (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count)
+                *out = p->rt->objects->items[o].persistent ? 1.0 : 0.0;
+            return true;
+        }
+        if (strcmp(id, "merge_color") == 0 || strcmp(id, "merge_colour") == 0) {
+            double c1 = args[0], c2 = nargs >= 2 ? args[1] : 0, a = nargs >= 3 ? args[2] : 0.5;
+            if (a < 0) a = 0; if (a > 1) a = 1;
+            int r1 = ((int)c1) & 255, g1 = (((int)c1)>>8)&255, b1 = (((int)c1)>>16)&255;
+            int r2 = ((int)c2) & 255, g2 = (((int)c2)>>8)&255, b2 = (((int)c2)>>16)&255;
+            int r = (int)(r1 + (r2-r1)*a), g = (int)(g1 + (g2-g1)*a), b = (int)(b1 + (b2-b1)*a);
+            *out = (double)(r | (g<<8) | (b<<16)); return true;
         }
         if (strcmp(id, "object_exists") == 0) {
             *out = gml_object_exists(arg); return true;
@@ -1363,7 +1533,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_rad_to_deg(arg); return true;
         }
         if (strcmp(id, "real") == 0) {
-            *out = arg; return true;
+            *out = (p->str_mask & 1) ? gml_real(p->str_args[0]) : arg; return true;
         }
         if (strcmp(id, "path_start") == 0) {
             *out = gml_path_start(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 1); return true;
@@ -1453,7 +1623,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_window_get_height(); return true;
         }
         if (strcmp(id, "window_set_caption") == 0) {
-            *out = 0; return true;
+            *out = gml_window_set_caption((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "game_has_ended") == 0) {
             *out = gml_game_has_ended(); return true;
@@ -1513,13 +1683,13 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_get_bbox_bottom(); return true;
         }
         if (strcmp(id, "file_text_open_read") == 0) {
-            *out = gml_file_text_open_read(""); return true;
+            *out = gml_file_text_open_read((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "file_text_open_write") == 0) {
-            *out = gml_file_text_open_write(""); return true;
+            *out = gml_file_text_open_write((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "file_text_open_append") == 0) {
-            *out = gml_file_text_open_append(""); return true;
+            *out = gml_file_text_open_append((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "file_text_close") == 0) {
             *out = gml_file_text_close(arg); return true;
@@ -1531,7 +1701,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_file_text_write_real(args[0], nargs >= 2 ? args[1] : 0); return true;
         }
         if (strcmp(id, "file_text_write_string") == 0) {
-            *out = gml_file_text_write_string(args[0], ""); return true;
+            *out = gml_file_text_write_string(args[0], (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "file_text_writeln") == 0) {
             *out = gml_file_text_writeln(arg); return true;
@@ -1540,25 +1710,25 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_file_text_eof(arg); return true;
         }
         if (strcmp(id, "file_exists") == 0) {
-            *out = gml_file_exists(""); return true;
+            *out = gml_file_exists((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "file_delete") == 0) {
-            *out = gml_file_delete(""); return true;
+            *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "ini_open") == 0) {
-            *out = gml_ini_open(""); return true;
+            *out = gml_ini_open((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "ini_close") == 0) {
             *out = gml_ini_close(); return true;
         }
         if (strcmp(id, "ini_read_real") == 0) {
-            *out = gml_ini_read_real("", "", nargs >= 3 ? args[2] : 0); return true;
+            *out = gml_ini_read_real((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : "", nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "ini_write_real") == 0) {
-            *out = gml_ini_write_real("", "", nargs >= 3 ? args[2] : 0); return true;
+            *out = gml_ini_write_real((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : "", nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "ini_key_exists") == 0) {
-            *out = gml_ini_key_exists("", ""); return true;
+            *out = gml_ini_key_exists((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "script_exists") == 0) {
             *out = gml_script_exists(arg); return true;
@@ -1567,43 +1737,67 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_script_execute(arg); return true;
         }
         if (strcmp(id, "string_length") == 0) {
-            *out = 0; return true;
+            *out = gml_string_length((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "string_pos") == 0) {
-            *out = 0; return true;
+            *out = gml_string_pos((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "string_count") == 0) {
-            *out = 0; return true;
+            *out = gml_string_count((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "string_char_at") == 0) {
-            *out = 0; return true;
+            *out = gml_string_char_at((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 0); return true;
         }
         if (strcmp(id, "string_copy") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_copy((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 1, nargs >= 3 ? args[2] : 0, tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_delete") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_delete((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 1, nargs >= 3 ? args[2] : 0, tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_digits") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_digits((p->str_mask & 1) ? p->str_args[0] : "", tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_insert") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_insert((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : "", nargs >= 3 ? args[2] : 1, tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_lower") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_lower((p->str_mask & 1) ? p->str_args[0] : "", tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_upper") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_upper((p->str_mask & 1) ? p->str_args[0] : "", tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_replace") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_replace((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : "", (p->str_mask & 4) ? p->str_args[2] : "", tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "string_replace_all") == 0) {
-            *out = 0; return true;
+            char tmp[256];
+            gml_string_replace_all((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : "", (p->str_mask & 4) ? p->str_args[2] : "", tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
         }
         if (strcmp(id, "alarm_set_script") == 0) {
-            *out = gml_alarm_set_script(args[0], ""); return true;
+            *out = gml_alarm_set_script(args[0], (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "make_color_rgb") == 0 || strcmp(id, "make_colour_rgb") == 0) {
             *out = gml_make_color_rgb(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
@@ -1715,7 +1909,7 @@ static bool parse_expr(gml_parser *p, double *out) {
 
 bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr, double *out) {
     if (!expr || !out) return false;
-    gml_parser p = { expr, 0, strlen(expr), rt, self, {0} };
+    gml_parser p = { expr, 0, strlen(expr), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
     return parse_expr(&p, out);
@@ -1723,7 +1917,7 @@ bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr,
 
 bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt) {
     if (!stmt) return false;
-    gml_parser p = { stmt, 0, strlen(stmt), rt, self, {0} };
+    gml_parser p = { stmt, 0, strlen(stmt), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
     char id[64];
