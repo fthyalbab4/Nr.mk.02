@@ -74,7 +74,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
         /* Name heuristics when GMK solid bit is wrong/zero */
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
@@ -83,6 +83,19 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         }
     }
 }
+
+void gm82_runtime_compact_instances(gm82_runtime *rt) {
+    if (!rt) return;
+    int write_idx = 0;
+    for (int read_idx = 0; read_idx < rt->instance_count; read_idx++) {
+        if (rt->instances[read_idx].alive) {
+            if (write_idx != read_idx) rt->instances[write_idx] = rt->instances[read_idx];
+            write_idx++;
+        }
+    }
+    rt->instance_count = write_idx;
+}
+
 
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
     if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
@@ -458,6 +471,8 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
             }
         }
     }
+
+    gm82_events_fire_draw_all(rt);
 
     int order[GM82_MAX_INSTANCES];
     int n = 0;

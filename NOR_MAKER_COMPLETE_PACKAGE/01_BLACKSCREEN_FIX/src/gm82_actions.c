@@ -127,7 +127,7 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
     }
 
     /* Second pass: harvest action_* from ANY inflate (shooter packs actions outside obj blobs) */
-    if (nobj == 0) {
+    if (nobj == 0 || 1) {
         gm82_object_actions global_bucket;
         memset(&global_bucket, 0, sizeof(global_bucket));
         strncpy(global_bucket.object_name, "_global_actions", sizeof(global_bucket.object_name)-1);
