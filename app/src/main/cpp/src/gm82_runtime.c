@@ -84,8 +84,26 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     }
 }
 
+void gm82_runtime_compact_instances(gm82_runtime *rt) {
+    if (!rt) return;
+    int write_idx = 0;
+    for (int read_idx = 0; read_idx < rt->instance_count; read_idx++) {
+        if (rt->instances[read_idx].alive) {
+            if (write_idx != read_idx) {
+                rt->instances[write_idx] = rt->instances[read_idx];
+            }
+            write_idx++;
+        }
+    }
+    rt->instance_count = write_idx;
+}
+
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
-    if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    if (!rt) return NULL;
+    if (rt->instance_count >= GM82_MAX_INSTANCES) {
+        gm82_runtime_compact_instances(rt);
+        if (rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    }
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;

@@ -86,17 +86,19 @@ static void scan_bg_blob(gm82_decoded_background_list *L, const uint8_t *d, size
     size_t off = 8 + (size_t)slen + 8; /* skip double */
     if (off + 4 > len) return;
     int32_t ver = rd_i32(d + off);
-    if (ver != 710 && ver != 800 && ver != 543 && ver != 400) return;
+    if (ver != 710 && ver != 800 && ver != 701 && ver != 600 && ver != 543 && ver != 542 && ver != 400) return;
     off += 4;
 
     int best_j = -1, best_w = 0, best_h = 0, best_dlen = 0;
-    for (size_t j = off; j + 16 < len; j += 4) {
+    /* Byte-step: same alignment issue as sprites after variable-length names */
+    for (size_t j = off; j + 16 < len; j++) {
         int32_t v = rd_i32(d + j);
-        if (v != 800) continue;
+        if (v != 800 && v != 710 && v != 701 && v != 600 &&
+            v != 543 && v != 542 && v != 520 && v != 500 && v != 400) continue;
         int32_t w = rd_i32(d + j + 4);
         int32_t h = rd_i32(d + j + 8);
         int32_t dlen = rd_i32(d + j + 12);
-        if (w < 8 || h < 8 || w > 4096 || h > 4096) continue;
+        if (w < 4 || h < 4 || w > 4096 || h > 4096) continue;
         if (dlen != w * h * 4) continue;
         if (j + 16 + (size_t)dlen > len) continue;
         if (best_j < 0 || w * h > best_w * best_h) {
@@ -105,12 +107,10 @@ static void scan_bg_blob(gm82_decoded_background_list *L, const uint8_t *d, size
     }
     if (best_j < 0) return;
 
-    /* Prefer names starting with background, or ver 710 chunks */
-    int accept = 0;
-    if (strncmp(name, "background", 10) == 0 || strncmp(name, "bg", 2) == 0)
-        accept = 1;
-    else if (ver == 710)
-        accept = 1;
+    /* Accept typical background names, or any blob that yielded a valid 800 frame */
+    int accept = 1;
+    if (strncmp(name, "sprite", 6) == 0 || strncmp(name, "obj_", 4) == 0)
+        accept = 0; /* avoid mis-classifying sprites as backgrounds when name is clear */
     if (!accept) return;
 
     list_push(L, name, best_w, best_h, d + best_j + 16, (size_t)best_dlen);
@@ -133,6 +133,10 @@ int gm82_decode_backgrounds_from_gmk(const uint8_t *data, size_t size,
             }
             i += 16;
         }
+    }
+    /* Fallback for legacy uncompressed GMK projects */
+    if (out->count == 0 && size > 40) {
+        scan_bg_blob(out, data, size);
     }
     return out->count;
 }
