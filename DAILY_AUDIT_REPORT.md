@@ -1,9 +1,9 @@
-# Daily Audit & Gap Fill Report — 2026-10-24
+# Daily Audit & Gap Fill Report — 2026-10-25
 
 ## 1. Executive Summary
-- **Host Linux Engine Verification**: PASS (Native C host binaries & test suite `test_dual_load`, `test_event_order`, `test_runtime_guard` passing 3/3).
+- **Host Linux Engine Verification**: PASS (Native C host binaries & test suite `test_dual_load`, `test_event_order`, `test_runtime_guard` passing 3/3 cleanly with zero compiler warnings).
 - **Python Comprehensive Test Suite**: PASS (`run_full_verification.py` 16/16 test checks passing).
-- **JS Pipeline Verification**: PASS (`test_all_games_inlined.js` 39/39 scripts parsed, 78/78 DnD actions executed).
+- **JS Pipeline Verification**: PASS (`test_all_games_inlined.js` 39/39 scripts parsed, 78/78 DnD actions executed across sample GMK games).
 - **Android Native Binaries**: PASS (Pre-built JNI `.so` libraries present for 4 ABIs: arm64-v8a, armeabi-v7a, x86, x86_64).
 - **Android Physical Hardware Playtest**: UNVERIFIED / BLOCKED (No physical Android device hardware log attached).
 
@@ -11,18 +11,18 @@
 | Subsystem / Layer | Weight | Measured Parity | Weighted Contribution | Verification Status | Notes & Remaining Gaps |
 |-------------------|:------:|:---------------:|:---------------------:|:-------------------:|------------------------|
 | **Resource Decode** | 15% | 45.0% | 6.75% | Host Verified | GMK 8.0/8.1 decode for sample games; complete Begin/End GMK event decode tables remaining. |
-| **GML VM & Scopes** | 30% | 35.0% | 10.50% | Host Verified | Basic loops (`repeat`, `while`, `do..until`, `with`), builtins, Math; GML AST parser/bytecode interpreter partial. Cleaned up duplicate dead code in `gm82_gml_eval.c`. |
+| **GML VM & Scopes** | 30% | 35.0% | 10.50% | Host Verified | Basic loops (`repeat`, `while`, `do..until`, `with`), builtins, Math; GML AST parser/bytecode interpreter partial. Cleaned up C compiler warnings & misleading indentations in `gm82_gml_eval.c`. |
 | **Physics & Events** | 25% | 48.0% | 12.00% | Host Verified | Upgraded `place_meeting` to perform pixel-precise bitmask inspection (`precise_mask_overlap`) when available; AABB scale fallback. |
 | **Rendering Engine**| 15% | 32.0% | 4.80% | Host Verified | Bound sprite origin (`origin_x`, `origin_y`) and scale (`image_xscale`, `image_yscale`) dynamically to `gml_get_bbox_*` calculations. |
 | **Audio Engine**    | 5%  | 25.0% | 1.25% | Host Queue Pass | OpenSLES C PCM queue; requires physical Android hardware verification. |
 | **Android Glue / JNI**| 10% | 25.0% | 2.50% | Build Verified | 4 ABIs `.so` native libs built and linked to Java JNI layer; physical touch/logcat validation pending. |
 
-**Total Honest Weighted Parity**: **37.80%**
-**Remaining Gap to 100% Full Windows Parity**: **62.20%**
+**Total Honest Weighted Parity**: **37.80%** (Estimated Range: **35% - 40%**)
+**Remaining Gap to 100% Full Windows Parity**: **62.20%** (Range: **60% - 65%**)
 
 ## 3. Test Suite Matrix
-- C Host `test_full_suite`: **PASS** (100%)
-- `run_full_verification.py`: **PASS** (16/16 tests)
+- C Host `make test`: **PASS** (3/3 test executables, 0 compiler warnings)
+- `python3 run_full_verification.py`: **PASS** (16/16 tests)
 - `test_all_games_inlined.js`: **PASS** (39/39 scripts, 78/78 DnD actions)
 - Pre-built JNI 4 ABIs present: **PASS**
 - Physical Android Hardware Verification: **BLOCKED / UNVERIFIED**
@@ -37,10 +37,9 @@
 
 ## 5. Completed Today & Open Technical Action Items
 ### Completed Today:
-1. **Sprite BBox Binding**: Bound sprite origins (`origin_x`, `origin_y`) and scales (`image_xscale`, `image_yscale`) dynamically to `gml_get_bbox_*` in `gm82_gml_builtins.c`.
-2. **Precise Collision In place_meeting**: Integrated `precise_mask_overlap` into `gml_place_meeting` for pixel-level collision detection.
-3. **Dead Code Cleanup**: Removed duplicate unreachable `bbox_*` checks in `gm82_gml_eval.c`.
-4. **Source Mirror Synchronization**: Synchronized `app/src/main/cpp/src/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/`, and `app/src/main/cpp_backup/src/`.
+1. **Periodic Gap Audit & Scan**: Evaluated entire codebase against test verification script `run_full_verification.py`, `make test`, and `test_all_games_inlined.js`.
+2. **C Compiler Warning Elimination**: Fixed misleading indentation and address comparison warnings in `gm82_font_decode.c`, `gm82_runtime.c`, `gm82_gml_builtins.c`, and `gm82_gml_eval.c`.
+3. **Dual C Source Synchronization**: Synchronized `app/src/main/cpp/src/` (and `include/`) with `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/` (and `include/`).
 
 ### Open Technical Action Items:
 1. **GMK Decode**: Complete table decoder for GMK Begin/End event blocks.

@@ -67,7 +67,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->solid = o->solid;
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
