@@ -70,8 +70,21 @@ double gm82_gml_get_script_arg(int index) {
 
 static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "global.", 7) == 0) {
+        return get_var(p, name + 7, out);
+    }
+    if (strncmp(name, "self.", 5) == 0) {
+        return get_var(p, name + 5, out);
+    }
     if (strncmp(name, "argument", 8) == 0 && isdigit((unsigned char)name[8])) {
         int idx = atoi(name + 8);
+        if (idx >= 0 && idx < 16) {
+            *out = g_script_args[idx];
+            return true;
+        }
+    }
+    if (strncmp(name, "arg", 3) == 0 && isdigit((unsigned char)name[3])) {
+        int idx = atoi(name + 3);
         if (idx >= 0 && idx < 16) {
             *out = g_script_args[idx];
             return true;
@@ -265,6 +278,12 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
 
 static bool set_var(gml_parser *p, const char *name, double v) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "global.", 7) == 0) {
+        return set_var(p, name + 7, v);
+    }
+    if (strncmp(name, "self.", 5) == 0) {
+        return set_var(p, name + 5, v);
+    }
     if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
         return false;
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
