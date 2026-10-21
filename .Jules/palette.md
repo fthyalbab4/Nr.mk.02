@@ -17,3 +17,7 @@
 ## 2026-10-15 - Accessible Live Status & ARIA Progress Reporting in Async Modals
 **Learning:** Async status messages and progress bars inside overlay modals are silent to screen reader users unless the status container uses `role="status"` and `aria-live="polite"`, and the progress bar element defines `role="progressbar"` with dynamic `aria-valuenow` updates.
 **Action:** Always wrap async loading feedback in a `role="status"` `aria-live="polite"` container and bind percentage updates to `aria-valuenow` on `role="progressbar"` wrappers.
+
+## 2026-10-16 - Focus Restoration & Dynamic Focus Rings in Modal Overlay Dialogs
+**Learning:** Closing overlay modals without returning focus to the trigger element leaves keyboard/screen-reader users stranded in the DOM. Additionally, interactive cards with `tabindex="0"` require explicit `onfocus`/`onblur` outline indicators to signal focus state during keyboard navigation.
+**Action:** Always capture `document.activeElement` before opening a modal and restore focus on close, and attach high-contrast focus ring handlers to interactive cards and inputs.
