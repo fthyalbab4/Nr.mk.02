@@ -105,7 +105,7 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
 
         gm82_decoded_object *o = &tmp[n++];
         memset(o, 0, sizeof(*o));
-        strncpy(o->name, name, sizeof(o->name)-1);
+        snprintf(o->name, sizeof(o->name), "%s", name);
         o->sprite_index = spr_i;
         o->solid = solid_i;
         o->visible = vis_i;
@@ -265,7 +265,7 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         if (n >= 32) { free(d); break; }
         gm82_decoded_room *r = &tmp[n++];
         memset(r, 0, sizeof(*r));
-        strncpy(r->name, name, sizeof(r->name)-1);
+        snprintf(r->name, sizeof(r->name), "%s", name);
         r->width = width; r->height = height; r->speed = speed;
 
         gm82_decoded_instance ibuf[1024];
