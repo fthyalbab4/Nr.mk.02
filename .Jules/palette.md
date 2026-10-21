@@ -17,3 +17,7 @@
 ## 2026-10-15 - Accessible Live Status & ARIA Progress Reporting in Async Modals
 **Learning:** Async status messages and progress bars inside overlay modals are silent to screen reader users unless the status container uses `role="status"` and `aria-live="polite"`, and the progress bar element defines `role="progressbar"` with dynamic `aria-valuenow` updates.
 **Action:** Always wrap async loading feedback in a `role="status"` `aria-live="polite"` container and bind percentage updates to `aria-valuenow` on `role="progressbar"` wrappers.
+
+## 2026-10-16 - Dynamic Card Grid Focus Elevation Parity
+**Learning:** In interactive card grids with `tabindex="0"`, relying solely on mouse hover listeners (`onmouseenter`/`onmouseleave`) for card elevation (`transform`, `boxShadow`, `borderColor`) leaves keyboard users with flat cards during Tab navigation, creating a visual disconnect between pointer and keyboard interactions.
+**Action:** Bind card elevation logic to both mouse (`onmouseenter`/`onmouseleave`) and focus (`onfocus`/`onblur`) events to ensure identical tactile feedback regardless of input method.

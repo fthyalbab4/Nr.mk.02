@@ -29,22 +29,28 @@ static void test_auto_detect(void) {
     puts("test_auto_detect (missing file) PASS");
 }
 
+static bool resolve_path(const char *path, char *out, size_t out_sz) {
+    FILE *f = fopen(path, "rb");
+    if (f) { fclose(f); snprintf(out, out_sz, "%s", path); return true; }
+    snprintf(out, out_sz, "../../%s", path);
+    f = fopen(out, "rb");
+    if (f) { fclose(f); return true; }
+    snprintf(out, out_sz, "%s", path);
+    return false;
+}
+
 int main(int argc, char **argv) {
     const char *sample = NULL;
+    char resolved[512];
     if (argc > 1) {
         sample = argv[1];
+        resolve_path(sample, resolved, sizeof(resolved));
     } else {
-        sample = "app/src/main/assets/www/samples/mario_bros.gmk";
-        FILE *f = fopen(sample, "rb");
-        if (!f) {
-            sample = "../../app/src/main/assets/www/samples/mario_bros.gmk";
-        } else {
-            fclose(f);
-        }
+        resolve_path("app/src/main/assets/www/samples/mario_bros.gmk", resolved, sizeof(resolved));
     }
 
     test_auto_detect();
-    test_gmk_sample(sample);
+    test_gmk_sample(resolved);
     puts("ALL_DUAL_LOAD_TESTS_PASS");
     return 0;
 }
