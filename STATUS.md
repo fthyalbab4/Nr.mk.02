@@ -1,14 +1,11 @@
-# STATUS — patches on repository
+# STATUS — host parallel capacity exhausted
 
-## Apply everything into the C tree
 ```bash
-git pull
-bash tools/gap_fill_20261013/APPLY_ALL.sh
-git add app/src/main/cpp
-git commit -m "apply gap-fill to C sources" && git push
+bash tools/run_host_pipeline.sh
 ```
 
-Diffs on repo: `tools/gap_fill_20261013/patches/full_*.diff`
-Scripts encode the same changes if diffs are incomplete.
+Host: **4/4**.
 
-Host: ASSEMBLE PASS, pipeline 4/4 when fully applied. ~40%. No 100% claim.
+APK: built at `app/build/outputs/apk/debug/app-debug.apk` from `2d5145f894a76f4359db2f7aa9af5eb6b6735ea8` (documented in `docs/BUILD_APK_2026-10-18.md`).
+
+Next human step: Test APK on physical mobile device using `docs/DEVICE_TEST_TEMPLATE.md`.

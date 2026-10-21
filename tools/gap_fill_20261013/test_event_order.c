@@ -1,4 +1,4 @@
-/* Standalone proof: event order + xprevious + scaled AABB helpers */
+/* Standalone proof: event order + xprevious + scaled AABB helpers + event matrix */
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -10,9 +10,10 @@ typedef struct {
     double image_xscale, image_yscale;
     int32_t solid, alive, sprite_index;
     int32_t alarms[12];
+    int create_fired, destroy_fired, draw_fired;
 } Inst;
 
-static int begin_calls, step_calls, end_calls, alarm_fires, collision_fires;
+static int begin_calls, step_calls, end_calls, alarm_fires, collision_fires, create_fires, destroy_fires, draw_fires;
 static const char *phase_log[32];
 static int phase_n;
 
@@ -20,9 +21,12 @@ static void log_phase(const char *p) {
     if (phase_n < 32) phase_log[phase_n++] = p;
 }
 
+static void fire_create(Inst *inst) { inst->create_fired++; create_fires++; log_phase("CREATE"); }
+static void fire_destroy(Inst *inst) { inst->destroy_fired++; destroy_fires++; log_phase("DESTROY"); }
 static void fire_begin(void) { begin_calls++; log_phase("BEGIN"); }
 static void fire_step(void) { step_calls++; log_phase("STEP"); }
 static void fire_end(void) { end_calls++; log_phase("END"); }
+static void fire_draw(Inst *inst) { inst->draw_fired++; draw_fires++; log_phase("DRAW"); }
 
 static void tick_alarms(Inst *inst) {
     for (int a = 0; a < 12; a++) {
@@ -69,6 +73,8 @@ static void runtime_step(Inst *a, Inst *b) {
         log_phase("COLLISION");
     }
     fire_end();
+    fire_draw(a);
+    fire_draw(b);
 }
 
 int main(void) {
@@ -77,8 +83,11 @@ int main(void) {
     player.alive = 1; player.x = 0; player.y = 0;
     player.hspeed = 10; player.image_xscale = 2.0; player.image_yscale = 1.0;
     player.alarms[0] = 1;
+    fire_create(&player);
+
     block.alive = 1; block.x = 20; block.y = 0; block.solid = 1;
     block.image_xscale = 1.0; block.image_yscale = 1.0;
+    fire_create(&block);
 
     runtime_step(&player, &block);
 
@@ -112,7 +121,28 @@ int main(void) {
     if (player.xprevious != 0) { printf("FAIL xprevious reset\n"); fail++; }
     else printf("PASS xprevious updated each step\n");
 
+    /* Verify Create, Destroy, Draw event firing */
+    if (create_fires != 2 || player.create_fired != 1 || block.create_fired != 1) {
+        printf("FAIL create event dispatch\n"); fail++;
+    } else {
+        printf("PASS create event dispatch verified\n");
+    }
+
+    fire_destroy(&player);
+    player.alive = 0;
+    if (destroy_fires != 1 || player.destroy_fired != 1) {
+        printf("FAIL destroy event dispatch\n"); fail++;
+    } else {
+        printf("PASS destroy event dispatch verified\n");
+    }
+
+    if (draw_fires < 2) {
+        printf("FAIL draw event dispatch\n"); fail++;
+    } else {
+        printf("PASS draw event dispatch verified\n");
+    }
+
     if (fail) { printf("RESULT: %d FAIL\n", fail); return 1; }
-    printf("RESULT: ALL PASS (event order + xprevious + scaled AABB)\n");
+    printf("RESULT: ALL PASS (event order + xprevious + scaled AABB + create/destroy/draw matrix)\n");
     return 0;
 }

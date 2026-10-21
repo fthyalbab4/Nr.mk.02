@@ -116,6 +116,7 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
     inst->x = x; inst->y = y;
+    inst->xstart = x; inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0; inst->image_yscale = 1.0;
     inst->alive = 1;
