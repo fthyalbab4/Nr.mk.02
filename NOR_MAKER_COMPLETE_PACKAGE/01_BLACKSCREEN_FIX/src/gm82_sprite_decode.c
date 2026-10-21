@@ -77,7 +77,7 @@ static bool list_push(gm82_decoded_sprite_list *L, const char *name,
     }
     gm82_decoded_frame *f = &L->frames[L->count];
     memset(f, 0, sizeof(*f));
-    strncpy(f->name, name ? name : "?", sizeof(f->name) - 1);
+    snprintf(f->name, sizeof(f->name), "%s", name ? name : "?");
     f->width = w;
     f->height = h;
     f->origin_x = origin_x;
@@ -286,7 +286,7 @@ void gm82_sprite_groups_build(const gm82_decoded_sprite_list *frames, gm82_sprit
         while (i < frames->count && strcmp(frames->frames[i].name, name) == 0) i++;
         gm82_sprite_group *g = &tmp[n++];
         memset(g, 0, sizeof(*g));
-        strncpy(g->name, name, sizeof(g->name)-1);
+        snprintf(g->name, sizeof(g->name), "%s", name);
         g->frame_start = start;
         g->frame_count = i - start;
         g->width = frames->frames[start].width;

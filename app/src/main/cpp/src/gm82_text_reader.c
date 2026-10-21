@@ -42,7 +42,7 @@ static void load_scripts_from_dir(const char *root, gm82_script_list *list) {
     while ((ent = readdir(d)) != NULL) {
         if (ent->d_name[0] == '.') continue;
         if (strstr(ent->d_name, ".gml")) {
-            char fpath[512];
+            char fpath[1024];
             snprintf(fpath, sizeof(fpath), "%s/%s", subpath, ent->d_name);
             FILE *f = fopen(fpath, "r");
             if (f) {
