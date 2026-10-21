@@ -249,6 +249,16 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_sound_pitch(ARG_R(0), ARG_R(1)));
         return 1;
     }
+    if (strcmp(name, "sound_play_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_play(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "sound_loop_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_loop(ARG_R(0)));
+        return 1;
+    }
     if (strcmp(name, "sound_pan") == 0 && count >= 2) {
         *out = gml_value_real(gml_sound_pan(ARG_R(0), ARG_R(1)));
         return 1;
@@ -480,8 +490,52 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_color_get_blue(ARG_R(0)));
         return 1;
     }
+    if (strcmp(name, "color_reverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_reverse(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "color_inverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_inverse(ARG_R(0)));
+        return 1;
+    }
 
     /* Additional Math built-ins */
+    if (strcmp(name, "dsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dcos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dcos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dtan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dtan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darcsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darcsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darccos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darccos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darctan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan2") == 0 && count >= 2) {
+        *out = gml_value_real(gml_darctan2(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_set_disk") == 0 && count >= 5) {
+        *out = gml_value_real(gml_ds_grid_set_disk(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "window_set_size") == 0 && count >= 2) {
+        *out = gml_value_real(gml_window_set_size(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
     if (strcmp(name, "angle_difference") == 0 && count >= 2) {
         *out = gml_value_real(gml_angle_difference(ARG_R(0), ARG_R(1)));
         return 1;
