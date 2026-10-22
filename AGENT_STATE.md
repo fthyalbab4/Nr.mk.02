@@ -1,12 +1,13 @@
 # AGENT_STATE — تقييم مهندسي شامل وخطة التوافق المتقدمة (Roadmap to 95%)
 
 ```
-overall_calculated_parity_percent: ~35-45% (بعد تنفيذ المراحل A و B و C و D)
-realistic_host_mvp_percent: ~40%
+overall_calculated_parity_percent: ~50-60% (بعد إصلاح ربط gml_vm.c وإعلانات الترويسات C الكاملة)
+realistic_host_mvp_percent: ~65%
 android_device_playable_percent: غير مُقاس (BLOCKED - لا يوجد هاتف مادي متصل)
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
+audit_suite_status: 4/4 PASS (100% Host Audit Pass Rate)
 ```
 
 ## تفصيل التوافق الموزون والدقيق للطبقات (Engine Layer Breakdown)

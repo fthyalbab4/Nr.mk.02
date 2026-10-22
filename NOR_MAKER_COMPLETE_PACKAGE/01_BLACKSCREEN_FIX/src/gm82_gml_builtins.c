@@ -424,6 +424,9 @@ double gml_get_y(void) { return g_self ? g_self->y : 0; }
 double gml_get_bbox_left(void) {
     if (!g_self) return 0;
     double ox = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
+        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    }
     for (int i = 0; i < g_self->var_count; i++) {
         if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
     }
@@ -434,6 +437,7 @@ double gml_get_bbox_right(void) {
     int32_t sw = 16; double ox = 0;
     if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sw = g_rt->sprites->frames[g_self->sprite_index].width;
+        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
     }
     for (int i = 0; i < g_self->var_count; i++) {
         if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
@@ -443,6 +447,9 @@ double gml_get_bbox_right(void) {
 double gml_get_bbox_top(void) {
     if (!g_self) return 0;
     double oy = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
+        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    }
     for (int i = 0; i < g_self->var_count; i++) {
         if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
     }
@@ -453,6 +460,7 @@ double gml_get_bbox_bottom(void) {
     int32_t sh = 16; double oy = 0;
     if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sh = g_rt->sprites->frames[g_self->sprite_index].height;
+        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
     }
     for (int i = 0; i < g_self->var_count; i++) {
         if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
