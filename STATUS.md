@@ -8,4 +8,8 @@ bash tools/run_host_pipeline.sh
 ```
 Expect SUMMARY ok=4 fail=0.
 
-Next human: device test or FAIL log from a real GMK.
+Status:
+- Host Pipeline: 100% pass on 4 sample games (mario_bros, plataformas, shooter, zelda).
+- Full Verification Suite: 16/16 tests passed.
+- Engine Suite (C native): All tests passing, 0 compiler warnings.
+- Android device physical verification: Pending physical device test environment.

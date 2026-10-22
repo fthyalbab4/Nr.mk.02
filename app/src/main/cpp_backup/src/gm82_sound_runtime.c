@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_sound_runtime.h"
 #include "gm82_opensles.h"
+#include "gm82_opensles_stub.h"
 #include <string.h>
 #include <stdio.h>
 
