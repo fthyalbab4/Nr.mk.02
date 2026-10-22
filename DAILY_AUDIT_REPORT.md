@@ -2,10 +2,10 @@
 
 ## 1. Executive Summary
 
-- **Host Linux Engine Verification**: PASS. Native C host binaries and test suites (`test_full_suite`, `test_dual_load`, `test_event_order`, `test_runtime_guard`) passed with 0 failures and 0 warnings.
+- **Host Linux Engine Verification**: PASS. Native C host binaries and test suites (`test_full_suite`, `test_dual_load`, `test_event_order`, `test_runtime_guard`) passed with 0 failures and 0 compilation warnings.
 - **Python Comprehensive Test Suite**: PASS (`run_full_verification.py` 16/16 test checks passing).
 - **JS Pipeline Verification**: PASS (`test_all_games_inlined.js` 39/39 scripts parsed, 78/78 DnD actions executed).
-- **C Unit Test Suite (01_BLACKSCREEN_FIX)**: PASS (`make test` in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` builds and passes all unit tests).
+- **C Unit Test Suite (01_BLACKSCREEN_FIX)**: PASS (`make test` in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` builds cleanly with `gml_vm.c` included and passes all unit tests).
 - **Android Native Binaries**: PASS (Pre-built JNI `.so` libraries present for 4 ABIs: arm64-v8a, armeabi-v7a, x86, x86_64).
 - **Android Physical Hardware Playtest**: UNVERIFIED / BLOCKED (No physical Android device hardware log attached in repository context).
 
@@ -48,10 +48,10 @@ Reference: https://github.com/GM82Project
 
 ### Completed Today
 
-1. **Tri-Mirror C Native Synchronization**: Synchronized `gm82_native_bridge.c` across `app/src/main/cpp/src/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/`, and `app/src/main/cpp_backup/src/`.
-2. **C Unit Test Makefile Fix**: Fixed `Makefile` and `gml_vm.c` placement in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` so `make test` builds and executes cleanly without missing symbols.
-3. **GM82 Native Call Expansion**: Added native call dispatchers for GM82 core and trig/math extension functions (`color_reverse`, `color_inverse`, `dsin`, `dcos`, `dtan`, `darcsin`, `darccos`, `darctan`, `darctan2`, `ds_grid_set_disk`, `window_set_size`).
-4. **Comprehensive Test Suite Re-verification**: Passed all native C test suites (`python3 tools/run_engine_suite.py`), comprehensive Python suite (`python3 run_full_verification.py`), JS engine pipeline (`node test_all_games_inlined.js`), host pipeline (`bash tools/run_host_pipeline.sh`), and C package tests (`make test`).
+1. **Fixed Header Function Declarations**: Added missing prototypes (`gml_game_save`, `gml_game_load`, `gml_point_in_circle`, `gml_point_in_triangle`, `gml_point_direction_3d`, `gml_hex_to_color`, `gml_sprite_get_xoffset`, `gml_sprite_get_yoffset`) to `gm82_gml_builtins.h`, eliminating all implicit declaration compilation warnings.
+2. **Tri-Mirror C Native Synchronization**: Synchronized C header and source files across `app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, and `app/src/main/cpp_backup/`.
+3. **C Unit Test Makefile Fix**: Updated `Makefile` in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` to include `gml_vm.c` so `make test` builds and executes cleanly with 0 linker or runtime errors.
+4. **Comprehensive Verification Pass**: Verified all native C test suites (`python3 tools/run_engine_suite.py`), comprehensive Python suite (`python3 run_full_verification.py`), JS engine pipeline (`node test_all_games_inlined.js`), host pipeline (`bash tools/run_host_pipeline.sh`), and C package tests (`make test`).
 
 ### Open Technical Action Items
 
