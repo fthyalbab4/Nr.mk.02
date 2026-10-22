@@ -1,21 +1,7 @@
-# STATUS — Host Parallel Verification & C Core Cleanup
+# STATUS
 
-```bash
-bash tools/run_host_pipeline.sh
-python3 run_full_verification.py
-python3 tools/run_engine_suite.py
-node test_all_games_inlined.js
-cd NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX && make test
-```
+Host: run `python3 tools/gap_fill_20261013/patch_globals_files_strings.py` then pipeline — expect 4/4.
 
-### Verified Engine Status
-- **Host Pipeline**: 4/4 sample games PASS (`mario_bros.gmk`, `plataformas.gmk`, `shooter.gmk`, `zelda.gmk`).
-- **Engine Test Suite**: 10/10 tests PASS (100% complete, 0 skips, including `test_mario_physics_parity.c`).
-- **Comprehensive Verification**: 16/16 test checks PASS (`run_full_verification.py`).
-- **C Core Unit Test Suite**: 12/12 unit tests PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/make test`).
-- **JS Script Simulation**: 39/39 scripts parsed, 78/78 DnD actions verified (`test_all_games_inlined.js`).
-- **C Core Quality**: 0 compiler warnings/errors (cleaned pointer checks and indentation across both C trees).
-- **Android Debug APK**: Built cleanly at `app/build/outputs/apk/debug/app-debug.apk`.
+Latest code gap pass: globals get/set, directory_exists, string_letters/repeat, keyboard_string length.
 
-### Next Human Step
-Test APK on physical mobile hardware using `docs/DEVICE_TEST_TEMPLATE.md` to collect device logcat, OpenSLES low-latency audio, and touch input parity logs.
+Next: device APK playtest or FAIL log from a real game.
