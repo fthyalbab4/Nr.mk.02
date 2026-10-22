@@ -358,6 +358,14 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_surface_reset_target());
         return 1;
     }
+    if (strcmp(name, "surface_copy") == 0 && count >= 4) {
+        *out = gml_value_real(gml_surface_copy(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if (strcmp(name, "surface_copy_part") == 0 && count >= 8) {
+        *out = gml_value_real(gml_surface_copy_part(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
+        return 1;
+    }
     if (strcmp(name, "draw_surface") == 0 && count >= 3) {
         *out = gml_value_real(gml_draw_surface(ARG_R(0), ARG_R(1), ARG_R(2)));
         return 1;
@@ -620,6 +628,27 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "instance_exists") == 0 && count >= 1) {
         *out = gml_value_real(gml_instance_exists(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "instance_create_depth") == 0 && count >= 4) {
+        *out = gml_value_real(gml_instance_create_depth(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if (strcmp(name, "point_in_circle") == 0 && count >= 5) {
+        *out = gml_value_real(gml_point_in_circle(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "point_in_triangle") == 0 && count >= 8) {
+        *out = gml_value_real(gml_point_in_triangle(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
+        return 1;
+    }
+    if (strcmp(name, "point_direction_3d") == 0 && count >= 6) {
+        *out = gml_value_real(gml_point_direction_3d(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "hex_to_color") == 0 && count >= 1) {
+        const char *hs = ARG_S(0);
+        *out = gml_value_real(gml_hex_to_color(hs ? hs : ""));
         return 1;
     }
     if (strcmp(name, "instance_number") == 0 && count >= 1) {

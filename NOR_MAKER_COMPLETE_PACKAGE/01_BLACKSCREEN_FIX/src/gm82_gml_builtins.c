@@ -46,6 +46,16 @@ double gml_instance_create(double x, double y, double object_index) {
     return inst ? (double)inst->id : -1;
 }
 
+double gml_instance_create_depth(double x, double y, double depth, double object_index) {
+    if (!g_rt) return -1;
+    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
+    if (inst) {
+        inst->depth = (int32_t)depth;
+        return (double)inst->id;
+    }
+    return -1;
+}
+
 void gml_instance_destroy(void) {
     if (!g_rt || !g_self) return;
     gm82_runtime_instance_destroy(g_rt, g_self);
@@ -1739,6 +1749,61 @@ double gml_surface_reset_target(void) {
     g_draw_h = g_draw_h_saved;
     g_surf_target = -1;
     return 1;
+}
+
+double gml_surface_copy(double destination, double x, double y, double source) {
+    int dest_id = (int)destination;
+    int src_id = (int)source;
+    if (dest_id < 0 || dest_id >= GM82_SURFACE_MAX || !g_surfaces[dest_id].used) return 0;
+    if (src_id < 0 || src_id >= GM82_SURFACE_MAX || !g_surfaces[src_id].used) return 0;
+
+    gm82_surface *dst = &g_surfaces[dest_id];
+    gm82_surface *src = &g_surfaces[src_id];
+
+    int dx0 = (int)x, dy0 = (int)y;
+    for (int sy = 0; sy < src->h; sy++) {
+        int dy = dy0 + sy;
+        if (dy < 0 || dy >= dst->h) continue;
+        for (int sx = 0; sx < src->w; sx++) {
+            int dx = dx0 + sx;
+            if (dx < 0 || dx >= dst->w) continue;
+            uint8_t *sp = &src->rgba[(sy * src->w + sx) * 4];
+            uint8_t *dp = &dst->rgba[(dy * dst->w + dx) * 4];
+            memcpy(dp, sp, 4);
+        }
+    }
+    return 1.0;
+}
+
+double gml_surface_copy_part(double destination, double x, double y, double source, double xs, double ys, double ws, double hs) {
+    int dest_id = (int)destination;
+    int src_id = (int)source;
+    if (dest_id < 0 || dest_id >= GM82_SURFACE_MAX || !g_surfaces[dest_id].used) return 0;
+    if (src_id < 0 || src_id >= GM82_SURFACE_MAX || !g_surfaces[src_id].used) return 0;
+
+    gm82_surface *dst = &g_surfaces[dest_id];
+    gm82_surface *src = &g_surfaces[src_id];
+
+    int dx0 = (int)x, dy0 = (int)y;
+    int sx0 = (int)xs, sy0 = (int)ys;
+    int w = (int)ws, h = (int)hs;
+
+    for (int sy = 0; sy < h; sy++) {
+        int src_y = sy0 + sy;
+        if (src_y < 0 || src_y >= src->h) continue;
+        int dst_y = dy0 + sy;
+        if (dst_y < 0 || dst_y >= dst->h) continue;
+        for (int sx = 0; sx < w; sx++) {
+            int src_x = sx0 + sx;
+            if (src_x < 0 || src_x >= src->w) continue;
+            int dst_x = dx0 + sx;
+            if (dst_x < 0 || dst_x >= dst->w) continue;
+            uint8_t *sp = &src->rgba[(src_y * src->w + src_x) * 4];
+            uint8_t *dp = &dst->rgba[(dst_y * dst->w + dst_x) * 4];
+            memcpy(dp, sp, 4);
+        }
+    }
+    return 1.0;
 }
 
 double gml_draw_surface(double id, double x, double y) {

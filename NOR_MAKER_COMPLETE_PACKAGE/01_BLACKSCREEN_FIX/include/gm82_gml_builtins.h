@@ -461,6 +461,22 @@ double gml_draw_set_circle_precision(double prec);
 double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2, double y2, double val);
 int gml_script_find(const char *name);
 
+/* Extended GM82 builtin declarations */
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex_str);
+double gml_color_to_html(double color, char *out, size_t out_sz);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
+double gml_file_rename(const char *oldname, const char *newname);
+double gml_directory_rename(const char *oldname, const char *newname);
+double gml_instance_create_depth(double x, double y, double depth, double object_index);
+double gml_surface_copy(double destination, double x, double y, double source);
+double gml_surface_copy_part(double destination, double x, double y, double source, double xs, double ys, double ws, double hs);
+
 #ifdef __cplusplus
 }
 #endif

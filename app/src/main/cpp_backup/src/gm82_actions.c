@@ -85,7 +85,7 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
         if (nobj >= 128) { free(d); break; }
         gm82_object_actions *oa = &tmp[nobj++];
         memset(oa, 0, sizeof(*oa));
-        strncpy(oa->object_name, name, sizeof(oa->object_name)-1);
+        snprintf(oa->object_name, sizeof(oa->object_name), "%s", name);
         for (size_t o = 0; o + 8 < ol; o++) {
             int32_t n = rd_i32(d + o);
             if (n < 8 || n > 48 || o + 4 + (size_t)n > ol) continue;

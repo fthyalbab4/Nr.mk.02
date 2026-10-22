@@ -48,10 +48,11 @@ Reference: https://github.com/GM82Project
 
 ### Completed Today
 
-1. **Tri-Mirror C Native Synchronization**: Synchronized `gm82_native_bridge.c` across `app/src/main/cpp/src/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/`, and `app/src/main/cpp_backup/src/`.
-2. **C Unit Test Makefile Fix**: Fixed `Makefile` and `gml_vm.c` placement in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` so `make test` builds and executes cleanly without missing symbols.
-3. **GM82 Native Call Expansion**: Added native call dispatchers for GM82 core and trig/math extension functions (`color_reverse`, `color_inverse`, `dsin`, `dcos`, `dtan`, `darcsin`, `darccos`, `darctan`, `darctan2`, `ds_grid_set_disk`, `window_set_size`).
-4. **Comprehensive Test Suite Re-verification**: Passed all native C test suites (`python3 tools/run_engine_suite.py`), comprehensive Python suite (`python3 run_full_verification.py`), JS engine pipeline (`node test_all_games_inlined.js`), host pipeline (`bash tools/run_host_pipeline.sh`), and C package tests (`make test`).
+1. **Header Prototypes & Implicit Warning Elimination**: Updated `gm82_gml_builtins.h` with 14 missing function prototypes (`gml_point_in_circle`, `gml_point_in_triangle`, `gml_point_direction_3d`, `gml_hex_to_color`, `gml_color_to_html`, `gml_game_save`, `gml_game_load`, `gml_sprite_get_xoffset`, `gml_sprite_get_yoffset`, `gml_instance_create_depth`, `gml_surface_copy`, `gml_surface_copy_part`, `gml_file_rename`, `gml_directory_rename`), eliminating all C compiler warnings during host pipeline builds.
+2. **GM82 Builtins Implementation & Dispatch**: Implemented `gml_instance_create_depth`, `gml_surface_copy`, and `gml_surface_copy_part` in `gm82_gml_builtins.c`, and exposed native bridge dispatchers in `gm82_native_bridge.c` for `instance_create_depth`, `surface_copy`, `surface_copy_part`, `point_in_circle`, `point_in_triangle`, `point_direction_3d`, and `hex_to_color`.
+3. **Tri-Mirror C Native Synchronization**: Synchronized `gm82_gml_builtins.h`, `gm82_gml_builtins.c`, and `gm82_native_bridge.c` across `app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, and `app/src/main/cpp_backup/`.
+4. **C Unit Test Makefile Fix**: Updated `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/Makefile` sources to include `gml_vm.c` so `make test` executes cleanly.
+5. **Comprehensive Verification**: Executed and verified `make clean && make test` in `01_BLACKSCREEN_FIX`, `python3 tools/run_engine_suite.py`, `python3 run_full_verification.py` (16/16 pass), `bash tools/run_host_pipeline.sh` (0 warnings), and `node test_all_games_inlined.js` (39/39 scripts, 78/78 DnD actions).
 
 ### Open Technical Action Items
 
