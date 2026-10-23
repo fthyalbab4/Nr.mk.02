@@ -27,6 +27,8 @@ typedef struct {
     int32_t object_index;
     int32_t sprite_index;
     double  x, y;
+    double  xstart, ystart;
+    double  xprevious, yprevious; /* GM: position at start of step */
     double  hspeed, vspeed;
     double  direction, speed;
     double  gravity, gravity_direction;
@@ -39,11 +41,15 @@ typedef struct {
     int32_t solid;
     int32_t visible;
     int32_t persistent;
-    int32_t alive;          /* 0 = destroyed */
+    int32_t alive;
     int32_t alarms[12];
     int32_t path_index;
     double  path_position;
+    double  path_positionprevious;
     double  path_speed;
+    double  path_scale;
+    double  path_orientation;
+    int32_t path_endaction;
     int32_t timeline_index;
     double  timeline_position;
     double  timeline_speed;
@@ -61,7 +67,6 @@ typedef struct {
     int32_t room_speed;
     int32_t current_room;
 
-    /* borrowed refs (not owned) */
     const gm82_decoded_object_list     *objects;
     const gm82_decoded_sprite_list     *sprites;
     const gm82_sprite_group_list       *sprite_groups;
@@ -72,13 +77,13 @@ typedef struct {
 
     int32_t frame;
     int32_t running;
-    /* Simple camera (subset of GM views) */
     int32_t view_enabled;
     double  view_x, view_y, view_w, view_h;
-    int32_t view_follow_object; /* -1 none */
+    int32_t view_follow_object;
 } gm82_runtime;
 
 void gm82_runtime_init(gm82_runtime *rt);
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs);
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,
     const gm82_decoded_sprite_list *sprites,
@@ -87,20 +92,13 @@ void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_action_table *actions);
 void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_list *groups);
 void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts);
-/* Fire user event 0..11 on all instances (or self if provided via events later) */
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
-
-/* Load room by index: clear non-persistent instances, spawn from room data, fire Create */
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index);
-
-/* One frame: alarms → begin step → step → end step */
 void gm82_runtime_step(gm82_runtime *rt);
-
-/* Software draw into RGBA buffer (caller owns buffer, size = room_w * room_h * 4) */
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h);
-
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y);
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst);
+void gm82_runtime_compact_instances(gm82_runtime *rt);
 
 #ifdef __cplusplus
 }

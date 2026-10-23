@@ -1,14 +1,11 @@
-# STATUS — التقييم الحقيقي والخطة المستقبلية
+# STATUS
 
-## مسار SO الموجود (بدون NDK جديد)
-- التطبيق يحمّل `libgm82_android` مسبقاً
-- JS: `nor_native_loop_bridge.js` + patch في `assets/www/`
-- باتش MainActivity: `tools/MainActivity.native_loop.patch`
+Apply:
+```bash
+python3 tools/gap_fill_20261013/patch_globals_files_strings.py
+python3 tools/gap_fill_20261013/patch_math_draw_type.py
+bash tools/run_host_pipeline.sh
+```
+Expect SUMMARY ok=4 fail=0.
 
-## تنبيه
-إن كان `MainActivity.java` = PLACEHOLDER، طبّق `tools/RECOVER_MAINACTIVITY.md`
-
-Host ~65–75% (مُثبت بتشغيل test_full_suite و host_so_smoke و run_full_verification.py). Android على جهاز حقيقي: غير مُقاس. ليس 100%.
-- **النسبة الكلية المحسوبة حالياً:** **~36.75%** (محدثة بعد إضافة التحكم التكراري في GML، أقنعة البتات المباشرة، الخلاط الصوتي، وتجميع رسم GLES).
-- **الهدف الشامل القادم:** التدرج نحو 95% عبر الاختبارات الموسعة واختبارات الأجهزة الحقيقية.
-- **الحالة الحالية تحت الاختبار:** 100% نجاح في جميع سكربتات الاختبار الميدانية على Host (16/16 PASS في `run_full_verification.py` و `make test`).
+Next human: device test or FAIL log from a real GMK.

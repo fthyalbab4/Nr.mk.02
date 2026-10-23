@@ -103,7 +103,7 @@ double nor_export_gbc_native(const char *project, const char *output) {
     uint8_t rom[32768];
     memset(rom, 0, sizeof(rom));
     /* Cartridge title at 0x134 */
-    strncpy((char *)rom + 0x134, "NORMAKER", 8);
+    memcpy(rom + 0x134, "NORMAKER", 8);
     rom[0x143] = 0x80; /* GBC supported */
     rom[0x147] = 0x00; /* ROM ONLY */
     rom[0x148] = 0x00; /* 32KB */
@@ -124,7 +124,7 @@ double nor_export_gba_native(const char *project, const char *output) {
     /* GBA branch instruction at start */
     rom[0] = 0x2E; rom[1] = 0x00; rom[2] = 0x00; rom[3] = 0xEA;
     /* Game title at 0xA0 */
-    strncpy((char *)rom + 0xA0, "NORMAKERGBA", 11);
+    memcpy(rom + 0xA0, "NORMAKERGBA", 11);
     rom[0xB2] = 0x96; /* Fixed 96h */
     fwrite(rom, 1, sizeof(rom), f);
     fclose(f);
@@ -249,6 +249,16 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_sound_pitch(ARG_R(0), ARG_R(1)));
         return 1;
     }
+    if (strcmp(name, "sound_play_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_play(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "sound_loop_pitch") == 0 && count >= 2) {
+        gml_sound_pitch(ARG_R(0), ARG_R(1));
+        *out = gml_value_real(gml_sound_loop(ARG_R(0)));
+        return 1;
+    }
     if (strcmp(name, "sound_pan") == 0 && count >= 2) {
         *out = gml_value_real(gml_sound_pan(ARG_R(0), ARG_R(1)));
         return 1;
@@ -346,6 +356,14 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "surface_reset_target") == 0) {
         *out = gml_value_real(gml_surface_reset_target());
+        return 1;
+    }
+    if (strcmp(name, "surface_copy") == 0 && count >= 4) {
+        *out = gml_value_real(gml_surface_copy(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if (strcmp(name, "surface_copy_part") == 0 && count >= 8) {
+        *out = gml_value_real(gml_surface_copy_part(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
         return 1;
     }
     if (strcmp(name, "draw_surface") == 0 && count >= 3) {
@@ -480,8 +498,52 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_color_get_blue(ARG_R(0)));
         return 1;
     }
+    if (strcmp(name, "color_reverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_reverse(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "color_inverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_inverse(ARG_R(0)));
+        return 1;
+    }
 
     /* Additional Math built-ins */
+    if (strcmp(name, "dsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dcos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dcos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dtan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dtan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darcsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darcsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darccos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darccos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darctan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan2") == 0 && count >= 2) {
+        *out = gml_value_real(gml_darctan2(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_set_disk") == 0 && count >= 5) {
+        *out = gml_value_real(gml_ds_grid_set_disk(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "window_set_size") == 0 && count >= 2) {
+        *out = gml_value_real(gml_window_set_size(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
     if (strcmp(name, "angle_difference") == 0 && count >= 2) {
         *out = gml_value_real(gml_angle_difference(ARG_R(0), ARG_R(1)));
         return 1;
@@ -568,6 +630,27 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_instance_exists(ARG_R(0)));
         return 1;
     }
+    if (strcmp(name, "instance_create_depth") == 0 && count >= 4) {
+        *out = gml_value_real(gml_instance_create_depth(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if (strcmp(name, "point_in_circle") == 0 && count >= 5) {
+        *out = gml_value_real(gml_point_in_circle(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "point_in_triangle") == 0 && count >= 8) {
+        *out = gml_value_real(gml_point_in_triangle(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
+        return 1;
+    }
+    if (strcmp(name, "point_direction_3d") == 0 && count >= 6) {
+        *out = gml_value_real(gml_point_direction_3d(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "hex_to_color") == 0 && count >= 1) {
+        const char *hs = ARG_S(0);
+        *out = gml_value_real(gml_hex_to_color(hs ? hs : ""));
+        return 1;
+    }
     if (strcmp(name, "instance_number") == 0 && count >= 1) {
         *out = gml_value_real(gml_instance_number(ARG_R(0)));
         return 1;
@@ -594,6 +677,20 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "game_end") == 0) {
         *out = gml_value_real(gml_game_end());
+        return 1;
+    }
+    if (strcmp(name, "game_save") == 0) {
+        const char *fn = (count >= 1 && args[0].kind == GML_V_STRING && args[0].string) ? args[0].string : "nor_save.dat";
+        *out = gml_value_real(gml_game_save(fn));
+        return 1;
+    }
+    if (strcmp(name, "game_load") == 0) {
+        const char *fn = (count >= 1 && args[0].kind == GML_V_STRING && args[0].string) ? args[0].string : "nor_save.dat";
+        *out = gml_value_real(gml_game_load(fn));
+        return 1;
+    }
+    if (strcmp(name, "event_user") == 0 && count >= 1) {
+        *out = gml_value_real(gml_event_user(ARG_R(0)));
         return 1;
     }
 

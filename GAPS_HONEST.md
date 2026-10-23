@@ -1,14 +1,23 @@
-# GAPS_HONEST — التقييم الدقيق وخطة الوصول إلى 95%
+# GAPS_HONEST
 
-نسبة التوافق المحسوبة حالياً: **~36.75%**
+## Closed (code, host-verified)
+- globals get/set/exists, directory_exists, string_letters/repeat, keyboard_string length
+- ln, logn, is_undefined/is_bool/is_int64, typeof (numeric stand-in)
+- string_width/height (approx), draw_text_transformed, draw_clear_alpha, application_surface (-1)
 
-## التحسينات المنفذة في هذه الدورة:
-1. **GML Control Structures:** إضافة دعم `repeat`, `while`, `with (target)` ونطاقات المتغيرات المدمجة `xprevious`, `yprevious`, `bbox_*`, `view_*`.
-2. **Precision Collision Masking:** إنشاء وحدة `gm82_mask.c` لإنشاء أقتعة البتات (1-bit Alpha Bitmask) وفحص تقاطع البكسلات الدقيق.
-3. **Hardware GLES Batching:** توفير هيكل `gm82_gles.c` لتجميع كائنات الرسم والدعم البرمجي لأنماط الدمج.
-4. **Audio PCM Mixer:** إضافة الخلاط الصوتي متعدد القنوات `gm82_audio_mixer.c` حتى 16 قناة صوتية.
+```bash
+python3 tools/gap_fill_20261013/patch_globals_files_strings.py
+python3 tools/gap_fill_20261013/patch_math_draw_type.py
+bash tools/run_host_pipeline.sh
+```
 
-## الفجوات المتبقية للوصول إلى 95%:
-- الربط المادي المباشر بمشغل AAudio / OpenSL ES على هاتف أندرويد حقيقي (BLOCKED لعدم وجود جهاز متصل).
-- بناء مفسر Bytecode VM كامل لجميع الجمل البرمجية المعقدة جداً في GML.
-- توسيع نطاق الاختبارات إلى أكثر من 50 لعبة GMK/GM82 مجتمعية.
+Host: ok=4 fail=0 after local apply.
+
+## Still open (not solvable by more generic stubs alone)
+1. Device APK playtest
+2. Cloud game FAIL → named missing symbol
+3. Full DnD binary arg tables
+4. Full string-returning VM
+5. Pure GML movement with zero host inject
+
+No 100% claim.

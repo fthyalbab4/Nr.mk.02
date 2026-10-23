@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 
-/* Event type IDs (Game Maker) */
 enum {
     GM82_EV_CREATE = 0,
     GM82_EV_DESTROY = 1,
@@ -24,51 +23,45 @@ enum {
     GM82_EV_KEYRELEASE = 10
 };
 
-/* Step sub-types */
 enum {
     GM82_STEP_NORMAL = 0,
     GM82_STEP_BEGIN = 1,
     GM82_STEP_END = 2
 };
 
-/*
- * Default behaviors registered by object name when full DnD/GML
- * action lists are not yet fully decoded from the GMK.
- * This is honest scaffolding – not a claim of full action support.
- */
 typedef void (*gm82_event_fn)(gm82_runtime *rt, gm82_instance *self);
 
 typedef struct {
-    const char *object_name_prefix; /* matched against object name */
+    const char *object_name_prefix;
     gm82_event_fn on_create;
     gm82_event_fn on_step;
 } gm82_behavior;
 
 void gm82_events_register_defaults(void);
-
-/* Fire Create for all instances after room load (also called from goto_room) */
+void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst);
 void gm82_events_fire_create_all(gm82_runtime *rt);
-
-/* Fire Step (begin/normal/end simplified into one) for all alive instances */
+void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst);
+void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_index);
+void gm82_events_fire_begin_step_all(gm82_runtime *rt);
 void gm82_events_fire_step_all(gm82_runtime *rt);
+void gm82_events_fire_end_step_all(gm82_runtime *rt);
+void gm82_events_fire_keyboard_all(gm82_runtime *rt);
+void gm82_events_fire_mouse_all(gm82_runtime *rt);
+void gm82_events_fire_other(gm82_runtime *rt, gm82_instance *inst, int other_index);
+void gm82_events_fire_pre_draw_all(gm82_runtime *rt);
+void gm82_events_fire_draw_all(gm82_runtime *rt);
+void gm82_events_fire_draw_single(gm82_runtime *rt, gm82_instance *inst);
+bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst);
+void gm82_events_fire_post_draw_all(gm82_runtime *rt);
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other);
-
-/* Lookup behavior for object index */
 const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index);
-
-/* Bind GML source to run on Step for objects whose name starts with prefix.
- * Replaces C behavior step when both exist for that instance (GML preferred).
- * Max 16 bindings. code pointer must remain valid. */
 void gm82_events_clear_gml_bindings(void);
 bool gm82_events_bind_gml_step(const char *object_name_prefix, const char *code);
 bool gm82_events_bind_gml_create(const char *object_name_prefix, const char *code);
+int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-/* Best-effort: scan GMK object resource blobs for embedded GML-like strings
- * and bind them as Create events (not full event-type decode). */
-int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size);
