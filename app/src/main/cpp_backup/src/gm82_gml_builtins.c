@@ -23,6 +23,10 @@ static uint8_t *g_draw_buf = NULL;
 static int32_t g_draw_w = 0, g_draw_h = 0;
 static uint32_t g_draw_color = 0xFFFFFF;
 static double g_draw_alpha = 1.0;
+static int g_draw_halign = 0;
+static int g_draw_valign = 0;
+static int g_draw_font = 0;
+static int g_draw_blend_mode = 0;
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1114,8 +1118,57 @@ double gml_delta_time(void) { return g_delta * 1000000.0; }
 
 void gml_draw_set_color(double color) { g_draw_color = (uint32_t)color; }
 void gml_draw_set_alpha(double alpha) { g_draw_alpha = alpha; }
+void gml_draw_reset(void) {
+    g_draw_color = 0xFFFFFF;
+    g_draw_alpha = 1.0;
+    g_draw_halign = 0;
+    g_draw_valign = 0;
+    g_draw_font = 0;
+    g_draw_blend_mode = 0;
+}
+void gml_draw_set_rgba(double r, double g, double b, double a) {
+    g_draw_color = (uint32_t)gml_make_color_rgb(r, g, b);
+    g_draw_alpha = a;
+}
 double gml_draw_get_alpha(void) { return g_draw_alpha; }
 double gml_draw_get_color(void) { return (double)g_draw_color; }
+
+double gml_instance_destroy_id(double inst_id) {
+    if (!g_rt) return 0;
+    int32_t target_id = (int32_t)inst_id;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *inst = &g_rt->instances[i];
+        if (inst->alive && inst->id == target_id) {
+            gm82_runtime_instance_destroy(g_rt, inst);
+            return 1.0;
+        }
+    }
+    return 0.0;
+}
+
+double gml_instance_nearest_notme(double x, double y, double object_index) {
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)object_index;
+    double best = 1e300;
+    int32_t best_id = -4;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive || o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        double dx = o->x - x, dy = o->y - y;
+        double d = dx * dx + dy * dy;
+        if (d < best) { best = d; best_id = o->id; }
+    }
+    return (double)best_id;
+}
+
+double gml_string_ends_with(const char *str, const char *substr) {
+    if (!str || !substr) return 0;
+    size_t slen = strlen(str);
+    size_t sublen = strlen(substr);
+    if (sublen > slen) return 0;
+    return strcmp(str + slen - sublen, substr) == 0 ? 1.0 : 0.0;
+}
 
 static void put_px(int x, int y) {
     if (!g_draw_buf || x < 0 || y < 0 || x >= g_draw_w || y >= g_draw_h) return;
@@ -1173,11 +1226,6 @@ void gml_draw_line(double x1, double y1, double x2, double y2) {
         if (e2 <= dx) { err += dx; b += sy; }
     }
 }
-
-static int g_draw_halign = 0;
-static int g_draw_valign = 0;
-static int g_draw_font = 0;
-static int g_draw_blend_mode = 0;
 
 void gml_draw_set_halign(double halign) { g_draw_halign = (int)halign; }
 void gml_draw_set_valign(double valign) { g_draw_valign = (int)valign; }
@@ -3250,6 +3298,24 @@ double gml_place_meeting_precise(double x, double y, double object_index) {
 }
 
 /* GM82Core & Studio Math Extensions */
+static double g_math_epsilon = 0.00001;
+
+double gml_math_set_epsilon(double eps) {
+    if (eps >= 0) g_math_epsilon = eps;
+    return g_math_epsilon;
+}
+
+double gml_math_get_epsilon(void) {
+    return g_math_epsilon;
+}
+
+double gml_power_next(double val) {
+    if (val <= 1.0) return 1.0;
+    double p = 1.0;
+    while (p < val) p *= 2.0;
+    return p;
+}
+
 double gml_angle_abs(double angle) {
     double a = fmod(angle, 360.0);
     if (a < 0.0) a += 360.0;
