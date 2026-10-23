@@ -1,30 +1,18 @@
-# GAPS_HONEST — بدون تضخيم
+# GAPS_HONEST
 
-## الفحص الدوري اليومي (Daily Periodic Audit)
-- **Host Full Verification**: 16/16 Passed (100% on Host Test Suite)
-- **C Core Unit Tests**: 3/3 Binaries Passed (`test_dual_load`, `test_event_order`, `test_runtime_guard`)
-- **Total Weighted Engine Parity**: ~36.75% (~37%)
-- **Host MVP Status**: ~40% Operational
-- **Android Physical Device Status**: UNVERIFIED / BLOCKED (No physical device connected)
+## Closed in Latest Audit
+- Missing C header declarations added (`gml_point_in_circle`, `gml_point_in_triangle`, `gml_point_direction_3d`, `gml_hex_to_color`, `gml_sprite_get_xoffset`, `gml_sprite_get_yoffset`, `gml_game_save`, `gml_game_load`).
+- Fixed package `Makefile` in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` to link `gml_vm.c`.
+- `make clean && make test` in package passes 12/12 test executables.
+- `python3 tools/run_engine_suite.py` passes 11/11 tests with 0 compiler warnings.
 
-## أُغلق جزئياً (هذه الدورة)
-| فجوة | حالة |
-|------|------|
-| ترتيب Begin/Alarm/Step/Move/Collision/End | مُحدَّث في `gm82_runtime_step` |
-| xprevious / yprevious | حقول + GML getter |
-| مقاس التصادم مع scale | AABB يستخدم image_xscale/yscale |
-| High FPS & dynamic delta-time | دعم 60-90+ FPS وحساب `dt` ديناميكياً في `MainActivity` و `gm82_runtime` |
-| GML Math Builtins | إضافة `dsin`, `dcos`, `clamp`, `lerp`, `point_distance_3d`, `dot_product` |
+## Host
+SUMMARY ok=4 fail=0 on host pipeline (`bash tools/run_host_pipeline.sh`).
 
-## مفتوح (أولوية)
-| فجوة | ملاحظات |
-|------|---------|
-| Begin/End من جداول أحداث GMK | هيكل موجود؛ decode ناقص |
-| Precise mask في كل place_meeting | مسار precise منفصل؛ الافتراضي AABB |
-| sprite origin في bbox | غير مربوط بالكامل |
-| GML كامل | interpreter جزئي |
-| صوت على جهاز | إثبات مطلوب على جهاز أندرويد حقيقي |
-| MainActivity WebView+NorNative | النسخة على main مبسّطة |
+## Still Open Gaps
+1. Physical Android device APK playtest (hardware touch/OpenSLES validation).
+2. Complete GMK Begin/End event decode tables.
+3. Full DnD arg tables.
+4. Complete AST/GML parser coverage (eliminating pure-GML host fallback).
 
-## قاعدة
-ممنوع «100%»/«95%» من غير مصفوفة اختبار حقيقية وموثقة.
+No fake 100%.

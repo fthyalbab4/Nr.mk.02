@@ -1,0 +1,50 @@
+diff --git a/app/src/main/cpp/src/gm82_sprite_decode.c b/app/src/main/cpp/src/gm82_sprite_decode.c
+index b394e44..7cb9ed2 100644
+--- a/app/src/main/cpp/src/gm82_sprite_decode.c
++++ b/app/src/main/cpp/src/gm82_sprite_decode.c
+@@ -41,7 +41,8 @@ static uint32_t px_checksum(const uint8_t *bgra, size_t len) {
+ }
+ 
+ static bool list_push(gm82_decoded_sprite_list *L, const char *name,
+-                      int32_t w, int32_t h, const uint8_t *bgra, size_t bgra_len) {
++                      int32_t w, int32_t h, int32_t origin_x, int32_t origin_y,
++                      const uint8_t *bgra, size_t bgra_len) {
+     if ((size_t)(w * h * 4) != bgra_len) return false;
+ 
+     /* Dedupe: same name + size + pixel checksum already present */
+@@ -79,6 +80,8 @@ static bool list_push(gm82_decoded_sprite_list *L, const char *name,
+     strncpy(f->name, name ? name : "?", sizeof(f->name) - 1);
+     f->width = w;
+     f->height = h;
++    f->origin_x = origin_x;
++    f->origin_y = origin_y;
+     f->rgba_size = bgra_len;
+     f->rgba = (uint8_t *)malloc(bgra_len);
+     if (!f->rgba) return false;
+@@ -164,7 +167,25 @@ static void scan_blob(gm82_decoded_sprite_list *L, const uint8_t *d, size_t len)
+             }
+             if (back < 5) break;
+         }
+-        list_push(L, name, w, h, d + pix_off, (size_t)dlen);
++        /* Heuristic: GM sprite origin often sits as two int32 before version tag. */
++        int32_t ox = 0, oy = 0;
++        if (j >= 8) {
++            int32_t a = rd_i32(d + j - 8);
++            int32_t b = rd_i32(d + j - 4);
++            if (a >= 0 && a <= w && b >= 0 && b <= h) {
++                ox = a; oy = b;
++            } else if (j >= 16) {
++                for (size_t back = 8; back <= 48 && back + 4 <= j; back += 4) {
++                    int32_t xa = rd_i32(d + j - back - 4);
++                    int32_t yb = rd_i32(d + j - back);
++                    if (xa >= 0 && xa <= w && yb >= 0 && yb <= h) {
++                        ox = xa; oy = yb;
++                        break;
++                    }
++                }
++            }
++        }
++        list_push(L, name, w, h, ox, oy, d + pix_off, (size_t)dlen);
+         j = pix_off + (size_t)dlen - 1; /* skip past frame */
+     }
+ }

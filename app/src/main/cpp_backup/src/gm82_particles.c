@@ -27,19 +27,85 @@ void gm82_part_system_destroy(gm82_particle_world *w, int sys) {
 int gm82_part_type_create(gm82_particle_world *w) {
     for (int i = 0; i < GM82_PTYPE_MAX; i++) {
         if (!w->types[i].used) {
+            memset(&w->types[i], 0, sizeof(w->types[i]));
             w->types[i].used = 1;
             w->types[i].gravity = 0.1;
             w->types[i].gravity_dir = 270;
+            w->types[i].min_size = 1.0; w->types[i].max_size = 1.0;
+            w->types[i].min_life = 30.0; w->types[i].max_life = 60.0;
+            w->types[i].color1 = 0xFFFFFF; w->types[i].color2 = 0xFFFFFF;
+            w->types[i].alpha1 = 1.0; w->types[i].alpha2 = 1.0;
             return i;
         }
     }
     return -1;
 }
 
-void gm82_part_type_color(gm82_particle_world *w, int type, uint32_t color) {
+void gm82_part_type_destroy(gm82_particle_world *w, int type) {
     if (type < 0 || type >= GM82_PTYPE_MAX) return;
-    /* store color in gravity_dir high bits? keep simple - color applied at create */
-    (void)w; (void)type; (void)color;
+    memset(&w->types[type], 0, sizeof(w->types[type]));
+}
+
+void gm82_part_type_shape(gm82_particle_world *w, int type, int shape) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].shape = shape;
+}
+
+void gm82_part_type_size(gm82_particle_world *w, int type, double min_size, double max_size, double size_incr) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].min_size = min_size;
+    w->types[type].max_size = max_size;
+    w->types[type].size_incr = size_incr;
+}
+
+void gm82_part_type_speed(gm82_particle_world *w, int type, double min_speed, double max_speed, double speed_incr) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].min_speed = min_speed;
+    w->types[type].max_speed = max_speed;
+    w->types[type].speed_incr = speed_incr;
+}
+
+void gm82_part_type_direction(gm82_particle_world *w, int type, double min_dir, double max_dir, double dir_incr) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].min_dir = min_dir;
+    w->types[type].max_dir = max_dir;
+    w->types[type].dir_incr = dir_incr;
+}
+
+void gm82_part_type_life(gm82_particle_world *w, int type, double min_life, double max_life) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].min_life = min_life;
+    w->types[type].max_life = max_life;
+}
+
+void gm82_part_type_gravity(gm82_particle_world *w, int type, double amount, double dir) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].gravity = amount;
+    w->types[type].gravity_dir = dir;
+}
+
+void gm82_part_type_color1(gm82_particle_world *w, int type, uint32_t color) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].color1 = color;
+    w->types[type].color2 = color;
+}
+
+void gm82_part_type_color2(gm82_particle_world *w, int type, uint32_t c1, uint32_t c2) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].color1 = c1;
+    w->types[type].color2 = c2;
+}
+
+void gm82_part_type_alpha1(gm82_particle_world *w, int type, double a) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].alpha1 = a;
+    w->types[type].alpha2 = a;
+}
+
+void gm82_part_type_alpha2(gm82_particle_world *w, int type, double a1, double a2) {
+    if (type < 0 || type >= GM82_PTYPE_MAX) return;
+    w->types[type].alpha1 = a1;
+    w->types[type].alpha2 = a2;
 }
 
 void gm82_part_particles_create(gm82_particle_world *w, int sys, double x, double y, int type, int number) {
