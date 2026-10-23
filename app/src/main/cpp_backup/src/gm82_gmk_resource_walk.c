@@ -88,7 +88,7 @@ typedef struct {
 
 static void collect_name(walk_stats *st, const char *n) {
     if (!n || !n[0] || st->name_count >= 64) return;
-    strncpy(st->names[st->name_count], n, 63);
+    snprintf(st->names[st->name_count], 64, "%s", n);
     st->names[st->name_count][63] = 0;
     st->name_count++;
 }
