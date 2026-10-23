@@ -154409,7 +154409,10 @@ button, input, textarea, select {
     });
   }
 
+  let lastActiveElement = null;
+
   function openModal() {
+    lastActiveElement = document.activeElement;
     modal.style.display = "flex";
     updateSearchClearBtn();
     renderGames();
@@ -154418,11 +154421,31 @@ button, input, textarea, select {
 
   function closeModal() {
     modal.style.display = "none";
+    if (lastActiveElement && typeof lastActiveElement.focus === "function") {
+      try { lastActiveElement.focus(); } catch (e) {}
+    }
   }
 
   window.addEventListener("open-gmk-cloud-library", openModal);
   closeBtn.addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  modal.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      const focusables = Array.from(
+        modal.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex="0"]:not([tabindex="-1"])')
+      ).filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal.style.display === "flex") {
       if (searchInput.value.length > 0) {
