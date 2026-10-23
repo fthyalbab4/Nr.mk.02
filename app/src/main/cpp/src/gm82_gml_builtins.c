@@ -73,6 +73,47 @@ double gml_instance_exists(double id_or_object) {
     return 0;
 }
 
+static gm82_instance *find_instance_by_id(double instance_id) {
+    if (!g_rt) return NULL;
+    int32_t id = (int32_t)instance_id;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (g_rt->instances[i].alive && g_rt->instances[i].id == id)
+            return &g_rt->instances[i];
+    }
+    return NULL;
+}
+
+static int instance_var_index(const gm82_instance *inst, const char *name) {
+    if (!inst || !name || !name[0]) return -1;
+    for (int i = 0; i < inst->var_count; i++) {
+        if (strcmp(inst->vars[i].name, name) == 0) return i;
+    }
+    return -1;
+}
+
+double gml_variable_instance_exists(double instance_id, const char *name) {
+    return instance_var_index(find_instance_by_id(instance_id), name) >= 0 ? 1.0 : 0.0;
+}
+
+double gml_variable_instance_get(double instance_id, const char *name) {
+    gm82_instance *inst = find_instance_by_id(instance_id);
+    int idx = instance_var_index(inst, name);
+    return idx >= 0 ? inst->vars[idx].value : 0.0;
+}
+
+double gml_variable_instance_set(double instance_id, const char *name, double value) {
+    gm82_instance *inst = find_instance_by_id(instance_id);
+    if (!inst || !name || !name[0]) return 0.0;
+    int idx = instance_var_index(inst, name);
+    if (idx < 0) {
+        if (inst->var_count >= (int)(sizeof(inst->vars) / sizeof(inst->vars[0]))) return 0.0;
+        idx = inst->var_count++;
+        snprintf(inst->vars[idx].name, sizeof(inst->vars[idx].name), "%s", name);
+    }
+    inst->vars[idx].value = value;
+    return value;
+}
+
 void gml_motion_set(double dir, double spd) {
     if (!g_self) return;
     g_self->direction = dir;

@@ -1352,7 +1352,18 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "timeline_exists") == 0) { *out = (arg >= 0) ? 1.0 : 0.0; return true; }
         if (strcmp(id, "variable_global_exists") == 0) { *out = 0; return true; }
         if (strcmp(id, "variable_local_exists") == 0) { *out = 0; return true; }
-        if (strcmp(id, "variable_instance_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "variable_instance_exists") == 0) {
+            *out = gml_variable_instance_exists(arg, (p->str_mask & 2) ? p->str_args[1] : "");
+            return true;
+        }
+        if (strcmp(id, "variable_instance_get") == 0) {
+            *out = gml_variable_instance_get(arg, (p->str_mask & 2) ? p->str_args[1] : "");
+            return true;
+        }
+        if (strcmp(id, "variable_instance_set") == 0) {
+            *out = gml_variable_instance_set(arg, (p->str_mask & 2) ? p->str_args[1] : "", nargs >= 3 ? args[2] : 0.0);
+            return true;
+        }
         if (strcmp(id, "object_get_depth") == 0) {
             int o = (int)arg; *out = 0;
             if (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count)

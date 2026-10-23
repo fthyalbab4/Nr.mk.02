@@ -45,6 +45,10 @@ int main(void) {
     /* Test Collision Circle & Instance Management */
     gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 100, 100);
     assert(inst != NULL);
+    assert(gml_variable_instance_exists((double)inst->id, "score") == 0.0);
+    assert(gml_variable_instance_set((double)inst->id, "score", 42.0) == 42.0);
+    assert(gml_variable_instance_exists((double)inst->id, "score") == 1.0);
+    assert(gml_variable_instance_get((double)inst->id, "score") == 42.0);
     double hit_id = gml_collision_circle(105, 105, 20, 0, 0, 0);
     assert(hit_id == (double)inst->id);
 

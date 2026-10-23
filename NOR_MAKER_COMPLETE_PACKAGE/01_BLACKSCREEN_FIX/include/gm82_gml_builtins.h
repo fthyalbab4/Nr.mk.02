@@ -35,6 +35,9 @@ double gml_instance_create(double x, double y, double object_index);
 void   gml_instance_destroy(void); /* destroys self */
 double gml_instance_number(double object_index); /* -1 = all */
 double gml_instance_exists(double id_or_object);
+double gml_variable_instance_exists(double instance_id, const char *name);
+double gml_variable_instance_get(double instance_id, const char *name);
+double gml_variable_instance_set(double instance_id, const char *name, double value);
 double gml_instance_nearest(double x, double y, double object_index);
 double gml_instance_find(double object_index, double n);
 double gml_distance_to_object(double object_index);
