@@ -310,6 +310,7 @@ double gml_get_visible(void);
 double gml_room_width(void);
 double gml_room_height(void);
 double gml_room_speed(void);
+double gml_room_find(const char *name);
 double gml_room_goto(double room_index);
 double gml_room(void);
 double gml_room_restart(void);

@@ -1264,6 +1264,10 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = (p->rt && p->rt->rooms && r >= 0 && r < p->rt->rooms->count) ? 1.0 : 0.0;
             return true;
         }
+        if (strcmp(id, "room_find") == 0) {
+            *out = gml_room_find((p->str_mask & 1) ? p->str_args[0] : "");
+            return true;
+        }
         if (strcmp(id, "event_inherited") == 0) { *out = 1; return true; }
         if (strcmp(id, "object_exists") == 0) {
             int o = (int)arg;

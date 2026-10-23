@@ -532,7 +532,13 @@ double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 double gml_room_width(void) { return g_rt ? (double)g_rt->room_width : 0; }
 double gml_room_height(void) { return g_rt ? (double)g_rt->room_height : 0; }
 double gml_room_speed(void) { return g_rt ? (double)g_rt->room_speed : 30; }
-
+double gml_room_find(const char *name) {
+    if (!g_rt || !g_rt->rooms || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_rt->rooms->count; i++) {
+        if (strcmp(g_rt->rooms->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
 double gml_abs(double v) { return fabs(v); }
 double gml_sign(double v) { return (v > 0) - (v < 0); }
 double gml_clamp(double v, double lo, double hi) {

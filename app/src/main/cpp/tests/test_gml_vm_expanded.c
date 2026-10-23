@@ -14,6 +14,15 @@ int main(void) {
     rt.running = 1;
     gm82_gml_set_runtime(&rt);
 
+    gm82_decoded_room room_items[2] = {{0}, {0}};
+    snprintf(room_items[0].name, sizeof(room_items[0].name), "Room_Start");
+    snprintf(room_items[1].name, sizeof(room_items[1].name), "Room_Boss");
+    gm82_decoded_room_list room_list = { room_items, 2 };
+    rt.rooms = &room_list;
+    assert(gml_room_find("Room_Start") == 0.0);
+    assert(gml_room_find("Room_Boss") == 1.0);
+    assert(gml_room_find("Missing") == -1.0);
+
     /* Test array builtins */
     assert(gml_array_length_1d(0) == 1.0);
     assert(gml_array_height_2d(0) == 1.0);
