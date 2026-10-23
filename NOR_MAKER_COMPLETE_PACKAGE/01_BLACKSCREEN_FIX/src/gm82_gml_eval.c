@@ -284,7 +284,7 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strncmp(name, "self.", 5) == 0) {
         return set_var(p, name + 5, v);
     }
-    if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
+    if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0 || strcmp(name,"keyboard_string")==0))
         return false;
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
     if (strcmp(name, "y") == 0) { s->y = v; return true; }
