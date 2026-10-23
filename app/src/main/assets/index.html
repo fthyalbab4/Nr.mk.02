@@ -154368,7 +154368,7 @@ button, input, textarea, select {
 
     <!-- Footer -->
     <div style="padding:10px 16px; background:#f3f4f6; border-top:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#4b5563;">
-      <span id="gmk-cloud-count">عدد الألعاب المتاحة: 146</span>
+      <span id="gmk-cloud-count" aria-live="polite" aria-atomic="true">عدد الألعاب المتاحة: 146</span>
       <span>اضغط على أي لعبة لتحميلها وفكها فوراً في المحرك 🚀</span>
     </div>
   </div>
@@ -154567,6 +154567,15 @@ button, input, textarea, select {
   searchInput.addEventListener("input", () => {
     updateSearchClearBtn();
     renderGames();
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter") {
+      const firstCard = grid.querySelector(".gmk-cloud-card");
+      if (firstCard) {
+        e.preventDefault();
+        firstCard.focus();
+      }
+    }
   });
   categorySelect.addEventListener("change", renderGames);
 
