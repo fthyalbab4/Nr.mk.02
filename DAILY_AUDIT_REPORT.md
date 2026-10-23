@@ -1,8 +1,8 @@
-# Daily Audit & Gap Fill Report — 2026-10-31
+# Daily Audit & Gap Fill Report — 2026-11-01
 
 ## 1. Executive Summary
 
-- **Host Linux Engine Verification**: PASS. Native C host binaries and test suites (`test_full_suite`, `test_dual_load`, `test_event_order`, `test_runtime_guard`) passed with 0 failures and 0 warnings.
+- **Host Linux Engine Verification**: PASS. Native C host binaries and test suites (`test_full_suite`, `test_dual_load`, `test_event_order`, `test_runtime_guard`, `test_gm82_extensions`) passed with 0 failures and 0 warnings.
 - **Python Comprehensive Test Suite**: PASS (`run_full_verification.py` 16/16 test checks passing).
 - **JS Pipeline Verification**: PASS (`test_all_games_inlined.js` 39/39 scripts parsed, 78/78 DnD actions executed).
 - **C Unit Test Suite (01_BLACKSCREEN_FIX)**: PASS (`make test` in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` builds and passes all unit tests).
@@ -26,7 +26,7 @@
 ## 3. Test Suite Matrix
 
 - C Host `test_full_suite`: **PASS** (100% - 6/6 test suites).
-- C runtime/dual-load/event-order/guard tests: **PASS** with 0 failures and 0 warnings.
+- C runtime/dual-load/event-order/guard/GM82-extensions tests: **PASS** with 0 failures and 0 warnings.
 - C `01_BLACKSCREEN_FIX` Makefile & unit tests: **PASS** (`make test` clean build and pass).
 - `run_full_verification.py`: **PASS** (16/16 tests).
 - `test_all_games_inlined.js`: **PASS** (39/39 scripts, 78/78 DnD actions).
@@ -37,8 +37,8 @@
 
 Reference: https://github.com/GM82Project
 
-- **gm82core (`instance_create_depth`, `angle_difference`, `approach`, `color_reverse`, `color_inverse`, `dsin`, `dcos`, `dtan`)**: Implemented / Supported natively and in JS runner.
-- **gm823d (d3d stub/math)**: Partial / Stubbed.
+- **gm82core (`instance_create_depth`, `angle_difference`, `approach`, `color_reverse`, `color_inverse`, `dsin`, `dcos`, `dtan`)**: Implemented / Supported natively, in JS runner, and verified via `test_gm82_extensions.c`.
+- **gm823d (`point_distance_3d`, `point_direction_3d`, d3d stubs)**: Implemented / Supported.
 - **gm82audio (`sound_play_pitch`, `sound_loop_pitch`, `sound_volume`, `sound_pan`)**: Implemented / Supported.
 - **gm82display (`window_set_size`, `display_get_width`)**: Implemented / Supported.
 - **gm82surface (`surface_copy`, `surface_set_target`, `surface_reset_target`)**: Implemented / Supported.
@@ -48,10 +48,9 @@ Reference: https://github.com/GM82Project
 
 ### Completed Today
 
-1. **Tri-Mirror C Native Synchronization**: Synchronized `gm82_native_bridge.c` across `app/src/main/cpp/src/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/`, and `app/src/main/cpp_backup/src/`.
-2. **C Unit Test Makefile Fix**: Fixed `Makefile` and `gml_vm.c` placement in `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` so `make test` builds and executes cleanly without missing symbols.
-3. **GM82 Native Call Expansion**: Added native call dispatchers for GM82 core and trig/math extension functions (`color_reverse`, `color_inverse`, `dsin`, `dcos`, `dtan`, `darcsin`, `darccos`, `darctan`, `darctan2`, `ds_grid_set_disk`, `window_set_size`).
-4. **Comprehensive Test Suite Re-verification**: Passed all native C test suites (`python3 tools/run_engine_suite.py`), comprehensive Python suite (`python3 run_full_verification.py`), JS engine pipeline (`node test_all_games_inlined.js`), host pipeline (`bash tools/run_host_pipeline.sh`), and C package tests (`make test`).
+1. **GM82 Extensions Unit Test Addition**: Added `app/src/main/cpp/tests/test_gm82_extensions.c` to directly test `gm82core` angle/approach/color functions, `gm82display`, `gm82surface`, 3D geometry math, and `ds_grid_set_disk` native dispatcher calls.
+2. **Engine Test Suite Integration**: Updated `tools/run_engine_suite.py` to register and automatically run `test_gm82_extensions.c` during full test suite verification.
+3. **Comprehensive Test Suite Re-verification**: Passed all native C test suites (`python3 tools/run_engine_suite.py`), comprehensive Python suite (`python3 run_full_verification.py`), JS engine pipeline (`node test_all_games_inlined.js`), host pipeline (`bash tools/run_host_pipeline.sh`), and C package tests (`make test`).
 
 ### Open Technical Action Items
 
