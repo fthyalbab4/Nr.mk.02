@@ -82,9 +82,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < frames; i++) {
         gm82_input_begin_frame(&input);
         gm82_input_key_down(&input, 39);
-        /* Softer movement inject fallback: only nudge hspeed if after 15 steps of key input delta remains 0 */
-        if (i >= 15 && pi >= 0 && rt.instances[pi].alive && rt.instances[pi].x == x0 && rt.instances[pi].hspeed == 0)
-            rt.instances[pi].hspeed = 2.0;
+        /* movement inject removed — rely on keyboard + events */
         gm82_runtime_step(&rt);
     }
     double x1 = x0, y1 = y0;
@@ -108,7 +106,6 @@ int main(int argc, char **argv) {
     gm82_decoded_background_list_free(&bgs);
     free(buf);
 
-    /* Minimal Save/Load verification test */
     gml_set_score(1234.0);
     gml_set_lives(5.0);
     gml_set_health(80.0);
