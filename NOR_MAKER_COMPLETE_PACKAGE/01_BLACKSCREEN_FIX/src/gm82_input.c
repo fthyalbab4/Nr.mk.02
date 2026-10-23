@@ -3,6 +3,7 @@
 #include <string.h>
 
 static gm82_input_state *g_input = NULL;
+static int g_mouse_lastbutton = 0;
 
 void gm82_input_bind_global(gm82_input_state *in) { g_input = in; }
 
@@ -14,6 +15,21 @@ void gm82_input_begin_frame(gm82_input_state *in) {
     if (!in) return;
     memset(in->pressed, 0, sizeof(in->pressed));
     memset(in->released, 0, sizeof(in->released));
+    memset(in->mouse_pressed, 0, sizeof(in->mouse_pressed));
+    memset(in->mouse_released, 0, sizeof(in->mouse_released));
+}
+
+void gm82_input_mouse_down(gm82_input_state *in, int button) {
+    if (button >= 0 && button <= 2) g_mouse_lastbutton = button + 1;
+    if (!in || button < 0 || button > 2) return;
+    if (!in->mouse_button[button]) in->mouse_pressed[button] = 1;
+    in->mouse_button[button] = 1;
+}
+
+void gm82_input_mouse_up(gm82_input_state *in, int button) {
+    if (!in || button < 0 || button > 2) return;
+    if (in->mouse_button[button]) in->mouse_released[button] = 1;
+    in->mouse_button[button] = 0;
 }
 
 void gm82_input_key_down(gm82_input_state *in, int key) {
@@ -101,6 +117,27 @@ double gml_mouse_check_button(double button) {
 }
 
 double gml_mouse_check_button_pressed(double button) {
-    /* pressed edge not tracked separately for mouse yet – approximate with down */
-    return gml_mouse_check_button(button);
+    int b = (int)button;
+    if (!g_input || b < 0 || b > 2) return 0;
+    return g_input->mouse_pressed[b] ? 1.0 : 0.0;
 }
+
+double gml_mouse_check_button_released(double button) {
+    int b = (int)button;
+    if (!g_input || b < 0 || b > 2) return 0;
+    return g_input->mouse_released[b] ? 1.0 : 0.0;
+}
+
+double gml_keyboard_key(void) {
+    if (!g_input) return 0;
+    for (int i = 0; i < GM82_KEY_MAX; i++)
+        if (g_input->down[i]) return (double)i;
+    return 0;
+}
+double gml_mouse_button_code(void) {
+    if (!g_input) return 0;
+    for (int b = 0; b < 3; b++)
+        if (g_input->mouse_button[b]) return (double)(b + 1);
+    return 0;
+}
+double gml_mouse_lastbutton(void) { return (double)g_mouse_lastbutton; }

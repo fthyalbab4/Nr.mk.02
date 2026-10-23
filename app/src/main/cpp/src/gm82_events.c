@@ -58,6 +58,12 @@ static const gm82_behavior g_behaviors[] = {
     { "fantasma",      beh_player_create, beh_player_step },
     { "obj_link",      beh_player_create, beh_player_step },
     { "link",          beh_player_create, beh_player_step },
+    { "obj_guy",       beh_player_create, beh_player_step },
+    { "guy",           beh_player_create, beh_player_step },
+    { "obj_ship",      beh_player_create, beh_player_step },
+    { "ship",          beh_player_create, beh_player_step },
+    { "jugador",       beh_player_create, beh_player_step },
+    { "obj_jugador",   beh_player_create, beh_player_step },
     { "obj_enemigo",   NULL,              beh_enemy_step },
     { "enemigo",       NULL,              beh_enemy_step },
     { "objEnemigo",    NULL,              beh_enemy_step },
@@ -140,6 +146,7 @@ static const char *find_gml(gm82_gml_bind *arr, int n, gm82_runtime *rt, int32_t
     return NULL;
 }
 
+/* GM82_EV_CREATE = 0 */
 static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -147,20 +154,101 @@ static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        if (ev->main_type != 0) continue;
+        if (ev->main_type != GM82_EV_CREATE) continue;
         if (ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, ev->code_snippet);
+        }
     }
 }
 
+void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive) return;
+    gm82_gml_set_runtime(rt);
+    const char *gcode = find_gml(g_gml_create, g_gml_create_n, rt, inst->object_index);
+    if (gcode) {
+        gm82_gml_set_self(inst);
+        gm82_gml_eval_block(rt, inst, gcode);
+    } else {
+        const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
+        if (b && b->on_create) {
+            gm82_gml_set_self(inst);
+            b->on_create(rt, inst);
+        }
+    }
+    fire_object_create_actions(rt, inst);
+    if (rt->actions)
+        gm82_actions_fire_create(rt, inst, rt->actions);
+}
+
+void gm82_events_fire_create_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        gm82_events_fire_create_single(rt, inst);
+    }
+}
+
+/* GM82_EV_DESTROY = 1 */
+void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !rt->objects) return;
+    int32_t oi = inst->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    gm82_gml_set_runtime(rt);
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == GM82_EV_DESTROY) {
+            if (ev->action_name0[0]) {
+                gm82_action_execute_named(rt, inst, ev->action_name0);
+            }
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, ev->code_snippet);
+            }
+        }
+    }
+}
+
+/* GM82_EV_ALARM = 2 */
+void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_index) {
+    if (!rt || !inst || !inst->alive || alarm_index < 0 || alarm_index >= 12) return;
+    gm82_gml_set_runtime(rt);
+    int32_t oi = inst->object_index;
+    if (oi >= 0 && rt->objects && oi < rt->objects->count) {
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == GM82_EV_ALARM && ev->event_numb == alarm_index) {
+                if (ev->action_name0[0]) {
+                    gm82_action_execute_named(rt, inst, ev->action_name0);
+                }
+                if (ev->code_snippet && ev->code_snippet[0]) {
+                    gm82_gml_set_self(inst);
+                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                }
+            }
+        }
+    }
+    gm82_alarm_fire_scripts(rt, inst, alarm_index);
+}
+
+/* GM82_EV_COLLISION = 4 */
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
     if (oi < 0 || oi >= rt->objects->count) return;
+    gm82_gml_set_runtime(rt);
     const gm82_decoded_object *obj = &rt->objects->items[oi];
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
-        if (ev->main_type != 4) continue;
+        if (ev->main_type != GM82_EV_COLLISION) continue;
         if (ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
         if (ev->code_snippet && ev->code_snippet[0]) {
@@ -179,63 +267,15 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
                 const char *cs = o2->events[e].code_snippet;
                 if (cs && strstr(cs, "instance_destroy")) { is_pick = 1; break; }
             }
-            if (is_pick && !other->solid) other->alive = 0;
-        }
-    }
-}
-
-void gm82_events_fire_create_all(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_gml_set_runtime(rt);
-    for (int i = 0; i < rt->instance_count; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        const char *gcode = find_gml(g_gml_create, g_gml_create_n, rt, inst->object_index);
-        if (gcode) {
-            gm82_gml_set_self(inst);
-            gm82_gml_eval_block(rt, inst, gcode);
-        } else {
-            const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
-            if (b && b->on_create) {
-                gm82_gml_set_self(inst);
-                b->on_create(rt, inst);
-            }
-        }
-        fire_object_create_actions(rt, inst);
-        if (rt->actions)
-            gm82_actions_fire_create(rt, inst, rt->actions);
-    }
-}
-
-static void fire_object_step_actions(gm82_runtime *rt, gm82_instance *inst) {
-    if (!rt || !inst || !rt->objects) return;
-    int32_t oi = inst->object_index;
-    if (oi < 0 || oi >= rt->objects->count) return;
-    const gm82_decoded_object *obj = &rt->objects->items[oi];
-    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-        const gm82_decoded_event *ev = &obj->events[e];
-        /* Step event actions */
-        if (ev->main_type == 3 && ev->action_name0[0])
-            gm82_action_execute_named(rt, inst, ev->action_name0);
-        /* Run GML snippets that look like continuous logic even if tagged Create */
-        if (ev->code_snippet && ev->code_snippet[0]) {
-            const char *cs = ev->code_snippet;
-            int stepish = (ev->main_type == 3) ||
-                strstr(cs, "keyboard") || strstr(cs, "hspeed") || strstr(cs, "vspeed") ||
-                strstr(cs, "motion_set") || strstr(cs, "move_towards") ||
-                strstr(cs, "instance_exists") || strstr(cs, "distance_to") ||
-                strstr(cs, "instance_create") || strstr(cs, "alarm");
-            if (stepish) {
-                gm82_gml_set_self(inst);
-                gm82_gml_eval_block(rt, inst, cs);
+            if (is_pick && !other->solid) {
+                gm82_events_fire_destroy(rt, other);
+                other->alive = 0;
             }
         }
     }
 }
 
-
-/* Fire object events matching main_type / event_numb (GM8: Step=3, Draw=8).
- * Snapshot iteration: caller freezes instance_count for the phase. */
+/* Helper to fire object event for a specific main_type and event_numb */
 static void fire_object_ev(gm82_runtime *rt, gm82_instance *inst,
                            int main_type, int event_numb) {
     if (!rt || !inst || !inst->alive || !rt->objects) return;
@@ -244,7 +284,19 @@ static void fire_object_ev(gm82_runtime *rt, gm82_instance *inst,
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
         if (ev->main_type != main_type) continue;
-        if (event_numb >= 0 && ev->event_numb != event_numb) continue;
+        if (event_numb >= 0) {
+            if (main_type == GM82_EV_STEP && event_numb == GM82_STEP_NORMAL) {
+                if (ev->event_numb != 0 && ev->event_numb != -1) continue;
+            } else if (main_type == GM82_EV_DRAW && event_numb == 0) {
+                if (ev->event_numb != 0 && ev->event_numb != -1) continue;
+            } else if (main_type == GM82_EV_DRAW && event_numb == 1) {
+                if (ev->event_numb != 1 && ev->event_numb != 72) continue;
+            } else if (main_type == GM82_EV_DRAW && event_numb == 2) {
+                if (ev->event_numb != 2 && ev->event_numb != 73 && ev->event_numb != 64) continue;
+            } else {
+                if (ev->event_numb != event_numb) continue;
+            }
+        }
         if (ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
         if (ev->code_snippet && ev->code_snippet[0]) {
@@ -254,84 +306,231 @@ static void fire_object_ev(gm82_runtime *rt, gm82_instance *inst,
     }
 }
 
+/* GM82_EV_STEP = 3 (Begin Step, Step, End Step) */
 void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
     if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
     gm82_gml_set_runtime(rt);
-    const int n = rt->instance_count;
-    for (int i = 0; i < n; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        fire_object_ev(rt, inst, 3, 1);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        fire_object_ev(rt, inst, GM82_EV_STEP, GM82_STEP_BEGIN);
     }
 }
 
 void gm82_events_fire_end_step_all(gm82_runtime *rt) {
     if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
     gm82_gml_set_runtime(rt);
-    const int n = rt->instance_count;
-    for (int i = 0; i < n; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        fire_object_ev(rt, inst, 3, 2);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        fire_object_ev(rt, inst, GM82_EV_STEP, GM82_STEP_END);
     }
+}
+
+void gm82_events_fire_step_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        fire_object_ev(rt, inst, GM82_EV_STEP, GM82_STEP_NORMAL);
+        const char *gcode = find_gml(g_gml_step, g_gml_step_n, rt, inst->object_index);
+        if (gcode) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, gcode);
+        } else {
+            const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
+            if (b && b->on_step) {
+                gm82_gml_set_self(inst);
+                b->on_step(rt, inst);
+            }
+        }
+        if (rt->actions)
+            gm82_actions_fire_step(rt, inst, rt->actions);
+    }
+}
+
+/* GM82_EV_KEYBOARD = 5, GM82_EV_KEYPRESS = 9, GM82_EV_KEYRELEASE = 10 */
+void gm82_events_fire_keyboard_all(gm82_runtime *rt) {
+    if (!rt || !rt->objects) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        int32_t oi = inst->object_index;
+        if (oi < 0 || oi >= rt->objects->count) continue;
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == GM82_EV_KEYBOARD) { /* Keyboard held */
+                if (ev->event_numb > 0 && gml_keyboard_check((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            } else if (ev->main_type == GM82_EV_KEYPRESS) { /* Key press */
+                if (ev->event_numb > 0 && gml_keyboard_check_pressed((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            } else if (ev->main_type == GM82_EV_KEYRELEASE) { /* Key release */
+                if (ev->event_numb > 0 && gml_keyboard_check_released((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* GM82_EV_MOUSE = 6 */
+void gm82_events_fire_mouse_all(gm82_runtime *rt) {
+    if (!rt || !rt->objects) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    gm82_gml_set_runtime(rt);
+    double mx = gml_mouse_x();
+    double my = gml_mouse_y();
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        int32_t oi = inst->object_index;
+        if (oi < 0 || oi >= rt->objects->count) continue;
+        int32_t sw = 16, sh = 16;
+        if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
+            sw = rt->sprites->frames[inst->sprite_index].width;
+            sh = rt->sprites->frames[inst->sprite_index].height;
+        }
+        bool inside = (mx >= inst->x && mx < inst->x + sw && my >= inst->y && my < inst->y + sh);
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == GM82_EV_MOUSE) {
+                int ev_num = ev->event_numb;
+                bool fire = false;
+
+                if (ev_num >= 0 && ev_num <= 2) { /* Local Held Down */
+                    fire = inside && gml_mouse_check_button((double)ev_num);
+                } else if (ev_num >= 4 && ev_num <= 6) { /* Local Pressed */
+                    fire = inside && gml_mouse_check_button_pressed((double)(ev_num - 4));
+                } else if (ev_num >= 7 && ev_num <= 9) { /* Local Released */
+                    fire = inside && gml_mouse_check_button_released((double)(ev_num - 7));
+                } else if (ev_num >= 50 && ev_num <= 52) { /* Global Held Down */
+                    fire = gml_mouse_check_button((double)(ev_num - 50));
+                } else if (ev_num >= 53 && ev_num <= 55) { /* Global Pressed */
+                    fire = gml_mouse_check_button_pressed((double)(ev_num - 53));
+                } else if (ev_num >= 56 && ev_num <= 58) { /* Global Released */
+                    fire = gml_mouse_check_button_released((double)(ev_num - 56));
+                }
+
+                if (fire) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* GM82_EV_OTHER = 7 */
+void gm82_events_fire_other(gm82_runtime *rt, gm82_instance *inst, int other_index) {
+    if (!rt || !inst || !inst->alive || !rt->objects) return;
+    int32_t oi = inst->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    gm82_gml_set_runtime(rt);
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == GM82_EV_OTHER) {
+            if (other_index >= 0 && ev->event_numb != other_index) continue;
+            if (ev->action_name0[0]) {
+                gm82_action_execute_named(rt, inst, ev->action_name0);
+            }
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, ev->code_snippet);
+            }
+        }
+    }
+}
+
+/* GM82_EV_DRAW = 8 (Pre-Draw, Draw, Post-Draw/GUI) */
+void gm82_events_fire_pre_draw_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        fire_object_ev(rt, inst, GM82_EV_DRAW, 1);
+    }
+}
+
+bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive || !rt->objects) return false;
+    if (inst->object_index < 0 || inst->object_index >= rt->objects->count) return false;
+    const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == GM82_EV_DRAW && (ev->event_numb == 0 || ev->event_numb == -1)) {
+            if (ev->action_name0[0] || (ev->code_snippet && ev->code_snippet[0]))
+                return true;
+        }
+    }
+    return false;
+}
+
+void gm82_events_fire_draw_single(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive || !inst->visible) return;
+    gm82_gml_set_runtime(rt);
+    fire_object_ev(rt, inst, GM82_EV_DRAW, 0);
 }
 
 void gm82_events_fire_draw_all(gm82_runtime *rt) {
     if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
     gm82_gml_set_runtime(rt);
-    const int n = rt->instance_count;
-    for (int i = 0; i < n; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive || !inst->visible) continue;
-        fire_object_ev(rt, inst, 8, 0);
-    }
-}
-
-void gm82_events_fire_pre_draw_all(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_gml_set_runtime(rt);
-    const int n = rt->instance_count;
-    for (int i = 0; i < n; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        fire_object_ev(rt, inst, 8, 1);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive || !inst->visible) continue;
+        fire_object_ev(rt, inst, GM82_EV_DRAW, 0);
     }
 }
 
 void gm82_events_fire_post_draw_all(gm82_runtime *rt) {
     if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
     gm82_gml_set_runtime(rt);
-    const int n = rt->instance_count;
-    for (int i = 0; i < n; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        fire_object_ev(rt, inst, 8, 2);
-    }
-}
-
-
-void gm82_events_fire_step_all(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_gml_set_runtime(rt);
-    const int n = rt->instance_count;
-    for (int i = 0; i < n; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        fire_object_ev(rt, inst, 3, 0);
-        const char *gcode = find_gml(g_gml_step, g_gml_step_n, rt, inst->object_index);
-        if (gcode) {
-            gm82_gml_set_self(inst);
-            gm82_gml_eval_block(rt, inst, gcode);
-        }
-        /* Built-in behaviors fill gaps (movement) until full GML scripts land */
-        const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
-        if (b && b->on_step) {
-            gm82_gml_set_self(inst);
-            b->on_step(rt, inst);
-        }
-        fire_object_step_actions(rt, inst);
-        if (rt->actions)
-            gm82_actions_fire_step(rt, inst, rt->actions);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        fire_object_ev(rt, inst, GM82_EV_DRAW, 2);
     }
 }
 
