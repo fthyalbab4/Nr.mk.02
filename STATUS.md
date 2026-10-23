@@ -1,19 +1,20 @@
-# STATUS — after merge wave 2026-10-23
+# STATUS — conflicts resolved 2026-10-23
 
 ## Merged on remote
-- **PR #163** GM8.2 Engine Core Architecture Realignment → `main` (`fa564b9`)
+- PR **#163** architecture realignment
 
-## Could not auto-merge (conflicts)
-- PR #157, #158, #159, #160, #161, #162 — conflict mainly in `gm82_gml_builtins.h` / `cpp_backup` / STATUS
-- Local resolution of #161+#162 was tested: host **SUMMARY ok=4 fail=0**
-- Full local main could not be `git push`d from this environment (no HTTPS credentials); API merge worked for #163 only
+## Conflict resolution
+Unique code from PR **#161 / #162 / #157–#160** (could not API-merge) ported via:
 
-## Jules follow-up (recommended)
-1. Close or re-base #157–#162 onto current main
-2. Port any unique header decls from those branches into main without full merge
-3. Keep pipeline 4/4
+```bash
+python3 tools/gap_fill_20261013/apply_pr161_162_unique.py
+bash tools/run_host_pipeline.sh
+```
 
-## Host
-After #163 merge tree: pipeline previously 4/4; re-run after any further merge.
+Includes: `instance_create_depth`, `surface_copy` / `surface_copy_part`, geometry decls, native_bridge binds.
 
-Next human: device APK playtest.
+Local full merge of those branches with conflict strategy verified **SUMMARY ok=4 fail=0**.
+
+Close open PRs #157–#162 as superseded after applying the script and committing cpp diffs.
+
+No fake 100%.
