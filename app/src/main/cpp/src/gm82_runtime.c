@@ -21,6 +21,17 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_height = 480;
 }
 
+
+int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
+    if (!rt || !out_ptrs) return 0;
+    int n = 0;
+    for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++) {
+        if (rt->instances[i].alive)
+            out_ptrs[n++] = &rt->instances[i];
+    }
+    return n;
+}
+
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,
     const gm82_decoded_sprite_list *sprites,
@@ -63,7 +74,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
         /* Name heuristics when GMK solid bit is wrong/zero */
-        if (o->name) {
+        if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
                 strstr(o->name, "Solid") || strstr(o->name, "wall") ||
@@ -73,8 +84,26 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     }
 }
 
+void gm82_runtime_compact_instances(gm82_runtime *rt) {
+    if (!rt) return;
+    int write_idx = 0;
+    for (int read_idx = 0; read_idx < rt->instance_count; read_idx++) {
+        if (rt->instances[read_idx].alive) {
+            if (write_idx != read_idx) {
+                rt->instances[write_idx] = rt->instances[read_idx];
+            }
+            write_idx++;
+        }
+    }
+    rt->instance_count = write_idx;
+}
+
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
-    if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    if (!rt) return NULL;
+    if (rt->instance_count >= GM82_MAX_INSTANCES) {
+        gm82_runtime_compact_instances(rt);
+        if (rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    }
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
@@ -266,45 +295,64 @@ void gm82_runtime_step(gm82_runtime *rt) {
         inst->y += inst->vspeed;
     }
 
+    /* ROOM_BOUNDS_CLAMP */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        int32_t sw = 16, sh = 16;
+        if (rt->room_width > 0) {
+            if (inst->x < 0) { inst->x = 0; if (inst->hspeed < 0) inst->hspeed = 0; }
+            if (inst->x > rt->room_width) { inst->x = (double)rt->room_width; if (inst->hspeed > 0) inst->hspeed = 0; }
+        }
+        if (rt->room_height > 0) {
+            if (inst->y < 0) { inst->y = 0; if (inst->vspeed < 0) inst->vspeed = 0; }
+            if (inst->y > rt->room_height) { inst->y = (double)rt->room_height; if (inst->vspeed > 0) inst->vspeed = 0; }
+        }
+    }
+
+    const int n_col = rt->instance_count;
+    for (int i = 0; i < n_col; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        int32_t sw = 16, sh = 16, sox = 0, soy = 0;
         if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
             sw = rt->sprites->frames[inst->sprite_index].width;
             sh = rt->sprites->frames[inst->sprite_index].height;
+            sox = rt->sprites->frames[inst->sprite_index].origin_x;
+            soy = rt->sprites->frames[inst->sprite_index].origin_y;
         }
         {
             double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
             double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
             if (xs < 0) xs = -xs;
             if (ys < 0) ys = -ys;
-            sw = (int32_t)(sw * xs);
-            sh = (int32_t)(sh * ys);
+            sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
+            sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
             if (sw < 1) sw = 1;
             if (sh < 1) sh = 1;
         }
-        for (int j = 0; j < rt->instance_count; j++) {
+        for (int j = 0; j < n_col; j++) {
             if (i == j) continue;
             gm82_instance *other = &rt->instances[j];
             if (!other->alive) continue;
-            int32_t ow = 16, oh = 16;
+            int32_t ow = 16, oh = 16, oox = 0, ooy = 0;
             if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
                 ow = rt->sprites->frames[other->sprite_index].width;
                 oh = rt->sprites->frames[other->sprite_index].height;
+                oox = rt->sprites->frames[other->sprite_index].origin_x;
+                ooy = rt->sprites->frames[other->sprite_index].origin_y;
             }
             {
                 double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
                 double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
                 if (xs < 0) xs = -xs;
                 if (ys < 0) ys = -ys;
-                ow = (int32_t)(ow * xs);
-                oh = (int32_t)(oh * ys);
+                ow = (int32_t)(ow * xs); oh = (int32_t)(oh * ys);
+                oox = (int32_t)(oox * xs); ooy = (int32_t)(ooy * ys);
                 if (ow < 1) ow = 1;
                 if (oh < 1) oh = 1;
             }
-            double ax1 = inst->x, ay1 = inst->y, ax2 = inst->x + sw, ay2 = inst->y + sh;
-            double bx1 = other->x, by1 = other->y, bx2 = other->x + ow, by2 = other->y + oh;
+            double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
+            double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
             if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
                 continue;
             gm82_events_fire_collision(rt, inst, other);
@@ -312,19 +360,19 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
                 double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);
                 if (overlap_y <= overlap_x) {
-                    if (inst->y + sh/2.0 < other->y + oh/2.0) {
-                        inst->y = other->y - sh;
+                    if ((ay1 + ay2) * 0.5 < (by1 + by2) * 0.5) {
+                        inst->y = by1 - (ay2 - inst->y);
                         if (inst->vspeed > 0) inst->vspeed = 0;
                     } else {
-                        inst->y = other->y + oh;
+                        inst->y = by2 + (inst->y - ay1);
                         if (inst->vspeed < 0) inst->vspeed = 0;
                     }
                 } else {
-                    if (inst->x + sw/2.0 < other->x + ow/2.0) {
-                        inst->x = other->x - sw;
+                    if ((ax1 + ax2) * 0.5 < (bx1 + bx2) * 0.5) {
+                        inst->x = bx1 - (ax2 - inst->x);
                         if (inst->hspeed > 0) inst->hspeed = 0;
                     } else {
-                        inst->x = other->x + ow;
+                        inst->x = bx2 + (inst->x - ax1);
                         if (inst->hspeed < 0) inst->hspeed = 0;
                     }
                 }
@@ -360,8 +408,19 @@ void gm82_runtime_step(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        if (inst->image_speed != 0.0)
+        if (inst->image_speed != 0.0) {
             inst->image_index += (int32_t)(inst->image_speed > 0 ? 1 : -1);
+            if (rt->sprite_groups && inst->sprite_index >= 0) {
+                int gi = gm82_sprite_group_index_for_frame(rt->sprite_groups, inst->sprite_index);
+                if (gi >= 0) {
+                    int fc = rt->sprite_groups->items[gi].frame_count;
+                    if (fc > 0) {
+                        if (inst->image_index < 0) inst->image_index = fc - 1;
+                        else if (inst->image_index >= fc) inst->image_index = 0;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -422,8 +481,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    gm82_events_fire_draw_all(rt);
-
     int order[GM82_MAX_INSTANCES];
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
@@ -441,15 +498,19 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 
     for (int k = 0; k < n; k++) {
         gm82_instance *inst = &rt->instances[order[k]];
-        if (inst->sprite_index < 0) continue;
-        double dx = inst->x - rt->view_x;
-        double dy = inst->y - rt->view_y;
+        if (!inst->alive || !inst->visible) continue;
         gm82_gml_set_self(inst);
-        gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
-                            dx, dy,
-                            inst->image_xscale,
-                            inst->image_yscale,
-                            0.0, 0xFFFFFF, 1.0);
+        if (gm82_events_has_draw_event(rt, inst)) {
+            gm82_events_fire_draw_single(rt, inst);
+        } else if (inst->sprite_index >= 0) {
+            double dx = inst->x - rt->view_x;
+            double dy = inst->y - rt->view_y;
+            gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                                dx, dy,
+                                inst->image_xscale,
+                                inst->image_yscale,
+                                0.0, 0xFFFFFF, 1.0);
+        }
     }
     gm82_events_fire_post_draw_all(rt);
     return true;

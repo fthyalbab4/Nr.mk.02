@@ -54,7 +54,7 @@ static bool list_push(gm82_decoded_background_list *L, const char *name,
     }
     gm82_decoded_background *b = &L->items[L->count];
     memset(b, 0, sizeof(*b));
-    strncpy(b->name, name ? name : "?", sizeof(b->name)-1);
+    snprintf(b->name, sizeof(b->name), "%s", name ? name : "?");
     b->width = w; b->height = h; b->rgba_size = len;
     b->rgba = (uint8_t *)malloc(len);
     if (!b->rgba) return false;

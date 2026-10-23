@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <fnmatch.h>
 #include "gm82_gml_builtins.h"
+#include "gm82_sprite_decode.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
 #include "gm82_gml_eval.h"
@@ -126,6 +127,36 @@ static bool sprite_size(gm82_runtime *rt, int32_t sprite_index, int32_t *w, int3
     return true;
 }
 
+static bool precise_mask_overlap(const gm82_runtime *rt,
+                                 int32_t spr1, double x1, double y1,
+                                 int32_t spr2, double x2, double y2);
+
+static void inst_world_bbox(gm82_runtime *rt, const gm82_instance *inst,
+                            double at_x, double at_y,
+                            double *out_l, double *out_t, double *out_r, double *out_b) {
+    int32_t sw = 16, sh = 16, ox = 0, oy = 0;
+    if (rt && rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
+        const gm82_decoded_frame *fr = &rt->sprites->frames[inst->sprite_index];
+        sw = fr->width; sh = fr->height;
+        ox = fr->origin_x; oy = fr->origin_y;
+    }
+    double xs = inst->image_xscale != 0.0 ? inst->image_xscale : 1.0;
+    double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
+    double aw = (double)sw * (xs < 0 ? -xs : xs);
+    double ah = (double)sh * (ys < 0 ? -ys : ys);
+    double oxs = (double)ox * (xs < 0 ? -xs : xs);
+    double oys = (double)oy * (ys < 0 ? -ys : ys);
+    *out_l = at_x - oxs;
+    *out_t = at_y - oys;
+    *out_r = *out_l + aw;
+    *out_b = *out_t + ah;
+}
+
+static bool aabb_overlap_d(double al, double at, double ar, double ab,
+                           double bl, double bt, double br, double bb) {
+    return al < br && ar > bl && at < bb && ab > bt;
+}
+
 static bool aabb_overlap(double ax, double ay, int aw, int ah,
                          double bx, double by, int bw, int bh) {
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
@@ -142,7 +173,14 @@ double gml_place_meeting(double x, double y, double object_index) {
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) return 1;
+        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
+            if (precise_mask_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y))
+                return 1;
+            /* If precise mask not available or returned false but sprites lack pixel data, fallback to AABB */
+            if (!g_rt->sprites || g_self->sprite_index < 0 || g_self->sprite_index >= g_rt->sprites->count ||
+                !g_rt->sprites->frames[g_self->sprite_index].rgba)
+                return 1;
+        }
     }
     /* also solid tiles when object_index < 0 (all) */
     if (oi < 0 && g_rt->rooms && g_rt->current_room >= 0 && g_rt->current_room < g_rt->rooms->count) {
@@ -159,33 +197,36 @@ double gml_place_meeting(double x, double y, double object_index) {
 double gml_position_meeting(double x, double y, double object_index) {
     if (!g_rt) return 0;
     int32_t oi = (int32_t)object_index;
-    for (int i = 0; i < g_rt->instance_count; i++) {
+    const int n = g_rt->instance_count;
+    for (int i = 0; i < n; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
         if (oi >= 0 && o->object_index != oi) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (x >= o->x && x < o->x + ow && y >= o->y && y < o->y + oh) return 1;
+        double ol, ot, orr, ob;
+        inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
+        if (x >= ol && x < orr && y >= ot && y < ob) return 1;
     }
     return 0;
 }
 
 double gml_instance_place(double x, double y, double object_index) {
-    if (!g_rt || !g_self) return -4; /* noone */
+    if (!g_rt || !g_self) return -4;
     int32_t oi = (int32_t)object_index;
-    int32_t sw, sh;
-    sprite_size(g_rt, g_self->sprite_index, &sw, &sh);
-    for (int i = 0; i < g_rt->instance_count; i++) {
+    double sl, st, sr, sb;
+    inst_world_bbox(g_rt, g_self, x, y, &sl, &st, &sr, &sb);
+    const int n = g_rt->instance_count;
+    for (int i = 0; i < n; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
         if (oi >= 0 && o->object_index != oi) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh))
+        double ol, ot, orr, ob;
+        inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
+        if (aabb_overlap_d(sl, st, sr, sb, ol, ot, orr, ob))
             return (double)o->id;
     }
     return -4;
 }
+
 
 double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     if (!g_rt) return -4;
@@ -380,21 +421,43 @@ double gml_event_user(double numb) {
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
-double gml_get_bbox_left(void) { return g_self ? g_self->x : 0; }
+double gml_get_bbox_left(void) {
+    if (!g_self) return 0;
+    double ox = 0;
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
+    }
+    return g_self->x - ox * g_self->image_xscale;
+}
 double gml_get_bbox_right(void) {
     if (!g_self) return 0;
-    int32_t sw = 16;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+    int32_t sw = 16; double ox = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sw = g_rt->sprites->frames[g_self->sprite_index].width;
-    return g_self->x + sw - 1;
+    }
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
+    }
+    return g_self->x + (sw - ox) * g_self->image_xscale - 1;
 }
-double gml_get_bbox_top(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_top(void) {
+    if (!g_self) return 0;
+    double oy = 0;
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
+    }
+    return g_self->y - oy * g_self->image_yscale;
+}
 double gml_get_bbox_bottom(void) {
     if (!g_self) return 0;
-    int32_t sh = 16;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+    int32_t sh = 16; double oy = 0;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sh = g_rt->sprites->frames[g_self->sprite_index].height;
-    return g_self->y + sh - 1;
+    }
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
+    }
+    return g_self->y + (sh - oy) * g_self->image_yscale - 1;
 }
 void gml_set_x(double v) { if (g_self) g_self->x = v; }
 void gml_set_y(double v) { if (g_self) g_self->y = v; }
@@ -537,6 +600,60 @@ double gml_point_in_rectangle(double px, double py, double x1, double y1, double
     if (x1 > x2) { double t=x1; x1=x2; x2=t; }
     if (y1 > y2) { double t=y1; y1=y2; y2=t; }
     return (px >= x1 && px <= x2 && py >= y1 && py <= y2) ? 1.0 : 0.0;
+}
+
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad) {
+    double dx = px - cx;
+    double dy = py - cy;
+    return (dx * dx + dy * dy <= rad * rad) ? 1.0 : 0.0;
+}
+
+static double sign_tri(double px, double py, double x1, double y1, double x2, double y2) {
+    return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2);
+}
+
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3) {
+    double d1 = sign_tri(px, py, x1, y1, x2, y2);
+    double d2 = sign_tri(px, py, x2, y2, x3, y3);
+    double d3 = sign_tri(px, py, x3, y3, x1, y1);
+    bool has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    bool has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+    return !(has_neg && has_pos) ? 1.0 : 0.0;
+}
+
+double gml_color_to_html(double color, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = c & 0xFF;
+    uint8_t g = (c >> 8) & 0xFF;
+    uint8_t b = (c >> 16) & 0xFF;
+    snprintf(out, out_sz, "#%02X%02X%02X", r, g, b);
+    return (double)strlen(out);
+}
+
+double gml_hex_to_color(const char *hex_str) {
+    if (!hex_str) return 0;
+    const char *p = hex_str;
+    if (*p == '#') p++;
+    else if (*p == '$') p++;
+    else if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) p += 2;
+    unsigned int raw = 0;
+    if (sscanf(p, "%x", &raw) != 1) return 0;
+    if (strlen(p) == 6) {
+        uint32_t r = (raw >> 16) & 0xFF;
+        uint8_t g = (raw >> 8) & 0xFF;
+        uint32_t b = raw & 0xFF;
+        return (double)((b << 16) | (g << 8) | r);
+    }
+    return (double)raw;
+}
+
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double dz = z2 - z1;
+    double horiz = sqrt(dx * dx + dy * dy);
+    return atan2(-dz, horiz) * 180.0 / M_PI;
 }
 
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
@@ -850,6 +967,17 @@ double gml_sprite_get_height(double sprite) {
     int si = (int)sprite;
     if (si < 0 || si >= g_rt->sprites->count) return 0;
     return (double)g_rt->sprites->frames[si].height;
+}
+
+double gml_sprite_get_xoffset(double sprite) {
+    int32_t si = (int32_t)sprite;
+    if (!g_rt || !g_rt->sprites || si < 0 || si >= g_rt->sprites->count) return 0;
+    return (double)g_rt->sprites->frames[si].origin_x;
+}
+double gml_sprite_get_yoffset(double sprite) {
+    int32_t si = (int32_t)sprite;
+    if (!g_rt || !g_rt->sprites || si < 0 || si >= g_rt->sprites->count) return 0;
+    return (double)g_rt->sprites->frames[si].origin_y;
 }
 double gml_sprite_get_number(double sprite) {
     (void)sprite;
@@ -1356,13 +1484,16 @@ static gm82_path_list *g_paths = NULL;
 void gm82_path_bind(gm82_path_list *paths) { g_paths = paths; }
 
 double gml_path_start(double path_index, double speed, double end_action, double absolute) {
-    (void)end_action; (void)absolute;
+    (void)absolute;
     if (!g_self || !g_paths) return 0;
     int pi = (int)path_index;
     if (pi < 0 || pi >= g_paths->count) return 0;
     g_self->path_index = pi;
     g_self->path_position = 0;
+    g_self->path_positionprevious = 0;
     g_self->path_speed = speed;
+    g_self->path_endaction = (int32_t)end_action;
+    if (g_self->path_scale == 0) g_self->path_scale = 1;
     if (g_paths->items[pi].count > 0) {
         g_self->x = g_paths->items[pi].points[0].x;
         g_self->y = g_paths->items[pi].points[0].y;
@@ -1387,7 +1518,21 @@ void gm82_path_step_instance(gm82_instance *inst) {
     if (!inst || !g_paths || inst->path_index < 0) return;
     if (inst->path_index >= g_paths->count) return;
     const gm82_path *path = &g_paths->items[inst->path_index];
-    gm82_path_advance(path, &inst->x, &inst->y, &inst->path_position, inst->path_speed);
+    inst->path_positionprevious = inst->path_position;
+    double pos = inst->path_position;
+    gm82_path_advance(path, &inst->x, &inst->y, &pos, inst->path_speed);
+    inst->path_position = pos;
+    if (inst->path_position >= 1.0 - 1e-9) {
+        if (inst->path_endaction == 1) {
+            inst->path_position = 0;
+        } else if (inst->path_endaction == 3) {
+            inst->path_speed = -inst->path_speed;
+            inst->path_position = 1.0;
+        } else {
+            inst->path_speed = 0;
+            inst->path_index = -1;
+        }
+    }
 }
 
 static gm82_timeline_list *g_timelines = NULL;
@@ -2269,8 +2414,8 @@ double gml_ini_open(const char *path) {
         char *sp = key + strlen(key) - 1;
         while (sp > key && (*sp == ' ' || *sp == '\t')) { *sp = 0; sp--; }
         if (g_ini_count >= GM82_INI_MAX_KEYS) break;
-        strncpy(g_ini[g_ini_count].section, cur_sec, 63);
-        strncpy(g_ini[g_ini_count].key, key, 63);
+        snprintf(g_ini[g_ini_count].section, sizeof(g_ini[g_ini_count].section), "%s", cur_sec);
+        snprintf(g_ini[g_ini_count].key, sizeof(g_ini[g_ini_count].key), "%s", key);
         g_ini[g_ini_count].value = strtod(val, NULL);
         g_ini_count++;
     }
@@ -2286,7 +2431,7 @@ double gml_ini_close(void) {
         for (int i = 0; i < g_ini_count; i++) {
             if (strcmp(g_ini[i].section, last_sec) != 0) {
                 fprintf(f, "[%s]\n", g_ini[i].section);
-                strncpy(last_sec, g_ini[i].section, 63);
+                snprintf(last_sec, sizeof(last_sec), "%.63s", g_ini[i].section);
             }
             fprintf(f, "%s=%.10g\n", g_ini[i].key, g_ini[i].value);
         }
@@ -2414,6 +2559,17 @@ double gml_file_exists(const char *path) {
 double gml_file_delete(const char *path) {
     if (!path) return 0;
     return remove(path) == 0 ? 1.0 : 0.0;
+}
+
+/* Ported from Nr.mk.01 — complete, do not replace other file I/O */
+double gml_file_rename(const char *oldname, const char *newname) {
+    if (!oldname || !newname) return 0.0;
+    return rename(oldname, newname) == 0 ? 1.0 : 0.0;
+}
+
+double gml_directory_rename(const char *oldname, const char *newname) {
+    if (!oldname || !newname) return 0.0;
+    return rename(oldname, newname) == 0 ? 1.0 : 0.0;
 }
 
 void gml_string_format(double val, double total, double dec, char *out, size_t outsize) {
@@ -2612,6 +2768,57 @@ double gml_game_restart(void) {
     return gm82_runtime_goto_room(g_rt, 0) ? 1.0 : 0.0;
 }
 double gml_game_has_ended(void) { return g_game_ended ? 1.0 : 0.0; }
+
+double gml_game_save(const char *filename) {
+    if (!filename || !filename[0]) filename = "nor_save.dat";
+    FILE *f = fopen(filename, "w");
+    if (!f) return 0;
+    double px = 0, py = 0;
+    int oi = -1;
+    if (g_rt) {
+        for (int i = 0; i < g_rt->instance_count; i++) {
+            if (g_rt->instances[i].alive) {
+                px = g_rt->instances[i].x;
+                py = g_rt->instances[i].y;
+                oi = g_rt->instances[i].object_index;
+                break;
+            }
+        }
+    }
+    fprintf(f, "score=%f\nlives=%f\nhealth=%f\npx=%f\npy=%f\noi=%d\n",
+            g_score, g_lives, g_health, px, py, oi);
+    fclose(f);
+    return 1;
+}
+
+double gml_game_load(const char *filename) {
+    if (!filename || !filename[0]) filename = "nor_save.dat";
+    FILE *f = fopen(filename, "r");
+    if (!f) return 0;
+    double s = g_score, l = g_lives, h = g_health, px = 0, py = 0;
+    int oi = -1;
+    char line[128];
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "score=", 6) == 0) s = atof(line + 6);
+        else if (strncmp(line, "lives=", 6) == 0) l = atof(line + 6);
+        else if (strncmp(line, "health=", 7) == 0) h = atof(line + 7);
+        else if (strncmp(line, "px=", 3) == 0) px = atof(line + 3);
+        else if (strncmp(line, "py=", 3) == 0) py = atof(line + 3);
+        else if (strncmp(line, "oi=", 3) == 0) oi = atoi(line + 3);
+    }
+    fclose(f);
+    g_score = s; g_lives = l; g_health = h;
+    if (g_rt) {
+        for (int i = 0; i < g_rt->instance_count; i++) {
+            if (g_rt->instances[i].alive && (oi < 0 || g_rt->instances[i].object_index == oi)) {
+                g_rt->instances[i].x = px;
+                g_rt->instances[i].y = py;
+                break;
+            }
+        }
+    }
+    return 1;
+}
 
 static gm82_script_list *g_scripts = NULL;
 void gm82_scripts_bind(gm82_script_list *scripts) { g_scripts = scripts; }
@@ -3144,7 +3351,8 @@ double gml_ds_grid_value_exists(double id, double x1, double y1, double x2, doub
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3159,7 +3367,8 @@ double gml_ds_grid_value_x(double id, double x1, double y1, double x2, double y2
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return -1;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3174,7 +3383,8 @@ double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return -1;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3332,9 +3542,12 @@ double gml_window_center(void) {
 /* Color functions & Blend modes */
 double gml_make_color_rgb(double r, double g, double b) {
     int ir = (int)r, ig = (int)g, ib = (int)b;
-    if (ir < 0) ir = 0; if (ir > 255) ir = 255;
-    if (ig < 0) ig = 0; if (ig > 255) ig = 255;
-    if (ib < 0) ib = 0; if (ib > 255) ib = 255;
+    if (ir < 0) ir = 0;
+    if (ir > 255) ir = 255;
+    if (ig < 0) ig = 0;
+    if (ig > 255) ig = 255;
+    if (ib < 0) ib = 0;
+    if (ib > 255) ib = 255;
     return (double)(ir | (ig << 8) | (ib << 16));
 }
 
@@ -3391,7 +3604,8 @@ double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2,
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
     int ix1 = (int)x1, iy1 = (int)y1, ix2 = (int)x2, iy2 = (int)y2;
-    if (ix1 < 0) ix1 = 0; if (iy1 < 0) iy1 = 0;
+    if (ix1 < 0) ix1 = 0;
+    if (iy1 < 0) iy1 = 0;
     if (ix2 >= g_ds_grids[i].width) ix2 = g_ds_grids[i].width - 1;
     if (iy2 >= g_ds_grids[i].height) iy2 = g_ds_grids[i].height - 1;
     if (ix1 > ix2 || iy1 > iy2) return 0;
@@ -3411,12 +3625,22 @@ int gml_script_find(const char *name) {
 void gml_show_debug_message(const char *msg) {
     if (msg) fprintf(stderr, "[GML] %s\n", msg);
 }
+static double g_random_seed = 0;
+
 double gml_randomize(void) {
-    srand((unsigned)time(NULL));
-    return 1;
+    g_random_seed = (double)time(NULL);
+    srand((unsigned)g_random_seed);
+    return g_random_seed;
 }
 double gml_random_set_seed(double seed) {
+    g_random_seed = seed;
     srand((unsigned)seed);
     return seed;
 }
-double gml_random_get_seed(void) { return 0; }
+double gml_random_get_seed(void) { return g_random_seed; }
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
+__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }

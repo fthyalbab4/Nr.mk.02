@@ -1,14 +1,21 @@
-# STATUS — patches on repository
+# STATUS — Host Parallel Verification & C Core Cleanup
 
-## Apply everything into the C tree
 ```bash
-git pull
-bash tools/gap_fill_20261013/APPLY_ALL.sh
-git add app/src/main/cpp
-git commit -m "apply gap-fill to C sources" && git push
+bash tools/run_host_pipeline.sh
+python3 run_full_verification.py
+python3 tools/run_engine_suite.py
+node test_all_games_inlined.js
+cd NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX && make test
 ```
 
-Diffs on repo: `tools/gap_fill_20261013/patches/full_*.diff`
-Scripts encode the same changes if diffs are incomplete.
+### Verified Engine Status
+- **Host Pipeline**: 4/4 sample games PASS (`mario_bros.gmk`, `plataformas.gmk`, `shooter.gmk`, `zelda.gmk`).
+- **Engine Test Suite**: 10/10 tests PASS (0 skips, including `test_mario_physics_parity.c`).
+- **Comprehensive Verification**: 16/16 test checks PASS (`run_full_verification.py`).
+- **C Core Unit Test Suite**: 12/12 unit tests PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/make test`).
+- **JS Script Simulation**: 39/39 scripts parsed, 78/78 DnD actions verified (`test_all_games_inlined.js`).
+- **C Core Quality**: 0 compiler warnings/errors across both native source trees (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` and `app/src/main/cpp`).
+- **Android Debug APK**: Built cleanly at `app/build/outputs/apk/debug/app-debug.apk`.
 
-Host: ASSEMBLE PASS, pipeline 4/4 when fully applied. ~40%. No 100% claim.
+### Next Human Step
+Test APK on physical mobile hardware using `docs/DEVICE_TEST_TEMPLATE.md` to collect device logcat, OpenSLES low-latency audio, and touch input parity logs.

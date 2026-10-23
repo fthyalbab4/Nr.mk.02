@@ -58,6 +58,14 @@ double gml_instance_place(double x, double y, double object_index); /* returns i
 void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h);
 double gml_draw_clear(double color);
 double gml_point_in_rectangle(double px, double py, double x1, double y1, double x2, double y2);
+double gml_point_in_circle(double px, double py, double cx, double cy, double r);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_collision_point(double x, double y, double obj, double prec, double notme);
 double gml_place_free(double x, double y);
@@ -326,6 +334,9 @@ double gml_sound_play(double sound_index);
 double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
 double gml_sound_volume(double sound_index, double vol);
+double gml_sound_loop(double sound_index);
+double gml_sound_pitch(double sound_index, double pitch);
+double gml_sound_pan(double sound_index, double pan);
 
 /* ---- Math & Physics helpers ---- */
 double gml_sqr(double v);
@@ -396,6 +407,8 @@ double gml_ds_priority_delete_min(double id);
 double gml_ds_priority_change_priority(double id, double value, double new_priority);
 void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
 void gml_file_find_close(void);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
 double gml_math_min(double a, double b);
 double gml_math_max(double a, double b);
 double gml_arctan2(double y, double x);
