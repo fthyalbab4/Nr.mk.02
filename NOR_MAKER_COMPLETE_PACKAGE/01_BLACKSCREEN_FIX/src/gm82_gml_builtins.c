@@ -532,7 +532,6 @@ double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 double gml_room_width(void) { return g_rt ? (double)g_rt->room_width : 0; }
 double gml_room_height(void) { return g_rt ? (double)g_rt->room_height : 0; }
 double gml_room_speed(void) { return g_rt ? (double)g_rt->room_speed : 30; }
-
 double gml_room_find(const char *name) {
     if (!g_rt || !g_rt->rooms || !name || !name[0]) return -1.0;
     for (int i = 0; i < g_rt->rooms->count; i++) {
@@ -704,44 +703,6 @@ double gml_point_direction_3d(double x1, double y1, double z1, double x2, double
     return atan2(-dz, horiz) * 180.0 / M_PI;
 }
 
-double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
-    if (!g_rt) return -4;
-    if (x1 > x2) { double t=x1; x1=x2; x2=t; }
-    if (y1 > y2) { double t=y1; y1=y2; y2=t; }
-    int32_t oi = (int32_t)obj;
-    for (int i = 0; i < g_rt->instance_count; i++) {
-        gm82_instance *o = &g_rt->instances[i];
-        if (!o->alive) continue;
-        if (notme && o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x1, y1, x2-x1, y2-y1, o->x, o->y, ow, oh)) {
-            if (prec && g_rt->sprites && o->sprite_index >= 0 && o->sprite_index < g_rt->sprites->count) {
-                const gm82_decoded_frame *s = &g_rt->sprites->frames[o->sprite_index];
-                if (s->rgba) {
-                    int ix1 = (int)(x1 > o->x ? x1 : o->x);
-                    int ix2 = (int)(x2 < o->x + ow ? x2 : o->x + ow);
-                    int iy1 = (int)(y1 > o->y ? y1 : o->y);
-                    int iy2 = (int)(y2 < o->y + oh ? y2 : o->y + oh);
-                    bool hit = false;
-                    for (int py = iy1; py < iy2; py++) {
-                        int r = (py - (int)o->y) * s->width;
-                        for (int px = ix1; px < ix2; px++) {
-                            int off = (r + (px - (int)o->x)) * 4 + 3;
-                            if (s->rgba[off] > 16) { hit = true; break; }
-                        }
-                        if (hit) break;
-                    }
-                    if (!hit) continue;
-                }
-            }
-            return (double)o->id;
-        }
-    }
-    return -4;
-}
-
 /* Game Maker 8.2 Geometry checks */
 double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad) {
     double min_x = rx1 < rx2 ? rx1 : rx2;
@@ -793,6 +754,43 @@ double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, dou
     return val > 0.0 ? 1.0 : 0.0;
 }
 
+double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
+    if (!g_rt) return -4;
+    if (x1 > x2) { double t=x1; x1=x2; x2=t; }
+    if (y1 > y2) { double t=y1; y1=y2; y2=t; }
+    int32_t oi = (int32_t)obj;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (aabb_overlap(x1, y1, x2-x1, y2-y1, o->x, o->y, ow, oh)) {
+            if (prec && g_rt->sprites && o->sprite_index >= 0 && o->sprite_index < g_rt->sprites->count) {
+                const gm82_decoded_frame *s = &g_rt->sprites->frames[o->sprite_index];
+                if (s->rgba) {
+                    int ix1 = (int)(x1 > o->x ? x1 : o->x);
+                    int ix2 = (int)(x2 < o->x + ow ? x2 : o->x + ow);
+                    int iy1 = (int)(y1 > o->y ? y1 : o->y);
+                    int iy2 = (int)(y2 < o->y + oh ? y2 : o->y + oh);
+                    bool hit = false;
+                    for (int py = iy1; py < iy2; py++) {
+                        int r = (py - (int)o->y) * s->width;
+                        for (int px = ix1; px < ix2; px++) {
+                            int off = (r + (px - (int)o->x)) * 4 + 3;
+                            if (s->rgba[off] > 16) { hit = true; break; }
+                        }
+                        if (hit) break;
+                    }
+                    if (!hit) continue;
+                }
+            }
+            return (double)o->id;
+        }
+    }
+    return -4;
+}
 
 double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme) {
     if (!g_rt) return -4;
