@@ -1,16 +1,23 @@
-# GAPS_HONEST — stop condition for parallel stubs
+# GAPS_HONEST
 
-## Done on host (parallel 1–7 + prior)
-Nearly all generic GML/DnD soft gaps that do not require assets, device, or per-game binary args.
+## Closed (code, host-verified)
+- globals get/set/exists, directory_exists, string_letters/repeat, keyboard_string length
+- ln, logn, is_undefined/is_bool/is_int64, typeof (numeric stand-in)
+- string_width/height (approx), draw_text_transformed, draw_clear_alpha, application_surface (-1)
 
-## Remaining (real blockers)
-1. Android APK playtest
-2. Cloud game FAIL → specific missing symbol
-3. Full DnD arg tables from action library layouts
-4. Real save/load + sound/font asset E2E
-5. Host pipeline movement inject: Keyboard input arrow right (VK 39) drives movement natively for samples; host pipeline soft fallback only nudges `hspeed` after 15 steps if position remains completely unchanged.
-6. Pure GML zero host-fallback for every title
+```bash
+python3 tools/gap_fill_20261013/patch_globals_files_strings.py
+python3 tools/gap_fill_20261013/patch_math_draw_type.py
+bash tools/run_host_pipeline.sh
+```
 
-**Repeating "fill all gaps in parallel" without a FAIL log only adds stubs that do not move device parity.**
+Host: ok=4 fail=0 after local apply.
+
+## Still open (not solvable by more generic stubs alone)
+1. Device APK playtest
+2. Cloud game FAIL → named missing symbol
+3. Full DnD binary arg tables
+4. Full string-returning VM
+5. Pure GML movement with zero host inject
 
 No 100% claim.
