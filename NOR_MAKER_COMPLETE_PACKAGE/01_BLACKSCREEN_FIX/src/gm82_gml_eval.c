@@ -993,8 +993,24 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_set_color") == 0) {
             gml_draw_set_color(arg); *out = 1; return true;
         }
-        if (strcmp(id, "draw_set_alpha") == 0) {
+        if (strcmp(id, "draw_set_alpha") == 0 || strcmp(id, "draw_seta") == 0) {
             gml_draw_set_alpha(arg); *out = 1; return true;
+        }
+        if (strcmp(id, "draw_reset") == 0) {
+            gml_draw_reset(); *out = 1; return true;
+        }
+        if (strcmp(id, "draw_set_rgba") == 0) {
+            gml_draw_set_rgba(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 1.0);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "instance_destroy_id") == 0) {
+            *out = gml_instance_destroy_id(arg); return true;
+        }
+        if (strcmp(id, "instance_nearest_notme") == 0) {
+            *out = gml_instance_nearest_notme(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : -1); return true;
+        }
+        if (strcmp(id, "string_ends_with") == 0) {
+            *out = gml_string_ends_with((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "draw_get_color") == 0) {
             *out = gml_draw_get_color(); return true;
