@@ -461,6 +461,19 @@ double gml_draw_set_circle_precision(double prec);
 double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2, double y2, double val);
 int gml_script_find(const char *name);
 
+/* Missing geometry & utility declarations */
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex_str);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
+double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad);
+double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
+double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3);
+
 #ifdef __cplusplus
 }
 #endif

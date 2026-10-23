@@ -694,6 +694,58 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
     return -4;
 }
 
+/* Game Maker 8.2 Geometry checks */
+double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad) {
+    double min_x = rx1 < rx2 ? rx1 : rx2;
+    double max_x = rx1 > rx2 ? rx1 : rx2;
+    double min_y = ry1 < ry2 ? ry1 : ry2;
+    double max_y = ry1 > ry2 ? ry1 : ry2;
+
+    /* Find nearest point on rect to circle center */
+    double nearest_x = cx < min_x ? min_x : (cx > max_x ? max_x : cx);
+    double nearest_y = cy < min_y ? min_y : (cy > max_y ? max_y : cy);
+    double dx = cx - nearest_x;
+    double dy = cy - nearest_y;
+    if ((dx * dx + dy * dy) > (rad * rad)) return 0.0; /* completely outside */
+
+    /* Check if all 4 corners are inside the circle */
+    double c1 = (min_x - cx) * (min_x - cx) + (min_y - cy) * (min_y - cy);
+    double c2 = (max_x - cx) * (max_x - cx) + (min_y - cy) * (min_y - cy);
+    double c3 = (min_x - cx) * (min_x - cx) + (max_y - cy) * (max_y - cy);
+    double c4 = (max_x - cx) * (max_x - cx) + (max_y - cy) * (max_y - cy);
+    double r2 = rad * rad;
+    if (c1 <= r2 && c2 <= r2 && c3 <= r2 && c4 <= r2) return 1.0; /* completely inside */
+
+    return 2.0; /* overlaps */
+}
+
+double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2) {
+    double a_min_x = ax1 < ax2 ? ax1 : ax2;
+    double a_max_x = ax1 > ax2 ? ax1 : ax2;
+    double a_min_y = ay1 < ay2 ? ay1 : ay2;
+    double a_max_y = ay1 > ay2 ? ay1 : ay2;
+
+    double b_min_x = bx1 < bx2 ? bx1 : bx2;
+    double b_max_x = bx1 > bx2 ? bx1 : bx2;
+    double b_min_y = by1 < by2 ? by1 : by2;
+    double b_max_y = by1 > by2 ? by1 : by2;
+
+    if (a_max_x < b_min_x || a_min_x > b_max_x || a_max_y < b_min_y || a_min_y > b_max_y) {
+        return 0.0; /* outside */
+    }
+    if (a_min_x >= b_min_x && a_max_x <= b_max_x && a_min_y >= b_min_y && a_max_y <= b_max_y) {
+        return 1.0; /* completely inside */
+    }
+    return 2.0; /* overlaps */
+}
+
+double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3) {
+    /* Cross product of (p2 - p1) and (p3 - p2) */
+    double val = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+    return val > 0.0 ? 1.0 : 0.0;
+}
+
+
 double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme) {
     if (!g_rt) return -4;
     int32_t oi = (int32_t)obj;
