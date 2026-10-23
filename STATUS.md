@@ -1,16 +1,20 @@
-# STATUS — phase 0 landed 2026-10-23
-
-Host verified after full patch apply: **SUMMARY ok=4 fail=0**.
+# STATUS — phases 0+3 executed on host
 
 ```bash
 bash tools/gap_fill_20261013/LAND_PHASE0.sh
-```
-
-Or:
-```bash
-for p in tools/gap_fill_20261013/patch_*.py tools/gap_fill_20261013/apply_pr161_162_unique.py; do python3 "$p"; done
+python3 tools/gap_fill_20261013/patch_phase3_movement_save.py
 bash tools/run_host_pipeline.sh
 ```
 
-Next: device APK playtest (`docs/DEVICE_TEST_TEMPLATE.md`).
+Verified: **SUMMARY ok=4 fail=0** with **no hspeed inject**.
+
+## Phase status
+| Phase | Status |
+|-------|--------|
+| 0 Land patches | Done (scripts + input on main; run LAND_PHASE0) |
+| 1 Device APK | **Blocked on your phone** — see docs/DEVICE_TEST_READY.md |
+| 2 FAIL-driven | Protocol ready — needs a FAIL log |
+| 3 Movement/save | Done on host (inject removed; multi-inst save patch) |
+| 4 100% parity | Not claimed |
+
 No fake 100%.
