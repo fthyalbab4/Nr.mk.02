@@ -1,23 +1,15 @@
 # GAPS_HONEST
 
-## Closed (code, host-verified)
-- globals get/set/exists, directory_exists, string_letters/repeat, keyboard_string length
-- ln, logn, is_undefined/is_bool/is_int64, typeof (numeric stand-in)
-- string_width/height (approx), draw_text_transformed, draw_clear_alpha, application_surface (-1)
+## Closed on host (phases 0+3+4)
+- Gap-fill patches apply path
+- Movement host inject **removed**; samples still 4/4 with keyboard only
+- Save/load multi-instance format (patch)
+- Full GM82Core extension port (reverse-engineered C math, 3D geometry, Perlin noise, HRT timer, string tokens, hex, power_next, resource indexing, and keyboard_string variable)
 
-```bash
-python3 tools/gap_fill_20261013/patch_globals_files_strings.py
-python3 tools/gap_fill_20261013/patch_math_draw_type.py
-bash tools/run_host_pipeline.sh
-```
+## Open
+1. **Device APK playtest** (you)
+2. Cloud/GMK FAIL → named symbol
+3. Full string-returning VM
+4. Full DnD binary arg tables
 
-Host: ok=4 fail=0 after local apply.
-
-## Still open (not solvable by more generic stubs alone)
-1. Device APK playtest
-2. Cloud game FAIL → named missing symbol
-3. Full DnD binary arg tables
-4. Full string-returning VM
-5. Pure GML movement with zero host inject
-
-No 100% claim.
+No 100%.

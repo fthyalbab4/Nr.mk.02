@@ -21,3 +21,7 @@
 ## 2026-10-16 - Dynamic Card Grid Focus Elevation Parity
 **Learning:** In interactive card grids with `tabindex="0"`, relying solely on mouse hover listeners (`onmouseenter`/`onmouseleave`) for card elevation (`transform`, `boxShadow`, `borderColor`) leaves keyboard users with flat cards during Tab navigation, creating a visual disconnect between pointer and keyboard interactions.
 **Action:** Bind card elevation logic to both mouse (`onmouseenter`/`onmouseleave`) and focus (`onfocus`/`onblur`) events to ensure identical tactile feedback regardless of input method.
+
+## 2026-10-17 - Modal Dialog Focus Restoration & Focus Trap Boundary
+**Learning:** When opening modal dialogs, omitting focus restoration (`lastActiveElement = document.activeElement`) causes keyboard users to lose focus context upon modal dismissal. Furthermore, without a `Tab`/`Shift+Tab` focus cycle handler inside the modal container, keyboard navigation escapes into invisible backdrop elements behind the dialog.
+**Action:** Always save the triggering `document.activeElement` on modal open, restore focus on modal close, and attach a `Tab` key listener on the modal container to trap focus within visible dialog boundaries.

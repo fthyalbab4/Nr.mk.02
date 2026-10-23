@@ -73,6 +73,47 @@ double gml_instance_exists(double id_or_object) {
     return 0;
 }
 
+static gm82_instance *find_instance_by_id(double instance_id) {
+    if (!g_rt) return NULL;
+    int32_t id = (int32_t)instance_id;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (g_rt->instances[i].alive && g_rt->instances[i].id == id)
+            return &g_rt->instances[i];
+    }
+    return NULL;
+}
+
+static int instance_var_index(const gm82_instance *inst, const char *name) {
+    if (!inst || !name || !name[0]) return -1;
+    for (int i = 0; i < inst->var_count; i++) {
+        if (strcmp(inst->vars[i].name, name) == 0) return i;
+    }
+    return -1;
+}
+
+double gml_variable_instance_exists(double instance_id, const char *name) {
+    return instance_var_index(find_instance_by_id(instance_id), name) >= 0 ? 1.0 : 0.0;
+}
+
+double gml_variable_instance_get(double instance_id, const char *name) {
+    gm82_instance *inst = find_instance_by_id(instance_id);
+    int idx = instance_var_index(inst, name);
+    return idx >= 0 ? inst->vars[idx].value : 0.0;
+}
+
+double gml_variable_instance_set(double instance_id, const char *name, double value) {
+    gm82_instance *inst = find_instance_by_id(instance_id);
+    if (!inst || !name || !name[0]) return 0.0;
+    int idx = instance_var_index(inst, name);
+    if (idx < 0) {
+        if (inst->var_count >= (int)(sizeof(inst->vars) / sizeof(inst->vars[0]))) return 0.0;
+        idx = inst->var_count++;
+        snprintf(inst->vars[idx].name, sizeof(inst->vars[idx].name), "%s", name);
+    }
+    inst->vars[idx].value = value;
+    return value;
+}
+
 void gml_motion_set(double dir, double spd) {
     if (!g_self) return;
     g_self->direction = dir;
@@ -491,7 +532,13 @@ double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 double gml_room_width(void) { return g_rt ? (double)g_rt->room_width : 0; }
 double gml_room_height(void) { return g_rt ? (double)g_rt->room_height : 0; }
 double gml_room_speed(void) { return g_rt ? (double)g_rt->room_speed : 30; }
-
+double gml_room_find(const char *name) {
+    if (!g_rt || !g_rt->rooms || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_rt->rooms->count; i++) {
+        if (strcmp(g_rt->rooms->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
 double gml_abs(double v) { return fabs(v); }
 double gml_sign(double v) { return (v > 0) - (v < 0); }
 double gml_clamp(double v, double lo, double hi) {
@@ -654,6 +701,57 @@ double gml_point_direction_3d(double x1, double y1, double z1, double x2, double
     double dz = z2 - z1;
     double horiz = sqrt(dx * dx + dy * dy);
     return atan2(-dz, horiz) * 180.0 / M_PI;
+}
+
+/* Game Maker 8.2 Geometry checks */
+double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad) {
+    double min_x = rx1 < rx2 ? rx1 : rx2;
+    double max_x = rx1 > rx2 ? rx1 : rx2;
+    double min_y = ry1 < ry2 ? ry1 : ry2;
+    double max_y = ry1 > ry2 ? ry1 : ry2;
+
+    /* Find nearest point on rect to circle center */
+    double nearest_x = cx < min_x ? min_x : (cx > max_x ? max_x : cx);
+    double nearest_y = cy < min_y ? min_y : (cy > max_y ? max_y : cy);
+    double dx = cx - nearest_x;
+    double dy = cy - nearest_y;
+    if ((dx * dx + dy * dy) > (rad * rad)) return 0.0; /* completely outside */
+
+    /* Check if all 4 corners are inside the circle */
+    double c1 = (min_x - cx) * (min_x - cx) + (min_y - cy) * (min_y - cy);
+    double c2 = (max_x - cx) * (max_x - cx) + (min_y - cy) * (min_y - cy);
+    double c3 = (min_x - cx) * (min_x - cx) + (max_y - cy) * (max_y - cy);
+    double c4 = (max_x - cx) * (max_x - cx) + (max_y - cy) * (max_y - cy);
+    double r2 = rad * rad;
+    if (c1 <= r2 && c2 <= r2 && c3 <= r2 && c4 <= r2) return 1.0; /* completely inside */
+
+    return 2.0; /* overlaps */
+}
+
+double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2) {
+    double a_min_x = ax1 < ax2 ? ax1 : ax2;
+    double a_max_x = ax1 > ax2 ? ax1 : ax2;
+    double a_min_y = ay1 < ay2 ? ay1 : ay2;
+    double a_max_y = ay1 > ay2 ? ay1 : ay2;
+
+    double b_min_x = bx1 < bx2 ? bx1 : bx2;
+    double b_max_x = bx1 > bx2 ? bx1 : bx2;
+    double b_min_y = by1 < by2 ? by1 : by2;
+    double b_max_y = by1 > by2 ? by1 : by2;
+
+    if (a_max_x < b_min_x || a_min_x > b_max_x || a_max_y < b_min_y || a_min_y > b_max_y) {
+        return 0.0; /* outside */
+    }
+    if (a_min_x >= b_min_x && a_max_x <= b_max_x && a_min_y >= b_min_y && a_max_y <= b_max_y) {
+        return 1.0; /* completely inside */
+    }
+    return 2.0; /* overlaps */
+}
+
+double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3) {
+    /* Cross product of (p2 - p1) and (p3 - p2) */
+    double val = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+    return val > 0.0 ? 1.0 : 0.0;
 }
 
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {

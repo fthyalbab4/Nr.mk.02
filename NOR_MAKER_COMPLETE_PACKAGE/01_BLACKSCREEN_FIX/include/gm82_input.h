@@ -57,6 +57,8 @@ double gml_mouse_check_button_released(double button);
 double gml_mouse_button_code(void);
 double gml_mouse_lastbutton(void);
 
+const char *gml_keyboard_string(void);
+void gml_keyboard_string_clear(void);
 void gm82_input_bind_global(gm82_input_state *in);
 
 #ifdef __cplusplus

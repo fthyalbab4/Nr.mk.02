@@ -284,7 +284,7 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strncmp(name, "self.", 5) == 0) {
         return set_var(p, name + 5, v);
     }
-    if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
+    if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0 || strcmp(name,"keyboard_string")==0))
         return false;
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
     if (strcmp(name, "y") == 0) { s->y = v; return true; }
@@ -1264,6 +1264,10 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = (p->rt && p->rt->rooms && r >= 0 && r < p->rt->rooms->count) ? 1.0 : 0.0;
             return true;
         }
+        if (strcmp(id, "room_find") == 0) {
+            *out = gml_room_find((p->str_mask & 1) ? p->str_args[0] : "");
+            return true;
+        }
         if (strcmp(id, "event_inherited") == 0) { *out = 1; return true; }
         if (strcmp(id, "object_exists") == 0) {
             int o = (int)arg;
@@ -1352,7 +1356,18 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "timeline_exists") == 0) { *out = (arg >= 0) ? 1.0 : 0.0; return true; }
         if (strcmp(id, "variable_global_exists") == 0) { *out = 0; return true; }
         if (strcmp(id, "variable_local_exists") == 0) { *out = 0; return true; }
-        if (strcmp(id, "variable_instance_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "variable_instance_exists") == 0) {
+            *out = gml_variable_instance_exists(arg, (p->str_mask & 2) ? p->str_args[1] : "");
+            return true;
+        }
+        if (strcmp(id, "variable_instance_get") == 0) {
+            *out = gml_variable_instance_get(arg, (p->str_mask & 2) ? p->str_args[1] : "");
+            return true;
+        }
+        if (strcmp(id, "variable_instance_set") == 0) {
+            *out = gml_variable_instance_set(arg, (p->str_mask & 2) ? p->str_args[1] : "", nargs >= 3 ? args[2] : 0.0);
+            return true;
+        }
         if (strcmp(id, "object_get_depth") == 0) {
             int o = (int)arg; *out = 0;
             if (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count)
