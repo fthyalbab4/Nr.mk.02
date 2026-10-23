@@ -164,6 +164,10 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_lerp(ARG_R(0), ARG_R(1), ARG_R(2)));
         return 1;
     }
+    if (strcmp(name, "choose") == 0 && count >= 2) {
+        *out = gml_value_real(gml_choose(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
 
     /* String built-ins */
     if (strcmp(name, "string_length") == 0 && count >= 1) {
@@ -213,6 +217,224 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         } else {
             *out = gml_value_string("");
         }
+        return 1;
+    }
+
+    /* Alarm built-ins */
+    if (strcmp(name, "alarm_set") == 0 && count >= 2) {
+        *out = gml_value_real(gml_alarm_set(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "alarm_get") == 0 && count >= 1) {
+        *out = gml_value_real(gml_alarm_get(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "alarm_set_script") == 0 && count >= 2) {
+        *out = gml_value_real(gml_alarm_set_script(ARG_R(0), ARG_S(1)));
+        return 1;
+    }
+
+    /* Buffer built-ins */
+    if (strcmp(name, "buffer_create") == 0 && count >= 3) {
+        *out = gml_value_real(gml_buffer_create(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_delete") == 0 && count >= 1) {
+        *out = gml_value_real(gml_buffer_delete(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_write") == 0 && count >= 3) {
+        *out = gml_value_real(gml_buffer_write(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_read") == 0 && count >= 2) {
+        *out = gml_value_real(gml_buffer_read(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_poke") == 0 && count >= 4) {
+        *out = gml_value_real(gml_buffer_poke(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_peek") == 0 && count >= 3) {
+        *out = gml_value_real(gml_buffer_peek(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_seek") == 0 && count >= 3) {
+        *out = gml_value_real(gml_buffer_seek(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_tell") == 0 && count >= 1) {
+        *out = gml_value_real(gml_buffer_tell(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_get_size") == 0 && count >= 1) {
+        *out = gml_value_real(gml_buffer_get_size(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "buffer_sizeof") == 0 && count >= 1) {
+        *out = gml_value_real(gml_buffer_sizeof(ARG_R(0)));
+        return 1;
+    }
+
+    /* Date & Time built-ins */
+    if (strcmp(name, "date_current_datetime") == 0) {
+        *out = gml_value_real(gml_date_current_datetime());
+        return 1;
+    }
+    if (strcmp(name, "date_get_year") == 0 && count >= 1) {
+        *out = gml_value_real(gml_date_get_year(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "date_get_month") == 0 && count >= 1) {
+        *out = gml_value_real(gml_date_get_month(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "date_get_day") == 0 && count >= 1) {
+        *out = gml_value_real(gml_date_get_day(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "date_get_hour") == 0 && count >= 1) {
+        *out = gml_value_real(gml_date_get_hour(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "date_get_minute") == 0 && count >= 1) {
+        *out = gml_value_real(gml_date_get_minute(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "date_get_second") == 0 && count >= 1) {
+        *out = gml_value_real(gml_date_get_second(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "current_time") == 0) {
+        *out = gml_value_real(gml_current_time());
+        return 1;
+    }
+    if (strcmp(name, "current_year") == 0) {
+        *out = gml_value_real(gml_current_year());
+        return 1;
+    }
+    if (strcmp(name, "current_month") == 0) {
+        *out = gml_value_real(gml_current_month());
+        return 1;
+    }
+    if (strcmp(name, "current_day") == 0) {
+        *out = gml_value_real(gml_current_day());
+        return 1;
+    }
+
+    /* Tile built-ins */
+    if (strcmp(name, "tile_add") == 0 && count >= 8) {
+        *out = gml_value_real(gml_tile_add(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
+        return 1;
+    }
+    if (strcmp(name, "tile_delete") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_delete(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_find") == 0 && count >= 3) {
+        *out = gml_value_real(gml_tile_find(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "tile_exists") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_exists(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_get_x") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_get_x(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_get_y") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_get_y(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_get_width") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_get_width(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_get_height") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_get_height(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_get_background") == 0 && count >= 1) {
+        *out = gml_value_real(gml_tile_get_background(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "tile_set_position") == 0 && count >= 3) {
+        *out = gml_value_real(gml_tile_set_position(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "tile_set_region") == 0 && count >= 5) {
+        *out = gml_value_real(gml_tile_set_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+
+    /* Extended Math & Angle built-ins */
+    if (strcmp(name, "randomize") == 0) {
+        *out = gml_value_real(gml_randomize());
+        return 1;
+    }
+    if (strcmp(name, "random_set_seed") == 0 && count >= 1) {
+        *out = gml_value_real(gml_random_set_seed(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "random_get_seed") == 0) {
+        *out = gml_value_real(gml_random_get_seed());
+        return 1;
+    }
+    if (strcmp(name, "random") == 0 && count >= 1) {
+        *out = gml_value_real(gml_random(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "random_range") == 0 && count >= 2) {
+        *out = gml_value_real(gml_random_range(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "irandom_range") == 0 && count >= 2) {
+        *out = gml_value_real(gml_irandom_range(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "arctan2") == 0 && count >= 2) {
+        *out = gml_value_real(gml_arctan2(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "angle_abs") == 0 && count >= 1) {
+        *out = gml_value_real(gml_angle_abs(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "angle_mean") == 0 && count >= 2) {
+        *out = gml_value_real(gml_angle_mean(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "approach_angle") == 0 && count >= 3) {
+        *out = gml_value_real(gml_approach_angle(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "box_distance") == 0 && count >= 2) {
+        *out = gml_value_real(gml_box_distance(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "circle_in_circle") == 0 && count >= 6) {
+        *out = gml_value_real(gml_circle_in_circle(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "clerp2") == 0 && count >= 5) {
+        *out = gml_value_real(gml_clerp2(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "cosine") == 0 && count >= 3) {
+        *out = gml_value_real(gml_cosine(ARG_R(0), ARG_R(1), ARG_R(2)));
+        return 1;
+    }
+    if (strcmp(name, "array_length_1d") == 0 && count >= 1) {
+        *out = gml_value_real(gml_array_length_1d(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "array_length_2d") == 0 && count >= 2) {
+        *out = gml_value_real(gml_array_length_2d(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "array_height_2d") == 0 && count >= 1) {
+        *out = gml_value_real(gml_array_height_2d(ARG_R(0)));
         return 1;
     }
 
