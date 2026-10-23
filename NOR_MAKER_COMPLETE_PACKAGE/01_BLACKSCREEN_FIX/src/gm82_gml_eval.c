@@ -165,6 +165,12 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "keyboard_key") == 0 || strcmp(name, "keyboard_lastkey") == 0) {
         *out = gml_keyboard_key(); return true;
     }
+    if (strcmp(name, "keyboard_string") == 0) {
+        snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", gml_keyboard_string());
+        p->str_mask |= 1;
+        *out = (double)strlen(gml_keyboard_string());
+        return true;
+    }
     if (strcmp(name, "mouse_button") == 0) { *out = gml_mouse_button_code(); return true; }
     if (strcmp(name, "mouse_lastbutton") == 0) { *out = gml_mouse_lastbutton(); return true; }
 
@@ -311,6 +317,10 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "path_orientation") == 0) { s->path_orientation = v; return true; }
     if (strcmp(name, "path_endaction") == 0) { s->path_endaction = (int32_t)v; return true; }
 
+    if (strcmp(name, "keyboard_string") == 0) {
+        gml_keyboard_string_clear();
+        return true;
+    }
     if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = (int32_t)v; return true; }
     if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = (int32_t)v; return true; }
     if (strcmp(name, "view_wview") == 0) { if (p->rt) p->rt->view_w = (int32_t)v; return true; }
@@ -505,6 +515,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "angle_difference") == 0) {
             *out = gml_angle_difference(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "power_next") == 0) {
+            *out = gml_power_next(arg); return true;
+        }
+        if (strcmp(id, "math_set_epsilon") == 0) {
+            *out = gml_math_set_epsilon(arg); return true;
+        }
+        if (strcmp(id, "math_get_epsilon") == 0) {
+            *out = gml_math_get_epsilon(); return true;
         }
         if (strcmp(id, "angle_abs") == 0) {
             *out = gml_angle_abs(arg); return true;

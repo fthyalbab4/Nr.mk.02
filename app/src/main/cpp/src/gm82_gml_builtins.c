@@ -3250,6 +3250,24 @@ double gml_place_meeting_precise(double x, double y, double object_index) {
 }
 
 /* GM82Core & Studio Math Extensions */
+static double g_math_epsilon = 0.00001;
+
+double gml_math_set_epsilon(double eps) {
+    if (eps >= 0) g_math_epsilon = eps;
+    return g_math_epsilon;
+}
+
+double gml_math_get_epsilon(void) {
+    return g_math_epsilon;
+}
+
+double gml_power_next(double val) {
+    if (val <= 1.0) return 1.0;
+    double p = 1.0;
+    while (p < val) p *= 2.0;
+    return p;
+}
+
 double gml_angle_abs(double angle) {
     double a = fmod(angle, 360.0);
     if (a < 0.0) a += 360.0;
