@@ -82,6 +82,21 @@ int main(void) {
 
     /* Test GM82Core math functions */
     assert(gml_abs(gml_angle_difference(10.0, 350.0) - 20.0) < 1e-6);
+    assert(gml_abs(gml_angle_difference_3d(1, 0, 0, 0, 1, 0) - 90.0) < 1e-4);
+    assert(gml_string_ends_with("GameMaker 8.2", "8.2") == 1.0);
+    assert(gml_string_ends_with("GameMaker 8.2", "Maker") == 0.0);
+
+    /* Test ds_bag */
+    double bag = gml_ds_bag_create();
+    assert(bag >= 0);
+    assert(gml_ds_bag_empty(bag) == 1.0);
+    gml_ds_bag_add(bag, 100.0);
+    gml_ds_bag_add(bag, 200.0);
+    assert(gml_ds_bag_size(bag) == 2.0);
+    assert(gml_ds_bag_empty(bag) == 0.0);
+    gml_ds_bag_clear(bag);
+    assert(gml_ds_bag_size(bag) == 0.0);
+    gml_ds_bag_destroy(bag);
     assert(gml_abs(gml_angle_difference(350.0, 10.0) - (-20.0)) < 1e-6);
     assert(gml_approach(10.0, 50.0, 5.0) == 15.0);
     assert(gml_approach(52.0, 50.0, 5.0) == 50.0);

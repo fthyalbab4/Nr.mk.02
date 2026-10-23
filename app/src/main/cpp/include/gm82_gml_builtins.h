@@ -485,6 +485,17 @@ double gml_sprite_get_yoffset(double sprite);
 double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad);
 double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
 double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_string_ends_with(const char *str, const char *suffix);
+double gml_include_file_count(void);
+double gml_include_file_exists(const char *fname);
+const char* gml_include_file_get_string(const char *fname);
+double gml_ds_bag_create(void);
+double gml_ds_bag_destroy(double id);
+double gml_ds_bag_clear(double id);
+double gml_ds_bag_add(double id, double val);
+double gml_ds_bag_size(double id);
+double gml_ds_bag_empty(double id);
 
 #ifdef __cplusplus
 }

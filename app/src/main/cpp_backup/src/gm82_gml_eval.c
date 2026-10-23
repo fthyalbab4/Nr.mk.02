@@ -506,6 +506,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "angle_difference") == 0) {
             *out = gml_angle_difference(arg, nargs >= 2 ? args[1] : 0); return true;
         }
+        if (strcmp(id, "angle_difference_3d") == 0) {
+            *out = gml_angle_difference_3d(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
+        }
         if (strcmp(id, "angle_abs") == 0) {
             *out = gml_angle_abs(arg); return true;
         }
@@ -666,6 +669,24 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "ds_list_create") == 0) {
             *out = gml_ds_list_create(); return true;
+        }
+        if (strcmp(id, "ds_bag_create") == 0) {
+            *out = gml_ds_bag_create(); return true;
+        }
+        if (strcmp(id, "ds_bag_destroy") == 0) {
+            *out = gml_ds_bag_destroy(arg); return true;
+        }
+        if (strcmp(id, "ds_bag_clear") == 0) {
+            *out = gml_ds_bag_clear(arg); return true;
+        }
+        if (strcmp(id, "ds_bag_add") == 0) {
+            *out = gml_ds_bag_add(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "ds_bag_size") == 0) {
+            *out = gml_ds_bag_size(arg); return true;
+        }
+        if (strcmp(id, "ds_bag_empty") == 0) {
+            *out = gml_ds_bag_empty(arg); return true;
         }
         if (strcmp(id, "ds_list_destroy") == 0) {
             *out = gml_ds_list_destroy(arg); return true;
@@ -1264,6 +1285,10 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = (p->rt && p->rt->rooms && r >= 0 && r < p->rt->rooms->count) ? 1.0 : 0.0;
             return true;
         }
+        if (strcmp(id, "room_find") == 0) {
+            *out = gml_room_find((p->str_mask & 1) ? p->str_args[0] : "");
+            return true;
+        }
         if (strcmp(id, "event_inherited") == 0) { *out = 1; return true; }
         if (strcmp(id, "object_exists") == 0) {
             int o = (int)arg;
@@ -1352,7 +1377,18 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "timeline_exists") == 0) { *out = (arg >= 0) ? 1.0 : 0.0; return true; }
         if (strcmp(id, "variable_global_exists") == 0) { *out = 0; return true; }
         if (strcmp(id, "variable_local_exists") == 0) { *out = 0; return true; }
-        if (strcmp(id, "variable_instance_exists") == 0) { *out = 0; return true; }
+        if (strcmp(id, "variable_instance_exists") == 0) {
+            *out = gml_variable_instance_exists(arg, (p->str_mask & 2) ? p->str_args[1] : "");
+            return true;
+        }
+        if (strcmp(id, "variable_instance_get") == 0) {
+            *out = gml_variable_instance_get(arg, (p->str_mask & 2) ? p->str_args[1] : "");
+            return true;
+        }
+        if (strcmp(id, "variable_instance_set") == 0) {
+            *out = gml_variable_instance_set(arg, (p->str_mask & 2) ? p->str_args[1] : "", nargs >= 3 ? args[2] : 0.0);
+            return true;
+        }
         if (strcmp(id, "object_get_depth") == 0) {
             int o = (int)arg; *out = 0;
             if (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count)
@@ -1790,6 +1826,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "string_count") == 0) {
             *out = gml_string_count((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
+        }
+        if (strcmp(id, "string_ends_with") == 0) {
+            *out = gml_string_ends_with((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "string_char_at") == 0) {
             *out = gml_string_char_at((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 0); return true;

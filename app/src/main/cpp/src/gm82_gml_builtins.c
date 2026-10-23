@@ -3742,3 +3742,89 @@ double gml_random_get_seed(void) { return g_random_seed; }
 #endif
 __attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
 __attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }
+
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double len1 = sqrt(x1 * x1 + y1 * y1 + z1 * z1);
+    double len2 = sqrt(x2 * x2 + y2 * y2 + z2 * z2);
+    if (len1 < 1e-9 || len2 < 1e-9) return 0.0;
+    double dot = (x1 * x2 + y1 * y2 + z1 * z2) / (len1 * len2);
+    if (dot > 1.0) dot = 1.0;
+    if (dot < -1.0) dot = -1.0;
+    return acos(dot) * 180.0 / 3.14159265358979323846;
+}
+
+double gml_string_ends_with(const char *str, const char *suffix) {
+    if (!str || !suffix) return 0.0;
+    size_t len_str = strlen(str);
+    size_t len_suf = strlen(suffix);
+    if (len_suf > len_str) return 0.0;
+    return (strcmp(str + len_str - len_suf, suffix) == 0) ? 1.0 : 0.0;
+}
+
+double gml_include_file_count(void) { return 0.0; }
+double gml_include_file_exists(const char *fname) { (void)fname; return 0.0; }
+const char* gml_include_file_get_string(const char *fname) { (void)fname; return ""; }
+
+#define MAX_DS_BAGS 64
+typedef struct {
+    double *data;
+    int count;
+    int capacity;
+    bool active;
+} gm82_ds_bag;
+
+static gm82_ds_bag g_ds_bags[MAX_DS_BAGS];
+
+double gml_ds_bag_create(void) {
+    for (int i = 0; i < MAX_DS_BAGS; i++) {
+        if (!g_ds_bags[i].active) {
+            g_ds_bags[i].active = true;
+            g_ds_bags[i].count = 0;
+            g_ds_bags[i].capacity = 8;
+            g_ds_bags[i].data = (double *)calloc(8, sizeof(double));
+            return (double)i;
+        }
+    }
+    return -1.0;
+}
+
+double gml_ds_bag_destroy(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= MAX_DS_BAGS || !g_ds_bags[i].active) return 0.0;
+    if (g_ds_bags[i].data) free(g_ds_bags[i].data);
+    memset(&g_ds_bags[i], 0, sizeof(gm82_ds_bag));
+    return 1.0;
+}
+
+double gml_ds_bag_clear(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= MAX_DS_BAGS || !g_ds_bags[i].active) return 0.0;
+    g_ds_bags[i].count = 0;
+    return 1.0;
+}
+
+double gml_ds_bag_add(double id, double val) {
+    int i = (int)id;
+    if (i < 0 || i >= MAX_DS_BAGS || !g_ds_bags[i].active) return 0.0;
+    if (g_ds_bags[i].count >= g_ds_bags[i].capacity) {
+        int new_cap = g_ds_bags[i].capacity * 2;
+        double *new_data = (double *)realloc(g_ds_bags[i].data, new_cap * sizeof(double));
+        if (!new_data) return 0.0;
+        g_ds_bags[i].data = new_data;
+        g_ds_bags[i].capacity = new_cap;
+    }
+    g_ds_bags[i].data[g_ds_bags[i].count++] = val;
+    return 1.0;
+}
+
+double gml_ds_bag_size(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= MAX_DS_BAGS || !g_ds_bags[i].active) return 0.0;
+    return (double)g_ds_bags[i].count;
+}
+
+double gml_ds_bag_empty(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= MAX_DS_BAGS || !g_ds_bags[i].active) return 1.0;
+    return g_ds_bags[i].count == 0 ? 1.0 : 0.0;
+}
