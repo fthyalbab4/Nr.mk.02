@@ -2,7 +2,7 @@ CC ?= gcc
 CFLAGS ?= -Wall -Wextra -Iinclude -O2
 LDFLAGS ?= -lz -lm
 
-SRC = $(wildcard src/*.c)
+SRC = $(wildcard src/*.c) gml_vm.c
 OBJ = $(SRC:.c=.o)
 TEST_SRCS = $(wildcard tests/*.c)
 TEST_BINS = $(TEST_SRCS:.c=)

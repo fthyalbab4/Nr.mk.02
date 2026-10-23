@@ -58,6 +58,14 @@ double gml_instance_place(double x, double y, double object_index); /* returns i
 void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h);
 double gml_draw_clear(double color);
 double gml_point_in_rectangle(double px, double py, double x1, double y1, double x2, double y2);
+double gml_point_in_circle(double px, double py, double cx, double cy, double r);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_collision_point(double x, double y, double obj, double prec, double notme);
 double gml_place_free(double x, double y);
