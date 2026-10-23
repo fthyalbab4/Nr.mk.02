@@ -3,6 +3,7 @@
 #include <string.h>
 
 static gm82_input_state *g_input = NULL;
+static char g_keyboard_string[256];
 static int g_mouse_lastbutton = 0;
 
 void gm82_input_bind_global(gm82_input_state *in) { g_input = in; }
@@ -53,13 +54,13 @@ void gm82_input_set_mouse(gm82_input_state *in, int x, int y) {
 double gml_keyboard_check(double key) {
     int k = (int)key;
     if (!g_input) return 0;
-    if (k == 0 /* vk_nokey */) {
+    if (k == 0) {
         for (int i = 0; i < GM82_KEY_MAX; i++) {
             if (g_input->down[i]) return 0.0;
         }
         return 1.0;
     }
-    if (k == 1 /* vk_anykey */) {
+    if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++) {
             if (g_input->down[i]) return 1.0;
         }
@@ -72,13 +73,13 @@ double gml_keyboard_check(double key) {
 double gml_keyboard_check_pressed(double key) {
     int k = (int)key;
     if (!g_input) return 0;
-    if (k == 0 /* vk_nokey */) {
+    if (k == 0) {
         for (int i = 0; i < GM82_KEY_MAX; i++) {
             if (g_input->pressed[i]) return 0.0;
         }
         return 1.0;
     }
-    if (k == 1 /* vk_anykey */) {
+    if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++) {
             if (g_input->pressed[i]) return 1.0;
         }
@@ -91,13 +92,13 @@ double gml_keyboard_check_pressed(double key) {
 double gml_keyboard_check_released(double key) {
     int k = (int)key;
     if (!g_input) return 0;
-    if (k == 0 /* vk_nokey */) {
+    if (k == 0) {
         for (int i = 0; i < GM82_KEY_MAX; i++) {
             if (g_input->released[i]) return 0.0;
         }
         return 1.0;
     }
-    if (k == 1 /* vk_anykey */) {
+    if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++) {
             if (g_input->released[i]) return 1.0;
         }
@@ -141,3 +142,6 @@ double gml_mouse_button_code(void) {
     return 0;
 }
 double gml_mouse_lastbutton(void) { return (double)g_mouse_lastbutton; }
+
+const char *gml_keyboard_string(void) { return g_keyboard_string; }
+void gml_keyboard_string_clear(void) { g_keyboard_string[0] = 0; }
