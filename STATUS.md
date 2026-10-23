@@ -15,6 +15,7 @@ Verified: **SUMMARY ok=4 fail=0** with **no hspeed inject**.
 | 1 Device APK | **Blocked on your phone** — see docs/DEVICE_TEST_READY.md |
 | 2 FAIL-driven | Protocol ready — needs a FAIL log |
 | 3 Movement/save | Done on host (inject removed; multi-inst save patch) |
-| 4 100% parity | Not claimed |
+| 4 GM82Core RE Integration | Done (clean-room C port of math, perlin noise, HRT timer, geometry, resource indexing & keyboard_string) |
+| 5 100% parity | Not claimed |
 
 No fake 100%.
