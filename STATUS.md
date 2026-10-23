@@ -1,19 +1,26 @@
-# STATUS — Host Parallel Verification & C Core Cleanup
+# STATUS — Host Engine & Master Plan Status
 
-```bash
-bash tools/run_host_pipeline.sh
-python3 run_full_verification.py
-python3 tools/run_engine_suite.py
-node test_all_games_inlined.js
-```
+## Master Plan Verification Matrix (Phases 0–8)
 
-### Verified Engine Status
-- **Host Pipeline**: 4/4 sample games PASS (`mario_bros.gmk`, `plataformas.gmk`, `shooter.gmk`, `zelda.gmk`).
-- **Engine Test Suite**: 10/10 tests PASS (100% complete, 0 skips, including `test_mario_physics_parity.c`).
-- **Comprehensive Verification**: 16/16 test checks PASS (`run_full_verification.py`).
-- **JS Script Simulation**: 39/39 scripts parsed, 78/78 DnD actions verified (`test_all_games_inlined.js`).
-- **C Core Quality**: 0 compiler warnings/errors (cleaned pointer checks and indentation across both C trees).
-- **Android Debug APK**: Built cleanly at `app/build/outputs/apk/debug/app-debug.apk`.
+| Phase | Description | Status | Verification Output |
+|---|---|---|---|
+| Phase 0 | Engine Base & Core Compilation | PASS | `01_BLACKSCREEN_FIX` compiles cleanly on host |
+| Phase 1 | Blackscreen Fix & Soft Render | PASS | Materialize & Soft render nonzero_pixels > 1000 |
+| Phase 2 | Room & Execution (4-Game Smoke) | PASS | `run_host_pipeline.sh`: ok=4 fail=0 |
+| Phase 3 | Playable Host Mario | PASS | `test_mario_physics_parity`: MARIO_PLAYABLE_PASS_HOST |
+| Phase 4 | Audio Queue & PCM Mixer | PASS | Low-latency audio queue & mixer host verified |
+| Phase 5 | GML & DnD Built-in Engine | PASS | `test_gml_comprehensive`, `test_gml_ds_collisions`, `test_gml_phase5` PASS |
+| Phase 6 | Format Robustness & IR Loader | PASS | `test_dual_load`, `test_runtime_guard` PASS |
+| Phase 7 | Android JNI & GLES Layer | PASS (Host JNI/ABI), BLOCKED (Physical Device APK) | 4 ABI `libgm82_android.so` built; physical playtest blocked |
+| Phase 8 | Expanded Test Suite & Honest Status | PASS | `run_full_verification.py`: PASS (16/16) |
 
-### Next Human Step
-Test APK on physical mobile hardware using `docs/DEVICE_TEST_TEMPLATE.md` to collect device logcat, OpenSLES low-latency audio, and touch input parity logs.
+## Test Suite Executions
+
+- **run_full_verification.py**: PASS (16/16 tests passing)
+- **tools/run_host_pipeline.sh**: PASS (4/4 sample games ok=4 fail=0)
+- **NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX (make test)**: PASS (11 test binaries passing)
+
+## Version Tag
+
+- **Current Stage**: `HOST_MVP`
+- **Claim 100% Status**: False (Anti-hallucination policy enforced; physical APK playtest open in GAPS_HONEST)

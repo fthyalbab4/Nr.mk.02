@@ -32,6 +32,9 @@ static uint32_t s_u32(gm_stream *s) {
 
 static int32_t s_i32(gm_stream *s) { return (int32_t)s_u32(s); }
 
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((unused))
+#endif
 static char *s_str(gm_stream *s) {
     int32_t len = s_i32(s);
     if (len < 0 || (size_t)len > s->size - s->pos || len > 1024*1024) return NULL;
@@ -85,7 +88,7 @@ typedef struct {
 
 static void collect_name(walk_stats *st, const char *n) {
     if (!n || !n[0] || st->name_count >= 64) return;
-    strncpy(st->names[st->name_count], n, 63);
+    snprintf(st->names[st->name_count], 64, "%s", n);
     st->names[st->name_count][63] = 0;
     st->name_count++;
 }
