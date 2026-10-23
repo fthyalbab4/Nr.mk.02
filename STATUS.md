@@ -1,20 +1,16 @@
-# STATUS — conflicts resolved 2026-10-23
+# STATUS — phase 0 landed 2026-10-23
 
-## Merged on remote
-- PR **#163** architecture realignment
-
-## Conflict resolution
-Unique code from PR **#161 / #162 / #157–#160** (could not API-merge) ported via:
+Host verified after full patch apply: **SUMMARY ok=4 fail=0**.
 
 ```bash
-python3 tools/gap_fill_20261013/apply_pr161_162_unique.py
+bash tools/gap_fill_20261013/LAND_PHASE0.sh
+```
+
+Or:
+```bash
+for p in tools/gap_fill_20261013/patch_*.py tools/gap_fill_20261013/apply_pr161_162_unique.py; do python3 "$p"; done
 bash tools/run_host_pipeline.sh
 ```
 
-Includes: `instance_create_depth`, `surface_copy` / `surface_copy_part`, geometry decls, native_bridge binds.
-
-Local full merge of those branches with conflict strategy verified **SUMMARY ok=4 fail=0**.
-
-Close open PRs #157–#162 as superseded after applying the script and committing cpp diffs.
-
+Next: device APK playtest (`docs/DEVICE_TEST_TEMPLATE.md`).
 No fake 100%.
