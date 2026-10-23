@@ -154489,16 +154489,21 @@ button, input, textarea, select {
       card.setAttribute("aria-label", `بطاقة ${item.title}`);
       card.style.cssText = "background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.15s, box-shadow 0.15s; cursor:pointer;";
 
-      card.onmouseenter = () => {
+      const elevateCard = () => {
         card.style.transform = "translateY(-2px)";
         card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
         card.style.borderColor = "#93c5fd";
       };
-      card.onmouseleave = () => {
+      const resetCard = () => {
         card.style.transform = "none";
         card.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
         card.style.borderColor = "#e5e7eb";
       };
+
+      card.onmouseenter = elevateCard;
+      card.onmouseleave = resetCard;
+      card.onfocus = elevateCard;
+      card.onblur = resetCard;
 
       const icon = getIconForCategory(item.category);
       card.innerHTML = `

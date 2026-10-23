@@ -85,7 +85,7 @@ int gm82_decode_sounds_from_gmk(const uint8_t *data, size_t size, gm82_decoded_s
         if (n >= 128) { free(d); break; }
         gm82_decoded_sound *s = &tmp[n++];
         memset(s, 0, sizeof(*s));
-        strncpy(s->name, name, sizeof(s->name)-1);
+        snprintf(s->name, sizeof(s->name), "%s", name);
         s->kind = (kind >= 0 && kind <= 3) ? kind : 0;
         s->volume = 1.0;
         s->preload = 1;

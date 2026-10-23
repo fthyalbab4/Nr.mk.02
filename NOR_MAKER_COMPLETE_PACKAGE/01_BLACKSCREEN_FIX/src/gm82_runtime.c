@@ -89,16 +89,21 @@ void gm82_runtime_compact_instances(gm82_runtime *rt) {
     int write_idx = 0;
     for (int read_idx = 0; read_idx < rt->instance_count; read_idx++) {
         if (rt->instances[read_idx].alive) {
-            if (write_idx != read_idx) rt->instances[write_idx] = rt->instances[read_idx];
+            if (write_idx != read_idx) {
+                rt->instances[write_idx] = rt->instances[read_idx];
+            }
             write_idx++;
         }
     }
     rt->instance_count = write_idx;
 }
 
-
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
-    if (!rt || rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    if (!rt) return NULL;
+    if (rt->instance_count >= GM82_MAX_INSTANCES) {
+        gm82_runtime_compact_instances(rt);
+        if (rt->instance_count >= GM82_MAX_INSTANCES) return NULL;
+    }
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
@@ -318,10 +323,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
         {
             double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
             double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
-            if (xs < 0) xs = -xs; if (ys < 0) ys = -ys;
+            if (xs < 0) xs = -xs;
+            if (ys < 0) ys = -ys;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
+            if (sw < 1) sw = 1;
+            if (sh < 1) sh = 1;
         }
         for (int j = 0; j < n_col; j++) {
             if (i == j) continue;
@@ -337,10 +344,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
             {
                 double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
                 double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
-                if (xs < 0) xs = -xs; if (ys < 0) ys = -ys;
+                if (xs < 0) xs = -xs;
+                if (ys < 0) ys = -ys;
                 ow = (int32_t)(ow * xs); oh = (int32_t)(oh * ys);
                 oox = (int32_t)(oox * xs); ooy = (int32_t)(ooy * ys);
-                if (ow < 1) ow = 1; if (oh < 1) oh = 1;
+                if (ow < 1) ow = 1;
+                if (oh < 1) oh = 1;
             }
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
             double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
@@ -471,8 +480,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
             }
         }
     }
-
-    gm82_events_fire_draw_all(rt);
 
     int order[GM82_MAX_INSTANCES];
     int n = 0;
