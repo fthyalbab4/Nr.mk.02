@@ -23,14 +23,51 @@ void gm82_decoded_sprite_list_init(gm82_decoded_sprite_list *L) {
 }
 
 void gm82_decoded_sprite_list_free(gm82_decoded_sprite_list *L) {
-    for (int i = 0; i < L->count; i++) free(L->frames[i].rgba);
+    for (int i = 0; i < L->count; i++) {
+        free(L->frames[i].rgba);
+        free(L->frames[i].bitmask);
+    }
     free(L->frames);
     memset(L, 0, sizeof(*L));
 }
 
+static uint32_t px_checksum(const uint8_t *bgra, size_t len) {
+    uint32_t h = 2166136261u;
+    for (size_t i = 0; i < len; i++) {
+        h ^= bgra[i];
+        h *= 16777619u;
+    }
+    return h;
+}
+
 static bool list_push(gm82_decoded_sprite_list *L, const char *name,
-                      int32_t w, int32_t h, const uint8_t *bgra, size_t bgra_len) {
+                      int32_t w, int32_t h, int32_t origin_x, int32_t origin_y,
+                      const uint8_t *bgra, size_t bgra_len) {
     if ((size_t)(w * h * 4) != bgra_len) return false;
+
+    /* Dedupe: same name + size + pixel checksum already present */
+    (void)px_checksum;
+    for (int i = 0; i < L->count; i++) {
+        if (L->frames[i].width == w && L->frames[i].height == h &&
+            L->frames[i].rgba_size == bgra_len &&
+            strcmp(L->frames[i].name, name ? name : "?") == 0) {
+            /* compare checksum stored in unused high bits via first/last pixel mix */
+            uint32_t existing = px_checksum(L->frames[i].rgba, L->frames[i].rgba_size);
+            /* rgba is already converted; compare against converted form */
+            uint8_t *tmp = (uint8_t *)malloc(bgra_len);
+            if (!tmp) break;
+            for (int32_t p = 0; p < w * h; p++) {
+                tmp[p*4+0] = bgra[p*4+2];
+                tmp[p*4+1] = bgra[p*4+1];
+                tmp[p*4+2] = bgra[p*4+0];
+                tmp[p*4+3] = bgra[p*4+3];
+            }
+            uint32_t conv = px_checksum(tmp, bgra_len);
+            free(tmp);
+            if (existing == conv) return true; /* duplicate skipped, treat as success */
+        }
+    }
+
     if (L->count >= L->capacity) {
         int nc = L->capacity ? L->capacity * 2 : 16;
         gm82_decoded_frame *nf = (gm82_decoded_frame *)realloc(L->frames, (size_t)nc * sizeof(*nf));
@@ -40,19 +77,21 @@ static bool list_push(gm82_decoded_sprite_list *L, const char *name,
     }
     gm82_decoded_frame *f = &L->frames[L->count];
     memset(f, 0, sizeof(*f));
-    strncpy(f->name, name ? name : "?", sizeof(f->name) - 1);
+    snprintf(f->name, sizeof(f->name), "%s", name ? name : "?");
     f->width = w;
     f->height = h;
+    f->origin_x = origin_x;
+    f->origin_y = origin_y;
     f->rgba_size = bgra_len;
     f->rgba = (uint8_t *)malloc(bgra_len);
     if (!f->rgba) return false;
-    /* BGRA → RGBA */
     for (int32_t i = 0; i < w * h; i++) {
-        f->rgba[i*4+0] = bgra[i*4+2]; /* R */
-        f->rgba[i*4+1] = bgra[i*4+1]; /* G */
-        f->rgba[i*4+2] = bgra[i*4+0]; /* B */
-        f->rgba[i*4+3] = bgra[i*4+3]; /* A */
+        f->rgba[i*4+0] = bgra[i*4+2];
+        f->rgba[i*4+1] = bgra[i*4+1];
+        f->rgba[i*4+2] = bgra[i*4+0];
+        f->rgba[i*4+3] = bgra[i*4+3];
     }
+    gm82_frame_build_bitmask(f, 16);
     L->count++;
     return true;
 }
@@ -94,11 +133,13 @@ static int32_t rd_i32(const uint8_t *p) {
  * Secondary: plausible w/h/dlen when preceded by exists/version flag.
  * This increases coverage for zelda / plataformas style GMKs. */
 static void scan_blob(gm82_decoded_sprite_list *L, const uint8_t *d, size_t len) {
-    /* Byte-step scan: after variable-length names the 800 marker is often
-       not 4-byte aligned. Required for zelda / plataformas style resources. */
+    /* Byte-step scan: after variable-length names the version marker is often
+       not 4-byte aligned. Supports GM4, GM5, GM6, GM7, GM8, GM8.1, GM8.2. */
     for (size_t j = 0; j + 20 < len; j++) {
         int32_t ver = rd_i32(d + j);
-        if (ver != 800 && ver != 710) continue;
+        if (ver != 800 && ver != 710 && ver != 701 && ver != 600 &&
+            ver != 542 && ver != 530 && ver != 520 && ver != 500 &&
+            ver != 430 && ver != 400) continue;
 
         int32_t w = rd_i32(d + j + 4);
         int32_t h = rd_i32(d + j + 8);
@@ -126,7 +167,25 @@ static void scan_blob(gm82_decoded_sprite_list *L, const uint8_t *d, size_t len)
             }
             if (back < 5) break;
         }
-        list_push(L, name, w, h, d + pix_off, (size_t)dlen);
+        /* Heuristic: GM sprite origin often sits as two int32 before version tag. */
+        int32_t ox = 0, oy = 0;
+        if (j >= 8) {
+            int32_t a = rd_i32(d + j - 8);
+            int32_t b = rd_i32(d + j - 4);
+            if (a >= 0 && a <= w && b >= 0 && b <= h) {
+                ox = a; oy = b;
+            } else if (j >= 16) {
+                for (size_t back = 8; back <= 48 && back + 4 <= j; back += 4) {
+                    int32_t xa = rd_i32(d + j - back - 4);
+                    int32_t yb = rd_i32(d + j - back);
+                    if (xa >= 0 && xa <= w && yb >= 0 && yb <= h) {
+                        ox = xa; oy = yb;
+                        break;
+                    }
+                }
+            }
+        }
+        list_push(L, name, w, h, ox, oy, d + pix_off, (size_t)dlen);
         j = pix_off + (size_t)dlen - 1; /* skip past frame */
     }
 }
@@ -137,7 +196,7 @@ int gm82_decode_sprites_from_gmk(const uint8_t *data, size_t size,
     if (!data || size < 12) return -1;
     int32_t magic = rd_i32(data);
     int32_t ver = rd_i32(data + 4);
-    if (magic != 1234321 || ver < 500 || ver > 810) return -2;
+    if (magic != 1234321 || ver < 400 || ver > 820) return -2;
 
     for (size_t i = 12; i + 2 < size; i++) {
         if (data[i] == 0x78 && (data[i+1] == 0x9c || data[i+1] == 0xda ||
@@ -150,6 +209,10 @@ int gm82_decode_sprites_from_gmk(const uint8_t *data, size_t size,
             }
             i += 16; /* skip ahead */
         }
+    }
+    /* Fallback for legacy uncompressed GMK projects (GM4/GM5 raw format) */
+    if (out->count == 0 && size > 32) {
+        scan_blob(out, data, size);
     }
     return out->count;
 }
@@ -223,7 +286,7 @@ void gm82_sprite_groups_build(const gm82_decoded_sprite_list *frames, gm82_sprit
         while (i < frames->count && strcmp(frames->frames[i].name, name) == 0) i++;
         gm82_sprite_group *g = &tmp[n++];
         memset(g, 0, sizeof(*g));
-        strncpy(g->name, name, sizeof(g->name)-1);
+        snprintf(g->name, sizeof(g->name), "%s", name);
         g->frame_start = start;
         g->frame_count = i - start;
         g->width = frames->frames[start].width;
@@ -257,4 +320,51 @@ int gm82_sprite_resolve_frame(const gm82_sprite_group_list *G, int sprite_index,
     int idx = image_index % g->frame_count;
     if (idx < 0) idx += g->frame_count;
     return g->frame_start + idx;
+}
+
+void gm82_frame_build_bitmask(gm82_decoded_frame *frame, uint8_t alpha_tolerance) {
+    if (!frame || !frame->rgba || frame->width <= 0 || frame->height <= 0) return;
+    free(frame->bitmask);
+    size_t npixels = (size_t)frame->width * (size_t)frame->height;
+    size_t nbytes = (npixels + 7) / 8;
+    frame->bitmask = (uint8_t *)calloc(nbytes, 1);
+    if (!frame->bitmask) return;
+    frame->bitmask_size = nbytes;
+    for (size_t i = 0; i < npixels; i++) {
+        if (frame->rgba[i * 4 + 3] > alpha_tolerance) {
+            frame->bitmask[i >> 3] |= (uint8_t)(1 << (i & 7));
+        }
+    }
+}
+
+bool gm82_frame_test_pixel(const gm82_decoded_frame *frame, int32_t px, int32_t py) {
+    if (!frame || !frame->bitmask || px < 0 || py < 0 || px >= frame->width || py >= frame->height)
+        return false;
+    size_t idx = (size_t)py * (size_t)frame->width + (size_t)px;
+    return (frame->bitmask[idx >> 3] & (1 << (idx & 7))) != 0;
+}
+
+bool gm82_frames_collide_pixel(const gm82_decoded_frame *f1, int32_t x1, int32_t y1,
+                               const gm82_decoded_frame *f2, int32_t x2, int32_t y2) {
+    if (!f1 || !f2) return false;
+    int32_t left = (x1 > x2) ? x1 : x2;
+    int32_t right = ((x1 + f1->width) < (x2 + f2->width)) ? (x1 + f1->width) : (x2 + f2->width);
+    if (left >= right) return false;
+    int32_t top = (y1 > y2) ? y1 : y2;
+    int32_t bottom = ((y1 + f1->height) < (y2 + f2->height)) ? (y1 + f1->height) : (y2 + f2->height);
+    if (top >= bottom) return false;
+
+    for (int32_t py = top; py < bottom; py++) {
+        int32_t y1_off = py - y1;
+        int32_t y2_off = py - y2;
+        for (int32_t px = left; px < right; px++) {
+            int32_t x1_off = px - x1;
+            int32_t x2_off = px - x2;
+            if (gm82_frame_test_pixel(f1, x1_off, y1_off) &&
+                gm82_frame_test_pixel(f2, x2_off, y2_off)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

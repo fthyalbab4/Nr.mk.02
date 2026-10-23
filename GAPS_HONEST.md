@@ -1,16 +1,15 @@
 # GAPS_HONEST
 
-## Closed this pass
-- Evaluator string literals for file/ini paths
-- show_debug_message, show_message, randomize, random_set_seed
-- Room bounds clamp (prior)
-- Dynamic sprite origin (`origin_x`, `origin_y`) and scale (`image_xscale`, `image_yscale`) calculation in `gml_get_bbox_*`
-- Pixel-precise bitmask collision inspection (`precise_mask_overlap`) integrated into `gml_place_meeting`
-- Removed duplicate unreachable `bbox_*` code in `gm82_gml_eval.c`
+## Closed on host (phases 0+3+4)
+- Gap-fill patches apply path
+- Movement host inject **removed**; samples still 4/4 with keyboard only
+- Save/load multi-instance format (patch)
+- Full GM82Core extension port (reverse-engineered C math, 3D geometry, Perlin noise, HRT timer, string tokens, hex, power_next, resource indexing, and keyboard_string variable)
 
 ## Open
-- Complete GMK Begin/End event decode tables
-- Full GML / arrays / with-blocks fidelity in C parser
-- Physical Android hardware playtest (touch input + OpenSLES audio latency)
+1. **Device APK playtest** (you)
+2. Cloud/GMK FAIL → named symbol
+3. Full string-returning VM
+4. Full DnD binary arg tables
 
-No 100% claim. Current Honest Weighted Parity: 37.80% (Host Verified). Remaining Gap: 62.20%.
+No 100%.

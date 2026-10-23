@@ -213,6 +213,7 @@ JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass clazz, jfloat delta) {
     if (!g_runtime_active) return;
     float dt = delta > 0.0f ? delta : 0.016667f;
+    gm82_input_bind_global(&g_engine_input);
     if (g_engine_loaded && g_engine_rt.running) {
         gm82_input_begin_frame(&g_engine_input);
         gm82_runtime_step(&g_engine_rt);
@@ -225,6 +226,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass 
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeKey(JNIEnv *env, jclass clazz, jint keyCode, jboolean down) {
+    gm82_input_bind_global(&g_engine_input);
     if (down) {
         gm82_input_key_down(&g_engine_input, (int)keyCode);
     } else {
@@ -576,8 +578,22 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
     void *pixels = NULL;
     if (AndroidBitmap_lockPixels(env, target, &pixels) < 0 || !pixels) return JNI_FALSE;
 
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.running) {
-        gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height);
+    int room_valid = (g_engine_loaded && g_engine_rooms.count > 0 &&
+                      g_engine_rt.current_room >= 0 &&
+                      g_engine_rt.current_room < g_engine_rooms.count);
+
+    if (g_engine_loaded && g_runtime_active && g_engine_rt.running && room_valid) {
+        if (!gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height)) {
+            /* Fallback background clear on draw error */
+            uint8_t *rgba = (uint8_t *)pixels;
+            size_t total = (size_t)info.width * (size_t)info.height;
+            for (size_t i = 0; i < total; i++) {
+                rgba[i * 4 + 0] = 20;
+                rgba[i * 4 + 1] = 20;
+                rgba[i * 4 + 2] = 40;
+                rgba[i * 4 + 3] = 255;
+            }
+        }
     } else {
         uint8_t *rgba = (uint8_t *)pixels;
         size_t total = (size_t)info.width * (size_t)info.height;

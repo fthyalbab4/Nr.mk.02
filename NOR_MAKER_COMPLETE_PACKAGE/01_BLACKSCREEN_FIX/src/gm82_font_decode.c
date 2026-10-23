@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_font_decode.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
@@ -24,7 +25,9 @@ static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol=strm.total_out;inflateEnd(&strm);return dst;
 }
 void gm82_decoded_font_list_free(gm82_decoded_font_list *L) {
-    if(!L)return; free(L->items); memset(L,0,sizeof(*L));
+    if (!L) return;
+    free(L->items);
+    memset(L, 0, sizeof(*L));
 }
 int gm82_decode_fonts_from_gmk(const uint8_t *data, size_t size, gm82_decoded_font_list *out) {
     memset(out,0,sizeof(*out));
@@ -43,7 +46,7 @@ int gm82_decode_fonts_from_gmk(const uint8_t *data, size_t size, gm82_decoded_fo
         if(n>=32){free(d);break;}
         gm82_decoded_font *f=&tmp[n++];
         memset(f,0,sizeof(*f));
-        strncpy(f->name,name,sizeof(f->name)-1);
+        snprintf(f->name, sizeof(f->name), "%s", name);
         size_t off=8+(size_t)slen+8+4;
         if(off+4<=ol){
             int32_t nlen=rd_i32(d+off); off+=4;
