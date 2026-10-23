@@ -18,6 +18,9 @@ static uint32_t read_u32(const uint8_t *p) {
            ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((unused))
+#endif
 static int32_t read_i32(const uint8_t *p) {
     return (int32_t)read_u32(p);
 }

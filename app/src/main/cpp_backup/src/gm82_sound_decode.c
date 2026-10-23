@@ -55,32 +55,62 @@ int gm82_decode_sounds_from_gmk(const uint8_t *data, size_t size, gm82_decoded_s
         char name[64]; memcpy(name, d+8, (size_t)slen); name[slen]=0;
         int ok=1; for (int k=0;k<slen;k++) if (name[k]<32||name[k]>126) ok=0;
         if (!ok) { free(d); continue; }
-        /* sound names often start with snd_ or end with .wav/.mid */
-        int is_snd = 0;
-        if (strncmp(name, "snd", 3)==0 || strstr(name, ".wav") || strstr(name, ".mid") || strstr(name, ".mp3"))
-            is_snd = 1;
-        if (!is_snd) { free(d); continue; }
-        if (n >= 128) { free(d); break; }
         size_t off = 8 + (size_t)slen + 8; /* lastChanged */
+        if (off + 8 > ol) { free(d); continue; }
         int32_t ver = rd_i32(d + off); off += 4;
-        gm82_decoded_sound *s = &tmp[n++];
-        memset(s, 0, sizeof(*s));
-        strncpy(s->name, name, sizeof(s->name)-1);
-        s->kind = 0; s->volume = 1.0; s->preload = 0;
-        if (off + 12 <= ol) {
-            s->kind = rd_i32(d + off);
-            /* Search for raw audio headers (RIFF/WAVE, OggS, ID3) inside decompressed payload */
-            for (size_t ao = off; ao + 16 <= ol; ao++) {
-                if (memcmp(d + ao, "RIFF", 4) == 0 || memcmp(d + ao, "OggS", 4) == 0 || memcmp(d + ao, "ID3", 3) == 0) {
-                    s->data_offset = i; /* store source stream offset for JNI retrieval */
-                    s->data_size = ol - ao;
-                    break;
+        if (ver != 800 && ver != 710 && ver != 600 && ver != 540 &&
+            ver != 530 && ver != 440 && ver != 400) { free(d); continue; }
+
+        int32_t kind = rd_i32(d + off);
+        int is_snd = 0;
+        if (strncmp(name, "snd", 3) == 0 || strstr(name, ".wav") || strstr(name, ".mid") || strstr(name, ".mp3") ||
+            strncmp(name, "mus", 3) == 0 || strncmp(name, "bgm", 3) == 0 || strncmp(name, "se_", 3) == 0) {
+            is_snd = 1;
+        }
+
+        /* Check extension string in GM sound header (e.g. .wav, .mp3, .ogg, .mid) */
+        char ext[16] = {0};
+        if (off + 8 <= ol) {
+            int32_t ext_len = rd_i32(d + off + 4);
+            if (ext_len >= 1 && ext_len <= 8 && off + 8 + (size_t)ext_len <= ol) {
+                memcpy(ext, d + off + 8, (size_t)ext_len);
+                ext[ext_len] = 0;
+                if (strstr(ext, ".wav") || strstr(ext, ".mp3") || strstr(ext, ".mid") || strstr(ext, ".ogg")) {
+                    is_snd = 1;
                 }
             }
         }
+        if (!is_snd) { free(d); continue; }
+
+        if (n >= 128) { free(d); break; }
+        gm82_decoded_sound *s = &tmp[n++];
+        memset(s, 0, sizeof(*s));
+        snprintf(s->name, sizeof(s->name), "%s", name);
+        s->kind = (kind >= 0 && kind <= 3) ? kind : 0;
+        s->volume = 1.0;
+        s->preload = 1;
         (void)ver;
         free(d);
     }
+    /* Raw scan fallback for uncompressed audio chunks or embedded WAV files */
+    if (n == 0 && size > 44) {
+        for (size_t j = 0; j + 44 < size && n < 128; j++) {
+            if (data[j] == 'R' && data[j+1] == 'I' && data[j+2] == 'F' && data[j+3] == 'F' &&
+                data[j+8] == 'W' && data[j+9] == 'A' && data[j+10] == 'V' && data[j+11] == 'E') {
+                gm82_decoded_sound *s = &tmp[n++];
+                memset(s, 0, sizeof(*s));
+                snprintf(s->name, sizeof(s->name), "snd_raw_%d", n);
+                s->kind = 0;
+                s->volume = 1.0;
+                s->preload = 1;
+                s->data_offset = j;
+                int32_t rlen = rd_i32(data + j + 4);
+                s->data_size = (rlen > 0 && j + 8 + (size_t)rlen <= size) ? (size_t)rlen + 8 : 44;
+                j += s->data_size > 16 ? s->data_size - 1 : 16;
+            }
+        }
+    }
+
     out->count = n;
     if (n > 0) {
         out->items = malloc((size_t)n * sizeof(*out->items));

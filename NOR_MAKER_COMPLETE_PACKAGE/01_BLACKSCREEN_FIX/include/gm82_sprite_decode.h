@@ -13,10 +13,12 @@ typedef struct {
     char     name[64];
     int32_t  width;
     int32_t  height;
-    int32_t  origin_x;
-    int32_t  origin_y;
+    int32_t  origin_x;   /* GM sprite x origin; 0 if unknown */
+    int32_t  origin_y;   /* GM sprite y origin; 0 if unknown */
     uint8_t *rgba;       /* width*height*4, caller frees via list_free */
     size_t   rgba_size;
+    uint8_t *bitmask;    /* (width * height + 7) / 8 bytes, 1 bit per pixel (alpha > 0) */
+    size_t   bitmask_size;
 } gm82_decoded_frame;
 
 typedef struct {
@@ -47,6 +49,14 @@ int gm82_sprite_resolve_frame(const gm82_sprite_group_list *G, int sprite_index,
 
 void gm82_decoded_sprite_list_init(gm82_decoded_sprite_list *L);
 void gm82_decoded_sprite_list_free(gm82_decoded_sprite_list *L);
+
+/* Build 1-bit collision mask from RGBA pixels where alpha > tolerance (default 16) */
+void gm82_frame_build_bitmask(gm82_decoded_frame *frame, uint8_t alpha_tolerance);
+/* Test whether pixel (px, py) is solid in frame's bitmask */
+bool gm82_frame_test_pixel(const gm82_decoded_frame *frame, int32_t px, int32_t py);
+/* Test precise per-pixel collision between two frames at world coords */
+bool gm82_frames_collide_pixel(const gm82_decoded_frame *f1, int32_t x1, int32_t y1,
+                               const gm82_decoded_frame *f2, int32_t x2, int32_t y2);
 
 /* Returns number of frames decoded, or negative on error. */
 int gm82_decode_sprites_from_gmk(const uint8_t *data, size_t size,
