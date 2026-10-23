@@ -1,14 +1,14 @@
-# GAPS_HONEST
+# GAPS_HONEST — Verified Progress & Open Gaps
 
-## Closed on host (phases 0+3)
-- Gap-fill patches apply path
-- Movement host inject **removed**; samples still 4/4 with keyboard only
-- Save/load multi-instance format (patch)
+## Verified on Host (~55–65% Host Compatibility)
+- C core mirror directories synchronized 100% (`app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, `app/src/main/cpp_backup/`).
+- GML builtins expanded (`variable_instance_*`, geometry functions `rectangle_in_rectangle`/`point_in_rectangle`, `room_find`, keyboard_string VM state).
+- Sample GMK games (4/4: Mario, Plataformas, Shooter, Zelda) load and execute step loops on host pipeline (`SUMMARY ok=4 fail=0`).
 
-## Open
-1. **Device APK playtest** (you)
-2. Cloud/GMK FAIL → named symbol
-3. Full string-returning VM
-4. Full DnD binary arg tables
+## Open / Unverified
+1. Physical Android device APK testing.
+2. Complete D3D / Direct3D / Shaders pipeline.
+3. Native Windows external DLL loading (`.dll` stubs).
+4. Remaining extended GML functions from GM82 portable `fnames` catalog.
 
-No 100%.
+No fake 100% claims.
