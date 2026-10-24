@@ -17,3 +17,15 @@
 ## 2026-10-15 - Accessible Live Status & ARIA Progress Reporting in Async Modals
 **Learning:** Async status messages and progress bars inside overlay modals are silent to screen reader users unless the status container uses `role="status"` and `aria-live="polite"`, and the progress bar element defines `role="progressbar"` with dynamic `aria-valuenow` updates.
 **Action:** Always wrap async loading feedback in a `role="status"` `aria-live="polite"` container and bind percentage updates to `aria-valuenow` on `role="progressbar"` wrappers.
+
+## 2026-10-16 - Dynamic Card Grid Focus Elevation Parity
+**Learning:** In interactive card grids with `tabindex="0"`, relying solely on mouse hover listeners (`onmouseenter`/`onmouseleave`) for card elevation (`transform`, `boxShadow`, `borderColor`) leaves keyboard users with flat cards during Tab navigation, creating a visual disconnect between pointer and keyboard interactions.
+**Action:** Bind card elevation logic to both mouse (`onmouseenter`/`onmouseleave`) and focus (`onfocus`/`onblur`) events to ensure identical tactile feedback regardless of input method.
+
+## 2026-10-17 - Modal Dialog Focus Restoration & Focus Trap Boundary
+**Learning:** When opening modal dialogs, omitting focus restoration (`lastActiveElement = document.activeElement`) causes keyboard users to lose focus context upon modal dismissal. Furthermore, without a `Tab`/`Shift+Tab` focus cycle handler inside the modal container, keyboard navigation escapes into invisible backdrop elements behind the dialog.
+**Action:** Always save the triggering `document.activeElement` on modal open, restore focus on modal close, and attach a `Tab` key listener on the modal container to trap focus within visible dialog boundaries.
+
+## 2026-10-18 - Screen Reader ARIA Live Announcer & Keyboard Search Focus Navigation
+**Learning:** In search-filtered catalog grids, dynamic query updates leave screen reader users unaware of result count changes unless count elements include `aria-live="polite"` and `aria-atomic="true"`. Additionally, forcing keyboard users to Tab through intermediate controls (like clear buttons and dropdowns) after typing a search query degrades navigation speed; binding `ArrowDown`/`Enter` in search inputs to directly shift focus to the first matching card creates a fluid keyboard workflow.
+**Action:** Always mark summary count elements with `aria-live="polite"` and `aria-atomic="true"`, and attach `ArrowDown`/`Enter` keydown listeners on search inputs to immediately focus top-matching grid cards.

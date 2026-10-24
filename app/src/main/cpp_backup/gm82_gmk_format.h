@@ -11,7 +11,10 @@ extern "C" {
 typedef enum gm82_gmk_format_kind {
     GM82_GMK_FORMAT_UNKNOWN = 0,
     GM82_GMK_FORMAT_GM7_GM8 = 1,
-    GM82_GMK_FORMAT_GM81 = 2
+    GM82_GMK_FORMAT_GM81 = 2,
+    GM82_GMK_FORMAT_GM82 = 3,
+    GM82_GMK_FORMAT_GM5_GM6 = 4,
+    GM82_GMK_FORMAT_GM4 = 5
 } gm82_gmk_format_kind;
 
 typedef enum gm82_gmk_parse_status {

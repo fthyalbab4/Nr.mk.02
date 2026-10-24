@@ -58,6 +58,12 @@ static const gm82_behavior g_behaviors[] = {
     { "fantasma",      beh_player_create, beh_player_step },
     { "obj_link",      beh_player_create, beh_player_step },
     { "link",          beh_player_create, beh_player_step },
+    { "obj_guy",       beh_player_create, beh_player_step },
+    { "guy",           beh_player_create, beh_player_step },
+    { "obj_ship",      beh_player_create, beh_player_step },
+    { "ship",          beh_player_create, beh_player_step },
+    { "jugador",       beh_player_create, beh_player_step },
+    { "obj_jugador",   beh_player_create, beh_player_step },
     { "obj_enemigo",   NULL,              beh_enemy_step },
     { "enemigo",       NULL,              beh_enemy_step },
     { "objEnemigo",    NULL,              beh_enemy_step },
@@ -482,6 +488,26 @@ void gm82_events_fire_pre_draw_all(gm82_runtime *rt) {
         if (!inst || !inst->alive) continue;
         fire_object_ev(rt, inst, GM82_EV_DRAW, 1);
     }
+}
+
+bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive || !rt->objects) return false;
+    if (inst->object_index < 0 || inst->object_index >= rt->objects->count) return false;
+    const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == GM82_EV_DRAW && (ev->event_numb == 0 || ev->event_numb == -1)) {
+            if (ev->action_name0[0] || (ev->code_snippet && ev->code_snippet[0]))
+                return true;
+        }
+    }
+    return false;
+}
+
+void gm82_events_fire_draw_single(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive || !inst->visible) return;
+    gm82_gml_set_runtime(rt);
+    fire_object_ev(rt, inst, GM82_EV_DRAW, 0);
 }
 
 void gm82_events_fire_draw_all(gm82_runtime *rt) {
