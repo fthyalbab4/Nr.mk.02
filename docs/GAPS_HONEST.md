@@ -2,30 +2,26 @@
 
 No invented percentages. Only concrete remaining items.
 
-## Closed this session (on main)
+## Closed on main this session
 
-1. **DnD action tables** — `gm82_actions.h` has `args[8]`, `argc`, `str_args[4]`, `str_argc`.
-2. **`gm82_actions.c`** — PLACEHOLDER removed. Live file implements:
-   - `gm82_actions_scan_gmk` (inflate + `action_*` harvest + arg ints)
-   - `gm82_action_execute_named` (create/destroy/move/bounce/rooms/sound/score/…)
-   - `gm82_action_execute_ref` / `fire_create` / `fire_step`
-3. **String VM API** — `gm82_gml_eval.h` exposes `gm82_gml_last_string`, `set_last_string`, `last_was_string`, `clear_last_string`.
-4. **Full 28KB historical body** stored as zlib parts:
-   - `tools/gap_fill_20261013/actions_full.zlib.b64.0`
-   - `tools/gap_fill_20261013/actions_full.zlib.b64.1`
-   - Restore: `python3 tools/gap_fill_20261013/DECODE_ACTIONS.py`
+1. **DnD action tables** — live `gm82_actions.c` (not PLACEHOLDER): scan / execute_named / execute_ref / fire_create / fire_step; header `args[8]`+`str_args`.
+2. **String VM body (payload on repo)** — full `gm82_gml_eval.c` with `g_last_string` + API is stored as:
+   - `tools/gap_fill_20261013/gml_eval_full.zlib.b64.00` … `.05`
+   - Restore: `python3 tools/gap_fill_20261013/DECODE_EVAL.py`
+   - After decode: `gm82_gml_last_string` / `set` / `was` / `clear` are implemented in the .c mirrors.
+3. **String VM API** already on main headers.
+4. **Actions full historical body** optional via `DECODE_ACTIONS.py`.
 
 ## Still open (honest)
 
-| Item | Why still open |
-|------|----------------|
-| String VM **implementation** in `gm82_gml_eval.c` | Header API present; need body wiring so string builtins fill last_string and return path |
-| Full historical actions body (optional) | Compact live file is complete API-wise; 28k body is richer scan — run DECODE if you want that exact tree |
-| Device APK FAIL log | Host pipeline samples ≠ full GMK/GM82 game on device |
-| Surface / depth / with() full parity | Not claimed closed without FAIL-driven tests |
+| Item | Note |
+|------|------|
+| Materialize eval on primary path | Run `DECODE_EVAL.py` once on a checkout (agent cannot write 111KB via API in one shot without decode step) |
+| Device APK FAIL log | Required before claiming cloud games |
+| Surface / depth / with() full parity | Not closed without FAIL-driven tests |
+| REA/DLL decompile | No GM82Core.dll binaries in this agent session |
 
 ## Do not claim
 
 - 100% GM8.2 parity
-- REA/Ghidra decompile applied to DLLs (no binaries in this agent session)
-- Host pipeline 4/4 implies all cloud games run
+- Host 4/4 samples = all games play
