@@ -274,6 +274,8 @@ void test_advanced_gml_and_physics_suite(void) {
     free(f2.rgba); free(f2.bitmask);
 
     /* 7. Test DnD Action execution */
+    rt.room_width = 640;
+    rt.room_height = 480;
     inst->vspeed = 5.0;
     inst->hspeed = 0.0;
     assert(gm82_action_execute_named(&rt, inst, "action_bounce") == true);

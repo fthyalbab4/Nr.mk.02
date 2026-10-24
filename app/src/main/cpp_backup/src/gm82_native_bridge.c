@@ -2,6 +2,7 @@
 #include "gm82_native_bridge.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_sound_runtime.h"
+#include "gml_vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

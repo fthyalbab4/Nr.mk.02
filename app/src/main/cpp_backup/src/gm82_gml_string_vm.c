@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+/* String-returning VM buffer — linked via CMake GLOB src/*.c */
 static char g_last_string[512];
 static int g_last_was_string = 0;
 
