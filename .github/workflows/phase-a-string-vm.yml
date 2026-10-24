@@ -1,0 +1,28 @@
+name: phase-a-string-vm
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py'
+      - 'tools/gap_fill_20261013/phase_a_eval_keyboard_string.patch'
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply string VM calls into eval
+        run: |
+          set -e
+          python3 tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py
+          if grep -q 'gm82_gml_set_last_string(p->str_args\[0\])' app/src/main/cpp/src/gm82_gml_eval.c; then
+            echo A2_OK
+          else
+            echo A2_FAIL; exit 1
+          fi
+      - name: Commit if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Phase A2 inject set_last_string into keyboard_string"
+          file_pattern: "app/src/main/cpp/src/gm82_gml_eval.c app/src/main/cpp_backup/src/gm82_gml_eval.c NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c"

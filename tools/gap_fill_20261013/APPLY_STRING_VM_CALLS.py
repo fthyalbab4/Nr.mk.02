@@ -24,9 +24,10 @@ new = (
     '        return true;\n'
     '    }'
 )
+changed = 0
 for f in targets:
     if not f.exists():
-        print("skip", f)
+        print("skip missing", f)
         continue
     t = f.read_text()
     if "gm82_gml_set_last_string(p->str_args[0])" in t:
@@ -35,6 +36,7 @@ for f in targets:
     if old in t:
         f.write_text(t.replace(old, new, 1))
         print("patched", f)
+        changed += 1
     else:
         print("no needle", f)
-print("OK")
+print("OK changed", changed)
