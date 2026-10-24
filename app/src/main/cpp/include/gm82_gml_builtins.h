@@ -13,12 +13,14 @@
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
-#include "gm82_sound_runtime.h"
+#include "gm82_input.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+double gml_sqrt(double v);
 
 /* Thread-local-ish current runtime for builtins (set before scripts run) */
 void gm82_gml_set_runtime(gm82_runtime *rt);
@@ -33,6 +35,9 @@ double gml_instance_create(double x, double y, double object_index);
 void   gml_instance_destroy(void); /* destroys self */
 double gml_instance_number(double object_index); /* -1 = all */
 double gml_instance_exists(double id_or_object);
+double gml_variable_instance_exists(double instance_id, const char *name);
+double gml_variable_instance_get(double instance_id, const char *name);
+double gml_variable_instance_set(double instance_id, const char *name, double value);
 double gml_instance_nearest(double x, double y, double object_index);
 double gml_instance_find(double object_index, double n);
 double gml_distance_to_object(double object_index);
@@ -43,6 +48,9 @@ void   gml_motion_add(double dir, double spd);
 void   gml_move_towards_point(double tx, double ty, double sp);
 double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
+double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_string_digits(const char *src, char *dst, size_t max_len);
+void gml_string_letters(const char *src, char *dst, size_t max_len);
 
 /* ---- Collision (AABB via sprite size) ---- */
 double gml_place_meeting(double x, double y, double object_index);
@@ -54,22 +62,15 @@ void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h);
 double gml_draw_clear(double color);
 double gml_point_in_rectangle(double px, double py, double x1, double y1, double x2, double y2);
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
-double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme);
 double gml_collision_point(double x, double y, double obj, double prec, double notme);
-double gml_collision_line(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
-double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_place_free(double x, double y);
 double gml_place_empty(double x, double y);
 double gml_move_contact_solid(double dir, double maxdist);
-double gml_move_contact_all(double dir, double maxdist);
-double gml_move_outside_solid(double dir, double maxdist);
-double gml_move_outside_all(double dir, double maxdist);
-double gml_move_bounce_solid(double advanced);
-double gml_move_bounce_all(double advanced);
-double gml_distance_to_point(double px, double py);
 double gml_sprite_get_width(double sprite);
 double gml_sprite_get_height(double sprite);
 double gml_sprite_get_number(double sprite);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 double gml_sprite_exists(double sprite);
 double gml_object_exists(double object_index);
 double gml_object_get_sprite(double object_index);
@@ -80,26 +81,18 @@ void gm82_gml_set_frame_time(double seconds);
 void gml_draw_sprite(double sprite, double x, double y);
 void gml_draw_set_color(double color);
 void gml_draw_set_alpha(double alpha);
+void gml_draw_reset(void);
+void gml_draw_set_rgba(double r, double g, double b, double a);
+double gml_instance_destroy_id(double inst_id);
+double gml_instance_nearest_notme(double x, double y, double object_index);
+double gml_string_ends_with(const char *str, const char *substr);
 double gml_draw_get_alpha(void);
 double gml_draw_get_color(void);
 void gml_draw_rectangle(double x1, double y1, double x2, double y2, double outline);
 void gml_draw_circle(double x, double y, double r, double outline);
 void gml_draw_line(double x1, double y1, double x2, double y2);
-void gml_draw_point(double x, double y);
-void gml_draw_ellipse(double x1, double y1, double x2, double y2, double outline);
-void gml_draw_roundrect(double x1, double y1, double x2, double y2, double outline);
-void gml_draw_triangle(double x1, double y1, double x2, double y2, double x3, double y3, double outline);
-void gml_draw_set_halign(double halign);
-void gml_draw_set_valign(double valign);
-void gml_draw_set_font(double font);
-void gml_draw_set_blend_mode(double mode);
-double gml_draw_background(double bg, double x, double y);
-double gml_draw_background_ext(double bg, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
-double gml_draw_background_tiled(double bg, double x, double y);
-double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 void gml_draw_text(double x, double y, const char *str);
 void gml_draw_text_color(double x, double y, const char *str, double c1, double c2, double c3, double c4);
-void gml_draw_text_ext(double x, double y, const char *str, double sep, double w);
 
 /* Surfaces (CPU framebuffer targets) */
 double gml_surface_create(double w, double h);
@@ -110,6 +103,8 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
+double gml_draw_clear(double color);
+double gml_draw_clear_alpha(double color, double alpha);
 
 void gm82_particles_bind(gm82_particle_world *w);
 double gml_part_system_create(void);
@@ -159,24 +154,13 @@ double gml_ds_queue_size(double id);
 double gml_ds_queue_empty(double id);
 double gml_ds_queue_clear(double id);
 
-
-/* ds_grid (Full GM82 Parity) */
+/* ds_grid */
 double gml_ds_grid_create(double w, double h);
 double gml_ds_grid_destroy(double id);
-double gml_ds_grid_width(double id);
-double gml_ds_grid_height(double id);
-double gml_ds_grid_resize(double id, double w, double h);
-double gml_ds_grid_clear(double id, double val);
 double gml_ds_grid_set(double id, double x, double y, double val);
 double gml_ds_grid_get(double id, double x, double y);
-double gml_ds_grid_set_region(double id, double x1, double y1, double x2, double y2, double val);
-double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2);
-double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2);
-double gml_ds_grid_get_min(double id, double x1, double y1, double x2, double y2);
-double gml_ds_grid_get_mean(double id, double x1, double y1, double x2, double y2);
-
-/* Precise Bitmask & Per-Pixel Collision */
-double gml_place_meeting_precise(double x, double y, double object_index);
+double gml_ds_grid_value_sum(double id, double x1, double y1, double x2, double y2);
+double gml_ds_grid_set_disk(double id, double cx, double cy, double r, double val);
 
 /* ds_priority (numeric priority, higher first) */
 double gml_ds_priority_create(void);
@@ -184,24 +168,8 @@ double gml_ds_priority_destroy(double id);
 double gml_ds_priority_add(double id, double value, double priority);
 double gml_ds_priority_delete_max(double id);
 double gml_ds_priority_find_max(double id);
-double gml_ds_priority_delete_min(double id);
-double gml_ds_priority_find_min(double id);
-double gml_ds_priority_change_priority(double id, double value, double new_priority);
 double gml_ds_priority_size(double id);
 double gml_ds_priority_empty(double id);
-
-/* ds_list and ds_map extended */
-double gml_ds_list_insert(double id, double pos, double value);
-double gml_ds_list_replace(double id, double pos, double value);
-double gml_ds_map_replace(double id, double key, double value);
-double gml_ds_map_empty(double id);
-
-/* ds_grid extended */
-double gml_ds_grid_set_disk(double id, double xm, double ym, double r, double val);
-double gml_ds_grid_fill(double id, double val);
-double gml_ds_grid_value_exists(double id, double x1, double y1, double x2, double y2, double val);
-double gml_ds_grid_value_x(double id, double x1, double y1, double x2, double y2, double val);
-double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2, double val);
 
 void gm82_mp_grid_bind(gm82_mp_grid_world *w);
 double gml_mp_grid_create(double left, double top, double hcells, double vcells, double cellw, double cellh);
@@ -264,16 +232,17 @@ double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 double gml_lerp(double a, double b, double amount);
 double gml_clamp(double val, double minv, double maxv);
-double gml_median(double a, double b, double c);
+double gml_approach(double val, double target, double max_amount);
 double gml_deg_to_rad(double deg);
 double gml_rad_to_deg(double rad);
 double gml_angle_difference(double dest, double src);
 double gml_dsin(double deg);
 double gml_dcos(double deg);
 double gml_dtan(double deg);
-double gml_darcsin(double val);
-double gml_darccos(double val);
-double gml_darctan(double val);
+double gml_darcsin(double x);
+double gml_darccos(double x);
+double gml_darctan(double x);
+double gml_darctan2(double y, double x);
 
 double gml_display_get_width(void);
 double gml_display_get_height(void);
@@ -287,6 +256,14 @@ double gml_room_goto_previous(void);
 double gml_room_restart(void);
 double gml_game_end(void);
 double gml_game_restart(void);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_point_in_circle(double px, double py, double cx, double cy, double r);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
 void gm82_window_set_size(int w, int h);
 double gml_game_has_ended(void);
 void gm82_scripts_bind(gm82_script_list *scripts);
@@ -304,31 +281,14 @@ int  gm82_debug_log_count(void);
 const char *gm82_debug_log_get(int index);
 double gml_string_length(const char *s);
 double gml_real(const char *s);
-double gml_string_pos(const char *sub, const char *str);
-double gml_string_char_at(const char *str, double index);
-double gml_string_digits(const char *str, char *out, size_t out_sz);
-double gml_string_lower(const char *str, char *out, size_t out_sz);
-double gml_string_upper(const char *str, char *out, size_t out_sz);
-double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz);
-double gml_string_replace(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz);
-double gml_string_replace_all(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz);
-double gml_string_count(const char *substr, const char *str);
-double gml_string_delete(const char *str, double index, double count, char *out, size_t out_sz);
-double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz);
-double gml_array_length_1d(double array_id);
-double gml_array_height_2d(double array_id);
-double gml_array_length_2d(double array_id, double row);
 double gml_mouse_x(void);
 double gml_mouse_y(void);
 double gml_mouse_check_button(double button);
 double gml_mouse_check_button_pressed(double button);
 double gml_instance_change(double object_index, double perform_events);
 double gml_instance_copy(double perform_events);
-double gml_instance_position(double x, double y, double object_index);
 double gml_instance_deactivate_all(double notme);
-double gml_instance_deactivate_object(double object_index);
 double gml_instance_activate_all(void);
-double gml_instance_activate_object(double object_index);
 void gm82_path_bind(gm82_path_list *paths);
 double gml_path_start(double path_index, double speed, double end_action, double absolute);
 double gml_path_end(void);
@@ -344,10 +304,6 @@ void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
 /* ---- Built-in variable access on self ---- */
 double gml_get_x(void);
 double gml_get_y(void);
-double gml_get_bbox_left(void);
-double gml_get_bbox_right(void);
-double gml_get_bbox_top(void);
-double gml_get_bbox_bottom(void);
 void   gml_set_x(double v);
 void   gml_set_y(double v);
 double gml_get_hspeed(void);
@@ -369,6 +325,7 @@ double gml_get_visible(void);
 double gml_room_width(void);
 double gml_room_height(void);
 double gml_room_speed(void);
+double gml_room_find(const char *name);
 double gml_room_goto(double room_index);
 double gml_room(void);
 double gml_room_restart(void);
@@ -383,63 +340,129 @@ double gml_get_lives(void);
 void   gml_set_lives(double v);
 double gml_get_health(void);
 void   gml_set_health(double v);
-/* Audio stubs – no device playback yet */
+/* Audio stubs */
+double gml_sound_play(double sound_index);
+double gml_sound_stop(double sound_index);
+double gml_sound_isplaying(double sound_index);
+double gml_sound_volume(double sound_index, double vol);
+double gml_sound_loop(double sound_index);
+double gml_sound_pitch(double sound_index, double pitch);
+double gml_sound_pan(double sound_index, double pan);
 
-/* ---- Math helpers common in GML ---- */
+/* ---- Math & Physics helpers ---- */
+double gml_sqr(double v);
+double gml_sqrt_fn(double v);
+double gml_power(double x, double y);
+double gml_frac(double v);
+double gml_dot_product(double x1, double y1, double x2, double y2);
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex_str);
+double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_move_bounce_solid(double adv);
+double gml_move_wrap(double hor, double vert, double margin);
+
 double gml_abs(double v);
 double gml_sign(double v);
-double gml_median(double a, double b, double c);
 double gml_clamp(double v, double lo, double hi);
 double gml_lerp(double a, double b, double t);
 double gml_irandom(double n);
 double gml_random(double n);
 
-
-/* Math & Geometry builtins added from unified Nr.mk.01 */
-double gml_dot_product(double x1, double y1, double x2, double y2);
+double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
+double gml_event_user(double numb);
+double gml_get_bbox_left(void);
+double gml_get_bbox_right(void);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_get_bbox_top(void);
+double gml_get_bbox_bottom(void);
+double gml_median(double a, double b, double c);
+double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme);
+double gml_collision_line(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
+double gml_move_contact_all(double dir, double maxdist);
+double gml_move_outside_solid(double dir, double maxdist);
+double gml_move_outside_all(double dir, double maxdist);
+double gml_move_bounce_all(double advanced);
+double gml_distance_to_point(double px, double py);
+void gml_draw_set_halign(double halign);
+void gml_draw_set_valign(double valign);
+void gml_draw_set_font(double font);
+void gml_draw_set_blend_mode(double mode);
+void gml_draw_point(double x, double y);
+void gml_draw_ellipse(double x1, double y1, double x2, double y2, double outline);
+void gml_draw_roundrect(double x1, double y1, double x2, double y2, double outline);
+void gml_draw_triangle(double x1, double y1, double x2, double y2, double x3, double y3, double outline);
+double gml_draw_background(double bg, double x, double y);
+double gml_draw_background_tiled(double bg, double x, double y);
+double gml_draw_background_ext(double bg, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
+double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
+double gml_string_pos(const char *sub, const char *str);
+double gml_string_char_at(const char *str, double index);
+double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz);
+double gml_string_replace(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz);
+double gml_string_replace_all(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz);
+double gml_string_count(const char *substr, const char *str);
+double gml_string_delete(const char *str, double index, double count, char *out, size_t out_sz);
+double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz);
+double gml_string_lower(const char *str, char *out, size_t out_sz);
+double gml_string_upper(const char *str, char *out, size_t out_sz);
+double gml_array_length_1d(double array_id);
+double gml_array_length_2d(double array_id, double row);
+double gml_array_height_2d(double array_id);
+double gml_instance_position(double x, double y, double object_index);
+double gml_instance_deactivate_object(double object_index);
+double gml_instance_activate_object(double object_index);
+void gml_draw_text_ext(double x, double y, const char *str, double sep, double w);
+double gml_ds_list_insert(double id, double pos, double value);
+double gml_ds_list_replace(double id, double pos, double value);
+double gml_ds_map_replace(double id, double key, double value);
+double gml_ds_map_empty(double id);
+double gml_ds_priority_find_min(double id);
+double gml_ds_priority_delete_min(double id);
+double gml_ds_priority_change_priority(double id, double value, double new_priority);
+void gml_string_format(double val, double total, double dec, char *out, size_t outsize);
+void gml_file_find_close(void);
+const char *gml_file_find_first(const char *mask, double attr);
+const char *gml_file_find_next(void);
 double gml_math_min(double a, double b);
 double gml_math_max(double a, double b);
 double gml_arctan2(double y, double x);
-double gml_sqr(double v);
-double gml_sqrt(double v);
-double gml_power(double base, double exp_val);
 double gml_log10(double v);
 double gml_log2(double v);
 double gml_exp(double v);
-double gml_frac(double v);
-
-/* GM82Core & Studio Math Extensions */
-double gml_angle_difference(double ang1, double ang2);
+double gml_ds_grid_width(double id);
+double gml_ds_grid_height(double id);
+double gml_ds_grid_resize(double id, double w, double h);
+double gml_ds_grid_clear(double id, double val);
+double gml_ds_grid_set_region(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2);
+double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2);
+double gml_ds_grid_get_min(double id, double x1, double y1, double x2, double y2);
+double gml_ds_grid_get_mean(double id, double x1, double y1, double x2, double y2);
+double gml_place_meeting_precise(double x, double y, double object_index);
 double gml_angle_abs(double angle);
 double gml_angle_mean(double ang1, double ang2);
-double gml_approach(double val, double target, double stepsize);
 double gml_approach_angle(double ang1, double ang2, double step);
 double gml_box_distance(double length, double dir);
 double gml_circle_in_circle(double ax, double ay, double radiusa, double bx, double by, double radiusb);
 double gml_clerp2(double fromA, double fromB, double toA, double toB, double value);
 double gml_cosine(double a, double b, double amount);
-double gml_darccos(double x);
-double gml_darcsin(double x);
-double gml_darctan(double x);
-double gml_darctan2(double y, double x);
-double gml_dcos(double angle);
-double gml_dsin(double angle);
-double gml_dtan(double angle);
 double gml_dsecant(double angle);
 double gml_dot_product_normalized(double x1, double y1, double x2, double y2);
-double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_dot_product_3d_normalized(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_color_inverse(double color);
 double gml_color_reverse(double color);
-
-/* Additional Data Structure operations */
 double gml_ds_grid_multiply(double id, double x, double y, double val);
 double gml_ds_grid_add(double id, double x, double y, double val);
 double gml_ds_grid_copy(double id, double source_id);
 double gml_ds_list_shuffle(double id);
 double gml_ds_list_sort(double id, double ascending);
-
-/* Tile & Display Builtins */
+double gml_ds_grid_fill(double id, double val);
+double gml_ds_grid_value_exists(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_value_x(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2, double val);
 double gml_tile_add(double bg, double left, double top, double width, double height, double x, double y, double depth);
 double gml_tile_delete(double id);
 double gml_tile_find(double x, double y, double depth);
@@ -451,31 +474,42 @@ double gml_tile_get_height(double id);
 double gml_tile_get_background(double id);
 double gml_tile_set_position(double id, double x, double y);
 double gml_tile_set_region(double id, double left, double top, double width, double height);
-
-/* Window & View Helpers */
-double gml_window_get_width(void);
-double gml_window_get_height(void);
 double gml_window_set_size(double w, double h);
 double gml_window_center(void);
-
-/* Timing */
-double gml_get_timer(void);
-double gml_delta_time(void);
-
-/* Color functions & Blend modes */
 double gml_make_color_rgb(double r, double g, double b);
-double gml_make_color_hsv(double h, double s, double v);
 double gml_color_get_red(double c);
 double gml_color_get_green(double c);
 double gml_color_get_blue(double c);
+double gml_make_color_hsv(double h, double s, double v);
 double gml_draw_set_blend_mode_ext(double src, double dest);
 double gml_draw_set_circle_precision(double prec);
-
-/* Script finding */
+double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2, double y2, double val);
 int gml_script_find(const char *name);
+
+/* Missing geometry & utility declarations */
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad);
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_hex_to_color(const char *hex_str);
+double gml_game_save(const char *filename);
+double gml_game_load(const char *filename);
+double gml_sprite_get_xoffset(double sprite);
+double gml_sprite_get_yoffset(double sprite);
+double gml_power_next(double val);
+double gml_math_set_epsilon(double eps);
+double gml_math_get_epsilon(void);
+double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad);
+double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
+double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3);
 
 #ifdef __cplusplus
 }
 #endif
+
+
+void gml_show_debug_message(const char *msg);
+double gml_randomize(void);
+double gml_random_set_seed(double seed);
+double gml_random_get_seed(void);
 
 #endif

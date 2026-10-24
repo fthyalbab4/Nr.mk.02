@@ -1,14 +1,23 @@
-# STATUS — التقييم الحقيقي والخطة المستقبلية
+# STATUS — phases 0+3+string/DnD partial on host
 
-## مسار SO الموجود (بدون NDK جديد)
-- التطبيق يحمّل `libgm82_android` مسبقاً
-- JS: `nor_native_loop_bridge.js` + patch في `assets/www/`
-- باتش MainActivity: `tools/MainActivity.native_loop.patch`
+```bash
+bash tools/gap_fill_20261013/LAND_PHASE0.sh
+python3 tools/gap_fill_20261013/patch_phase3_movement_save.py
+bash tools/run_host_pipeline.sh
+```
 
-## تنبيه
-إن كان `MainActivity.java` = PLACEHOLDER، طبّق `tools/RECOVER_MAINACTIVITY.md`
+Verified previously: **SUMMARY ok=4 fail=0** with **no hspeed inject**.
 
-Host ~65–75% (مُثبت بتشغيل test_full_suite و host_so_smoke و run_full_verification.py). Android على جهاز حقيقي: غير مُقاس. ليس 100%.
-- **النسبة الكلية المحسوبة حالياً:** **~36.75%** (محدثة بعد إضافة التحكم التكراري في GML، أقنعة البتات المباشرة، الخلاط الصوتي، وتجميع رسم GLES).
-- **الهدف الشامل القادم:** التدرج نحو 95% عبر الاختبارات الموسعة واختبارات الأجهزة الحقيقية.
-- **الحالة الحالية تحت الاختبار:** 100% نجاح في جميع سكربتات الاختبار الميدانية على Host (16/16 PASS في `run_full_verification.py` و `make test`).
+## Phase status
+| Phase | Status |
+|-------|--------|
+| 0 Land patches | Done |
+| 1 Device APK | **Blocked on your phone** |
+| 2 FAIL-driven | Protocol ready — needs a FAIL log |
+| 3 Movement/save | Done on host |
+| 4 GM82Core RE Integration | Done (clean-room) |
+| 4b String-returning VM | **Partial** — last-string API + string_repeat + producers wire last-string |
+| 4c DnD arg tables | **Partial** — args[8]/argc in action_ref; expanded execute paths |
+| 5 100% parity | Not claimed |
+
+No fake 100%.

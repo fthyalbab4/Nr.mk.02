@@ -22,12 +22,16 @@ gm82_gmk_probe_result gm82_gmk_probe(const uint8_t *data, size_t size) {
         r.error_code = "bad_magic";
         return r;
     }
-    if (version < 500 || version > 810) {
+    if (version < 400 || version > 820) {
         r.error_code = "unsupported_version";
         return r;
     }
 
-    r.format_kind = (version >= 810) ? GM82_GMK_FORMAT_GM81 : GM82_GMK_FORMAT_GM7_GM8;
+    if (version >= 810) r.format_kind = GM82_GMK_FORMAT_GM81;
+    else if (version >= 700) r.format_kind = GM82_GMK_FORMAT_GM7_GM8;
+    else if (version >= 500) r.format_kind = GM82_GMK_FORMAT_GM5_GM6;
+    else r.format_kind = GM82_GMK_FORMAT_GM4;
+
     r.status = GM82_GMK_PARSE_PARTIAL;   /* header ok, full decode still required */
     r.error_code = NULL;
     return r;
