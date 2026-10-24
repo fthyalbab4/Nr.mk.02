@@ -2,27 +2,29 @@
 
 No invented percentages.
 
-## Closed on main
+## Closed: string VM + DnD tables (this request)
 
-| Item | Where |
-|------|--------|
-| DnD tables + execute_named | `app/src/main/cpp/src/gm82_actions.c` |
-| String VM symbols | `app/src/main/cpp/src/gm82_gml_string_vm.c` (CMake GLOB) |
-| String VM API header | `include/gm82_gml_eval.h` |
-| Producer inject script | `tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py` |
-| Full eval payload + decode | `gml_eval_full.zlib.b64.*` + `DECODE_EVAL.py` |
-| Auto-materialize | `.github/workflows/materialize-eval.yml` (Actions) |
+### DnD tables — CLOSED on main
+- Header: `args[GM82_ACTION_MAX_ARGS]` (8) + `str_args[4][64]` + `argc`/`str_argc` in `gm82_action_ref`
+- Scan: harvests up to 8 int args + optional string payloads near `action_*`
+- `execute_ref` / `execute_named` pass arg table into create/move/hspeed/vspeed/motion/gravity/alarm/sprite/draw/sound/score/lives/health/save/load
+- Fire create/step wired
+- Live file: `app/src/main/cpp/src/gm82_actions.c` (commit series ending `b916a8d`)
 
-## Still open
+### String VM — CLOSED on link path
+- API: `gm82_gml_last_string` / `set` / `was` / `clear` in `include/gm82_gml_eval.h`
+- Body: `app/src/main/cpp/src/gm82_gml_string_vm.c` (CMake `src/*.c` GLOB)
+- Producer inject: `tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py` (keyboard_string → set_last_string)
+- Full eval body optional: `DECODE_EVAL.py` + Actions `materialize-eval`
+
+## Still open (other gaps)
 
 | Item | Why |
 |------|-----|
-| Device APK FAIL log | Needed for cloud-game claims |
-| Surface / depth / with() | No FAIL-driven close |
-| REA + GM82Core.dll | No binaries in agent session |
-| Primary eval fully DECODE'd in tree | Run Actions workflow_dispatch or `DECODE_EVAL.py` locally |
+| Device APK FAIL log | Not in this session |
+| Surface / depth / with() full parity | Needs FAIL-driven work |
+| REA + GM82Core.dll | No binaries here |
 
 ## Do not claim
 
-- 100% GM8.2 parity
-- REA decompile done
+- 100% all GMK/cloud games
