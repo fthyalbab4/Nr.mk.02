@@ -128,7 +128,7 @@ C
 gcc -O2 -I"$INC" -I"$CPP" -o "$ROOT/build_host/pipeline_min" \
   "$ROOT/build_host/host_pipeline_min.c" "$ROOT/build_host/opensles_stub.c" \
   "$SRC/gm82_runtime.c" "$SRC/gm82_events.c" "$SRC/gm82_input.c" \
-  "$SRC/gm82_gml_builtins.c" "$SRC/gm82_gml_eval.c" \
+  "$SRC/gm82_gml_builtins.c" "$SRC/gm82_gml_eval.c" "$SRC/gm82_gml_string_vm.c" \
   "$SRC/gm82_actions.c" "$SRC/gm82_view.c" "$SRC/gm82_path.c" \
   "$SRC/gm82_timeline.c" "$SRC/gm82_script.c" \
   "$SRC/gm82_particles.c" "$SRC/gm82_mp_grid.c" \

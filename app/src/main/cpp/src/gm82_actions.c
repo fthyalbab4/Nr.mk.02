@@ -369,7 +369,7 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
 }
 
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table || !rt->objects) return;
+    if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
     for (int i = 0; i < table->count; i++) {
@@ -384,13 +384,14 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
                 strcmp(ar->name, "action_another_room") == 0)
                 continue;
             gm82_action_execute_ref(rt, self, ar);
+            if (!self->alive) break;
         }
         break;
     }
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table || !rt->objects) return;
+    if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
     for (int i = 0; i < table->count; i++) {
@@ -406,6 +407,7 @@ void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_ac
                     strcmp(ar->name, "action_reverse_x") == 0 ||
                     strcmp(ar->name, "action_move") == 0) {
                     gm82_action_execute_ref(rt, self, ar);
+                    if (!self->alive) break;
                 }
             }
         }
