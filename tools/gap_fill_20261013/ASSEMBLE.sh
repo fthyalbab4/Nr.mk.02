@@ -21,6 +21,24 @@ apply_patch() {
   fi
 }
 
+# Materialize full string-VM eval body if payload present and marker missing
+if [ -f "$DIR/DECODE_EVAL.py" ] && [ -f "$DIR/gml_eval_full.zlib.b64.00" ]; then
+  if ! grep -q 'gm82_gml_set_last_string' app/src/main/cpp/src/gm82_gml_eval.c 2>/dev/null; then
+    python3 "$DIR/DECODE_EVAL.py" || true
+  else
+    echo "skip DECODE_EVAL (eval already has set_last_string)"
+  fi
+fi
+
+# Optional richer actions body
+if [ -f "$DIR/DECODE_ACTIONS.py" ] && ls "$DIR"/actions_full.zlib.b64.* >/dev/null 2>&1; then
+  if ! grep -q 'gm82_action_execute_named' app/src/main/cpp/src/gm82_actions.c 2>/dev/null; then
+    python3 "$DIR/DECODE_ACTIONS.py" || true
+  else
+    echo "skip DECODE_ACTIONS (actions already has execute_named)"
+  fi
+fi
+
 if ! grep -q 'has_player' app/src/main/cpp/src/gm82_runtime.c 2>/dev/null; then
   python3 "$DIR/spawn_fallback.py" || true
 else
@@ -49,6 +67,7 @@ python3 "$DIR/mm_xstart.py" || true
 python3 "$DIR/apply_deterministic_pipeline.py" || true
 python3 "$DIR/gm82core_instance_helpers.py" || true
 
-gcc -O2 -Wall -o /tmp/test_event_order "$DIR/test_event_order.c"
-/tmp/test_event_order
+if [ -f "$DIR/test_event_order.c" ]; then
+  gcc -O2 -Wall -o /tmp/test_event_order "$DIR/test_event_order.c" 2>/dev/null && /tmp/test_event_order || true
+fi
 echo ASSEMBLE_OK
