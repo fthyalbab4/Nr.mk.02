@@ -385,6 +385,7 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
                 strcmp(ar->name, "action_another_room") == 0)
                 continue;
             gm82_action_execute_ref(rt, self, ar);
+            if (!self->alive) break;
         }
         break;
     }
@@ -408,6 +409,7 @@ void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_ac
                     strcmp(ar->name, "action_reverse_x") == 0 ||
                     strcmp(ar->name, "action_move") == 0) {
                     gm82_action_execute_ref(rt, self, ar);
+                    if (!self->alive) break;
                 }
             }
         }
