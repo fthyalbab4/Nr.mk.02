@@ -209,8 +209,23 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_bounce") == 0) {
         if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640))
             self->hspeed = -self->hspeed;
-        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480))
+        else if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480))
             self->vspeed = -self->vspeed;
+        else {
+            if (fabs(self->vspeed) >= fabs(self->hspeed))
+                self->vspeed = -self->vspeed;
+            else
+                self->hspeed = -self->hspeed;
+        }
+        return true;
+    }
+    if (strcmp(name, "action_wrap") == 0) {
+        int rw = (rt && rt->room_width > 0) ? rt->room_width : 640;
+        int rh = (rt && rt->room_height > 0) ? rt->room_height : 480;
+        if (self->x < 0) self->x += rw;
+        else if (self->x > rw) self->x -= rw;
+        if (self->y < 0) self->y += rh;
+        else if (self->y > rh) self->y -= rh;
         return true;
     }
     if (strcmp(name, "action_next_room") == 0) {
@@ -311,24 +326,40 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
     return true;
 }
 
+static int s_create_room_transition_depth = 0;
+
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table) return;
+    if (!rt || !self || !table || !rt->objects) return;
+    if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
+    const char *oname = rt->objects->items[self->object_index].name;
     for (int oi = 0; oi < table->count; oi++) {
         const gm82_object_actions *oa = &table->objects[oi];
+        if (strcmp(oa->object_name, oname) != 0) continue;
         for (int ai = 0; ai < oa->count; ai++) {
-            if (oa->items[ai].event_type == 0 || oa->items[ai].event_type == -1)
-                gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            if (oa->items[ai].event_type != 0) continue;
+            if (s_create_room_transition_depth > 0 &&
+                (strcmp(oa->items[ai].name, "action_next_room") == 0 ||
+                 strcmp(oa->items[ai].name, "action_if_next_room") == 0 ||
+                 strcmp(oa->items[ai].name, "action_previous_room") == 0 ||
+                 strcmp(oa->items[ai].name, "action_restart_room") == 0))
+                continue;
+            s_create_room_transition_depth++;
+            gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            s_create_room_transition_depth--;
         }
     }
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table) return;
+    if (!rt || !self || !table || !rt->objects) return;
+    if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
+    const char *oname = rt->objects->items[self->object_index].name;
     for (int oi = 0; oi < table->count; oi++) {
         const gm82_object_actions *oa = &table->objects[oi];
+        if (strcmp(oa->object_name, oname) != 0) continue;
         for (int ai = 0; ai < oa->count; ai++) {
-            if (oa->items[ai].event_type == 3 || oa->items[ai].event_type == -1)
-                gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            if (oa->items[ai].event_type != 3 && oa->items[ai].event_type != -1) continue;
+            gm82_action_execute_ref(rt, self, &oa->items[ai]);
         }
     }
 }
