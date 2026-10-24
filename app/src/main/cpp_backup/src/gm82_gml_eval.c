@@ -165,6 +165,12 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "keyboard_key") == 0 || strcmp(name, "keyboard_lastkey") == 0) {
         *out = gml_keyboard_key(); return true;
     }
+    if (strcmp(name, "keyboard_string") == 0) {
+        snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", gml_keyboard_string());
+        p->str_mask |= 1;
+        *out = (double)strlen(gml_keyboard_string());
+        return true;
+    }
     if (strcmp(name, "mouse_button") == 0) { *out = gml_mouse_button_code(); return true; }
     if (strcmp(name, "mouse_lastbutton") == 0) { *out = gml_mouse_lastbutton(); return true; }
 
@@ -311,6 +317,10 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "path_orientation") == 0) { s->path_orientation = v; return true; }
     if (strcmp(name, "path_endaction") == 0) { s->path_endaction = (int32_t)v; return true; }
 
+    if (strcmp(name, "keyboard_string") == 0) {
+        gml_keyboard_string_clear();
+        return true;
+    }
     if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = (int32_t)v; return true; }
     if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = (int32_t)v; return true; }
     if (strcmp(name, "view_wview") == 0) { if (p->rt) p->rt->view_w = (int32_t)v; return true; }
@@ -505,6 +515,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "angle_difference") == 0) {
             *out = gml_angle_difference(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "power_next") == 0) {
+            *out = gml_power_next(arg); return true;
+        }
+        if (strcmp(id, "math_set_epsilon") == 0) {
+            *out = gml_math_set_epsilon(arg); return true;
+        }
+        if (strcmp(id, "math_get_epsilon") == 0) {
+            *out = gml_math_get_epsilon(); return true;
         }
         if (strcmp(id, "angle_abs") == 0) {
             *out = gml_angle_abs(arg); return true;
@@ -974,8 +993,24 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_set_color") == 0) {
             gml_draw_set_color(arg); *out = 1; return true;
         }
-        if (strcmp(id, "draw_set_alpha") == 0) {
+        if (strcmp(id, "draw_set_alpha") == 0 || strcmp(id, "draw_seta") == 0) {
             gml_draw_set_alpha(arg); *out = 1; return true;
+        }
+        if (strcmp(id, "draw_reset") == 0) {
+            gml_draw_reset(); *out = 1; return true;
+        }
+        if (strcmp(id, "draw_set_rgba") == 0) {
+            gml_draw_set_rgba(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 1.0);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "instance_destroy_id") == 0) {
+            *out = gml_instance_destroy_id(arg); return true;
+        }
+        if (strcmp(id, "instance_nearest_notme") == 0) {
+            *out = gml_instance_nearest_notme(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : -1); return true;
+        }
+        if (strcmp(id, "string_ends_with") == 0) {
+            *out = gml_string_ends_with((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
         }
         if (strcmp(id, "draw_get_color") == 0) {
             *out = gml_draw_get_color(); return true;
