@@ -154557,6 +154557,18 @@ button, input, textarea, select {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           loadCloudGame(item, actionBtn);
+        } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          const next = card.nextElementSibling;
+          if (next && next.classList.contains("gmk-cloud-card")) {
+            e.preventDefault();
+            next.focus();
+          }
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          const prev = card.previousElementSibling;
+          if (prev && prev.classList.contains("gmk-cloud-card")) {
+            e.preventDefault();
+            prev.focus();
+          }
         }
       };
 
