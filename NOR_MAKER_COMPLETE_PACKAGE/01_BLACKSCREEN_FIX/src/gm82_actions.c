@@ -369,12 +369,13 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
 }
 
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table || !rt->objects) return;
+    if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
     for (int i = 0; i < table->count; i++) {
         if (strcmp(table->objects[i].object_name, oname) != 0) continue;
         for (int a = 0; a < table->objects[i].count; a++) {
+            if (!self->alive) break;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type != 0) continue;
             if (strcmp(ar->name, "action_next_room") == 0 ||
@@ -390,7 +391,7 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table || !rt->objects) return;
+    if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
     for (int i = 0; i < table->count; i++) {
@@ -398,6 +399,7 @@ void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_ac
             strcmp(table->objects[i].object_name, "_global_actions") != 0)
             continue;
         for (int a = 0; a < table->objects[i].count; a++) {
+            if (!self->alive) break;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type == 3 || ar->event_type == -1) {
                 if (strcmp(ar->name, "action_set_hspeed") == 0 ||
