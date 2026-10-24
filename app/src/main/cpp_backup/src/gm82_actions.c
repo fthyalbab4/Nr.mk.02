@@ -56,9 +56,12 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
     memset(a, 0, sizeof(*a));
     a->event_type = etype;
     a->event_numb = enumb;
-    if (argc > 0) a->action_id = args[0]; else a->action_id = aid;
-    if (argc > 1) a->kind = args[1]; else a->kind = kind;
-    a->argc = 0; a->str_argc = 0;
+    if (argc > 0) a->action_id = args[0];
+    else a->action_id = aid;
+    if (argc > 1) a->kind = args[1];
+    else a->kind = kind;
+    a->argc = 0;
+    a->str_argc = 0;
     if (args && argc > 0) {
         int n = argc > GM82_ACTION_MAX_ARGS ? GM82_ACTION_MAX_ARGS : argc;
         for (int i = 0; i < n; i++) a->args[i] = args[i];
@@ -66,7 +69,8 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
     }
     if (str_args && str_argc > 0) {
         int n = str_argc > 4 ? 4 : str_argc;
-        for (int i = 0; i < n; i++) strncpy(a->str_args[i], str_args[i], sizeof(a->str_args[i]) - 1);
+        for (int i = 0; i < n; i++)
+            strncpy(a->str_args[i], str_args[i], sizeof(a->str_args[i]) - 1);
         a->str_argc = n;
     }
     if (name) strncpy(a->name, name, sizeof(a->name) - 1);
@@ -75,25 +79,41 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
 int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *out) {
     if (!data || !out || size < 16) return 0;
     memset(out, 0, sizeof(*out));
-    gm82_object_actions tmp[128]; memset(tmp, 0, sizeof(tmp)); int nobj = 0;
-    gm82_object_actions global_bucket; memset(&global_bucket, 0, sizeof(global_bucket));
+    gm82_object_actions tmp[128];
+    memset(tmp, 0, sizeof(tmp));
+    int nobj = 0;
+    gm82_object_actions global_bucket;
+    memset(&global_bucket, 0, sizeof(global_bucket));
     strncpy(global_bucket.object_name, "_global_actions", sizeof(global_bucket.object_name) - 1);
     for (size_t i = 12; i + 2 < size; i++) {
-        if (!(data[i] == 0x78 && (data[i+1]==0x9c||data[i+1]==0xda||data[i+1]==0x01||data[i+1]==0x5e))) continue;
-        size_t ol = 0; uint8_t *d = inflate_at(data + i, size - i, &ol); i += 16;
+        if (!(data[i] == 0x78 && (data[i + 1] == 0x9c || data[i + 1] == 0xda ||
+                                  data[i + 1] == 0x01 || data[i + 1] == 0x5e)))
+            continue;
+        size_t ol = 0;
+        uint8_t *d = inflate_at(data + i, size - i, &ol);
+        i += 16;
         if (!d || ol < 16) { free(d); continue; }
         for (size_t o = 0; o + 8 < ol; o++) {
             int32_t n = rd_i32(d + o);
             if (n < 8 || n > 48 || o + 4 + (size_t)n > ol) continue;
             const uint8_t *s = d + o + 4;
             if (memcmp(s, "action_", 7) != 0) continue;
-            int good = 1; for (int k = 0; k < n; k++) if (s[k] < 32 || s[k] > 126) { good = 0; break; }
+            int good = 1;
+            for (int k = 0; k < n; k++)
+                if (s[k] < 32 || s[k] > 126) { good = 0; break; }
             if (!good) continue;
-            char aname[64]; memcpy(aname, s, (size_t)n); aname[n] = 0;
-            int dup = 0; for (int ai = 0; ai < global_bucket.count; ai++) if (strcmp(global_bucket.items[ai].name, aname) == 0) { dup = 1; break; }
+            char aname[64];
+            memcpy(aname, s, (size_t)n);
+            aname[n] = 0;
+            int dup = 0;
+            for (int ai = 0; ai < global_bucket.count; ai++)
+                if (strcmp(global_bucket.items[ai].name, aname) == 0) { dup = 1; break; }
             if (dup) { o += 4 + (size_t)n; continue; }
-            int32_t args[GM82_ACTION_MAX_ARGS]; int argc = 0;
-            char str_args[4][64]; int str_argc = 0; memset(str_args, 0, sizeof(str_args));
+            int32_t args[GM82_ACTION_MAX_ARGS];
+            int argc = 0;
+            char str_args[4][64];
+            int str_argc = 0;
+            memset(str_args, 0, sizeof(str_args));
             size_t ao = o + 4 + (size_t)n;
             while (argc < GM82_ACTION_MAX_ARGS && ao + 4 <= ol) {
                 int32_t v = rd_i32(d + ao);
@@ -101,75 +121,195 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
                     const uint8_t *p = d + ao + 4;
                     if (memcmp(p, "action_", 7) == 0) break;
                     if (str_argc < 4 && v >= 1 && v <= 63) {
-                        int ok = 1; for (int k = 0; k < v; k++) { unsigned char c = p[k]; if (c < 32 || c > 126) { ok = 0; break; } }
-                        if (ok) { memcpy(str_args[str_argc], p, (size_t)v); str_args[str_argc][v] = 0; str_argc++; ao += 4 + (size_t)v; continue; }
+                        int ok = 1;
+                        for (int k = 0; k < v; k++) {
+                            unsigned char c = p[k];
+                            if (c < 32 || c > 126) { ok = 0; break; }
+                        }
+                        if (ok) {
+                            memcpy(str_args[str_argc], p, (size_t)v);
+                            str_args[str_argc][v] = 0;
+                            str_argc++;
+                            ao += 4 + (size_t)v;
+                            continue;
+                        }
                     }
                 }
-                if (v == 400) break; args[argc++] = v; ao += 4;
+                if (v == 400) break;
+                args[argc++] = v;
+                ao += 4;
             }
             add_action(&global_bucket, -1, 0, aname, 0, 0, args, argc, str_args, str_argc);
             o += 4 + (size_t)n;
         }
         free(d);
     }
-    if (global_bucket.count > 0 && nobj < 128) tmp[nobj++] = global_bucket; else free(global_bucket.items);
+    if (global_bucket.count > 0 && nobj < 128)
+        tmp[nobj++] = global_bucket;
+    else
+        free(global_bucket.items);
     out->count = nobj;
     if (nobj > 0) {
         out->objects = (gm82_object_actions *)malloc((size_t)nobj * sizeof(*out->objects));
-        if (out->objects) memcpy(out->objects, tmp, (size_t)nobj * sizeof(*tmp)); else out->count = 0;
+        if (out->objects)
+            memcpy(out->objects, tmp, (size_t)nobj * sizeof(*tmp));
+        else
+            out->count = 0;
     }
     return out->count;
 }
 
 static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char *name,
-                               const int32_t *args, int argc, const char str_args[][64], int str_argc) {
+                               const int32_t *args, int argc,
+                               const char str_args[][64], int str_argc) {
     if (!rt || !self || !name) return false;
-    gm82_gml_set_runtime(rt); gm82_gml_set_self(self);
-    if (strcmp(name, "action_kill_object") == 0 || strcmp(name, "action_destroy") == 0) { gm82_runtime_instance_destroy(rt, self); return true; }
+    gm82_gml_set_runtime(rt);
+    gm82_gml_set_self(self);
+
+    if (strcmp(name, "action_kill_object") == 0 || strcmp(name, "action_destroy") == 0) {
+        gm82_runtime_instance_destroy(rt, self);
+        return true;
+    }
     if (strcmp(name, "action_create_object") == 0) {
         int obj = (argc >= 1) ? args[0] : self->object_index;
-        double x = (argc >= 2) ? (double)args[1] : self->x, y = (argc >= 3) ? (double)args[2] : self->y;
-        gm82_runtime_instance_create(rt, obj, x, y); return true;
+        double x = (argc >= 2) ? (double)args[1] : self->x;
+        double y = (argc >= 3) ? (double)args[2] : self->y;
+        gm82_runtime_instance_create(rt, obj, x, y);
+        return true;
     }
     if (strcmp(name, "action_move") == 0 || strcmp(name, "action_move_point") == 0) {
-        if (argc >= 2) { self->hspeed = (double)args[0]; self->vspeed = (double)args[1]; }
-        self->x += self->hspeed; self->y += self->vspeed; return true;
+        if (argc >= 2) {
+            self->hspeed = (double)args[0];
+            self->vspeed = (double)args[1];
+        }
+        self->x += self->hspeed;
+        self->y += self->vspeed;
+        return true;
     }
-    if (strcmp(name, "action_set_hspeed") == 0) { self->hspeed = (argc >= 1) ? (double)args[0] : 2.0; return true; }
-    if (strcmp(name, "action_set_vspeed") == 0) { self->vspeed = (argc >= 1) ? (double)args[0] : 2.0; return true; }
-    if (strcmp(name, "action_set_motion") == 0) { if (argc >= 1) self->direction = (double)args[0]; if (argc >= 2) self->speed = (double)args[1]; return true; }
-    if (strcmp(name, "action_set_gravity") == 0) { self->gravity = (argc >= 1) ? (double)args[0] : 0.5; if (argc >= 2) self->gravity_direction = (double)args[1]; return true; }
+    if (strcmp(name, "action_set_hspeed") == 0) {
+        self->hspeed = (argc >= 1) ? (double)args[0] : 2.0;
+        return true;
+    }
+    if (strcmp(name, "action_set_vspeed") == 0) {
+        self->vspeed = (argc >= 1) ? (double)args[0] : 2.0;
+        return true;
+    }
+    if (strcmp(name, "action_set_motion") == 0) {
+        if (argc >= 1) self->direction = (double)args[0];
+        if (argc >= 2) self->speed = (double)args[1];
+        return true;
+    }
+    if (strcmp(name, "action_set_gravity") == 0) {
+        self->gravity = (argc >= 1) ? (double)args[0] : 0.5;
+        if (argc >= 2) self->gravity_direction = (double)args[1];
+        return true;
+    }
     if (strcmp(name, "action_reverse_x") == 0) { self->hspeed = -self->hspeed; return true; }
     if (strcmp(name, "action_reverse_y") == 0) { self->vspeed = -self->vspeed; return true; }
     if (strcmp(name, "action_bounce") == 0) {
-        if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640)) self->hspeed = -self->hspeed;
-        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480)) self->vspeed = -self->vspeed; return true;
+        bool bounced = false;
+        if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640)) {
+            self->hspeed = -self->hspeed;
+            bounced = true;
+        }
+        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480)) {
+            self->vspeed = -self->vspeed;
+            bounced = true;
+        }
+        if (!bounced) {
+            if (self->hspeed != 0) self->hspeed = -self->hspeed;
+            if (self->vspeed != 0) self->vspeed = -self->vspeed;
+        }
+        return true;
     }
-    if (strcmp(name, "action_next_room") == 0) { if (rt->rooms && rt->current_room + 1 < rt->rooms->count) gm82_runtime_goto_room(rt, rt->current_room + 1); return true; }
-    if (strcmp(name, "action_previous_room") == 0) { if (rt->rooms && rt->current_room > 0) gm82_runtime_goto_room(rt, rt->current_room - 1); return true; }
-    if (strcmp(name, "action_restart_room") == 0 || strcmp(name, "action_current_room") == 0) { gm82_runtime_goto_room(rt, rt->current_room); return true; }
-    if (strcmp(name, "action_end_game") == 0 || strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
-    if (strcmp(name, "action_sound") == 0 || strcmp(name, "action_play_sound") == 0) { gml_sound_play((argc >= 1) ? args[0] : 0); return true; }
+    if (strcmp(name, "action_wrap") == 0) {
+        double rw = rt->room_width ? (double)rt->room_width : 640.0;
+        double rh = rt->room_height ? (double)rt->room_height : 480.0;
+        int mode = (argc >= 1) ? args[0] : 0;
+        if (mode == 0 || mode == 1) {
+            if (self->x < 0) self->x += rw;
+            else if (self->x >= rw) self->x -= rw;
+        }
+        if (mode == 0 || mode == 2) {
+            if (self->y < 0) self->y += rh;
+            else if (self->y >= rh) self->y -= rh;
+        }
+        return true;
+    }
+    if (strcmp(name, "action_next_room") == 0) {
+        if (rt->rooms && rt->current_room + 1 < rt->rooms->count)
+            gm82_runtime_goto_room(rt, rt->current_room + 1);
+        return true;
+    }
+    if (strcmp(name, "action_previous_room") == 0) {
+        if (rt->rooms && rt->current_room > 0)
+            gm82_runtime_goto_room(rt, rt->current_room - 1);
+        return true;
+    }
+    if (strcmp(name, "action_restart_room") == 0 || strcmp(name, "action_current_room") == 0) {
+        gm82_runtime_goto_room(rt, rt->current_room);
+        return true;
+    }
+    if (strcmp(name, "action_end_game") == 0 || strcmp(name, "action_restart_game") == 0) {
+        rt->running = 0;
+        return true;
+    }
+    if (strcmp(name, "action_sound") == 0 || strcmp(name, "action_play_sound") == 0) {
+        gml_sound_play((argc >= 1) ? args[0] : 0);
+        return true;
+    }
     if (strcmp(name, "action_end_sound") == 0) { gml_sound_stop_all(); return true; }
-    if (strcmp(name, "action_set_score") == 0) { gml_set_score((argc >= 1) ? (double)args[0] : 0.0); return true; }
-    if (strcmp(name, "action_set_lives") == 0) { gml_set_lives((argc >= 1) ? (double)args[0] : 3.0); return true; }
-    if (strcmp(name, "action_set_health") == 0) { gml_set_health((argc >= 1) ? (double)args[0] : 100.0); return true; }
+    if (strcmp(name, "action_set_score") == 0) {
+        gml_set_score((argc >= 1) ? (double)args[0] : 0.0);
+        return true;
+    }
+    if (strcmp(name, "action_set_lives") == 0) {
+        gml_set_lives((argc >= 1) ? (double)args[0] : 3.0);
+        return true;
+    }
+    if (strcmp(name, "action_set_health") == 0) {
+        gml_set_health((argc >= 1) ? (double)args[0] : 100.0);
+        return true;
+    }
     if (strcmp(name, "action_set_alarm") == 0) {
-        int idx = (argc >= 1) ? args[0] : 0; int val = (argc >= 2) ? args[1] : 30;
-        if (idx < 0) idx = 0; if (idx > 11) idx = 11; self->alarms[idx] = val; return true;
+        int idx = (argc >= 1) ? args[0] : 0;
+        int val = (argc >= 2) ? args[1] : 30;
+        if (idx < 0) idx = 0;
+        if (idx > 11) idx = 11;
+        self->alarms[idx] = val;
+        return true;
     }
     if (strcmp(name, "action_sprite_set") == 0) {
-        if (argc >= 1) self->sprite_index = args[0]; if (argc >= 2) self->image_index = args[1]; if (argc >= 3) self->image_speed = (double)args[2]; return true;
+        if (argc >= 1) self->sprite_index = args[0];
+        if (argc >= 2) self->image_index = args[1];
+        if (argc >= 3) self->image_speed = (double)args[2];
+        return true;
     }
     if (strcmp(name, "action_draw_sprite") == 0) {
         int sp = (argc >= 1) ? args[0] : self->sprite_index;
-        double x = (argc >= 2) ? (double)args[1] : self->x, y = (argc >= 3) ? (double)args[2] : self->y;
-        if (sp >= 0) gml_draw_sprite((double)sp, x, y); return true;
+        double x = (argc >= 2) ? (double)args[1] : self->x;
+        double y = (argc >= 3) ? (double)args[2] : self->y;
+        if (sp >= 0) gml_draw_sprite((double)sp, x, y);
+        return true;
     }
-    if (strcmp(name, "action_draw_variable") == 0) { char buf[64]; snprintf(buf, sizeof(buf), "%g", self->x); gml_draw_text(self->x, self->y, buf); return true; }
-    if (strcmp(name, "action_effect") == 0) { gml_part_particles_create(0, self->x, self->y, 0, 8); return true; }
-    if (strcmp(name, "action_save_game") == 0) { const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat"; return gml_game_save(path) > 0; }
-    if (strcmp(name, "action_load_game") == 0) { const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat"; return gml_game_load(path) > 0; }
+    if (strcmp(name, "action_draw_variable") == 0) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%g", self->x);
+        gml_draw_text(self->x, self->y, buf);
+        return true;
+    }
+    if (strcmp(name, "action_effect") == 0) {
+        gml_part_particles_create(0, self->x, self->y, 0, 8);
+        return true;
+    }
+    if (strcmp(name, "action_save_game") == 0) {
+        const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
+        return gml_game_save(path) > 0;
+    }
+    if (strcmp(name, "action_load_game") == 0) {
+        const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
+        return gml_game_load(path) > 0;
+    }
     return true;
 }
 
@@ -180,28 +320,52 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
 
 bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action_ref *ar) {
     if (!rt || !self || !ar) return false;
-    if (ar->name[0]) return execute_named_args(rt, self, ar->name, ar->args, ar->argc, ar->str_args, ar->str_argc);
-    if (ar->argc >= 2) { self->hspeed = (double)ar->args[0]; self->vspeed = (double)ar->args[1]; return true; }
-    if (ar->argc >= 1 && ar->kind == 1) { self->sprite_index = ar->args[0]; return true; }
+    if (ar->name[0])
+        return execute_named_args(rt, self, ar->name, ar->args, ar->argc, ar->str_args, ar->str_argc);
+    if (ar->argc >= 2) {
+        self->hspeed = (double)ar->args[0];
+        self->vspeed = (double)ar->args[1];
+        return true;
+    }
+    if (ar->argc >= 1 && ar->kind == 1) {
+        self->sprite_index = ar->args[0];
+        return true;
+    }
     return true;
 }
 
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table) return;
-    for (int oi = 0; oi < table->count; oi++) {
-        const gm82_object_actions *oa = &table->objects[oi];
-        for (int ai = 0; ai < oa->count; ai++)
-            if (oa->items[ai].event_type == 0 || oa->items[ai].event_type == -1)
+    if (!rt || !self || !table || !rt->objects) return;
+    int32_t oi = self->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const char *obj_name = rt->objects->items[oi].name;
+
+    for (int i = 0; i < table->count; i++) {
+        const gm82_object_actions *oa = &table->objects[i];
+        bool match_obj = (obj_name && oa->object_name[0] && strcmp(oa->object_name, obj_name) == 0);
+        if (!match_obj) continue;
+        for (int ai = 0; ai < oa->count; ai++) {
+            if (oa->items[ai].event_type == 0 || oa->items[ai].event_type == -1) {
                 gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            }
+        }
     }
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table) return;
-    for (int oi = 0; oi < table->count; oi++) {
-        const gm82_object_actions *oa = &table->objects[oi];
-        for (int ai = 0; ai < oa->count; ai++)
-            if (oa->items[ai].event_type == 3 || oa->items[ai].event_type == -1)
+    if (!rt || !self || !table || !rt->objects) return;
+    int32_t oi = self->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const char *obj_name = rt->objects->items[oi].name;
+
+    for (int i = 0; i < table->count; i++) {
+        const gm82_object_actions *oa = &table->objects[i];
+        bool match_obj = (obj_name && oa->object_name[0] && strcmp(oa->object_name, obj_name) == 0);
+        if (!match_obj) continue;
+        for (int ai = 0; ai < oa->count; ai++) {
+            if (oa->items[ai].event_type == 3 || oa->items[ai].event_type == -1) {
                 gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            }
+        }
     }
 }

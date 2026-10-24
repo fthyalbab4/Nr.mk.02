@@ -207,10 +207,33 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_reverse_x") == 0) { self->hspeed = -self->hspeed; return true; }
     if (strcmp(name, "action_reverse_y") == 0) { self->vspeed = -self->vspeed; return true; }
     if (strcmp(name, "action_bounce") == 0) {
-        if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640))
+        bool bounced = false;
+        if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640)) {
             self->hspeed = -self->hspeed;
-        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480))
+            bounced = true;
+        }
+        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480)) {
             self->vspeed = -self->vspeed;
+            bounced = true;
+        }
+        if (!bounced) {
+            if (self->hspeed != 0) self->hspeed = -self->hspeed;
+            if (self->vspeed != 0) self->vspeed = -self->vspeed;
+        }
+        return true;
+    }
+    if (strcmp(name, "action_wrap") == 0) {
+        double rw = rt->room_width ? (double)rt->room_width : 640.0;
+        double rh = rt->room_height ? (double)rt->room_height : 480.0;
+        int mode = (argc >= 1) ? args[0] : 0;
+        if (mode == 0 || mode == 1) {
+            if (self->x < 0) self->x += rw;
+            else if (self->x >= rw) self->x -= rw;
+        }
+        if (mode == 0 || mode == 2) {
+            if (self->y < 0) self->y += rh;
+            else if (self->y >= rh) self->y -= rh;
+        }
         return true;
     }
     if (strcmp(name, "action_next_room") == 0) {
@@ -312,23 +335,37 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
 }
 
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table) return;
-    for (int oi = 0; oi < table->count; oi++) {
-        const gm82_object_actions *oa = &table->objects[oi];
+    if (!rt || !self || !table || !rt->objects) return;
+    int32_t oi = self->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const char *obj_name = rt->objects->items[oi].name;
+
+    for (int i = 0; i < table->count; i++) {
+        const gm82_object_actions *oa = &table->objects[i];
+        bool match_obj = (obj_name && oa->object_name[0] && strcmp(oa->object_name, obj_name) == 0);
+        if (!match_obj) continue;
         for (int ai = 0; ai < oa->count; ai++) {
-            if (oa->items[ai].event_type == 0 || oa->items[ai].event_type == -1)
+            if (oa->items[ai].event_type == 0 || oa->items[ai].event_type == -1) {
                 gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            }
         }
     }
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    if (!rt || !self || !table) return;
-    for (int oi = 0; oi < table->count; oi++) {
-        const gm82_object_actions *oa = &table->objects[oi];
+    if (!rt || !self || !table || !rt->objects) return;
+    int32_t oi = self->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const char *obj_name = rt->objects->items[oi].name;
+
+    for (int i = 0; i < table->count; i++) {
+        const gm82_object_actions *oa = &table->objects[i];
+        bool match_obj = (obj_name && oa->object_name[0] && strcmp(oa->object_name, obj_name) == 0);
+        if (!match_obj) continue;
         for (int ai = 0; ai < oa->count; ai++) {
-            if (oa->items[ai].event_type == 3 || oa->items[ai].event_type == -1)
+            if (oa->items[ai].event_type == 3 || oa->items[ai].event_type == -1) {
                 gm82_action_execute_ref(rt, self, &oa->items[ai]);
+            }
         }
     }
 }

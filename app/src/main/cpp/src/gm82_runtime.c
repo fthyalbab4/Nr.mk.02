@@ -143,6 +143,10 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     if (!rt || !rt->rooms || room_index < 0 || room_index >= rt->rooms->count)
         return false;
 
+    static int s_room_transition_depth = 0;
+    if (s_room_transition_depth > 3) return false;
+    s_room_transition_depth++;
+
     const gm82_decoded_room *room = &rt->rooms->items[room_index];
     rt->current_room = room_index;
     rt->room_width = room->width;
@@ -205,6 +209,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             gm82_events_fire_create_all(rt);
         }
     }
+    s_room_transition_depth--;
     return true;
 }
 
