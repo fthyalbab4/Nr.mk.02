@@ -168,6 +168,7 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "keyboard_string") == 0) {
         snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", gml_keyboard_string());
         p->str_mask |= 1;
+        gm82_gml_set_last_string(p->str_args[0]);
         *out = (double)strlen(gml_keyboard_string());
         return true;
     }
