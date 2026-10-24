@@ -1,0 +1,23 @@
+name: materialize-eval
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/gap_fill_20261013/gml_eval_full.zlib.b64.*'
+      - 'tools/gap_fill_20261013/DECODE_EVAL.py'
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode eval payload
+        run: python3 tools/gap_fill_20261013/DECODE_EVAL.py
+      - name: Inject string VM calls if needed
+        run: python3 tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py || true
+      - name: Commit materialized sources
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: materialize gm82_gml_eval.c (string VM body)"
+          file_pattern: "app/src/main/cpp/src/gm82_gml_eval.c app/src/main/cpp_backup/src/gm82_gml_eval.c NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c"

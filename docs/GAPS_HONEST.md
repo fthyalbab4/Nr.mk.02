@@ -2,26 +2,27 @@
 
 No invented percentages.
 
-## Closed on main (this work)
+## Closed on main
 
 | Item | Where |
 |------|--------|
-| DnD `args[8]` / `execute_named` / scan / fire | `app/src/main/cpp/src/gm82_actions.c` (live, not PLACEHOLDER) |
+| DnD tables + execute_named | `app/src/main/cpp/src/gm82_actions.c` |
+| String VM symbols | `app/src/main/cpp/src/gm82_gml_string_vm.c` (CMake GLOB) |
 | String VM API header | `include/gm82_gml_eval.h` |
-| String VM **symbols on link path** | `app/src/main/cpp/src/gm82_gml_string_vm.c` (CMake GLOB) |
-| Full eval body payload | `gml_eval_full.zlib.b64.00`–`.05` + `DECODE_EVAL.py` |
-| Full actions historical payload | `actions_full.zlib.b64.0/.1` + `DECODE_ACTIONS.py` |
+| Producer inject script | `tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py` |
+| Full eval payload + decode | `gml_eval_full.zlib.b64.*` + `DECODE_EVAL.py` |
+| Auto-materialize | `.github/workflows/materialize-eval.yml` (Actions) |
 
 ## Still open
 
 | Item | Why |
 |------|-----|
-| Full eval materialized on primary path | Run `DECODE_EVAL.py` on checkout; until then producers in old eval may not call `set_last_string` (API still linkable via string_vm.c) |
-| Device APK FAIL log | Required for cloud-game claims |
-| Surface / depth / with() parity | Not closed without FAIL tests |
+| Device APK FAIL log | Needed for cloud-game claims |
+| Surface / depth / with() | No FAIL-driven close |
 | REA + GM82Core.dll | No binaries in agent session |
+| Primary eval fully DECODE'd in tree | Run Actions workflow_dispatch or `DECODE_EVAL.py` locally |
 
 ## Do not claim
 
-- 100% GM8.2 / all cloud games
-- REA decompile applied
+- 100% GM8.2 parity
+- REA decompile done
