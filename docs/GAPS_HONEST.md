@@ -1,27 +1,27 @@
-# GAPS_HONEST — Nr.mk.02 (updated 2026-10-24)
+# GAPS_HONEST — Nr.mk.02 (2026-10-24)
 
-No invented percentages. Only concrete remaining items.
+No invented percentages.
 
-## Closed on main this session
+## Closed on main (this work)
 
-1. **DnD action tables** — live `gm82_actions.c` (not PLACEHOLDER): scan / execute_named / execute_ref / fire_create / fire_step; header `args[8]`+`str_args`.
-2. **String VM body (payload on repo)** — full `gm82_gml_eval.c` with `g_last_string` + API is stored as:
-   - `tools/gap_fill_20261013/gml_eval_full.zlib.b64.00` … `.05`
-   - Restore: `python3 tools/gap_fill_20261013/DECODE_EVAL.py`
-   - After decode: `gm82_gml_last_string` / `set` / `was` / `clear` are implemented in the .c mirrors.
-3. **String VM API** already on main headers.
-4. **Actions full historical body** optional via `DECODE_ACTIONS.py`.
+| Item | Where |
+|------|--------|
+| DnD `args[8]` / `execute_named` / scan / fire | `app/src/main/cpp/src/gm82_actions.c` (live, not PLACEHOLDER) |
+| String VM API header | `include/gm82_gml_eval.h` |
+| String VM **symbols on link path** | `app/src/main/cpp/src/gm82_gml_string_vm.c` (CMake GLOB) |
+| Full eval body payload | `gml_eval_full.zlib.b64.00`–`.05` + `DECODE_EVAL.py` |
+| Full actions historical payload | `actions_full.zlib.b64.0/.1` + `DECODE_ACTIONS.py` |
 
-## Still open (honest)
+## Still open
 
-| Item | Note |
-|------|------|
-| Materialize eval on primary path | Run `DECODE_EVAL.py` once on a checkout (agent cannot write 111KB via API in one shot without decode step) |
-| Device APK FAIL log | Required before claiming cloud games |
-| Surface / depth / with() full parity | Not closed without FAIL-driven tests |
-| REA/DLL decompile | No GM82Core.dll binaries in this agent session |
+| Item | Why |
+|------|-----|
+| Full eval materialized on primary path | Run `DECODE_EVAL.py` on checkout; until then producers in old eval may not call `set_last_string` (API still linkable via string_vm.c) |
+| Device APK FAIL log | Required for cloud-game claims |
+| Surface / depth / with() parity | Not closed without FAIL tests |
+| REA + GM82Core.dll | No binaries in agent session |
 
 ## Do not claim
 
-- 100% GM8.2 parity
-- Host 4/4 samples = all games play
+- 100% GM8.2 / all cloud games
+- REA decompile applied
