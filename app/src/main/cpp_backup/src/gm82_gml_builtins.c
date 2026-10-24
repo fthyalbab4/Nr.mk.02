@@ -23,6 +23,10 @@ static uint8_t *g_draw_buf = NULL;
 static int32_t g_draw_w = 0, g_draw_h = 0;
 static uint32_t g_draw_color = 0xFFFFFF;
 static double g_draw_alpha = 1.0;
+static int g_draw_halign = 0;
+static int g_draw_valign = 0;
+static int g_draw_font = 0;
+static int g_draw_blend_mode = 0;
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,6 +75,47 @@ double gml_instance_exists(double id_or_object) {
             return 1;
     }
     return 0;
+}
+
+static gm82_instance *find_instance_by_id(double instance_id) {
+    if (!g_rt) return NULL;
+    int32_t id = (int32_t)instance_id;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (g_rt->instances[i].alive && g_rt->instances[i].id == id)
+            return &g_rt->instances[i];
+    }
+    return NULL;
+}
+
+static int instance_var_index(const gm82_instance *inst, const char *name) {
+    if (!inst || !name || !name[0]) return -1;
+    for (int i = 0; i < inst->var_count; i++) {
+        if (strcmp(inst->vars[i].name, name) == 0) return i;
+    }
+    return -1;
+}
+
+double gml_variable_instance_exists(double instance_id, const char *name) {
+    return instance_var_index(find_instance_by_id(instance_id), name) >= 0 ? 1.0 : 0.0;
+}
+
+double gml_variable_instance_get(double instance_id, const char *name) {
+    gm82_instance *inst = find_instance_by_id(instance_id);
+    int idx = instance_var_index(inst, name);
+    return idx >= 0 ? inst->vars[idx].value : 0.0;
+}
+
+double gml_variable_instance_set(double instance_id, const char *name, double value) {
+    gm82_instance *inst = find_instance_by_id(instance_id);
+    if (!inst || !name || !name[0]) return 0.0;
+    int idx = instance_var_index(inst, name);
+    if (idx < 0) {
+        if (inst->var_count >= (int)(sizeof(inst->vars) / sizeof(inst->vars[0]))) return 0.0;
+        idx = inst->var_count++;
+        snprintf(inst->vars[idx].name, sizeof(inst->vars[idx].name), "%s", name);
+    }
+    inst->vars[idx].value = value;
+    return value;
 }
 
 void gml_motion_set(double dir, double spd) {
@@ -423,33 +468,39 @@ double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
 double gml_get_bbox_left(void) {
     if (!g_self) return 0;
-    int32_t ox = 0;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
-        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    double ox = 0;
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
+    }
     return g_self->x - ox * g_self->image_xscale;
 }
 double gml_get_bbox_right(void) {
     if (!g_self) return 0;
-    int32_t sw = 16, ox = 0;
+    int32_t sw = 16; double ox = 0;
     if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sw = g_rt->sprites->frames[g_self->sprite_index].width;
-        ox = g_rt->sprites->frames[g_self->sprite_index].origin_x;
+    }
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_xoffset") == 0) { ox = g_self->vars[i].value; break; }
     }
     return g_self->x + (sw - ox) * g_self->image_xscale - 1;
 }
 double gml_get_bbox_top(void) {
     if (!g_self) return 0;
-    int32_t oy = 0;
-    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
-        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    double oy = 0;
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
+    }
     return g_self->y - oy * g_self->image_yscale;
 }
 double gml_get_bbox_bottom(void) {
     if (!g_self) return 0;
-    int32_t sh = 16, oy = 0;
+    int32_t sh = 16; double oy = 0;
     if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count) {
         sh = g_rt->sprites->frames[g_self->sprite_index].height;
-        oy = g_rt->sprites->frames[g_self->sprite_index].origin_y;
+    }
+    for (int i = 0; i < g_self->var_count; i++) {
+        if (strcmp(g_self->vars[i].name, "sprite_yoffset") == 0) { oy = g_self->vars[i].value; break; }
     }
     return g_self->y + (sh - oy) * g_self->image_yscale - 1;
 }
@@ -485,7 +536,13 @@ double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 double gml_room_width(void) { return g_rt ? (double)g_rt->room_width : 0; }
 double gml_room_height(void) { return g_rt ? (double)g_rt->room_height : 0; }
 double gml_room_speed(void) { return g_rt ? (double)g_rt->room_speed : 30; }
-
+double gml_room_find(const char *name) {
+    if (!g_rt || !g_rt->rooms || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_rt->rooms->count; i++) {
+        if (strcmp(g_rt->rooms->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
 double gml_abs(double v) { return fabs(v); }
 double gml_sign(double v) { return (v > 0) - (v < 0); }
 double gml_clamp(double v, double lo, double hi) {
@@ -594,6 +651,111 @@ double gml_point_in_rectangle(double px, double py, double x1, double y1, double
     if (x1 > x2) { double t=x1; x1=x2; x2=t; }
     if (y1 > y2) { double t=y1; y1=y2; y2=t; }
     return (px >= x1 && px <= x2 && py >= y1 && py <= y2) ? 1.0 : 0.0;
+}
+
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad) {
+    double dx = px - cx;
+    double dy = py - cy;
+    return (dx * dx + dy * dy <= rad * rad) ? 1.0 : 0.0;
+}
+
+static double sign_tri(double px, double py, double x1, double y1, double x2, double y2) {
+    return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2);
+}
+
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3) {
+    double d1 = sign_tri(px, py, x1, y1, x2, y2);
+    double d2 = sign_tri(px, py, x2, y2, x3, y3);
+    double d3 = sign_tri(px, py, x3, y3, x1, y1);
+    bool has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    bool has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+    return !(has_neg && has_pos) ? 1.0 : 0.0;
+}
+
+double gml_color_to_html(double color, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = c & 0xFF;
+    uint8_t g = (c >> 8) & 0xFF;
+    uint8_t b = (c >> 16) & 0xFF;
+    snprintf(out, out_sz, "#%02X%02X%02X", r, g, b);
+    return (double)strlen(out);
+}
+
+double gml_hex_to_color(const char *hex_str) {
+    if (!hex_str) return 0;
+    const char *p = hex_str;
+    if (*p == '#') p++;
+    else if (*p == '$') p++;
+    else if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) p += 2;
+    unsigned int raw = 0;
+    if (sscanf(p, "%x", &raw) != 1) return 0;
+    if (strlen(p) == 6) {
+        uint32_t r = (raw >> 16) & 0xFF;
+        uint8_t g = (raw >> 8) & 0xFF;
+        uint32_t b = raw & 0xFF;
+        return (double)((b << 16) | (g << 8) | r);
+    }
+    return (double)raw;
+}
+
+double gml_point_direction_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double dz = z2 - z1;
+    double horiz = sqrt(dx * dx + dy * dy);
+    return atan2(-dz, horiz) * 180.0 / M_PI;
+}
+
+/* Game Maker 8.2 Geometry checks */
+double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad) {
+    double min_x = rx1 < rx2 ? rx1 : rx2;
+    double max_x = rx1 > rx2 ? rx1 : rx2;
+    double min_y = ry1 < ry2 ? ry1 : ry2;
+    double max_y = ry1 > ry2 ? ry1 : ry2;
+
+    /* Find nearest point on rect to circle center */
+    double nearest_x = cx < min_x ? min_x : (cx > max_x ? max_x : cx);
+    double nearest_y = cy < min_y ? min_y : (cy > max_y ? max_y : cy);
+    double dx = cx - nearest_x;
+    double dy = cy - nearest_y;
+    if ((dx * dx + dy * dy) > (rad * rad)) return 0.0; /* completely outside */
+
+    /* Check if all 4 corners are inside the circle */
+    double c1 = (min_x - cx) * (min_x - cx) + (min_y - cy) * (min_y - cy);
+    double c2 = (max_x - cx) * (max_x - cx) + (min_y - cy) * (min_y - cy);
+    double c3 = (min_x - cx) * (min_x - cx) + (max_y - cy) * (max_y - cy);
+    double c4 = (max_x - cx) * (max_x - cx) + (max_y - cy) * (max_y - cy);
+    double r2 = rad * rad;
+    if (c1 <= r2 && c2 <= r2 && c3 <= r2 && c4 <= r2) return 1.0; /* completely inside */
+
+    return 2.0; /* overlaps */
+}
+
+double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2) {
+    double a_min_x = ax1 < ax2 ? ax1 : ax2;
+    double a_max_x = ax1 > ax2 ? ax1 : ax2;
+    double a_min_y = ay1 < ay2 ? ay1 : ay2;
+    double a_max_y = ay1 > ay2 ? ay1 : ay2;
+
+    double b_min_x = bx1 < bx2 ? bx1 : bx2;
+    double b_max_x = bx1 > bx2 ? bx1 : bx2;
+    double b_min_y = by1 < by2 ? by1 : by2;
+    double b_max_y = by1 > by2 ? by1 : by2;
+
+    if (a_max_x < b_min_x || a_min_x > b_max_x || a_max_y < b_min_y || a_min_y > b_max_y) {
+        return 0.0; /* outside */
+    }
+    if (a_min_x >= b_min_x && a_max_x <= b_max_x && a_min_y >= b_min_y && a_max_y <= b_max_y) {
+        return 1.0; /* completely inside */
+    }
+    return 2.0; /* overlaps */
+}
+
+double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3) {
+    /* Cross product of (p2 - p1) and (p3 - p2) */
+    double val = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+    return val > 0.0 ? 1.0 : 0.0;
 }
 
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
@@ -956,8 +1118,57 @@ double gml_delta_time(void) { return g_delta * 1000000.0; }
 
 void gml_draw_set_color(double color) { g_draw_color = (uint32_t)color; }
 void gml_draw_set_alpha(double alpha) { g_draw_alpha = alpha; }
+void gml_draw_reset(void) {
+    g_draw_color = 0xFFFFFF;
+    g_draw_alpha = 1.0;
+    g_draw_halign = 0;
+    g_draw_valign = 0;
+    g_draw_font = 0;
+    g_draw_blend_mode = 0;
+}
+void gml_draw_set_rgba(double r, double g, double b, double a) {
+    g_draw_color = (uint32_t)gml_make_color_rgb(r, g, b);
+    g_draw_alpha = a;
+}
 double gml_draw_get_alpha(void) { return g_draw_alpha; }
 double gml_draw_get_color(void) { return (double)g_draw_color; }
+
+double gml_instance_destroy_id(double inst_id) {
+    if (!g_rt) return 0;
+    int32_t target_id = (int32_t)inst_id;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *inst = &g_rt->instances[i];
+        if (inst->alive && inst->id == target_id) {
+            gm82_runtime_instance_destroy(g_rt, inst);
+            return 1.0;
+        }
+    }
+    return 0.0;
+}
+
+double gml_instance_nearest_notme(double x, double y, double object_index) {
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)object_index;
+    double best = 1e300;
+    int32_t best_id = -4;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive || o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        double dx = o->x - x, dy = o->y - y;
+        double d = dx * dx + dy * dy;
+        if (d < best) { best = d; best_id = o->id; }
+    }
+    return (double)best_id;
+}
+
+double gml_string_ends_with(const char *str, const char *substr) {
+    if (!str || !substr) return 0;
+    size_t slen = strlen(str);
+    size_t sublen = strlen(substr);
+    if (sublen > slen) return 0;
+    return strcmp(str + slen - sublen, substr) == 0 ? 1.0 : 0.0;
+}
 
 static void put_px(int x, int y) {
     if (!g_draw_buf || x < 0 || y < 0 || x >= g_draw_w || y >= g_draw_h) return;
@@ -1015,11 +1226,6 @@ void gml_draw_line(double x1, double y1, double x2, double y2) {
         if (e2 <= dx) { err += dx; b += sy; }
     }
 }
-
-static int g_draw_halign = 0;
-static int g_draw_valign = 0;
-static int g_draw_font = 0;
-static int g_draw_blend_mode = 0;
 
 void gml_draw_set_halign(double halign) { g_draw_halign = (int)halign; }
 void gml_draw_set_valign(double valign) { g_draw_valign = (int)valign; }
@@ -2354,8 +2560,8 @@ double gml_ini_open(const char *path) {
         char *sp = key + strlen(key) - 1;
         while (sp > key && (*sp == ' ' || *sp == '\t')) { *sp = 0; sp--; }
         if (g_ini_count >= GM82_INI_MAX_KEYS) break;
-        strncpy(g_ini[g_ini_count].section, cur_sec, 63);
-        strncpy(g_ini[g_ini_count].key, key, 63);
+        snprintf(g_ini[g_ini_count].section, sizeof(g_ini[g_ini_count].section), "%s", cur_sec);
+        snprintf(g_ini[g_ini_count].key, sizeof(g_ini[g_ini_count].key), "%s", key);
         g_ini[g_ini_count].value = strtod(val, NULL);
         g_ini_count++;
     }
@@ -2371,7 +2577,7 @@ double gml_ini_close(void) {
         for (int i = 0; i < g_ini_count; i++) {
             if (strcmp(g_ini[i].section, last_sec) != 0) {
                 fprintf(f, "[%s]\n", g_ini[i].section);
-                strncpy(last_sec, g_ini[i].section, 63);
+                snprintf(last_sec, sizeof(last_sec), "%.63s", g_ini[i].section);
             }
             fprintf(f, "%s=%.10g\n", g_ini[i].key, g_ini[i].value);
         }
@@ -3092,6 +3298,24 @@ double gml_place_meeting_precise(double x, double y, double object_index) {
 }
 
 /* GM82Core & Studio Math Extensions */
+static double g_math_epsilon = 0.00001;
+
+double gml_math_set_epsilon(double eps) {
+    if (eps >= 0) g_math_epsilon = eps;
+    return g_math_epsilon;
+}
+
+double gml_math_get_epsilon(void) {
+    return g_math_epsilon;
+}
+
+double gml_power_next(double val) {
+    if (val <= 1.0) return 1.0;
+    double p = 1.0;
+    while (p < val) p *= 2.0;
+    return p;
+}
+
 double gml_angle_abs(double angle) {
     double a = fmod(angle, 360.0);
     if (a < 0.0) a += 360.0;
@@ -3291,7 +3515,8 @@ double gml_ds_grid_value_exists(double id, double x1, double y1, double x2, doub
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3306,7 +3531,8 @@ double gml_ds_grid_value_x(double id, double x1, double y1, double x2, double y2
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return -1;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3321,7 +3547,8 @@ double gml_ds_grid_value_y(double id, double x1, double y1, double x2, double y2
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return -1;
     int minx = (int)x1, miny = (int)y1, maxx = (int)x2, maxy = (int)y2;
-    if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
     if (maxx >= g_ds_grids[i].width) maxx = g_ds_grids[i].width - 1;
     if (maxy >= g_ds_grids[i].height) maxy = g_ds_grids[i].height - 1;
     for (int y = miny; y <= maxy; y++) {
@@ -3479,9 +3706,12 @@ double gml_window_center(void) {
 /* Color functions & Blend modes */
 double gml_make_color_rgb(double r, double g, double b) {
     int ir = (int)r, ig = (int)g, ib = (int)b;
-    if (ir < 0) ir = 0; if (ir > 255) ir = 255;
-    if (ig < 0) ig = 0; if (ig > 255) ig = 255;
-    if (ib < 0) ib = 0; if (ib > 255) ib = 255;
+    if (ir < 0) ir = 0;
+    if (ir > 255) ir = 255;
+    if (ig < 0) ig = 0;
+    if (ig > 255) ig = 255;
+    if (ib < 0) ib = 0;
+    if (ib > 255) ib = 255;
     return (double)(ir | (ig << 8) | (ib << 16));
 }
 
@@ -3538,7 +3768,8 @@ double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2,
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0;
     int ix1 = (int)x1, iy1 = (int)y1, ix2 = (int)x2, iy2 = (int)y2;
-    if (ix1 < 0) ix1 = 0; if (iy1 < 0) iy1 = 0;
+    if (ix1 < 0) ix1 = 0;
+    if (iy1 < 0) iy1 = 0;
     if (ix2 >= g_ds_grids[i].width) ix2 = g_ds_grids[i].width - 1;
     if (iy2 >= g_ds_grids[i].height) iy2 = g_ds_grids[i].height - 1;
     if (ix1 > ix2 || iy1 > iy2) return 0;
@@ -3558,12 +3789,22 @@ int gml_script_find(const char *name) {
 void gml_show_debug_message(const char *msg) {
     if (msg) fprintf(stderr, "[GML] %s\n", msg);
 }
+static double g_random_seed = 0;
+
 double gml_randomize(void) {
-    srand((unsigned)time(NULL));
-    return 1;
+    g_random_seed = (double)time(NULL);
+    srand((unsigned)g_random_seed);
+    return g_random_seed;
 }
 double gml_random_set_seed(double seed) {
+    g_random_seed = seed;
     srand((unsigned)seed);
     return seed;
 }
-double gml_random_get_seed(void) { return 0; }
+double gml_random_get_seed(void) { return g_random_seed; }
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
+__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }

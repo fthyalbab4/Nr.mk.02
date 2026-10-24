@@ -9,13 +9,21 @@
 extern "C" {
 #endif
 
-/* Extracted action reference from object resource (best-effort) */
+#define GM82_ACTION_MAX_ARGS 8
+
+/* Extracted action reference from object resource (best-effort + arg table) */
 typedef struct {
     int32_t event_type;   /* 0=Create, 3=Step, 8=Draw, -1=unknown */
     int32_t event_numb;
     char    name[64];     /* e.g. action_sprite_set, action_move, or empty */
-    int32_t action_id;    /* numeric id if known */
+    int32_t action_id;    /* numeric id if known / first arg */
     int32_t kind;
+    /* Full binary arg table (up to 8 ints as stored in GMK) */
+    int32_t args[GM82_ACTION_MAX_ARGS];
+    int     argc;
+    /* Optional string args harvested near the action name */
+    char    str_args[4][64];
+    int     str_argc;
 } gm82_action_ref;
 
 typedef struct {

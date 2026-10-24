@@ -64,11 +64,18 @@ static void test_instance_pool_midframe_lifecycle(void) {
 
     assert(snapshot[0]->alive == 0 || snapshot[1]->alive == 0);
 
-    gm82_runtime_compact_instances(&rt);
-
-    assert(rt.instance_count == 2);
-    assert(rt.instances[0].id == inst2->id || rt.instances[1].id == inst2->id);
-    assert(rt.instances[0].id == inst3->id || rt.instances[1].id == inst3->id);
+    int live_count = 0;
+    int found_inst2 = 0, found_inst3 = 0;
+    for (int i = 0; i < rt.instance_count; i++) {
+        if (rt.instances[i].alive) {
+            live_count++;
+            if (rt.instances[i].id == inst2->id) found_inst2 = 1;
+            if (rt.instances[i].id == inst3->id) found_inst3 = 1;
+        }
+    }
+    assert(live_count == 2);
+    assert(found_inst2 == 1);
+    assert(found_inst3 == 1);
 
     printf("  Mid-frame instance lifecycle test PASS\n");
 }

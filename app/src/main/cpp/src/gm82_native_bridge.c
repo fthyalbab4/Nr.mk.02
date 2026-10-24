@@ -2,6 +2,7 @@
 #include "gm82_native_bridge.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_sound_runtime.h"
+#include "gml_vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,7 +104,7 @@ double nor_export_gbc_native(const char *project, const char *output) {
     uint8_t rom[32768];
     memset(rom, 0, sizeof(rom));
     /* Cartridge title at 0x134 */
-    strncpy((char *)rom + 0x134, "NORMAKER", 8);
+    memcpy(rom + 0x134, "NORMAKER", 8);
     rom[0x143] = 0x80; /* GBC supported */
     rom[0x147] = 0x00; /* ROM ONLY */
     rom[0x148] = 0x00; /* 32KB */
@@ -124,7 +125,7 @@ double nor_export_gba_native(const char *project, const char *output) {
     /* GBA branch instruction at start */
     rom[0] = 0x2E; rom[1] = 0x00; rom[2] = 0x00; rom[3] = 0xEA;
     /* Game title at 0xA0 */
-    strncpy((char *)rom + 0xA0, "NORMAKERGBA", 11);
+    memcpy(rom + 0xA0, "NORMAKERGBA", 11);
     rom[0xB2] = 0x96; /* Fixed 96h */
     fwrite(rom, 1, sizeof(rom), f);
     fclose(f);
@@ -490,8 +491,52 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_color_get_blue(ARG_R(0)));
         return 1;
     }
+    if (strcmp(name, "color_reverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_reverse(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "color_inverse") == 0 && count >= 1) {
+        *out = gml_value_real(gml_color_inverse(ARG_R(0)));
+        return 1;
+    }
 
     /* Additional Math built-ins */
+    if (strcmp(name, "dsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dcos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dcos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "dtan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_dtan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darcsin") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darcsin(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darccos") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darccos(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan") == 0 && count >= 1) {
+        *out = gml_value_real(gml_darctan(ARG_R(0)));
+        return 1;
+    }
+    if (strcmp(name, "darctan2") == 0 && count >= 2) {
+        *out = gml_value_real(gml_darctan2(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_set_disk") == 0 && count >= 5) {
+        *out = gml_value_real(gml_ds_grid_set_disk(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "window_set_size") == 0 && count >= 2) {
+        *out = gml_value_real(gml_window_set_size(ARG_R(0), ARG_R(1)));
+        return 1;
+    }
     if (strcmp(name, "angle_difference") == 0 && count >= 2) {
         *out = gml_value_real(gml_angle_difference(ARG_R(0), ARG_R(1)));
         return 1;
