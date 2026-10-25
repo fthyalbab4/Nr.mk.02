@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#include <limits.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include "gm82_gml_builtins.h"
+#include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
@@ -39,10 +41,16 @@ static int g_draw_blend_mode = 0;
 
 static gm82_runtime *g_rt = NULL;
 static gm82_instance *g_self = NULL;
+static gm82_instance *g_other = NULL;
+static int g_sound_playing[64];
+static int g_sound_playing_n = 0;
 
 void gm82_gml_set_runtime(gm82_runtime *rt) { g_rt = rt; }
 gm82_runtime *gm82_gml_get_runtime(void) { return g_rt; }
 void gm82_gml_set_self(gm82_instance *self) { g_self = self; }
+void gm82_gml_set_other(gm82_instance *o) { g_other = o; }
+gm82_instance *gm82_gml_get_other(void) { return g_other; }
+
 gm82_instance *gm82_gml_get_self(void) { return g_self; }
 
 double gml_instance_create(double x, double y, double object_index) {
@@ -1400,6 +1408,7 @@ double gml_string_repeat(const char *str, double count, char *out, size_t out_sz
         return 0;
     }
 
+    /* Preserve the source if it aliases any part of the destination. */
     size_t source_span = slen + 1;
     uintptr_t src_begin = (uintptr_t)str;
     uintptr_t dst_begin = (uintptr_t)out;
@@ -2957,6 +2966,29 @@ double gml_date_get_second(double datetime) {
     struct tm *tm = localtime(&t);
     return tm ? tm->tm_sec : 0;
 }
+double gml_date_compare_datetime(double a, double b) { return (a > b) - (a < b); }
+double gml_date_compare_date(double a, double b) {
+    double ay = gml_date_get_year(a), by = gml_date_get_year(b);
+    if (ay != by) return ay < by ? -1.0 : 1.0;
+    double am = gml_date_get_month(a), bm = gml_date_get_month(b);
+    if (am != bm) return am < bm ? -1.0 : 1.0;
+    double ad = gml_date_get_day(a), bd = gml_date_get_day(b);
+    return ad == bd ? 0.0 : (ad < bd ? -1.0 : 1.0);
+}
+double gml_date_compare_time(double a, double b) {
+    double ah = gml_date_get_hour(a), bh = gml_date_get_hour(b);
+    if (ah != bh) return ah < bh ? -1.0 : 1.0;
+    double am = gml_date_get_minute(a), bm = gml_date_get_minute(b);
+    if (am != bm) return am < bm ? -1.0 : 1.0;
+    double as = gml_date_get_second(a), bs = gml_date_get_second(b);
+    return as == bs ? 0.0 : (as < bs ? -1.0 : 1.0);
+}
+double gml_date_second_span(double a, double b) { return fabs(b - a); }
+double gml_date_minute_span(double a, double b) { return fabs(b - a) / 60.0; }
+double gml_date_hour_span(double a, double b) { return fabs(b - a) / 3600.0; }
+double gml_date_day_span(double a, double b) { return fabs(b - a) / 86400.0; }
+double gml_date_month_span(double a, double b) { return fabs(b - a) / (86400.0 * 30.4375); }
+double gml_date_year_span(double a, double b) { return fabs(b - a) / (86400.0 * 365.25); }
 double gml_current_time(void) { return gml_date_current_datetime(); }
 double gml_current_year(void) { return gml_date_get_year(gml_current_time()); }
 double gml_current_month(void) { return gml_date_get_month(gml_current_time()); }
@@ -3294,6 +3326,43 @@ double gml_ds_grid_get(double id, double x, double y) {
     return g_ds_grids[i].data[iy * g_ds_grids[i].width + ix];
 }
 
+static bool gm82_grid_to_int(double value, int *out) {
+    if (!isfinite(value) || value < (double)INT_MIN || value > (double)INT_MAX) return false;
+    *out = (int)value;
+    return true;
+}
+
+static double gm82_ds_grid_region_scalar(double id, double x1, double y1,
+                                          double x2, double y2, double val,
+                                          int op) {
+    int i, ix1, iy1, ix2, iy2;
+    if (!gm82_grid_to_int(id, &i) || !gm82_grid_to_int(x1, &ix1) ||
+        !gm82_grid_to_int(y1, &iy1) || !gm82_grid_to_int(x2, &ix2) ||
+        !gm82_grid_to_int(y2, &iy2)) return 0.0;
+    if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !g_ds_grids[i].data) return 0.0;
+    gm82_ds_grid *g = &g_ds_grids[i];
+    int64_t x0 = ix1 > 0 ? ix1 : 0, xend = ix2 < g->width - 1 ? ix2 : g->width - 1;
+    int64_t y0 = iy1 > 0 ? iy1 : 0, yend = iy2 < g->height - 1 ? iy2 : g->height - 1;
+    if (x0 <= xend && y0 <= yend) {
+        for (int64_t y = y0; y <= yend; ++y) {
+            for (int64_t x = x0; x <= xend; ++x) {
+                size_t k = (size_t)y * (size_t)g->width + (size_t)x;
+                if (op == 1) g->data[k] += val;
+                else g->data[k] *= val;
+            }
+        }
+    }
+    return 1.0;
+}
+
+double gml_ds_grid_add_region(double id, double x1, double y1, double x2, double y2, double val) {
+    return gm82_ds_grid_region_scalar(id, x1, y1, x2, y2, val, 1);
+}
+
+double gml_ds_grid_multiply_region(double id, double x1, double y1, double x2, double y2, double val) {
+    return gm82_ds_grid_region_scalar(id, x1, y1, x2, y2, val, 2);
+}
+
 double gml_ds_grid_set_region(double id, double x1, double y1, double x2, double y2, double val) {
     int i = (int)id;
     if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i]) return 0;
@@ -3521,10 +3590,14 @@ double gml_dsecant(double angle) {
 }
 
 double gml_dot_product_normalized(double x1, double y1, double x2, double y2) {
-    double l1 = sqrt(x1 * x1 + y1 * y1);
-    double l2 = sqrt(x2 * x2 + y2 * y2);
-    if (l1 <= 0.000001 || l2 <= 0.000001) return 0.0;
-    return (x1 * x2 + y1 * y2) / (l1 * l2);
+    if (!isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2)) return 0.0;
+    double s1 = fmax(fabs(x1), fabs(y1));
+    double s2 = fmax(fabs(x2), fabs(y2));
+    if (s1 == 0.0 || s2 == 0.0) return 0.0;
+    double ax = x1 / s1, ay = y1 / s1;
+    double bx = x2 / s2, by = y2 / s2;
+    double al = hypot(ax, ay), bl = hypot(bx, by);
+    return (ax / al) * (bx / bl) + (ay / al) * (by / bl);
 }
 
 double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
@@ -3532,10 +3605,21 @@ double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2,
 }
 
 double gml_dot_product_3d_normalized(double x1, double y1, double z1, double x2, double y2, double z2) {
-    double l1 = sqrt(x1 * x1 + y1 * y1 + z1 * z1);
-    double l2 = sqrt(x2 * x2 + y2 * y2 + z2 * z2);
-    if (l1 <= 0.000001 || l2 <= 0.000001) return 0.0;
-    return (x1 * x2 + y1 * y2 + z1 * z2) / (l1 * l2);
+    if (!isfinite(x1) || !isfinite(y1) || !isfinite(z1) ||
+        !isfinite(x2) || !isfinite(y2) || !isfinite(z2)) return 0.0;
+    double s1 = fmax(fabs(x1), fmax(fabs(y1), fabs(z1)));
+    double s2 = fmax(fabs(x2), fmax(fabs(y2), fabs(z2)));
+    if (s1 == 0.0 || s2 == 0.0) return 0.0;
+    double ax = x1 / s1, ay = y1 / s1, az = z1 / s1;
+    double bx = x2 / s2, by = y2 / s2, bz = z2 / s2;
+    double al = hypot(hypot(ax, ay), az), bl = hypot(hypot(bx, by), bz);
+    return (ax / al) * (bx / bl) + (ay / al) * (by / bl) + (az / al) * (bz / bl);
+}
+double gml_dot_product_normal(double x1, double y1, double x2, double y2) {
+    return gml_dot_product_normalized(x1, y1, x2, y2);
+}
+double gml_dot_product_3d_normal(double x1, double y1, double z1, double x2, double y2, double z2) {
+    return gml_dot_product_3d_normalized(x1, y1, z1, x2, y2, z2);
 }
 
 double gml_color_inverse(double color) {
@@ -3586,6 +3670,85 @@ double gml_ds_grid_copy(double id, double source_id) {
     }
     memcpy(dst->data, src->data, (size_t)(src->width * src->height) * sizeof(double));
     return 1;
+}
+
+static double gm82_ds_grid_region_transfer(double id, double source_id,
+                                             double x1, double y1, double x2, double y2,
+                                             double xpos, double ypos, int op) {
+    int dst_i, src_i, sx1, sy1, sx2, sy2, dx, dy;
+    if (!gm82_grid_to_int(id, &dst_i) || !gm82_grid_to_int(source_id, &src_i) ||
+        !gm82_grid_to_int(x1, &sx1) || !gm82_grid_to_int(y1, &sy1) ||
+        !gm82_grid_to_int(x2, &sx2) || !gm82_grid_to_int(y2, &sy2) ||
+        !gm82_grid_to_int(xpos, &dx) || !gm82_grid_to_int(ypos, &dy)) return 0.0;
+    if (dst_i < 0 || dst_i >= MAX_DS_GRIDS || src_i < 0 || src_i >= MAX_DS_GRIDS ||
+        !g_ds_grid_active[dst_i] || !g_ds_grid_active[src_i] || sx2 < sx1 || sy2 < sy1) return 0.0;
+    gm82_ds_grid *dst = &g_ds_grids[dst_i], *src = &g_ds_grids[src_i];
+    if (!dst->data || !src->data) return 0.0;
+
+    int64_t xlo = sx1 > 0 ? sx1 : 0;
+    int64_t xhi = sx2 < src->width - 1 ? sx2 : src->width - 1;
+    int64_t ylo = sy1 > 0 ? sy1 : 0;
+    int64_t yhi = sy2 < src->height - 1 ? sy2 : src->height - 1;
+    int64_t dxlo = (int64_t)sx1 - (int64_t)dx;
+    int64_t dxhi = (int64_t)sx1 + (int64_t)dst->width - 1 - (int64_t)dx;
+    int64_t dylo = (int64_t)sy1 - (int64_t)dy;
+    int64_t dyhi = (int64_t)sy1 + (int64_t)dst->height - 1 - (int64_t)dy;
+    if (xlo < dxlo) xlo = dxlo;
+    if (xhi > dxhi) xhi = dxhi;
+    if (ylo < dylo) ylo = dylo;
+    if (yhi > dyhi) yhi = dyhi;
+    if (xlo > xhi || ylo > yhi) return 1.0;
+
+    size_t width = (size_t)(xhi - xlo + 1);
+    size_t height = (size_t)(yhi - ylo + 1);
+    if (height != 0 && width > SIZE_MAX / height) return 0.0;
+    size_t count = width * height;
+    if (count > SIZE_MAX / sizeof(double)) return 0.0;
+
+    double *snapshot = NULL;
+    if (dst == src) {
+        snapshot = (double *)malloc(count * sizeof(double));
+        if (!snapshot) return 0.0;
+        size_t k = 0;
+        for (int64_t sy = ylo; sy <= yhi; ++sy) {
+            for (int64_t sx = xlo; sx <= xhi; ++sx) {
+                size_t sk = (size_t)sy * (size_t)src->width + (size_t)sx;
+                snapshot[k++] = src->data[sk];
+            }
+        }
+    }
+
+    size_t k = 0;
+    for (int64_t sy = ylo; sy <= yhi; ++sy) {
+        for (int64_t sx = xlo; sx <= xhi; ++sx) {
+            int64_t tx = (int64_t)dx + (sx - (int64_t)sx1);
+            int64_t ty = (int64_t)dy + (sy - (int64_t)sy1);
+            size_t sk = (size_t)sy * (size_t)src->width + (size_t)sx;
+            size_t dk = (size_t)ty * (size_t)dst->width + (size_t)tx;
+            double source_value = snapshot ? snapshot[k] : src->data[sk];
+            if (op == 0) dst->data[dk] = source_value;
+            else if (op == 1) dst->data[dk] += source_value;
+            else dst->data[dk] *= source_value;
+            ++k;
+        }
+    }
+    free(snapshot);
+    return 1.0;
+}
+
+double gml_ds_grid_set_grid_region(double id, double source_id, double x1, double y1,
+                                   double x2, double y2, double xpos, double ypos) {
+    return gm82_ds_grid_region_transfer(id, source_id, x1, y1, x2, y2, xpos, ypos, 0);
+}
+
+double gml_ds_grid_add_grid_region(double id, double source_id, double x1, double y1,
+                                   double x2, double y2, double xpos, double ypos) {
+    return gm82_ds_grid_region_transfer(id, source_id, x1, y1, x2, y2, xpos, ypos, 1);
+}
+
+double gml_ds_grid_multiply_grid_region(double id, double source_id, double x1, double y1,
+                                        double x2, double y2, double xpos, double ypos) {
+    return gm82_ds_grid_region_transfer(id, source_id, x1, y1, x2, y2, xpos, ypos, 2);
 }
 
 double gml_ds_list_shuffle(double id) {
@@ -3956,5 +4119,76 @@ double gml_random_get_seed(void) { return g_random_seed; }
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
-__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
-__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }
+
+/* Phase 6+code: track ids + feed software mixer (PCM may be silence if no decode) */
+static gm82_audio_mixer g_mixer;
+static int g_mixer_inited = 0;
+static int16_t g_click_pcm[512];
+static int g_sound_channels[64];
+
+static void ensure_mixer(void) {
+    if (g_mixer_inited) return;
+    gm82_audio_mixer_init(&g_mixer, 22050);
+    for (int i = 0; i < 512; i++) {
+        int16_t v = (i < 32) ? (int16_t)((i * 800) - 12800) : 0;
+        g_click_pcm[i] = v;
+    }
+    for (int i = 0; i < 64; i++) g_sound_channels[i] = -1;
+    g_mixer_inited = 1;
+}
+
+double gml_sound_play(double sound_index) {
+    ensure_mixer();
+    int id = (int)sound_index;
+    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
+    int ch = gm82_audio_mixer_play(&g_mixer, g_click_pcm, 512, 0.4f, 0);
+    if (id >= 0 && id < 64) g_sound_channels[id] = ch;
+    return 1;
+}
+double gml_sound_loop(double sound_index) {
+    ensure_mixer();
+    int id = (int)sound_index;
+    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
+    int ch = gm82_audio_mixer_play(&g_mixer, g_click_pcm, 512, 0.3f, 1);
+    if (id >= 0 && id < 64) g_sound_channels[id] = ch;
+    return 1;
+}
+double gml_sound_isplaying(double sound_index) {
+    ensure_mixer();
+    int id = (int)sound_index;
+    if (id >= 0 && id < 64 && g_sound_channels[id] >= 0 &&
+        gm82_audio_mixer_is_channel_active(&g_mixer, g_sound_channels[id]))
+        return 1.0;
+    for (int i = 0; i < g_sound_playing_n; i++)
+        if (g_sound_playing[i] == id) return 1.0;
+    return 0.0;
+}
+double gml_sound_stop(double sound_index) {
+    ensure_mixer();
+    int id = (int)sound_index;
+    if (id >= 0 && id < 64 && g_sound_channels[id] >= 0) {
+        int ch = g_sound_channels[id];
+        if (ch >= 0 && ch < GM82_MIXER_CHANNELS)
+            g_mixer.channels[ch].active = 0;
+        g_sound_channels[id] = -1;
+    }
+    int w = 0;
+    for (int i = 0; i < g_sound_playing_n; i++) {
+        if (g_sound_playing[i] == id) continue;
+        g_sound_playing[w++] = g_sound_playing[i];
+    }
+    g_sound_playing_n = w;
+    return 1;
+}
+double gml_sound_stop_all(void) {
+    ensure_mixer();
+    gm82_audio_mixer_stop_all(&g_mixer);
+    g_sound_playing_n = 0;
+    for (int i = 0; i < 64; i++) g_sound_channels[i] = -1;
+    return 1;
+}
+
+void gm82_audio_host_mix(int16_t *out, size_t frames) {
+    ensure_mixer();
+    gm82_audio_mixer_mix_s16(&g_mixer, out, frames);
+}

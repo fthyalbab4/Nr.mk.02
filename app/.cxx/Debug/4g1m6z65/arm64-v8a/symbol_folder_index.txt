@@ -1,1 +1,0 @@
-/app/applet/app/build/intermediates/cxx/Debug/4g1m6z65/obj/arm64-v8a

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <zlib.h>
+#include <time.h>
 
 #define GM82_ACTION_MAX_ARGS 8
 
@@ -519,8 +520,8 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         return gml_mouse_check_button((double)(btn + 1)) != 0.0;
     }
     if (strcmp(name, "action_if_sound") == 0) {
-        /* soft: always false unless sound system reports playing */
-        return false;
+        int sid = (argc >= 1) ? args[0] : 0;
+        return gml_sound_isplaying((double)sid) != 0.0;
     }
     if (strcmp(name, "action_if_next_room") == 0) {
         int cur = 0, n = 0;
@@ -601,6 +602,20 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_load_game") == 0) {
         const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
         return gml_game_load(path) > 0;
+    }
+    if (strcmp(name, "action_sleep") == 0) {
+        int ms = (argc >= 1) ? args[0] : 0;
+        if (ms > 0) {
+#ifdef _WIN32
+            Sleep(ms);
+#else
+            struct timespec ts;
+            ts.tv_sec = ms / 1000;
+            ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+            nanosleep(&ts, NULL);
+#endif
+        }
+        return true;
     }
     fprintf(stderr, "UNMAPPED_ACTION %s\n", name);
     return false;

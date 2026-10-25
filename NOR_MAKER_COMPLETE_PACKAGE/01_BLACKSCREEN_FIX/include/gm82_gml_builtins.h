@@ -28,6 +28,8 @@ gm82_runtime *gm82_gml_get_runtime(void);
 
 /* Set "self" instance for instance-scoped builtins */
 void gm82_gml_set_self(gm82_instance *self);
+void gm82_gml_set_other(gm82_instance *o);
+gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
@@ -103,6 +105,10 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
+double gml_surface_copy(double dest, double src);
+double gml_surface_getpixel(double id, double x, double y);
+double gml_surface_clear(double id, double color, double alpha);
+
 double gml_draw_clear(double color);
 double gml_draw_clear_alpha(double color, double alpha);
 
@@ -218,6 +224,15 @@ double gml_date_get_day(double datetime);
 double gml_date_get_hour(double datetime);
 double gml_date_get_minute(double datetime);
 double gml_date_get_second(double datetime);
+double gml_date_compare_datetime(double a, double b);
+double gml_date_compare_date(double a, double b);
+double gml_date_compare_time(double a, double b);
+double gml_date_second_span(double a, double b);
+double gml_date_minute_span(double a, double b);
+double gml_date_hour_span(double a, double b);
+double gml_date_day_span(double a, double b);
+double gml_date_month_span(double a, double b);
+double gml_date_year_span(double a, double b);
 double gml_current_time(void);
 double gml_current_year(void);
 double gml_current_month(void);
@@ -443,6 +458,11 @@ double gml_ds_grid_height(double id);
 double gml_ds_grid_resize(double id, double w, double h);
 double gml_ds_grid_clear(double id, double val);
 double gml_ds_grid_set_region(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_add_region(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_multiply_region(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_set_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos);
+double gml_ds_grid_add_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos);
+double gml_ds_grid_multiply_grid_region(double id, double source_id, double x1, double y1, double x2, double y2, double xpos, double ypos);
 double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_min(double id, double x1, double y1, double x2, double y2);
@@ -458,6 +478,8 @@ double gml_cosine(double a, double b, double amount);
 double gml_dsecant(double angle);
 double gml_dot_product_normalized(double x1, double y1, double x2, double y2);
 double gml_dot_product_3d_normalized(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_dot_product_normal(double x1, double y1, double x2, double y2);
+double gml_dot_product_3d_normal(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_color_inverse(double color);
 double gml_color_reverse(double color);
 double gml_ds_grid_multiply(double id, double x, double y, double val);

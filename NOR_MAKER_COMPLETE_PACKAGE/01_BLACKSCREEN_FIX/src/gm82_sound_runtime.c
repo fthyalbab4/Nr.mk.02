@@ -84,49 +84,13 @@ void gm82_sound_stop_all(gm82_sound_runtime *sr) {
     gm82_opensles_stop_all();
 }
 
-double gml_sound_play(double sound_index) {
-    if (!g_sr) return 0;
-    return gm82_sound_play(g_sr, (int)sound_index, 0) ? 1.0 : 0.0;
-}
-
-double gml_sound_loop(double sound_index) {
-    if (!g_sr) return 0;
-    return gm82_sound_play(g_sr, (int)sound_index, 1) ? 1.0 : 0.0;
-}
-
-double gml_sound_stop_all(void) {
-    if (!g_sr) return 0;
-    gm82_sound_stop_all(g_sr);
-    return 1;
-}
-
-double gml_sound_stop(double sound_index) {
-    (void)sound_index;
-    if (!g_sr) return 0;
-    /* Remove instance from queue if present */
-    int idx = (int)sound_index;
-    for (int i = 0; i < g_sr->queue_len; i++) {
-        if (g_sr->queue[i].sound_index == idx) {
-            for (int j = i; j < g_sr->queue_len - 1; j++)
-                g_sr->queue[j] = g_sr->queue[j+1];
-            g_sr->queue_len--;
-            break;
-        }
-    }
-    return 1;
-}
-
-double gml_sound_isplaying(double sound_index) {
-    int idx = (int)sound_index;
-    if (!g_sr) return 0;
-    for (int i = 0; i < g_sr->queue_len; i++) {
-        if (g_sr->queue[i].sound_index == idx) return 1;
-    }
-    return 0;
-}
-
 double gml_sound_is_playing(double sound_index) {
-    return gml_sound_isplaying(sound_index);
+    int idx = (int)sound_index;
+    if (!g_sr) return 0;
+    for (int i = 0; i < g_sr->queue_len; i++) {
+        if (g_sr->queue[i].sound_index == idx) return 1.0;
+    }
+    return 0.0;
 }
 
 double gml_sound_exists(double sound_index) {

@@ -505,6 +505,8 @@ bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst) {
 }
 
 void gm82_events_fire_draw_single(gm82_runtime *rt, gm82_instance *inst) {
+    if (rt && inst && inst->alive && rt->actions)
+        gm82_actions_fire_draw(rt, inst, rt->actions);
     if (!rt || !inst || !inst->alive || !inst->visible) return;
     gm82_gml_set_runtime(rt);
     fire_object_ev(rt, inst, GM82_EV_DRAW, 0);
@@ -518,6 +520,7 @@ void gm82_events_fire_draw_all(gm82_runtime *rt) {
     for (int i = 0; i < count; i++) {
         gm82_instance *inst = snapshot[i];
         if (!inst || !inst->alive || !inst->visible) continue;
+        if (rt->actions) gm82_actions_fire_draw(rt, inst, rt->actions);
         fire_object_ev(rt, inst, GM82_EV_DRAW, 0);
     }
 }
