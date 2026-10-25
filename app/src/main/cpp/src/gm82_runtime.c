@@ -24,13 +24,6 @@ void gm82_runtime_init(gm82_runtime *rt) {
     gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
     rt->frame_phase = 0;
-    rt->step_accumulator = 0.0;
-    rt->step_room_speed = rt->room_speed;
-}
-
-void gm82_runtime_cleanup(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_arena_free(&rt->room_arena);
 }
 
 
@@ -135,15 +128,17 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0;
+
     inst->image_yscale = 1.0;
+
     inst->image_angle = 0.0;
+
     inst->image_alpha = 1.0;
+
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
-    if (!rt->room_loading)
-        gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
@@ -180,7 +175,7 @@ void gm82_runtime_flush_destroy_queue(gm82_runtime *rt) {
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
     if (!inst || !inst->alive) return;
     /* Mid-frame: queue for deferred deletion (Phase 1 stability) */
-    if (rt && rt->frame_phase >= GM82_PHASE_BEGIN_STEP && rt->frame_phase <= GM82_PHASE_POST_DRAW) {
+    if (rt && rt->frame_phase >= 1 && rt->frame_phase <= 7) {
         if (rt->destroy_queue_count < GM82_MAX_INSTANCES) {
             int dup = 0;
             for (int i = 0; i < rt->destroy_queue_count; i++)
@@ -228,8 +223,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->room_width = room->width;
     rt->room_height = room->height;
     rt->room_speed = room->speed > 0 ? room->speed : 30;
-    rt->step_accumulator = 0.0;
-    rt->step_room_speed = rt->room_speed;
     rt->view_enabled = 1;
     rt->view_x = 0; rt->view_y = 0;
     rt->view_w = room->width > 640 ? 320.0 : (double)room->width;
@@ -247,8 +240,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     }
     rt->instance_count = w;
 
-    int room_instance_start = rt->instance_count;
-    rt->room_loading = 1;
     for (int i = 0; i < room->instance_count; i++) {
         const gm82_decoded_instance *src = &room->instances[i];
         if (rt->objects && src->object_index >= 0 && src->object_index < rt->objects->count) {
@@ -258,14 +249,9 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
-    rt->room_loading = 0;
-    int room_instance_end = rt->instance_count;
     rt->running = 1;
     rt->frame = 0;
-    for (int i = room_instance_start; i < room_instance_end; i++) {
-        if (rt->instances[i].alive)
-            gm82_events_fire_create_single(rt, &rt->instances[i]);
-    }
+    gm82_events_fire_create_all(rt);
     {
         int has_player = 0;
         for (int i = 0; i < rt->instance_count; i++) {
@@ -291,6 +277,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
                     rt->view_follow_object = oi; break;
                 }
             }
+            gm82_events_fire_create_all(rt);
         }
     }
     s_room_transition_depth--;
@@ -301,45 +288,6 @@ static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
     inst->vspeed = -sin(rad) * inst->speed;
-}
-
-void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
-    if (!rt || !rt->running) return;
-    int room_speed = rt->room_speed > 0 ? rt->room_speed : 30;
-    if (rt->step_room_speed != room_speed) {
-        rt->step_accumulator = 0.0;
-        rt->step_room_speed = room_speed;
-    }
-    if (!isfinite(rt->step_accumulator) || rt->step_accumulator < 0.0)
-        rt->step_accumulator = 0.0;
-    if (!isfinite(dt) || dt <= 0.0) return;
-
-    double target_sec = 1.0 / (double)room_speed;
-    double max_accum = target_sec * 4.0;
-    if (dt > max_accum) dt = max_accum;
-    if (dt >= max_accum || rt->step_accumulator > max_accum - dt)
-        rt->step_accumulator = max_accum;
-    else
-        rt->step_accumulator += dt;
-
-    int steps = 0;
-    while (rt->step_accumulator >= target_sec && steps < 4 && rt->running) {
-        rt->step_accumulator -= target_sec;
-        if (rt->step_accumulator < 0.0) rt->step_accumulator = 0.0;
-        int stepping_speed = room_speed;
-        gm82_runtime_step(rt);
-        steps++;
-        if (!rt->running) {
-            rt->step_accumulator = 0.0;
-            break;
-        }
-        room_speed = rt->room_speed > 0 ? rt->room_speed : 30;
-        if (room_speed != stepping_speed) {
-            rt->step_accumulator = 0.0;
-            rt->step_room_speed = room_speed;
-            break;
-        }
-    }
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {
@@ -360,9 +308,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
         inst->yprevious = inst->y;
     }
 
-    rt->frame_phase = GM82_PHASE_BEGIN_STEP;
+    rt->frame_phase = 1;
     gm82_events_fire_begin_step_all(rt);
-    rt->frame_phase = GM82_PHASE_ALARM;
+    rt->frame_phase = 2; /* Alarm */
 
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
@@ -393,13 +341,11 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    rt->frame_phase = GM82_PHASE_INPUT;
     gm82_events_fire_keyboard_all(rt);
     gm82_events_fire_mouse_all(rt);
-    rt->frame_phase = GM82_PHASE_STEP;
+    rt->frame_phase = 3; /* Step */
     gm82_events_fire_step_all(rt);
 
-    rt->frame_phase = GM82_PHASE_MOTION_COLLISION;
     const int n_move = rt->instance_count;
     for (int i = 0; i < n_move; i++) {
         gm82_instance *inst = &rt->instances[i];
@@ -542,10 +488,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    rt->frame_phase = GM82_PHASE_END_STEP;
     gm82_events_fire_end_step_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
-    rt->frame_phase = GM82_PHASE_IDLE;
+    rt->frame_phase = 0;
 
     if (rt->view_enabled && rt->view_w > 0) {
         gm82_instance *follow_inst = NULL;
@@ -608,9 +553,9 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
 
     gm82_draw_set_target(rgba, buf_w, buf_h);
-    rt->frame_phase = GM82_PHASE_PRE_DRAW;
+    rt->frame_phase = 5; /* Pre-Draw */
     gm82_events_fire_pre_draw_all(rt);
-    rt->frame_phase = GM82_PHASE_DRAW;
+    rt->frame_phase = 6; /* Draw */
 
     for (int i = 0; i < buf_w * buf_h; i++) {
         rgba[i*4+0]=20; rgba[i*4+1]=20; rgba[i*4+2]=40; rgba[i*4+3]=255;
@@ -681,10 +626,10 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
                                 inst->image_alpha > 0.0 ? inst->image_alpha : 1.0);
         }
     }
-    rt->frame_phase = GM82_PHASE_POST_DRAW;
+    rt->frame_phase = 7; /* Post-Draw */
     gm82_events_fire_post_draw_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
-    rt->frame_phase = GM82_PHASE_IDLE;
+    rt->frame_phase = 0;
     return true;
 }
 
