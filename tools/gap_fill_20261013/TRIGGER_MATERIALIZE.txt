@@ -1,1 +1,1 @@
-trigger phase2 full runtime blob
+trigger phase3 gml strings
