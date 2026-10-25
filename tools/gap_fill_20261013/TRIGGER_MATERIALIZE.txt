@@ -1,1 +1,1 @@
-trigger code remaining 2
+trigger jni materialize bind
