@@ -50,6 +50,16 @@ int gm82_sprite_resolve_frame(const gm82_sprite_group_list *G, int sprite_index,
 void gm82_decoded_sprite_list_init(gm82_decoded_sprite_list *L);
 void gm82_decoded_sprite_list_free(gm82_decoded_sprite_list *L);
 
+enum gm82_pixel_format {
+    GM82_FORMAT_RGBA8888 = 0,
+    GM82_FORMAT_BGRA8888 = 1,
+    GM82_FORMAT_RGB565   = 2,
+    GM82_FORMAT_ARGB4444 = 3
+};
+
+/* Convert src pixels of format enum to 32-bit RGBA (dst_rgba must be width*height*4 bytes) */
+void gm82_pixel_convert_to_rgba32(const uint8_t *src, uint8_t *dst_rgba, int32_t width, int32_t height, int format);
+
 /* Build 1-bit collision mask from RGBA pixels where alpha > tolerance (default 16) */
 void gm82_frame_build_bitmask(gm82_decoded_frame *frame, uint8_t alpha_tolerance);
 /* Test whether pixel (px, py) is solid in frame's bitmask */

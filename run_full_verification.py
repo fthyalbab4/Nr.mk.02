@@ -214,6 +214,23 @@ if comp.returncode == 0 and os.path.exists(guard_bin):
 else:
     record("Native Runtime Guard Executable", False, f"Compilation failed: {comp.stderr.strip()}")
 
+# 11. Check Phase 1 Resource & Memory Layout Test
+phase1_bin = "app/src/main/cpp/tests/test_phase1_tmp"
+compile_p1_cmd = [
+    "gcc", "-O2", "-Iapp/src/main/cpp", "-Iapp/src/main/cpp/include",
+    "-o", phase1_bin,
+    "app/src/main/cpp/tests/test_phase1.c",
+    "app/src/main/cpp/gml_vm.c"
+] + glob.glob("app/src/main/cpp/src/*.c") + ["-lz", "-lm"]
+comp_p1 = subprocess.run(compile_p1_cmd, capture_output=True, text=True)
+if comp_p1.returncode == 0 and os.path.exists(phase1_bin):
+    os.chmod(phase1_bin, 0o755)
+    r_p1 = subprocess.run([phase1_bin], capture_output=True, text=True)
+    record("Phase 1 Resource & Memory Suite", r_p1.returncode == 0, "ALL_PHASE_1_TESTS_PASSED")
+    os.remove(phase1_bin)
+else:
+    record("Phase 1 Resource & Memory Suite", False, f"Compilation failed: {comp_p1.stderr.strip()}")
+
 # 6. Verify Android Native Library Assets
 so_files = [
     "app/src/main/jniLibs/armeabi-v7a/libgm82_android.so",

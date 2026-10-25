@@ -4,11 +4,11 @@
 #include "gm82_object_room_decode.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_script.h"
-/* sprite groups via gm82_sprite_group_list */
 #include "gm82_background_decode.h"
 #include "gm82_arena.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "gm82_arena.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +17,19 @@ extern "C" {
 typedef struct gm82_action_table gm82_action_table;
 
 #define GM82_MAX_INSTANCES 2048
+
+enum gm82_frame_phase {
+    GM82_PHASE_IDLE = 0,
+    GM82_PHASE_BEGIN_STEP = 1,
+    GM82_PHASE_ALARM = 2,
+    GM82_PHASE_INPUT = 3,
+    GM82_PHASE_STEP = 4,
+    GM82_PHASE_MOTION_COLLISION = 5,
+    GM82_PHASE_END_STEP = 6,
+    GM82_PHASE_PRE_DRAW = 7,
+    GM82_PHASE_DRAW = 8,
+    GM82_PHASE_POST_DRAW = 9
+};
 
 typedef struct {
     char name[32];
@@ -100,9 +113,16 @@ typedef struct {
     int32_t view_enabled;
     double  view_x, view_y, view_w, view_h;
     int32_t view_follow_object;
+
+    gm82_arena room_arena;
+    int32_t destroy_queue[GM82_MAX_INSTANCES];
+    int32_t destroy_queue_count;
+    int32_t frame_phase;
 } gm82_runtime;
 
+void gm82_runtime_flush_destroy_queue(gm82_runtime *rt);
 void gm82_runtime_init(gm82_runtime *rt);
+void gm82_runtime_cleanup(gm82_runtime *rt);
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs);
 void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_object_list *objects,

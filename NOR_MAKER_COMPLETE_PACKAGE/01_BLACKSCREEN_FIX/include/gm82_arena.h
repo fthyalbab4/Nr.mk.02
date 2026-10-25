@@ -1,35 +1,24 @@
 #ifndef GM82_ARENA_H
 #define GM82_ARENA_H
-
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct gm82_arena_block {
-    uint8_t *buffer;
+typedef struct gm82_arena {
+    uint8_t *base;
     size_t capacity;
     size_t offset;
-    struct gm82_arena_block *next;
-} gm82_arena_block;
-
-typedef struct {
-    gm82_arena_block *first;
-    gm82_arena_block *current;
-    size_t default_block_size;
-    size_t total_allocated;
+    size_t peak;
 } gm82_arena;
-
-void gm82_arena_init(gm82_arena *arena, size_t default_block_size);
-void *gm82_arena_alloc(gm82_arena *arena, size_t size);
-void gm82_arena_reset(gm82_arena *arena);
-void gm82_arena_destroy(gm82_arena *arena);
-
+int gm82_arena_init(gm82_arena *a, size_t capacity);
+void gm82_arena_reset(gm82_arena *a);
+void gm82_arena_free(gm82_arena *a);
+void *gm82_arena_alloc(gm82_arena *a, size_t size, size_t align);
+size_t gm82_arena_used(const gm82_arena *a);
+size_t gm82_arena_peak(const gm82_arena *a);
+void *gm82_room_alloc(void *runtime_ptr, size_t size);
 #ifdef __cplusplus
 }
 #endif
-
 #endif

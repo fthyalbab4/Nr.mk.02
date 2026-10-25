@@ -28,16 +28,19 @@ typedef struct {
 } gm82_gl_texture;
 
 typedef struct {
-    uint32_t tex_id;
-    float u0, v0, u1, v1;
-    int32_t width, height;
-} gm82_texture_region;
+    int32_t sprite_index;
+    float u1, v1, u2, v2;
+    int32_t x, y, w, h;
+} gm82_gl_atlas_entry;
 
 typedef struct {
     gm82_gl_texture *sprites;
     int sprite_count;
     gm82_gl_texture *backgrounds;
     int background_count;
+    gm82_gl_atlas_entry *entries;
+    int entry_count;
+    int32_t atlas_width, atlas_height;
     int ready;
 } gm82_gl_atlas;
 
@@ -47,6 +50,7 @@ void gm82_gl_atlas_free(gm82_gl_atlas *a);
 /* Upload RGBA buffers – returns false if no GL context (expected in unit tests) */
 bool gm82_gl_upload_sprites(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites);
 bool gm82_gl_upload_backgrounds(gm82_gl_atlas *a, const gm82_decoded_background_list *bgs);
+bool gm82_gl_atlas_build_grid(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites, int32_t max_atlas_dim);
 
 bool gm82_gl_atlas_get_region(const gm82_gl_atlas *a, int sprite_index, gm82_texture_region *out_region);
 
