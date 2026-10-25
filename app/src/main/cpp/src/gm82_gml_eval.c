@@ -358,8 +358,15 @@ static bool parse_primary(gml_parser *p, double *out) {
     if (c == '"' || c == '\'') {
         char quote = c;
         p->i++;
-        while (p->i < p->n && p->s[p->i] != quote) p->i++;
+        /* Phase 3: capture string literal into last_string */
+        char buf[512];
+        size_t j = 0;
+        while (p->i < p->n && p->s[p->i] != quote && j + 1 < sizeof(buf)) {
+            buf[j++] = p->s[p->i++];
+        }
+        buf[j] = 0;
         if (p->i < p->n && p->s[p->i] == quote) p->i++;
+        gm82_gml_set_last_string(buf);
         *out = 0;
         return true;
     }
@@ -1989,6 +1996,12 @@ static bool parse_primary(gml_parser *p, double *out) {
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }
+        if (strcmp(id, "execute_string") == 0) {
+            const char *code = (p->str_mask & 1) ? p->str_args[0] : gm82_gml_last_string();
+            *out = gml_execute_string(code); return true;
+        }
+        if (strcmp(id, "is_real") == 0) { *out = gml_is_real(arg); return true; }
+        if (strcmp(id, "is_string") == 0) { *out = gml_is_string(arg); return true; }
         if (strcmp(id, "string_format") == 0) { char buf[128] = {0}; gml_string_format(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, buf, sizeof(buf)); snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", buf); p->str_mask |= 1; gm82_gml_set_last_string(buf); *out = 0; return true; }
         if (strcmp(id, "window_get_caption") == 0) { (void)gml_window_get_caption(); *out = 0; return true; }
 
@@ -2018,10 +2031,33 @@ static bool parse_additive(gml_parser *p, double *out) {
         char c = peek(p);
         if (c != '+' && c != '-') break;
         getc_(p);
+        /* Phase 3: GM8-style implicit string concat on + */
+        char left[512];
+        int left_str = gm82_gml_last_was_string() ? 1 : 0;
+        if (left_str)
+            snprintf(left, sizeof(left), "%s", gm82_gml_last_string());
+        else
+            snprintf(left, sizeof(left), "%g", *out);
+        gm82_gml_clear_last_string();
         double r;
         if (!parse_term(p, &r)) return false;
-        if (c == '+') *out += r;
-        else *out -= r;
+        if (c == '+') {
+            int right_str = gm82_gml_last_was_string() ? 1 : 0;
+            if (left_str || right_str) {
+                char right[512], cat[1024];
+                if (right_str)
+                    snprintf(right, sizeof(right), "%s", gm82_gml_last_string());
+                else
+                    snprintf(right, sizeof(right), "%g", r);
+                snprintf(cat, sizeof(cat), "%s%s", left, right);
+                gm82_gml_set_last_string(cat);
+                *out = 0;
+            } else {
+                *out += r;
+            }
+        } else {
+            *out -= r;
+        }
     }
     return true;
 }
