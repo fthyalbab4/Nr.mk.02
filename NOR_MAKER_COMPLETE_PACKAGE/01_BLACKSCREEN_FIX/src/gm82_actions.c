@@ -305,6 +305,41 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         gml_set_health((argc >= 1) ? (double)args[0] : 100.0);
         return true;
     }
+    if (strcmp(name, "action_draw_text") == 0) {
+        const char *txt = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "";
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        gml_draw_text(x, y, txt);
+        return true;
+    }
+    if (strcmp(name, "action_draw_score") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Score: %g", gml_get_score());
+        gml_draw_text(x, y, buf);
+        return true;
+    }
+    if (strcmp(name, "action_draw_life") == 0 || strcmp(name, "action_draw_lives") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Lives: %g", gml_get_lives());
+        gml_draw_text(x, y, buf);
+        return true;
+    }
+    if (strcmp(name, "action_path") == 0) {
+        double path = (argc >= 1) ? (double)args[0] : 0;
+        double spd = (argc >= 2) ? (double)args[1] : 1.0;
+        double endact = (argc >= 3) ? (double)args[2] : 0;
+        double abs_val = (argc >= 4) ? (double)args[3] : 1;
+        gml_path_start(path, spd, endact, abs_val);
+        return true;
+    }
+    if (strcmp(name, "action_path_end") == 0) {
+        gml_path_end();
+        return true;
+    }
     if (strcmp(name, "action_set_alarm") == 0) {
         int idx = (argc >= 1) ? args[0] : 0;
         int val = (argc >= 2) ? args[1] : 30;
