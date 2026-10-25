@@ -352,6 +352,7 @@ double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
 double gml_sound_volume(double sound_index, double vol);
 double gml_sound_loop(double sound_index);
+double gml_sound_stop_all(void);
 double gml_sound_pitch(double sound_index, double pitch);
 double gml_sound_pan(double sound_index, double pan);
 
