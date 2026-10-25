@@ -2002,16 +2002,11 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "string_repeat") == 0) {
             const char *src = (p->str_mask & 1) ? p->str_args[0] : "";
-            int n = (int)(nargs >= 2 ? args[1] : arg);
-            if (n < 0) n = 0;
-            if (n > 64) n = 64;
-            char tmp[256]; tmp[0]=0;
-            size_t pos=0;
-            for (int i=0;i<n && pos+1<sizeof(tmp);i++) {
-                size_t L=strlen(src);
-                if (pos+L >= sizeof(tmp)-1) break;
-                memcpy(tmp+pos, src, L); pos+=L; tmp[pos]=0;
-            }
+            double repeat_count = nargs >= 2 ? args[1] : arg;
+            if (!isfinite(repeat_count) || repeat_count < 0.0) repeat_count = 0.0;
+            if (repeat_count > 64.0) repeat_count = 64.0;
+            char tmp[256];
+            gml_string_repeat(src, repeat_count, tmp, sizeof(tmp));
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }

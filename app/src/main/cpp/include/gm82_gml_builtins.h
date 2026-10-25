@@ -352,6 +352,7 @@ double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
 double gml_sound_volume(double sound_index, double vol);
 double gml_sound_loop(double sound_index);
+double gml_sound_stop_all(void);
 double gml_sound_pitch(double sound_index, double pitch);
 double gml_sound_pan(double sound_index, double pan);
 
@@ -414,6 +415,10 @@ double gml_string_delete(const char *str, double index, double count, char *out,
 double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz);
 double gml_string_lower(const char *str, char *out, size_t out_sz);
 double gml_string_upper(const char *str, char *out, size_t out_sz);
+/* Returns bytes written; repeats are truncated toward zero and only whole
+ * copies are emitted. Output is always NUL-terminated when out_sz > 0.
+ * Input/output overlap is supported; invalid or non-finite counts write empty.
+ */
 double gml_string_repeat(const char *str, double count, char *out, size_t out_sz);
 double gml_array_length_1d(double array_id);
 double gml_array_length_2d(double array_id, double row);

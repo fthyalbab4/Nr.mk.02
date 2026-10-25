@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <time.h>
+#include <stdint.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include "gm82_gml_builtins.h"
@@ -1392,25 +1393,42 @@ double gml_string_digits(const char *str, char *out, size_t out_sz) {
 
 double gml_string_repeat(const char *str, double count, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
-    out[0] = 0;
-    if (!str || !str[0]) return 0;
-    int cnt = (int)count;
-    if (cnt <= 0) return 0;
+    if (!str) { out[0] = 0; return 0; }
     size_t slen = strlen(str);
-    size_t written = 0;
-    for (int i = 0; i < cnt; i++) {
-        if (written + slen >= out_sz) {
-            size_t rem = out_sz - written - 1;
-            if (rem > 0) {
-                memcpy(out + written, str, rem);
-                written += rem;
-            }
-            break;
-        }
-        memcpy(out + written, str, slen);
-        written += slen;
+    if (!isfinite(count) || count <= 0.0 || slen == 0 || slen == SIZE_MAX) {
+        out[0] = 0;
+        return 0;
     }
+
+    size_t source_span = slen + 1;
+    uintptr_t src_begin = (uintptr_t)str;
+    uintptr_t dst_begin = (uintptr_t)out;
+    uintptr_t src_span = (uintptr_t)source_span;
+    uintptr_t dst_span = (uintptr_t)out_sz;
+    int overlap = (size_t)src_span != source_span || (size_t)dst_span != out_sz ||
+                  src_begin > UINTPTR_MAX - src_span ||
+                  dst_begin > UINTPTR_MAX - dst_span;
+    if (!overlap) {
+        uintptr_t src_end = src_begin + src_span;
+        uintptr_t dst_end = dst_begin + dst_span;
+        overlap = src_begin < dst_end && dst_begin < src_end;
+    }
+    char *source_copy = NULL;
+    const char *source = str;
+    if (overlap) {
+        source_copy = (char *)malloc(source_span);
+        if (!source_copy) { out[0] = 0; return 0; }
+        memcpy(source_copy, str, source_span);
+        source = source_copy;
+    }
+
+    size_t max_repeats = (out_sz - 1) / slen;
+    size_t repeats = count >= (double)max_repeats ? max_repeats : (size_t)count;
+    size_t written = repeats * slen;
+    for (size_t i = 0; i < repeats; i++)
+        memcpy(out + i * slen, source, slen);
     out[written] = 0;
+    free(source_copy);
     return (double)written;
 }
 
