@@ -17,6 +17,7 @@ TESTS = [
     ("test_event_order", "app/src/main/cpp/tests/test_event_order.c"),
     ("test_phase1_arena_sprites_lifecycle", "app/src/main/cpp/tests/test_phase1_arena_sprites_lifecycle.c"),
     ("test_gml_string_repeat", "app/src/main/cpp/tests/test_gml_string_repeat.c"),
+    ("test_nr01_compat_apis", "app/src/main/cpp/tests/test_nr01_compat_apis.c"),
     # Imported from the friend's Full Core package; compiled against the current modular core.
     ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
     ("test_friend_gml_exec", "app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c"),
