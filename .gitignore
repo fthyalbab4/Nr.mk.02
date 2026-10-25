@@ -1,6 +1,10 @@
 node_modules/
 build/
 build_host/
+.cxx/
+app/.cxx/
+app/build/
+.externalNativeBuild/
 dist/
 coverage/
 .DS_Store

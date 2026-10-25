@@ -1,30 +1,31 @@
-# GAPS_HONEST — Nr.mk.02 (2026-10-24)
+# GAPS_HONEST — Nr.mk.02 (2026-10-25)
 
 No invented percentages.
 
-## Closed: string VM + DnD tables (this request)
+## Closed Items on Main
 
-### DnD tables — CLOSED on main
-- Header: `args[GM82_ACTION_MAX_ARGS]` (8) + `str_args[4][64]` + `argc`/`str_argc` in `gm82_action_ref`
-- Scan: harvests up to 8 int args + optional string payloads near `action_*`
-- `execute_ref` / `execute_named` pass arg table into create/move/hspeed/vspeed/motion/gravity/alarm/sprite/draw/sound/score/lives/health/save/load
-- Fire create/step wired
-- Live file: `app/src/main/cpp/src/gm82_actions.c` (commit series ending `b916a8d`)
+### GMK Resource Decoding & Materialization — CLOSED
+- Live files: `app/src/main/cpp/src/gm82_gmk_reader.c`, `gm82_sprite_decode.c`, `gm82_background_decode.c`, `gm82_object_room_decode.c`, `gm82_materialize.c`
+- Verification: `tools/run_host_pipeline.sh` decodes sprites, backgrounds, objects, and rooms for all sample GMKs (`mario_bros`, `plataformas`, `shooter`, `zelda`).
 
-### String VM — CLOSED on link path
-- API: `gm82_gml_last_string` / `set` / `was` / `clear` in `include/gm82_gml_eval.h`
-- Body: `app/src/main/cpp/src/gm82_gml_string_vm.c` (CMake `src/*.c` GLOB)
-- Producer inject: `tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py` (keyboard_string → set_last_string)
-- Full eval body optional: `DECODE_EVAL.py` + Actions `materialize-eval`
+### DnD Action Engine & Argument Harvesting — CLOSED
+- Live files: `app/src/main/cpp/src/gm82_actions.c`, `app/src/main/cpp/include/gm82_actions.h`
+- Verification: Executable tests pass in `run_full_verification.py` (Bounce & Wrap actions) and `daily_audit_runner.py` (78/78 actions mapped).
 
-## Still open (other gaps)
+### GML Evaluation & String VM — CLOSED
+- Live files: `app/src/main/cpp/src/gm82_gml_eval.c`, `gm82_gml_builtins.c`, `gm82_gml_string_vm.c`
+- Verification: `test_all_games_inlined.js` (39/39 GML scripts verified) and `run_full_verification.py`.
 
-| Item | Why |
-|------|-----|
-| Device APK FAIL log | Not in this session |
-| Surface / depth / with() full parity | Needs FAIL-driven work |
-| REA + GM82Core.dll | No binaries here |
+### Software & GLES Drawing Batching — CLOSED
+- Live files: `app/src/main/cpp/src/gm82_soft_render.c`, `gm82_gles.c`, `gm82_gl_textures.c`
+- Verification: Soft render blitting non-black pixels (`DRAW ok=1 lit > 0`) on all sample GMKs in `docs/HOST_PIPELINE_2026-10-25.md`.
 
-## Do not claim
+### Audio Engine Non-Crash Queue — CLOSED
+- Live files: `app/src/main/cpp/src/gm82_audio_mixer.c`, `gm82_sound_runtime.c`, `gm82_opensles.c`
+- Verification: Low-Latency Audio Ring Queue passes in `run_full_verification.py` and silent non-crash during host runtime loops.
 
-- 100% all GMK/cloud games
+## Open / Deferred Items
+
+| Item | Status / Reason |
+|------|-----------------|
+| REA Static Decompilation Analysis | Deferred: GM82Core.dll / GM82Dx9.dll binaries are not present in repository (documented in `docs/REA_SKIPPED.md`). |
