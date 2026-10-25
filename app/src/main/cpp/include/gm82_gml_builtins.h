@@ -28,6 +28,8 @@ gm82_runtime *gm82_gml_get_runtime(void);
 
 /* Set "self" instance for instance-scoped builtins */
 void gm82_gml_set_self(gm82_instance *self);
+void gm82_gml_set_other(gm82_instance *o);
+gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */

@@ -38,10 +38,16 @@ static int g_draw_blend_mode = 0;
 
 static gm82_runtime *g_rt = NULL;
 static gm82_instance *g_self = NULL;
+static gm82_instance *g_other = NULL;
+static int g_sound_playing[64];
+static int g_sound_playing_n = 0;
 
 void gm82_gml_set_runtime(gm82_runtime *rt) { g_rt = rt; }
 gm82_runtime *gm82_gml_get_runtime(void) { return g_rt; }
 void gm82_gml_set_self(gm82_instance *self) { g_self = self; }
+void gm82_gml_set_other(gm82_instance *o) { g_other = o; }
+gm82_instance *gm82_gml_get_other(void) { return g_other; }
+
 gm82_instance *gm82_gml_get_self(void) { return g_self; }
 
 double gml_instance_create(double x, double y, double object_index) {
@@ -3899,5 +3905,34 @@ double gml_random_get_seed(void) { return g_random_seed; }
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
-__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
-__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }
+
+/* Phase 6: soft sound play tracking (host has no real audio device guarantee) */
+double gml_sound_play(double sound_index) {
+    int id = (int)sound_index;
+    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
+    return 1;
+}
+double gml_sound_loop(double sound_index) {
+    return gml_sound_play(sound_index);
+}
+double gml_sound_isplaying(double sound_index) {
+    int id = (int)sound_index;
+    for (int i = 0; i < g_sound_playing_n; i++)
+        if (g_sound_playing[i] == id) return 1.0;
+    return 0.0;
+}
+double gml_sound_stop(double sound_index) {
+    int id = (int)sound_index;
+    int w = 0;
+    for (int i = 0; i < g_sound_playing_n; i++) {
+        if (g_sound_playing[i] == id) continue;
+        g_sound_playing[w++] = g_sound_playing[i];
+    }
+    g_sound_playing_n = w;
+    return 1;
+}
+double gml_sound_stop_all(void) {
+    g_sound_playing_n = 0;
+    return 1;
+}
+
