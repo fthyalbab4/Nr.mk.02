@@ -1,29 +1,22 @@
-# STATUS — Phases 0-3 Complete on Host; Full Verification PASS
+# STATUS — Studio Android unified; host tests tracked
 
-```bash
-python3 run_full_verification.py
-python3 tools/run_engine_suite.py
-bash tools/run_host_pipeline.sh
-make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test
-```
+## التطبيق الموحد
 
-Verification Results:
-- `run_full_verification.py`: **16/16 PASS** (100% test pass, no failures)
-- `run_engine_suite.py`: **SUMMARY ok=4 fail=0**, all 10 native test executables PASS
-- `run_host_pipeline.sh`: **SUMMARY ok=4 fail=0**
-- Native C core `make test`: All tests PASS
+نقطة تشغيل واحدة (`com.normaker.nativefull.MainActivity`) تعرض Studio WebView من assets، وتحتوي مشغل JNI الأصلي مع تبديل داخلي. استيراد GMK من المنتقي يمر إلى Studio، والصيغ التي يقبلها native importer تُحمّل أيضًا للمشغل الأصلي. تصدير NOR JSON يحفظ نسخة في Downloads. Gradle مرتبط بمصدر CMake؛ ترجمة Java API 34 نجحت، لكن `assembleDebug` لم ينتج APK لأن CMake/AAPT2 من SDK x86_64 لا يعملان على sandbox aarch64. لا يوجد اختبار جهاز.
 
-## Phase status
-| Phase | Status |
-|-------|--------|
-| 0 Base & Symbol Resolution | **Done** (app/src/main/cpp/src/gm82_actions.c synchronized) |
-| 1 Blackscreen Prevention | **Done** (Materialization & guard open) |
-| 2 Room & Execution | **Done** (4/4 sample games room decode & step/draw PASS) |
-| 3 Host Mario Playable | **Done** (Mario movement, physics parity, camera PASS) |
-| 4 Sound Queue | **Done on host** (Queue & sound_play PASS; device hardware testing BLOCKED) |
-| 5 GML / DnD Expansion | **In Progress** (Core builtins, math, strings, alarms PASS; edge-case GML gaps documented) |
-| 6 Format Robustness | **Done** (0-object rooms, zlib sprite decode, H1 Mario verified) |
-| 7 Android JNI & GLES | **Done on host build** (4 ABIs compiled; physical APK runtime BLOCKED on device connection) |
-| 8 Expansion & Closing | **In Progress** (Honest reporting, no fake 100%) |
+## نتائج الاختبار المعروفة
 
-No fake 100% claims.
+أعيد تشغيل الاختبارات قبل التسليم؛ النتائج في `docs/IMPLEMENTATION_STATUS_AR.md`. اختبارات المضيف على عينات GMK الأربع وC native suite منفصلة عن تحقق Android. لا تستخدم عبارة "100% مطابقة".
+
+## حالة العمل
+
+| المجال | الحالة |
+|---|---|
+| Host runtime / عينات GMK | اختبارات مضيف موجودة؛ تُعاد قبل التسليم |
+| typed GML statements | دعم جزئي مع fixtures؛ ما تزال فجوات grammar/scopes/events |
+| Studio داخل Activity Android | مصدر الواجهة أصبح نقطة التشغيل؛ يلزم APK/device validation |
+| native GMK player | يبقى داخل النشاط؛ الاستيراد يعتمد على حدود C parser |
+| GMK/GMX/GMZ round-trip | غير مكتمل |
+| parity مقابل Windows | غير مثبتة |
+
+راجع `GAPS_HONEST.md` و`REPORTING_RULES.md` و`docs/IMPLEMENTATION_STATUS_AR.md` للتفاصيل.

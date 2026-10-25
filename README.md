@@ -1,47 +1,36 @@
-# NOR Maker — Android GM82/GMK runtime (عمل قيد التطوير)
+# NOR Maker — تطبيق Android موحّد للاستوديو ومحرك GMK
 
-محرك/نواة لإعادة تشغيل مشاريع **Game Maker 8.2 / GMK** على Android.
+هذا المستودع هو مشروع التطبيق الأساسي. نقطة تشغيل Android واحدة تفتح واجهة Studio المضمّنة في `app/src/main/assets/www/index.html` داخل WebView، وتستخدم جسرًا إلى محرك C/ JNI في النشاط نفسه. لا توجد نسخ كاملة من المستودعين المرجعيين داخل شجرة التسليم.
 
-> **تحذير صادق:** هذا **ليس** IDE كامل ولا «محاكاة 100% مثل ويندوز» بعد.  
-> ما هو مُثبت اليوم: مسار **host** (load → decode → step → soft draw) على عينات GMK، وتجهيز JNI/WebView.
+## ما يعمل في المسار الموحّد
 
-## الحالة المختصرة
+- محرر Studio وJavaScript runner يعملان داخل تطبيق Android نفسه.
+- اختيار ملف GMK من واجهة Studio يمرر الملف إلى محرر الويب؛ والصيغ الثنائية التي يقبلها native importer تُحمّل أيضًا إلى محرك C.
+- زر **تشغيل GMK الأصلي** يعرض محرك JNI المحمّل، مع إدخال لوحة المفاتيح واللمس؛ والعودة تعيد المستخدم إلى Studio.
+- تسجيل بيانات الغرفة والموارد/instances المتاحة عبر الجسر، وحفظ تصدير NOR JSON في مجلد Downloads على Android الحديث.
+- Three.js r128 مضمّن محليًا مع ملف الترخيص، ولا يعتمد مشغّل اللعبة على تحميل سكربت CDN.
+- typed GML parser لديه fixtures مضبوطة لاختبارات الجمل المنقولة (مثل `if/else`, `while`, `for`, `break/continue`).
 
-انظر **`STATUS.md`** و **`GAPS_HONEST.md`** و **`REPORTING_RULES.md`**.
+## حدود معلنة
 
-| | |
-|--|--|
-| Host pipeline 4 عينات | OK |
-| Host native SO smoke | OK |
-| APK + NDK على جهاز | غير مُثبت في بيئة التوثيق هذه |
-| نسبة host تقديرية | ~55–65% |
+وجود واجهة واحدة لا يثبت تطابقًا سلوكيًا 100% مع Windows GameMaker 8.2. معاينة Studio المبنية على JavaScript والمحرك native مساران مختلفان؛ مشغل JNI الحالي لا ينفذ كل مخططات Studio ومواردها. استيراد مجلدات GM82 النصية وround-trip كامل لـGMK/GMX/GMZ، والاختبار على جهاز Android، ما زالت بحاجة إلى إكمال. ثُبّت SDK 34 وNDK 25.2 وحاولنا `assembleDebug`، لكن حزمة Android التي نزلها SDK تستخدم CMake/AAPT2 لـx86_64 بينما بيئة البناء arm64؛ لذلك لم يُنتج APK. ترجمة Java منفصلة باستخدام `android.jar` API 34 نجحت، ولا يوجد جهاز Android للاختبار.
 
-## هيكل مهم
+التقرير التفصيلي والاختبارات والفجوات في [`docs/IMPLEMENTATION_STATUS_AR.md`](docs/IMPLEMENTATION_STATUS_AR.md) و[`STATUS.md`](STATUS.md) و[`GAPS_HONEST.md`](GAPS_HONEST.md). راجع [`REPORTING_RULES.md`](REPORTING_RULES.md) قبل نشر أرقام parity.
 
-- `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` — نواة C + android JNI
-- `assets/www/` — جسر JS للحلقة الأصلية
-- `tools/` — اختبارات host pipeline / SO smoke
-- `STEP_LOG.md` — سجل خطوات فعلية
-
-## بناء host (بدون NDK)
+## اختبارات المضيف
 
 ```bash
-# مثال — راجع tools/run_host_pipeline.sh إن وُجد
-gcc -O2 -Iinclude -o pipeline_test tools/host_pipeline_test.c src/*.c ... -lz -lm
-./pipeline_test samples/mario_bros.gmk 30
+python3 tools/run_reference_fixtures.py
+python3 -m unittest discover -s tests/reference -p 'test_*.py' -v
+python3 tools/run_engine_suite.py
 ```
 
 ## بناء Android
 
-يحتاج **Android NDK**. انسخ `android/CMakeLists.txt` إلى `app/src/main/cpp/` وطبق `gradle_native_snippet.gradle`، ثم:
+يتطلب Android SDK platform 34 وbuild-tools 34.0.0 وNDK `25.2.9519653` وCMake `3.22.1`؛ Gradle Wrapper يثبت Gradle `8.2.1` تلقائيًا:
 
 ```bash
-./gradlew assembleDebug
+./gradlew :app:assembleDebug
 ```
 
-ثم احقن `NorNative` في WebView (`NorNativeWebBridge`).
-
-## قواعد للوكلاء
-
-أي تقرير جديد **يجب** أن يلتزم بـ `REPORTING_RULES.md`.  
-ممنوع تضخيم النسب أو إعلان اكتمال phases من غير دليل.
+لم يُرفع أي تغيير إلى GitHub.

@@ -1,24 +1,21 @@
-# GAPS_HONEST — Daily Audit Status
+# GAPS_HONEST — الحالة بعد دمج نقطة تشغيل Android
 
-## Closed on host (Phases 0-3 Complete, Full Verification PASS)
-- **Symbol resolution fixed**: `app/src/main/cpp/src/gm82_actions.c` synchronized with full implementation (`gm82_action_execute_named`, `gm82_actions_fire_create`, `gm82_actions_fire_step`).
-- `run_full_verification.py`: **16/16 PASS** (including Native Runtime Guard Executable compilation & test execution).
-- Gap-fill patches apply path.
-- Movement host inject **removed**; samples still 4/4 with keyboard only.
-- Save/load multi-instance format (patch).
-- Full GM82Core extension port (clean-room C math, 3D geometry, Perlin noise, HRT timer, string tokens, hex, power_next, resource indexing, keyboard_string).
-- Tri-mirror C native source tree synchronization verified.
-- **String-returning VM path**: `gm82_gml_last_string` / `gm82_gml_set_last_string` / `gm82_gml_last_was_string`; string_* producers write last-string buffer; `string_repeat` added.
-- **DnD arg tables**: `gm82_action_ref` now stores full `args[8]` + `argc` (+ optional str_args); scan harvests up to 8 ints; `execute_ref` prefers arg table for sprite/create/alarm/motion; expanded named action set.
+## ما تحقق على المضيف
 
-## Open Gaps
-1. **Device APK playtest**: Needs physical Android hardware test logcat verification (BLOCKED on physical device connection).
-2. **Cloud/GMK FAIL → named symbol**: Fallback reporting for unmapped symbols in raw GMK files.
-3. **Full string-returning VM**: Partial — last-string buffer + common string_* producers exist; still not full expression-typed string VM (concat in all contexts, with-string scopes).
-4. **Full DnD binary arg tables**: Partial — struct + harvest + several execute paths use args[]; not every GM8 action id signature is mapped.
+- مسار C المضيف واختبارات عينات GMK الأربع متوفران؛ يجب إعادة تشغيل `python3 tools/run_engine_suite.py` قبل التسليم.
+- typed GML frontend أضيف إليه دعم تزايدي لـ`if/else`, `while`, `do/until`, `for`, `repeat`, `break`, و`continue` مع fixtures snapshots. هذا لا يغلق grammar أو semantics كاملة.
+- اختبارات Android ثابتة تربط Activity بالـWebView/JNI؛ ليست بديلًا عن Gradle/NDK أو جهاز فعلي.
 
-## Measured Engine Parity
-- **Host Verified Parity**: do not invent a new %. Re-run host suite after device FAIL logs.
-- **Remaining Gap**: device + FAIL-driven symbols + remaining string/DnD edge cases.
+## دمج واجهة التطبيق
 
-No fake 100%.
+أصبح Studio المضمّن داخل assets هو واجهة Activity Android نفسها، ويوجد native player داخل النشاط مع file chooser وتصدير NOR JSON. هذا توحيد لنقطة الدخول وتدفق الملف، لا توحيد كامل لدلالات التشغيل: معاينة Studio JavaScript والمحرك الأصلي C ما زالا مسارين مختلفين. استيراد GM82 folder، ربط صور/صوت المشروع المُنشأ إلى renderer native، وتصدير GMK حقيقي ما زالت مفتوحة.
+
+## Open gaps
+
+1. إعادة `assembleDebug` على Linux x86_64 أو SDK بأدوات host arm64، ثم اختبار import → edit → run → export على جهاز حقيقي، بما في ذلك أذونات URI وMediaStore. المحاولة الحالية وصلت Gradle إلى CMake/AAPT2 لكنها توقفت لأن حزم Google المرفقة x86_64 على sandbox aarch64.
+2. دعم مجلدات GM82 النصية عبر Storage Access Framework واختبارها مع موارد كبيرة.
+3. استكمال GML expressions/scopes/events/actions ومقارنة نتائج حقيقية مع نسخة Windows.
+4. إنشاء Project IR وGMK/GMX/GMZ semantic round-trip كاملين والتحقق من ملفات الناتج في GameMaker.
+5. إكمال مزامنة موارد Studio الثنائية (sprite/audio/background/font) مع runtime native؛ الجسر الحالي لا يثبت ذلك.
+
+لا توجد نسبة parity جديدة مثبتة. نجاح fixtures المحدودة أو وجود اسم API لا يعني implementation. راجع `REPORTING_RULES.md` قبل أي ادعاء بنسبة اكتمال.
