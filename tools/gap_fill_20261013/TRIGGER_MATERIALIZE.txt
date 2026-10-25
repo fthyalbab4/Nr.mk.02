@@ -1,1 +1,1 @@
-trigger phase4 actions blob
+trigger phase4 events+actions materialize
