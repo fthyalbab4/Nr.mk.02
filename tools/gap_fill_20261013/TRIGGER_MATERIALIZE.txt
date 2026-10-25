@@ -1,1 +1,1 @@
-trigger phase1 runtime arena defer phases
+trigger phase1 parts assemble
