@@ -1,1 +1,1 @@
-trigger phase3 gml strings
+trigger phase3 apply gml
