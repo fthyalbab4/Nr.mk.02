@@ -1,1 +1,1 @@
-trigger phase2 runtime+input materialize
+trigger phase2 full runtime blob
