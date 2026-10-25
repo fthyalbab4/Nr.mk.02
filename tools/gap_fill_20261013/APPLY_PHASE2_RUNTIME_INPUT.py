@@ -4,22 +4,33 @@ import zlib, base64
 ROOT = Path(__file__).resolve().parents[2]
 B = ROOT / "tools/gap_fill_20261013/blobs"
 
-def materialize(name, markers):
-    parts = sorted(B.glob(name.replace('.c','.part*.b64')))
-    raw = None
+def load_blob(name):
+    single = B / f"{name}.zlib.b64"
+    if single.exists():
+        raw = single.read_text().strip()
+        if raw and raw != "PLACEHOLDER" and len(raw) > 100:
+            try:
+                return zlib.decompress(base64.b64decode(raw))
+            except Exception as e:
+                print("single blob fail", name, e)
+    parts = sorted(B.glob(name.replace('.c', '.part*.b64')))
     if parts:
         raw = "".join(p.read_text().strip() for p in parts)
-    single = B / f"{name}.zlib.b64"
-    if not raw and single.exists():
-        raw = single.read_text().strip()
-    if not raw or len(raw) < 50:
+        try:
+            return zlib.decompress(base64.b64decode(raw))
+        except Exception as e:
+            print("parts fail", name, e)
+    return None
+
+def materialize(name, markers):
+    data = load_blob(name)
+    if not data:
         print("skip", name)
         return
-    data = zlib.decompress(base64.b64decode(raw))
     for m in markers:
         if m not in data:
             raise SystemExit(f"missing {m} in {name}")
-    single.write_text(base64.b64encode(zlib.compress(data, 9)).decode())
+    (B / f"{name}.zlib.b64").write_text(base64.b64encode(zlib.compress(data, 9)).decode())
     for dest in [
         ROOT / f"app/src/main/cpp/src/{name}",
         ROOT / f"app/src/main/cpp_backup/src/{name}",
