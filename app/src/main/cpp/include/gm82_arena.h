@@ -17,6 +17,7 @@ void gm82_arena_free(gm82_arena *a);
 void *gm82_arena_alloc(gm82_arena *a, size_t size, size_t align);
 size_t gm82_arena_used(const gm82_arena *a);
 size_t gm82_arena_peak(const gm82_arena *a);
+void *gm82_room_alloc(void *runtime_ptr, size_t size);
 #ifdef __cplusplus
 }
 #endif

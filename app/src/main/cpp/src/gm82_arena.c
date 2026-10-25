@@ -31,3 +31,9 @@ void *gm82_arena_alloc(gm82_arena *a, size_t size, size_t align) {
 }
 size_t gm82_arena_used(const gm82_arena *a) { return a ? a->offset : 0; }
 size_t gm82_arena_peak(const gm82_arena *a) { return a ? a->peak : 0; }
+
+void *gm82_room_alloc(void *runtime_ptr, size_t size) {
+    if (!runtime_ptr || size == 0) return NULL;
+    gm82_arena *arena = (gm82_arena *)runtime_ptr; /* Pass &rt->room_arena or rt */
+    return gm82_arena_alloc(arena, size, 16);
+}

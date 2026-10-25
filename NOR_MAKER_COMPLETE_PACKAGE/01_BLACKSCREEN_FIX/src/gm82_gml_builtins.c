@@ -3879,6 +3879,21 @@ int gml_script_find(const char *name) {
     return gm82_script_find(g_scripts, name);
 }
 
+double gml_execute_string(const char *code) {
+    if (!code || !code[0]) return 0.0;
+    return (double)gm82_gml_eval_block(g_rt, g_self, code);
+}
+
+double gml_is_real(double val) {
+    (void)val;
+    return 1.0;
+}
+
+double gml_is_string(double val) {
+    (void)val;
+    return 0.0;
+}
+
 void gml_show_debug_message(const char *msg) {
     if (msg) fprintf(stderr, "[GML] %s\n", msg);
 }

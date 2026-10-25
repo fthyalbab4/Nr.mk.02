@@ -516,6 +516,10 @@ double gml_lerp_angle(double a, double b, double t);
 #endif
 
 
+double gml_execute_string(const char *code);
+double gml_is_real(double val);
+double gml_is_string(double val);
+
 void gml_show_debug_message(const char *msg);
 double gml_randomize(void);
 double gml_random_set_seed(double seed);

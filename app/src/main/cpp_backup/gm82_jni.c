@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
+#include <zlib.h>
 #include "gm82_gmk_format.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_background_decode.h"
@@ -19,6 +20,7 @@
 #include "gm82_gml_builtins.h"
 #include "gm82_actions.h"
 #include "gm82_script.h"
+#include "gm82_sound_runtime.h"
 
 #define LOG_TAG "NOR_NATIVE"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -29,6 +31,21 @@
 #define MAX_EVENTS 512
 #define MAX_CODES 128
 #define MAX_SOUND_COMMANDS 64
+#define MAX_OBJECTS 512
+#define MAX_SCRIPTS 256
+#define MAX_BITMAPS 1024
+/* Reference-backed file/ROM format implementations. */
+extern double nor_import_format_native(const char *path);
+extern double nor_validate_rom_native(const char *path, double kind);
+extern double nor_export_nes_native(const char *project, const char *output);
+extern double nor_export_gbc_native(const char *project, const char *output);
+extern double nor_export_gba_native(const char *project, const char *output);
+extern double nor_export_pnor_native(const char *title, const char *output);
+extern double nor_export_nor_native(const char *title, const char *output);
+extern double nor_import_gmx_gmz_native(const char *path, const char *output_dir);
+extern double nor_export_gmx_gmz_native(const char *source_dir, const char *output, const char *kind);
+extern double nor_export_gmk_raw_native(const char *source, const char *output);
+extern double nor_export_gmx_semantic_native(const char *source_dir, const char *output_dir, const char *project_name);
 
 /* --- Global Full Native Engine State --- */
 static gm82_runtime g_engine_rt;
@@ -58,6 +75,7 @@ typedef struct {
     int visible;
     int persistent;
     int depth;
+    int alarms[12];
 } NativeInstance;
 
 /* --- Resource Representation --- */
@@ -69,6 +87,9 @@ typedef struct {
     int height;
     int frames;
 } NativeResource;
+typedef struct { int id; char name[64]; int solid, visible, persistent, depth; } NativeObject;
+typedef struct { int used; char name[64]; char *source; } NativeScript;
+typedef struct { int used, spriteId, frame, width, height; uint8_t *rgba; size_t size; } NativeBitmap;
 
 /* --- Object Event Representation --- */
 typedef struct {
@@ -86,15 +107,6 @@ typedef struct {
     char *source;
 } NativeCode;
 
-/* --- Sound Command Representation --- */
-typedef struct {
-    int kind;
-    int soundId;
-    int loop;
-    int prio;
-    float volume;
-} NativeSoundCmd;
-
 /* --- Global Native State --- */
 static int g_runtime_active = 0;
 static int g_current_room = 0;
@@ -107,69 +119,104 @@ static int g_instance_id_counter = 100000;
 
 static NativeResource g_resources[MAX_RESOURCES];
 static int g_resource_count = 0;
-
+static NativeObject g_objects[MAX_OBJECTS];
+static int g_object_count = 0;
 static NativeEvent g_events[MAX_EVENTS];
 static int g_event_count = 0;
+static NativeScript g_scripts[MAX_SCRIPTS];
+static NativeBitmap g_bitmaps[MAX_BITMAPS];
+static void free_native_bitmaps(void) { for (int i=0;i<MAX_BITMAPS;i++) { free(g_bitmaps[i].rgba); memset(&g_bitmaps[i],0,sizeof(g_bitmaps[i])); } }
+static void free_native_scripts(void) { for (int i=0;i<MAX_SCRIPTS;i++) { free(g_scripts[i].source); memset(&g_scripts[i],0,sizeof(g_scripts[i])); } }
+
+JNIEXPORT jboolean JNICALL Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(JNIEnv *, jclass, jint, jstring);
+static void run_registered_object_events(JNIEnv *env, jclass clazz, NativeInstance *inst, int mainType, int subType) {
+    if (!env || !inst) return;
+    for (int i=0; i<g_event_count; i++) {
+        NativeEvent *ev=&g_events[i];
+        if (ev->objectId != inst->objectId || ev->mainType != mainType) continue;
+        if (subType >= 0 && ev->subType != subType && ev->subType != -1) continue;
+        if (!ev->source[0]) continue;
+        jstring source=(*env)->NewStringUTF(env, ev->source);
+        if (!source) continue;
+        (void)Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(env, clazz, inst->id, source);
+        (*env)->DeleteLocalRef(env, source);
+    }
+}
+
+static void run_registered_input_events(JNIEnv *env, jclass clazz, NativeInstance *inst) {
+    if (!env || !inst) return;
+    for (int i=0; i<g_event_count; i++) {
+        NativeEvent *ev=&g_events[i]; if(ev->objectId!=inst->objectId || !ev->source[0]) continue;
+        int fire=0;
+        if (ev->mainType==5) fire=gml_keyboard_check((double)ev->subType)!=0.0;
+        else if (ev->mainType==9) fire=gml_keyboard_check_pressed((double)ev->subType)!=0.0;
+        else if (ev->mainType==10) fire=gml_keyboard_check_released((double)ev->subType)!=0.0;
+        if (!fire) continue;
+        jstring source=(*env)->NewStringUTF(env,ev->source); if(!source) continue;
+        (void)Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(env,clazz,inst->id,source);
+        (*env)->DeleteLocalRef(env,source);
+    }
+}
+static void run_registered_collision_events(JNIEnv *env, jclass clazz, NativeInstance *a, NativeInstance *b) {
+    if (!env || !a || !b) return;
+    for (int i=0;i<g_event_count;i++) {
+        NativeEvent *ev=&g_events[i]; if(ev->objectId!=a->objectId || ev->mainType!=4) continue;
+        if(ev->subType>=0 && ev->subType!=b->objectId) continue; if(!ev->source[0]) continue;
+        jstring source=(*env)->NewStringUTF(env,ev->source); if(!source) continue;
+        (void)Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(env,clazz,a->id,source);
+        (*env)->DeleteLocalRef(env,source);
+    }
+}
+
+static void run_registered_mouse_events(JNIEnv *env, jclass clazz, NativeInstance *inst) {
+    if (!env || !inst) return;
+    int w=inst->spriteWidth>0?inst->spriteWidth:16, h=inst->spriteHeight>0?inst->spriteHeight:16;
+    double mx=gml_mouse_x(), my=gml_mouse_y();
+    int inside=(mx>=inst->x && mx<inst->x+w && my>=inst->y && my<inst->y+h);
+    for (int i=0;i<g_event_count;i++) {
+        NativeEvent *ev=&g_events[i]; if(ev->objectId!=inst->objectId || ev->mainType!=6 || !inside || !ev->source[0]) continue;
+        int b=-1, fire=0;
+        if(ev->subType>=0 && ev->subType<=2){b=ev->subType;fire=gml_mouse_check_button((double)b)!=0.0;}
+        else if(ev->subType>=4 && ev->subType<=6){b=ev->subType-4;fire=gml_mouse_check_button_pressed((double)b)!=0.0;}
+        else if(ev->subType>=7 && ev->subType<=9){b=ev->subType-7;fire=gml_mouse_check_button_released((double)b)!=0.0;}
+        else if(ev->subType>=50 && ev->subType<=52){b=ev->subType-50;fire=gml_mouse_check_button((double)b)!=0.0;}
+        if(!fire) continue;
+        jstring source=(*env)->NewStringUTF(env,ev->source); if(!source) continue;
+        (void)Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(env,clazz,inst->id,source);
+        (*env)->DeleteLocalRef(env,source);
+    }
+}
+
+static void register_decoded_assets(const gm82_decoded_sprite_list *sprites,
+                                    const gm82_decoded_background_list *bgs,
+                                    const gm82_decoded_object_list *objs) {
+    g_resource_count = 0;
+    g_object_count = 0;
+    memset(g_resources, 0, sizeof(g_resources));
+    memset(g_objects, 0, sizeof(g_objects));
+    if (sprites) for (int i=0; i<sprites->count && g_resource_count<MAX_RESOURCES; i++) {
+        NativeResource *r=&g_resources[g_resource_count++]; r->kind=1; r->id=i;
+        strncpy(r->name,sprites->frames[i].name,sizeof(r->name)-1);
+        r->width=sprites->frames[i].width; r->height=sprites->frames[i].height; r->frames=1;
+    }
+    if (bgs) for (int i=0; i<bgs->count && g_resource_count<MAX_RESOURCES; i++) {
+        NativeResource *r=&g_resources[g_resource_count++]; r->kind=2; r->id=i;
+        strncpy(r->name,bgs->items[i].name,sizeof(r->name)-1);
+        r->width=bgs->items[i].width; r->height=bgs->items[i].height; r->frames=1;
+    }
+    if (objs) for (int i=0; i<objs->count && i<MAX_OBJECTS; i++) {
+        const gm82_decoded_object *src=&objs->items[i]; NativeObject *dst=&g_objects[i];
+        dst->id=i; strncpy(dst->name,src->name,sizeof(dst->name)-1); dst->solid=src->solid;
+        dst->visible=src->visible; dst->persistent=src->persistent; dst->depth=src->depth; g_object_count=i+1;
+    }
+}
 
 static NativeCode g_codes[MAX_CODES];
 static int g_code_id_counter = 1000;
 
-static NativeSoundCmd g_sound_commands[MAX_SOUND_COMMANDS];
-static int g_sound_command_count = 0;
-
-void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume) {
-    if (g_sound_command_count < MAX_SOUND_COMMANDS) {
-        NativeSoundCmd *cmd = &g_sound_commands[g_sound_command_count++];
-        cmd->kind = kind;
-        cmd->soundId = soundId;
-        cmd->loop = loop;
-        cmd->prio = prio;
-        cmd->volume = volume;
-    }
-}
-
 static char g_token_buf[1024] = {0};
 static char g_token_sep[16] = {0};
 static char *g_token_ctx = NULL;
-
-/* --- GMK Format Probe Implementation --- */
-gm82_gmk_probe_result gm82_gmk_probe(const uint8_t *data, size_t size) {
-    gm82_gmk_probe_result res;
-    memset(&res, 0, sizeof(res));
-    if (!data || size < 12) {
-        res.status = GM82_GMK_PARSE_INVALID;
-        res.error_code = "buffer_too_small";
-        return res;
-    }
-
-    uint32_t magic = (uint32_t)data[0] | ((uint32_t)data[1] << 8) | ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
-    uint32_t version = (uint32_t)data[4] | ((uint32_t)data[5] << 8) | ((uint32_t)data[6] << 16) | ((uint32_t)data[7] << 24);
-    uint32_t app_id = (uint32_t)data[8] | ((uint32_t)data[9] << 8) | ((uint32_t)data[10] << 16) | ((uint32_t)data[11] << 24);
-
-    res.magic = (int32_t)magic;
-    res.version = (int32_t)version;
-    res.app_id = (int32_t)app_id;
-    res.header_bytes = 12;
-
-    if (magic != 1234321u) {
-        res.status = GM82_GMK_PARSE_INVALID;
-        res.error_code = "bad_magic";
-        return res;
-    }
-    if (version < 400u || version > 820u) {
-        res.status = GM82_GMK_PARSE_INVALID;
-        res.error_code = "unsupported_version";
-        return res;
-    }
-
-    res.status = GM82_GMK_PARSE_PARTIAL;
-    if (version >= 810u) res.format_kind = GM82_GMK_FORMAT_GM81;
-    else if (version >= 700u) res.format_kind = GM82_GMK_FORMAT_GM7_GM8;
-    else if (version >= 500u) res.format_kind = GM82_GMK_FORMAT_GM5_GM6;
-    else res.format_kind = GM82_GMK_FORMAT_GM4;
-    res.error_code = NULL;
-    return res;
-}
 
 /* --- Native Runtime Lifecycle --- */
 JNIEXPORT jboolean JNICALL
@@ -190,6 +237,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeCreate(JNIEnv *env, jclas
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeDestroy(JNIEnv *env, jclass clazz) {
+    free_native_bitmaps(); free_native_scripts();
     g_runtime_active = 0;
     g_instance_count = 0;
     if (g_engine_loaded) {
@@ -215,13 +263,39 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass 
     float dt = delta > 0.0f ? delta : 0.016667f;
     gm82_input_bind_global(&g_engine_input);
     if (g_engine_loaded && g_engine_rt.running) {
-        gm82_input_begin_frame(&g_engine_input);
         gm82_runtime_step(&g_engine_rt);
     }
+    if (!g_engine_loaded) {
+        for (int i = 0; i < g_instance_count; i++) {
+            NativeInstance *inst=&g_instances[i];
+            if (!inst->visible) continue;
+            for (int ai=0; ai<12; ai++) if (inst->alarms[ai] > 0) { inst->alarms[ai]--; if (inst->alarms[ai] == 0) run_registered_object_events(env, clazz, inst, 2, ai); }
+            run_registered_object_events(env, clazz, inst, 3, 1);
+            run_registered_object_events(env, clazz, &g_instances[i], 3, 0);
+            run_registered_object_events(env, clazz, &g_instances[i], 3, 2);
+            run_registered_input_events(env, clazz, &g_instances[i]);
+            run_registered_mouse_events(env, clazz, &g_instances[i]);
+        }
+    }
     for (int i = 0; i < g_instance_count; i++) {
+        if (!g_instances[i].visible) continue;
         g_instances[i].x += g_instances[i].vx * dt;
         g_instances[i].y += g_instances[i].vy * dt;
     }
+    if (!g_engine_loaded) {
+        for (int i=0;i<g_instance_count;i++) for (int j=i+1;j<g_instance_count;j++) {
+            NativeInstance *a=&g_instances[i], *b=&g_instances[j];
+            if(!a->visible || !b->visible) continue;
+            int aw=a->spriteWidth>0?a->spriteWidth:16, ah=a->spriteHeight>0?a->spriteHeight:16;
+            int bw=b->spriteWidth>0?b->spriteWidth:16, bh=b->spriteHeight>0?b->spriteHeight:16;
+            if(a->x < b->x+bw && a->x+aw > b->x && a->y < b->y+bh && a->y+ah > b->y) {
+                run_registered_collision_events(env,clazz,a,b);
+                run_registered_collision_events(env,clazz,b,a);
+            }
+        }
+    }
+    /* Consume one-frame pressed/released flags only after event dispatch. */
+    gm82_input_begin_frame(&g_engine_input);
 }
 
 JNIEXPORT void JNICALL
@@ -235,8 +309,17 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeKey(JNIEnv *env, jclass c
 }
 
 JNIEXPORT void JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeMouse(JNIEnv *env, jclass clazz, jint x, jint y, jint button, jboolean down) {
+    (void)env; (void)clazz;
+    gm82_input_bind_global(&g_engine_input);
+    gm82_input_set_mouse(&g_engine_input, (int)x, (int)y);
+    if (down) gm82_input_mouse_down(&g_engine_input, (int)button);
+    else gm82_input_mouse_up(&g_engine_input, (int)button);
+}
+
+JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetRoomSpeed(JNIEnv *env, jclass clazz, jint speed) {
-    gm82_runtime_set_room_speed(&g_engine_rt, speed);
+    g_engine_rt.room_speed = speed > 0 ? speed : 30;
 }
 
 JNIEXPORT void JNICALL
@@ -521,21 +604,31 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRegisterEvent(JNIEnv *env
 
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeRegisterObject(JNIEnv *env, jclass clazz, jint objectId, jstring name) {
-    return JNI_TRUE;
+    if (!name || objectId < 0 || objectId >= MAX_OBJECTS) return JNI_FALSE;
+    const char *raw = (*env)->GetStringUTFChars(env, name, NULL); if (!raw) return JNI_FALSE;
+    NativeObject *obj=&g_objects[objectId]; memset(obj,0,sizeof(*obj)); obj->id=objectId; obj->visible=1;
+    strncpy(obj->name,raw,sizeof(obj->name)-1); if (objectId>=g_object_count) g_object_count=objectId+1;
+    (*env)->ReleaseStringUTFChars(env,name,raw); return JNI_TRUE;
 }
-
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeRegisterScript(JNIEnv *env, jclass clazz, jstring name, jstring source) {
-    return JNI_TRUE;
+    if (!name || !source) return JNI_FALSE;
+    const char *n=(*env)->GetStringUTFChars(env,name,NULL), *code=(*env)->GetStringUTFChars(env,source,NULL);
+    if (!n || !code) { if(n) (*env)->ReleaseStringUTFChars(env,name,n); if(code) (*env)->ReleaseStringUTFChars(env,source,code); return JNI_FALSE; }
+    int slot=-1; for(int i=0;i<MAX_SCRIPTS;i++) if(g_scripts[i].used && !strcmp(g_scripts[i].name,n)){slot=i;break;}
+    if(slot<0) for(int i=0;i<MAX_SCRIPTS;i++) if(!g_scripts[i].used){slot=i;break;}
+    if(slot<0){(*env)->ReleaseStringUTFChars(env,name,n);(*env)->ReleaseStringUTFChars(env,source,code);return JNI_FALSE;}
+    free(g_scripts[slot].source); memset(&g_scripts[slot],0,sizeof(g_scripts[slot])); g_scripts[slot].used=1;
+    strncpy(g_scripts[slot].name,n,sizeof(g_scripts[slot].name)-1); g_scripts[slot].source=strdup(code);
+    (*env)->ReleaseStringUTFChars(env,name,n);(*env)->ReleaseStringUTFChars(env,source,code); return g_scripts[slot].source?JNI_TRUE:JNI_FALSE;
 }
-
 JNIEXPORT void JNICALL
-Java_com_normaker_nativefull_MainActivity_nativeRuntimeClearScripts(JNIEnv *env, jclass clazz) {
-}
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeClearScripts(JNIEnv *env, jclass clazz) { free_native_scripts(); }
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeClearEvents(JNIEnv *env, jclass clazz) {
     g_event_count = 0;
+    memset(g_events, 0, sizeof(g_events));
 }
 
 JNIEXPORT jint JNICALL
@@ -546,6 +639,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeAddInstance(JNIEnv *env, 
     }
     int new_id = ++g_instance_id_counter;
     NativeInstance *inst = &g_instances[g_instance_count++];
+    for (int ai=0; ai<12; ai++) inst->alarms[ai] = -1;
     inst->id = new_id;
     inst->objectId = objectId;
     inst->spriteId = spriteId;
@@ -560,12 +654,23 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeAddInstance(JNIEnv *env, 
     inst->visible = 1;
     inst->persistent = 0;
     inst->depth = 0;
+    if (objectId >= 0 && objectId < g_object_count) {
+        const NativeObject *obj = &g_objects[objectId];
+        inst->solid = obj->solid; inst->visible = obj->visible;
+        inst->persistent = obj->persistent; inst->depth = obj->depth;
+    }
+    if (!g_engine_loaded) run_registered_object_events(env, clazz, inst, 0, -1);
     return new_id;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetSpriteBitmap(JNIEnv *env, jclass clazz, jint spriteId, jint frame, jint width, jint height, jbyteArray rgba) {
-    return JNI_TRUE;
+    if(!rgba || width<=0 || height<=0 || width>4096 || height>4096) return JNI_FALSE;
+    size_t need=(size_t)width*(size_t)height*4u; if((size_t)(*env)->GetArrayLength(env,rgba)<need) return JNI_FALSE;
+    int slot=-1; for(int i=0;i<MAX_BITMAPS;i++) if(g_bitmaps[i].used&&g_bitmaps[i].spriteId==spriteId&&g_bitmaps[i].frame==frame){slot=i;break;}
+    if(slot<0) for(int i=0;i<MAX_BITMAPS;i++) if(!g_bitmaps[i].used){slot=i;break;} if(slot<0) return JNI_FALSE;
+    uint8_t *copy=(uint8_t*)malloc(need); if(!copy) return JNI_FALSE; (*env)->GetByteArrayRegion(env,rgba,0,(jsize)need,(jbyte*)copy);
+    free(g_bitmaps[slot].rgba); g_bitmaps[slot]=(NativeBitmap){1,spriteId,frame,width,height,copy,need}; return JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -617,10 +722,10 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
                     int px = ix + x;
                     if (px < 0 || px >= (int)info.width) continue;
                     uint8_t *dst = rgba + (py * (int)info.width + px) * 4;
-                    dst[0] = (uint8_t)((inst->objectId * 67 + 100) % 256);
-                    dst[1] = (uint8_t)((inst->objectId * 131 + 150) % 256);
-                    dst[2] = (uint8_t)((inst->objectId * 193 + 200) % 256);
-                    dst[3] = 255;
+                    const NativeBitmap *bm=NULL;
+                    for(int bi=0;bi<MAX_BITMAPS;bi++) if(g_bitmaps[bi].used&&g_bitmaps[bi].spriteId==inst->spriteId&&g_bitmaps[bi].frame==0){bm=&g_bitmaps[bi];break;}
+                    if(bm && x<bm->width && y<bm->height){const uint8_t *src=bm->rgba+((size_t)y*(size_t)bm->width+(size_t)x)*4u;dst[0]=src[0];dst[1]=src[1];dst[2]=src[2];dst[3]=src[3];}
+                    else { dst[0]=(uint8_t)((inst->objectId*67+100)%256); dst[1]=(uint8_t)((inst->objectId*131+150)%256); dst[2]=(uint8_t)((inst->objectId*193+200)%256); dst[3]=255; }
                 }
             }
         }
@@ -683,7 +788,9 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(JNIEnv *env, j
                 end--;
             }
             double val = eval_gml_simple(&val_str);
-            if (!strcmp(var_name, "x")) target->x = (float)val;
+            int alarm_index = -1;
+            if (sscanf(var_name, "alarm[%d]", &alarm_index) == 1 && alarm_index >= 0 && alarm_index < 12) target->alarms[alarm_index] = (int)val;
+            else if (!strcmp(var_name, "x")) target->x = (float)val;
             else if (!strcmp(var_name, "y")) target->y = (float)val;
             else if (!strcmp(var_name, "vx") || !strcmp(var_name, "hspeed")) target->vx = (float)val;
             else if (!strcmp(var_name, "vy") || !strcmp(var_name, "vspeed")) target->vy = (float)val;
@@ -699,21 +806,21 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(JNIEnv *env, j
 
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeConsumeSoundCommands(JNIEnv *env, jclass clazz) {
-    if (g_sound_command_count == 0) {
-        return (*env)->NewStringUTF(env, "[]");
-    }
     char buf[1024];
     int offset = snprintf(buf, sizeof(buf), "[");
-    for (int i = 0; i < g_sound_command_count; i++) {
-        const NativeSoundCmd *cmd = &g_sound_commands[i];
+    int i = 0;
+    int kind, soundId, loop, prio;
+    float volume;
+    while (i < MAX_SOUND_COMMANDS &&
+           gm82_dequeue_sound_command(&kind, &soundId, &loop, &prio, &volume)) {
         int w = snprintf(buf + offset, sizeof(buf) - offset,
             "%s[%d,%d,%d,%d,%.2f]",
             (i > 0) ? "," : "",
-            cmd->kind, cmd->soundId, cmd->loop, cmd->prio, cmd->volume);
+            kind, soundId, loop, prio, volume);
         if (w > 0 && offset + w < (int)sizeof(buf) - 2) offset += w;
+        i++;
     }
     snprintf(buf + offset, sizeof(buf) - offset, "]");
-    g_sound_command_count = 0;
     return (*env)->NewStringUTF(env, buf);
 }
 
@@ -739,26 +846,38 @@ Java_com_normaker_nativefull_MainActivity_nativeExportNorJson(JNIEnv *env, jclas
     return ok;
 }
 
+static char *jni_dup_string(JNIEnv *env, jstring value) {
+    if (!value) return NULL;
+    const char *raw = (*env)->GetStringUTFChars(env, value, NULL);
+    if (!raw) return NULL;
+    char *copy = strdup(raw);
+    (*env)->ReleaseStringUTFChars(env, value, raw);
+    return copy;
+}
 JNIEXPORT jint JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeImportGmxGmz(JNIEnv *env, jclass clazz, jstring path, jstring outputDir) {
-    return 1;
+    char *p = jni_dup_string(env, path), *o = jni_dup_string(env, outputDir);
+    double result = (p && o) ? nor_import_gmx_gmz_native(p, o) : 0.0;
+    free(p); free(o); return (jint)result;
 }
-
 JNIEXPORT jint JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeExportGmxGmz(JNIEnv *env, jclass clazz, jstring sourceDir, jstring outputPath, jstring kind) {
-    return 1;
+    char *s = jni_dup_string(env, sourceDir), *o = jni_dup_string(env, outputPath), *k = jni_dup_string(env, kind);
+    double result = (s && o && k) ? nor_export_gmx_gmz_native(s, o, k) : 0.0;
+    free(s); free(o); free(k); return (jint)result;
 }
-
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeExportGmkRaw(JNIEnv *env, jclass clazz, jstring sourcePath, jstring outputPath) {
-    return JNI_TRUE;
+    char *s = jni_dup_string(env, sourcePath), *o = jni_dup_string(env, outputPath);
+    double result = (s && o) ? nor_export_gmk_raw_native(s, o) : 0.0;
+    free(s); free(o); return result != 0.0 ? JNI_TRUE : JNI_FALSE;
 }
-
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeExportGmxSemantic(JNIEnv *env, jclass clazz, jstring sourceDir, jstring outputDir, jstring projectName) {
-    return JNI_TRUE;
+    char *s = jni_dup_string(env, sourceDir), *o = jni_dup_string(env, outputDir), *n = jni_dup_string(env, projectName);
+    double result = (s && o && n) ? nor_export_gmx_semantic_native(s, o, n) : 0.0;
+    free(s); free(o); free(n); return result != 0.0 ? JNI_TRUE : JNI_FALSE;
 }
-
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeCoreIdentity(JNIEnv *env, jclass clazz) {
     return (*env)->NewStringUTF(env, "NOR Maker 8.2 Native Engine (Arm64/x86/v7a)");
@@ -797,16 +916,44 @@ Java_com_normaker_nativefull_MainActivity_nativeGmkHeaderJson(JNIEnv *env, jclas
     return (*env)->NewStringUTF(env, buf);
 }
 
+static int scan_gmk_zlib(const uint8_t *data, size_t len, char *out, size_t cap, int array_only) {
+    int count=0, pos=0;
+    if (array_only) pos += snprintf(out+pos, cap-(size_t)pos, "[");
+    else pos += snprintf(out+pos, cap-(size_t)pos, "{\"ok\":true,\"bytes\":%zu,\"chunks\":[", len);
+    for (size_t i=12; i+2<len && count<512; i++) {
+        if (data[i]!=0x78 || !(data[i+1]==0x01 || data[i+1]==0x5e || data[i+1]==0x9c || data[i+1]==0xda)) continue;
+        z_stream zs; memset(&zs,0,sizeof(zs)); if (inflateInit(&zs)!=Z_OK) break;
+        zs.next_in=(Bytef*)(data+i); zs.avail_in=(uInt)((len-i)>0xffffffffu?0xffffffffu:(len-i));
+        uint8_t scratch[65536], prefix[80]; size_t prefix_n=0; int ret;
+        do { zs.next_out=scratch; zs.avail_out=sizeof(scratch); ret=inflate(&zs,Z_NO_FLUSH); size_t produced=sizeof(scratch)-zs.avail_out; if(produced && prefix_n<sizeof(prefix)){size_t take=produced; if(take>sizeof(prefix)-prefix_n) take=sizeof(prefix)-prefix_n; memcpy(prefix+prefix_n,scratch,take); prefix_n+=take;} } while(ret==Z_OK);
+        if(ret==Z_STREAM_END && zs.total_in>2) {
+            size_t used=(size_t)zs.total_in, decoded=(size_t)zs.total_out; const char *kind="zlib_payload", *confidence="low"; char name[65]={0};
+            if(prefix_n>=8){int32_t version=0,n=0;memcpy(&version,prefix,4);memcpy(&n,prefix+4,4);if(version==1&&n>=1&&n<=64&&(size_t)(8+n)<=prefix_n){int ok=1;for(int q=0;q<n;q++)if(prefix[8+q]<32||prefix[8+q]>126)ok=0;if(ok){kind="named_v1_resource";confidence="high";memcpy(name,prefix+8,(size_t)n);name[n]=0;}}else if(version==1&&n==0){kind="container_v1";confidence="medium";}}
+            if(name[0]) pos += snprintf(out+pos,cap-(size_t)pos,"%s{\"offset\":%zu,\"compressed\":%zu,\"decompressed\":%zu,\"kind\":\"%s\",\"confidence\":\"%s\",\"name\":\"%s\"}",count?",":"",i,used,decoded,kind,confidence,name);
+            else pos += snprintf(out+pos,cap-(size_t)pos,"%s{\"offset\":%zu,\"compressed\":%zu,\"decompressed\":%zu,\"kind\":\"%s\",\"confidence\":\"%s\"}",count?",":"",i,used,decoded,kind,confidence);
+            count++; i += used-1;
+        }
+        inflateEnd(&zs); if((size_t)pos>=cap-512) break;
+    }
+    if(array_only) snprintf(out+pos,cap-(size_t)pos,"]"); else snprintf(out+pos,cap-(size_t)pos,"],\"count\":%d}",count); return count;
+}
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeGmkLayoutJson(JNIEnv *env, jclass clazz, jbyteArray bytes) {
-    return (*env)->NewStringUTF(env, "{\"chunks\":[],\"count\":0}");
+    if(!bytes) return (*env)->NewStringUTF(env,"{\"ok\":false,\"error\":\"null_buffer\"}");
+    jsize len=(*env)->GetArrayLength(env,bytes); jbyte *data=(*env)->GetByteArrayElements(env,bytes,NULL);
+    if(!data) return (*env)->NewStringUTF(env,"{\"ok\":false,\"error\":\"memory\"}");
+    char *json=(char*)calloc(1,65536); if(!json){(*env)->ReleaseByteArrayElements(env,bytes,data,JNI_ABORT);return (*env)->NewStringUTF(env,"{\"ok\":false,\"error\":\"alloc\"}");}
+    scan_gmk_zlib((const uint8_t*)data,(size_t)len,json,65536,0); (*env)->ReleaseByteArrayElements(env,bytes,data,JNI_ABORT);
+    jstring result=(*env)->NewStringUTF(env,json); free(json); return result;
 }
-
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeGmkChunkInventory(JNIEnv *env, jclass clazz, jbyteArray bytes) {
-    return (*env)->NewStringUTF(env, "[]");
+    if(!bytes) return (*env)->NewStringUTF(env,"[]");
+    jsize len=(*env)->GetArrayLength(env,bytes); jbyte *data=(*env)->GetByteArrayElements(env,bytes,NULL); if(!data) return (*env)->NewStringUTF(env,"[]");
+    char *json=(char*)calloc(1,65536); if(!json){(*env)->ReleaseByteArrayElements(env,bytes,data,JNI_ABORT);return (*env)->NewStringUTF(env,"[]");}
+    scan_gmk_zlib((const uint8_t*)data,(size_t)len,json,65536,1); (*env)->ReleaseByteArrayElements(env,bytes,data,JNI_ABORT);
+    jstring result=(*env)->NewStringUTF(env,json); free(json); return result;
 }
-
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeGmkResourceManifest(JNIEnv *env, jclass clazz, jbyteArray bytes) {
     if (!bytes) return (*env)->NewStringUTF(env, "{\"resources\":[],\"count\":0}");
@@ -910,6 +1057,7 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     int n_bg = gm82_decode_backgrounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_bgs);
     int n_obj = gm82_decode_objects_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_objs);
     int n_rm = gm82_decode_rooms_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_rooms);
+    register_decoded_assets(&g_engine_sprites, &g_engine_bgs, &g_engine_objs);
     gm82_actions_scan_gmk((const uint8_t *)data, (size_t)len, &g_engine_actions);
     memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
     gm82_decode_scripts_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_scripts);
@@ -940,8 +1088,8 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
 
     char buf[512];
     snprintf(buf, sizeof(buf),
-        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"complete\":%s}",
-        n_spr, n_bg, n_obj, n_rm, (n_spr > 0 && n_rm > 0) ? "true" : "false");
+        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
+        n_spr, n_bg, n_obj, n_rm, g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
 
     return (*env)->NewStringUTF(env, buf);
 }
@@ -1000,27 +1148,44 @@ Java_com_normaker_nativefull_MainActivity_nativeCodeDestroy(JNIEnv *env, jclass 
 
 JNIEXPORT jint JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeCodeExecute(JNIEnv *env, jclass clazz, jint instanceId, jint codeId) {
-    return 0;
+    for(int i=0;i<MAX_CODES;i++) if(g_codes[i].in_use&&g_codes[i].id==codeId&&g_codes[i].source){
+        jstring src=(*env)->NewStringUTF(env,g_codes[i].source); if(!src) return 0;
+        jboolean ok=Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(env,clazz,instanceId,src); (*env)->DeleteLocalRef(env,src); return ok?1:0;
+    } return 0;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeExportRom(JNIEnv *env, jclass clazz, jstring title, jstring outputPath, jint kind) {
-    return JNI_TRUE;
+    char *t = jni_dup_string(env, title), *o = jni_dup_string(env, outputPath);
+    double result = 0.0;
+    if (t && o) {
+        if (kind == 1) result = nor_export_nes_native(t, o);
+        else if (kind == 2) result = nor_export_gbc_native(t, o);
+        else if (kind == 3) result = nor_export_gba_native(t, o);
+        else if (kind == 4) result = nor_export_pnor_native(t, o);
+        else if (kind == 5) result = nor_export_nor_native(t, o);
+    }
+    free(t); free(o); return result != 0.0 ? JNI_TRUE : JNI_FALSE;
 }
-
 JNIEXPORT jint JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeDetectRom(JNIEnv *env, jclass clazz, jstring path) {
-    return 0;
+    char *p = jni_dup_string(env, path);
+    double result = p ? nor_import_format_native(p) : 0.0;
+    free(p); return (jint)result;
 }
-
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeValidateRom(JNIEnv *env, jclass clazz, jstring path, jint kind) {
-    return JNI_TRUE;
+    char *p = jni_dup_string(env, path);
+    double result = p ? nor_validate_rom_native(p, (double)kind) : 0.0;
+    free(p); return result != 0.0 ? JNI_TRUE : JNI_FALSE;
 }
-
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeClearResourceRegistry(JNIEnv *env, jclass clazz) {
+    free_native_bitmaps();
     g_resource_count = 0;
+    g_object_count = 0;
+    memset(g_resources, 0, sizeof(g_resources));
+    memset(g_objects, 0, sizeof(g_objects));
 }
 
 JNIEXPORT jint JNICALL
