@@ -24,3 +24,5 @@ NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/build_host/
 test_save.dat
 __pycache__/
 *.py[cod]
+app/.cxx/
+test_save.dat

@@ -125,7 +125,7 @@ gcc -O2 -I"$INC" -I"$CPP" -o "$ROOT/build_host/pipeline_min" \
   "$SRC/gm82_actions.c" "$SRC/gm82_view.c" "$SRC/gm82_path.c" \
   "$SRC/gm82_timeline.c" "$SRC/gm82_script.c" \
   "$SRC/gm82_particles.c" "$SRC/gm82_mp_grid.c" \
-  "$SRC/gm82_sound_runtime.c" "$SRC/gm82_soft_render.c" \
+  "$SRC/gm82_arena.c" "$SRC/gm82_sound_runtime.c" "$SRC/gm82_soft_render.c" \
   "$SRC/gm82_sprite_decode.c" "$SRC/gm82_background_decode.c" \
   "$SRC/gm82_object_room_decode.c" -lz -lm
 
