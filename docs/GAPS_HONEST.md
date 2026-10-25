@@ -1,31 +1,34 @@
-# GAPS_HONEST — Nr.mk.02 (2026-10-25)
+# GAPS_HONEST — Nr.mk.02 (2026-10-26)
 
-No invented percentages.
+No invented “100% of all GMK”. Acceptance = checklist cells on named targets.
 
-## Closed Items on Main
+## CLOSED on main (code + host evidence where noted)
 
-### GMK Resource Decoding & Materialization — CLOSED
-- Live files: `app/src/main/cpp/src/gm82_gmk_reader.c`, `gm82_sprite_decode.c`, `gm82_background_decode.c`, `gm82_object_room_decode.c`, `gm82_materialize.c`
-- Verification: `tools/run_host_pipeline.sh` decodes sprites, backgrounds, objects, and rooms for all sample GMKs (`mario_bros`, `plataformas`, `shooter`, `zelda`).
+| Area | Evidence |
+|------|----------|
+| DnD args[8]/str_args + execute_named | `gm82_actions.c` |
+| String VM API | `gm82_gml_string_vm.c` |
+| Event order + deferred destroy + arena | `gm82_runtime.c` / `gm82_arena.*` |
+| Input + motion/collision path | `gm82_input.c` / runtime step |
+| Surfaces soft + nest/copy | `gm82_gml_builtins.c` |
+| with() GM8 ids + id snapshot | `gm82_gml_eval.c` |
+| Soft audio mixer + host_mix | `gm82_audio_mixer.c` / builtins |
+| Soft FBO | `gm82_gles.c` |
+| Materialize retain objects/scripts | `gm82_materialize_get_*` |
+| JNI bind prefers materialize objects | `gm82_jni_java_bridge.c` |
+| Host pipeline samples | `tools/run_host_pipeline.sh` → **ok=4 fail=0** |
 
-### DnD Action Engine & Argument Harvesting — CLOSED
-- Live files: `app/src/main/cpp/src/gm82_actions.c`, `app/src/main/cpp/include/gm82_actions.h`
-- Verification: Executable tests pass in `run_full_verification.py` (Bounce & Wrap actions) and `daily_audit_runner.py` (78/78 actions mapped).
+## OPEN (device / richer assets — not mystery phases)
 
-### GML Evaluation & String VM — CLOSED
-- Live files: `app/src/main/cpp/src/gm82_gml_eval.c`, `gm82_gml_builtins.c`, `gm82_gml_string_vm.c`
-- Verification: `test_all_games_inlined.js` (39/39 GML scripts verified) and `run_full_verification.py`.
+| ID | Gap | Unblocks |
+|----|-----|----------|
+| O1 | Device APK logcat for samples/cloud | L0–L3 on phone |
+| O2 | Complex GMK full event/script materialize | Non-black complex games |
+| O3 | Real sound PCM + OpenSL | Audible audio |
+| O4 | Hardware GLES FBO | Advanced surfaces |
+| O5 | FAIL-builtin batches from real logs | Remaining GML symbols |
+| O6 | REA/DLL | Only if user provides DLL |
 
-### Software & GLES Drawing Batching — CLOSED
-- Live files: `app/src/main/cpp/src/gm82_soft_render.c`, `gm82_gles.c`, `gm82_gl_textures.c`
-- Verification: Soft render blitting non-black pixels (`DRAW ok=1 lit > 0`) on all sample GMKs in `docs/HOST_PIPELINE_2026-10-25.md`.
-
-### Audio Engine Non-Crash Queue — CLOSED
-- Live files: `app/src/main/cpp/src/gm82_audio_mixer.c`, `gm82_sound_runtime.c`, `gm82_opensles.c`
-- Verification: Low-Latency Audio Ring Queue passes in `run_full_verification.py` and silent non-crash during host runtime loops.
-
-## Open / Deferred Items
-
-| Item | Status / Reason |
-|------|-----------------|
-| REA Static Decompilation Analysis | Deferred: GM82Core.dll / GM82Dx9.dll binaries are not present in repository (documented in `docs/REA_SKIPPED.md`). |
+## Score rule
+`docs/ACCEPTANCE_SCORE_*.md` = PASS cells / TOTAL cells on listed games.
+Host ok=4 is not “95% all games”.

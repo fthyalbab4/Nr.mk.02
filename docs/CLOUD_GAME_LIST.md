@@ -1,17 +1,17 @@
-# Cloud / Sample Game Acceptance List
+# Target games
 
-Criterion per game:
-- [x] app opens (no instant crash)
-- [x] first room not pure black (something drawn OR explicit error UI)
-- [x] primary move/input works
-- [x] room change OR game_restart works
-- [x] sound_play does not crash (silent OK)
+## Host samples (app/src/main/assets/www/samples/)
+| # | Name | Path | Host pipeline | Device checklist |
+|---|------|------|---------------|------------------|
+| 1 | mario_bros | samples/mario_bros.gmk | ok (2026-10-26) | pending device |
+| 2 | plataformas | samples/plataformas.gmk | ok | pending device |
+| 3 | shooter | samples/shooter.gmk | ok | pending device |
+| 4 | zelda | samples/zelda.gmk | ok | pending device |
 
-| # | Name | Path / Source | Status | Notes |
-|---|------|---------------|--------|-------|
-| 1 | Mario Bros | `app/src/main/assets/www/samples/mario_bros.gmk` | PASS | 5/5 criteria passed |
-| 2 | Plataformas | `app/src/main/assets/www/samples/plataformas.gmk` | PASS | 5/5 criteria passed |
-| 3 | Shooter | `app/src/main/assets/www/samples/shooter.gmk` | PASS | 5/5 criteria passed |
-| 4 | Zelda | `app/src/main/assets/www/samples/zelda.gmk` | PASS | 5/5 criteria passed |
+## Cloud / user games
+| # | Name | Source | Status |
+|---|------|--------|--------|
+| 5 | _(user)_ | | pending |
+| 6 | _(user)_ | | pending |
 
-All status values are backed by host pipeline logs in `docs/HOST_PIPELINE_2026-10-25.md` and individual run reports `docs/CLOUD_RUN_<game>_2026-10-25.md`.
+Checklist: open / not black / input / room|restart / sound no-crash.
