@@ -52,3 +52,14 @@ void gm82_audio_mixer_mix_s16(gm82_audio_mixer *mixer, int16_t *out_pcm, size_t 
         out_pcm[f] = (int16_t)mixed_sample;
     }
 }
+
+void gm82_audio_mixer_stop_all(gm82_audio_mixer *mixer) {
+    if (!mixer) return;
+    for (int i = 0; i < GM82_MIXER_CHANNELS; i++)
+        mixer->channels[i].active = 0;
+}
+
+int gm82_audio_mixer_is_channel_active(gm82_audio_mixer *mixer, int ch) {
+    if (!mixer || ch < 0 || ch >= GM82_MIXER_CHANNELS) return 0;
+    return mixer->channels[ch].active;
+}
