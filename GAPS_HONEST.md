@@ -1,15 +1,17 @@
 # GAPS_HONEST
 
-## Host scope ≈ **80%** (scorecard in `docs/HOST_COVERAGE_METRIC.md`)
+## Host scope ≈ **85%** (scorecard in `docs/HOST_COVERAGE_METRIC.md`)
 Not “every cloud GMK = Windows”. Host-only, measurable weights.
 
 ### On main now
 - String path, image_* draw, DnD map
 - **Real** `action_if_score/lives/health/dice/number`
 - **if/else skip** in `fire_create` / `fire_step`
-- auto-materialize commit with APPLY_DND_IF_ELSE
+- `action_sleep` mapped with standard `nanosleep` execution
+- Perfect 3-way C mirror synchronization (`app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
+- `.gitignore` updated to ignore Gradle/NDK build outputs (`.cxx/`, `.externalNativeBuild/`)
 
-### Host still open (to push past 80 / harden)
+### Host still open (to push past 85 / harden)
 - GML edge: with(), surfaces, typed strings broader
 - action_if_variable / collision ifs
 - object_index 1:1 when FAIL samples exist

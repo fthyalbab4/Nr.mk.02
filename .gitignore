@@ -14,6 +14,10 @@ coverage/
 Nor-maker-7-main/
 extracted_NorMaker-0_1/
 .gradle/
+.cxx/
+app/.cxx/
+.externalNativeBuild/
+app/build/
 *.o
 *.so
 NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/libgm82_host.so
