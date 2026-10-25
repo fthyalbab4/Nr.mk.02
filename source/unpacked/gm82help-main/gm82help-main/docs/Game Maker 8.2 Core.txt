@@ -1,0 +1,31 @@
+
+    Game Maker 8.2 Core
+    ===================
+    version 1.6
+
+  made by renex
+  hacking by Floogle
+  contributions by
+    elpoep, cam900, DFelipehDev, TsukiruP, Verve, Adamcake, Lovey847
+  high resolution timer by Kyle Smith
+  various geometry scripts by GMLScripts.com
+
+
+--------------------------------------------------------------------------------
+
+  Core, also known as gm82core, is a quality of life improvement extension for
+  Game Maker 8.2. It adds a number of helper functions, precise timing,
+  globalvars and utility constants, geometry and math, input, registry, and
+  also some functions imported from studio. 
+  
+  Core is also required for running most of
+  the other extensions in the GM 8.2 family. 
+  
+  Created by renex and Floogle. Contains contributions by Lovey01, cam900,
+  Adamcake, includes parts of High Resolution Timer 2 by Kyle Smith, and
+  contains code from GMLScripts.com - check the License for usage. 
+  
+  More detailed usage information is included in the Johnny Panel.
+
+
+--------------------------------------------------------------------------------

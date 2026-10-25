@@ -1,0 +1,61 @@
++util
+	|rect
+	|clickrect
+	|timestamp_nicer
+	|load_index
+	|delete_directory
+	|delete_file
+	|cleanup_loadingbar
+	|filename_valid
+	|invalid_variable_name
+	|valid_variable_name
+	|rename_asset
+	|wrong_case
+	|remove_plural
+	|rename_file
+	|get_sound_extension
+	|check_file_case
+	|ds_list_search_uncase
++theming
+	|theme_init
+	|theme_apply
+	|theme_load
+	|theme_save
+	|draw_button_ext
++io
+	|load_recent
+	|add_recent
+	|write_recent
+	|load_extensions
+	+subroutines
+		|gex_generate_table
+		|gex_decrypt_part
+		|load_compiled_extension
+		|load_builtin_help
+		|parse_johnny
+		|clear_func_list
+		|save_recent_meta
+		|check_tree_vs_index
+	|find_git
++ui
+	|button_actions
+	|button_held
+	|button_draw
+	|textfield_activate
+	|textfield_actions
+	|update_window
+	|change_currec
+	|drawtooltip
+	|git_radio_handler
+	|ui_integrated_styler
++actions
+	|edit_game
+	|run_game
+	|compile_game
+	|clean_game
+	|browse_game
+	|git_game
+|globalvars
+|create
+|createui
+|drawui

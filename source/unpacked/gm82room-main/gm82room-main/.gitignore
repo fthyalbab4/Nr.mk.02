@@ -1,0 +1,5 @@
+cache
+game_errors.log
+*.exe
+*.dll
+desktop.ini

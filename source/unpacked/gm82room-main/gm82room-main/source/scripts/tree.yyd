@@ -1,0 +1,282 @@
+|renex_notes
++util
+	|rect
+	|crc_init
+	|crc32
+	|num_selected
+	|draw_set_color_sel
+	|draw_loader
+	|drawtooltip
+	|drawtooltip_tilepanel
+	|file_text_open_read_safe
+	|file_text_open_append_safe
+	|draw_button_ext
+	|draw_text_outline
+	|message
+	|point_in_quad
+	|draw_quad_outline
+	|mouse_check_modal_pressed
+	|mouse_check_modal
+	|call_nmenu
+	|string_antivirus
+	|generate_path_model
+	|ds_map_save_ini
+	|create_menu_bitmap
+	|string_better_lim
+	|get_new_path_name
+	|set_interpolation
+	|bresenham
++file
+	|gensavecode
+	|parsereal
+	|get_sprite
+	|get_background
+	|get_background_tiles
+	|get_object
+	|get_object_parent
+	|file_text_read_list
+	|edit_creation_code
+	|external_code_editor
+	+resource tree
+		|load_sprite_tree
+		|load_sound_tree
+		|load_background_tree
+		|load_path_tree
+		|load_script_tree
+		|load_font_tree
+		|load_timeline_tree
+		|load_object_tree
+		|load_room_tree
+		|load_datafiles
+		|load_constants
++chunks
+	|chunk_export
+	|chunk_import
++undo
+	|undo_initialize
+	|begin_undo
+	|add_undo
+	|undo_global
+	|undo_globalvec
+	|add_undo_instance
+	|add_undo_instance_props
+	|add_undo_tile
+	|add_undo_tile_props
+	|push_undo
+	|pop_undo
+	|update_instance_memory
+	|do_change_undo
++preferences
+	|write_preferences
+	|read_preferences
+	|show_prefs
+	|load_palette
++gm82live
+	|live_start
+	|live_send_room_data
+	|live_listen
+|globalvars
+|create
++save/load
+	|load_room
+	|save_room
+	|load_paths
+	|save_paths
+	|save_backgrounds
+	|load_fonts
+	|delete_backups
+	|parse_code_into_flags
+	|parse_flags_into_code
+	|load_jtooldata
+	|load_all_jtool_objs
+	|load_thumbs
+	|loadthumb
+	|load_jtool_table
+	|load_tool_menu
+	|load_plugin_menu
+|createui
++createui
+	|createui_main
+	|createui_object
+	|createui_tiles
+	|createui_background
+	|createui_views
+	|createui_settings
+	|createui_paths
+|drawui
++drawui
+	|draw_backgrounds
+	|draw_paths
+	|draw_knob
+	|drawui_object_pre
+	|drawui_tile_pre
+	|drawui_view_pre
+	|drawui_path_pre
+	|drawui_settings_pre
+	|drawui_statusbar
+	|drawui_object_post
+	|drawui_tile_post
+	|drawui_bg_post
+	|drawui_view_post
+	|drawui_settings_post
+	|drawui_top_layer
+	|drawui_path
+	|draw_tile_panel
+	|draw_instancepanel
+|step
++step
+	|step_windowzoom
+	|step_hotkeys
+	|step_clipboard
+	|step_leftmouse
+	+leftmouse
+		|step_painting
+		|objects_leftclick
+		|tiles_leftclick
+		|backgrounds_leftclick
+		|views_leftclick
+		|settings_leftclick
+		|paths_leftclick
+	|step_rightmouse
+	|step_object
+	|step_tile
+	|step_tile_panel
+	|step_view
+	|step_settings
+	|step_contextmenu
+	|step_path
+|endstep
++update
+	|update_inspector
+	|clear_inspector
+	|update_view
+	|update_backgroundpanel
+	|update_tilepanel
+	|update_viewpanel
+	|update_settingspanel
+	|update_undo_button
+	|update_newtilepanel
+	|update_instancepanel
+|change_mode
++buttons
+	|button_actions
+	|button_held
+	|button_draw
+	|textfield_activate
+	|textfield_actions
+	|textfield_set
+	|button_rightactions
+	|textfield_active
++tools
+	+tool menu
+		|cement_instances
+		|cleanup_instances
+		|parsecode_instances
+		|replace_instances
+		|load_jmap
+		|subdivide_instances
+	|load_reference
+	|draw_reference
+	|search_for_objects
+	|search_for_backgrounds
+	|room_shift
+	|get_color_ext
+	|check_colorpicker_undo
+	|test_run
+	|create_french_fry
+	|clear_palette
+	|project_modified
+	|update_precise_hitbox
++instances
+	|get_uid
+	|set_uid
++tiles
+	|add_tile_layer
+	|dupe_tile_layer
+	|del_tile_layer
+	|change_tile_layer
++selection
+	|deselect
+	|focus_object
+	|focus_tile
+	|start_dragging
+	|do_dragging
+	|start_selection_resize
+	|do_selection_resize
+	|update_selection_bounds
+	|draw_resize_handle
+	|reduce_collision
+	|restore_collision
++fields
+	+resource getters
+		|Field
+		|FieldDefined
+		|Font
+		|Path
+		|Sprite
+		|Background
+		|Shader
+		|ShaderFromBase64
+		|ShaderFromPack
+		+shim getter armageddon
+			|object_get_depth
+			|object_get_mask
+			|object_get_name
+			|object_get_parent
+			|object_get_persistent
+			|object_get_solid
+			|object_get_sprite
+			|object_get_visible
+	|init_instance_fields
+	|load_object_fields
+	|is_field_copypaste_safe
+	|invalid_variable_name
+	|invalid_field_type
+	|edit_instance_fields
+	|draw_instance_fields
+	|preview_instance_fields
+	|parse_code_into_fields
+	|parse_fields_into_code
+	|set_instance_field
+	|set_field_by_type
+	|stringify
+	|destringify
+	|get_nth_token
+	|show_field_resource_menu
+	|draw_sprite_outline
+	|push_builtins
+	|pop_builtins
+	|disable_preview_fields
+	|set_hasfields
++theming
+	|theme_init
+	|theme_apply
+	|theme_load
+	|theme_save
++smart tiler
+	|init_autotiler_tables
+	|unpack_tilesmart_data
+	|change_tilesmart_mode
+	|draw_tilesmart_brush
+	|update_tilesmart_tiles
+	|save_tilemap_grid
+	|check_tilemap_complete
+	|find_smart_tile_at
+	|fill_tilesmart_copy
+	|tile_mode_name
+	|rebuild_autotiler_tree
+|begin_trim
+|end_trim
+|error_handler
+|select_path_point
+|set_objpal
+|delete_selected
+|fill_click_priority
++instancelist
+	|ilist_copy_many
+	|ilist_move_instances
+	|focus_view_around_selection
+|token_escape_commas
+|parse_constants_in_code
+|get_keyboard_string
+|clear_keyboard_string

@@ -1,0 +1,1303 @@
+{
+	"name": "Game Maker 8.2 glTF",
+	"folder": "gm82",
+	"version": "1.0",
+	"author": "Floogle && renex",
+	"date": "03/08/2025",
+	"license": "Free to use, also for commercial games.",
+	"description": "Part of the standard Game Maker 8.2 distribution. This extension allows you to load and render advanced GLTF models exported from blender, with PBR materials, animation, and bone deformation.",
+	"helpfile": "",
+	"hidden": false,
+	"dependencies": [
+		"Game Maker 8.2 Core",
+		"Game Maker 8.2 DirectX9",
+		"Game Maker 8.2 Buffer"
+	],
+	"files": [
+		{
+			"filename": "gm82gltf.dll",
+			"origname": "zig-out/bin/gm82gltf.dll",
+			"kind": 1,
+			"init": "",
+			"final": "__gltf_reset",
+			"functions": [
+				{
+					"name": "gltf_accessor_component_type",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_component_type(gltf,accessor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_accessor_copy",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_copy(gltf,accessor,address,size)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_accessor_normalized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_normalized(gltf,accessor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_accessor_pointer",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_pointer(gltf,accessor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_accessor_size",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_size(gltf,accessor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_accessor_stride",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_stride(gltf,accessor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_accessor_type",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_accessor_type(gltf,accessor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_animation_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_animation_count(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_animation_name",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_animation_name(gltf,animation)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_camera_aspect",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_camera_aspect(gltf,camera)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_camera_type",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_camera_type(gltf,camera)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_camera_yfov",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_camera_yfov(gltf,camera)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_camera_zfar",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_camera_zfar(gltf,camera)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_camera_znear",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_camera_znear(gltf,camera)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_get_animation",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_get_animation(gltf,animname)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_get_node",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_get_node(gltf,nodename)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_get_scene",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_get_scene(gltf,scenename)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_alpha_cutoff",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_alpha_cutoff(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_alpha_mode",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_alpha_mode(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_material_base_color_pointer",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_base_color_pointer(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_base_texcoord",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_base_texcoord(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_base_texture",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_base_texture(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_double_sided",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_double_sided(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_emissive_color_pointer",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_emissive_color_pointer(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_emissive_texcoord",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_emissive_texcoord(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_emissive_texture",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_emissive_texture(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_metalness",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_metalness(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_normal_scale",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_normal_scale(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_normal_texcoord",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_normal_texcoord(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_normal_texture",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_normal_texture(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_occlusion_strength",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_occlusion_strength(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_occlusion_texcoord",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_occlusion_texcoord(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_occlusion_texture",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_occlusion_texture(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_roughness",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_roughness(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_material_roughness_texture",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_material_roughness_texture(gltf,material)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_count(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_attribute_accessor",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_attribute_accessor(gltf,mesh,primitive,attribute)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_attribute_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_attribute_count(gltf,mesh,primitive)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_attribute_semantic",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_attribute_semantic(gltf,mesh,primitive,attribute)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_mesh_primitive_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_count(gltf,mesh)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_indices_accessor",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_indices_accessor(gltf,mesh,primitive)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_material",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_material(gltf,mesh,primitive)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_mode",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_mode(gltf,mesh,primitive)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_morph",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_morph(gltf,mesh,primitive,morph,attribute)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_morph_attribute_accessor",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_morph_attribute_accessor(gltf,mesh,primitive,morph,attribute)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_morph_attribute_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_morph_attribute_count(gltf,mesh,primitive,morph)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_mesh_primitive_morph_attribute_semantic",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_morph_attribute_semantic(gltf,mesh,primitive,morph,attribute)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_mesh_primitive_morph_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_mesh_primitive_morph_count(gltf,mesh,primitive)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_camera",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_camera(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_child",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_child(gltf,node,i)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_child_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_child_count(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_count(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_matrix_pointer",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_matrix_pointer(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_mesh",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_mesh(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_name",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_name(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_node_parent",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_parent(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_rw",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_rw(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_rx",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_rx(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_ry",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_ry(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_rz",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_rz(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_skin",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_skin(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_sorted_morph",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_sorted_morph(gltf,node,morph)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_sorted_weights_spaced_pointer",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_sorted_weights_spaced_pointer(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_sx",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_sx(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_sy",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_sy(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_sz",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_sz(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_tx",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_tx(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_ty",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_ty(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_tz",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_tz(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_node_weight_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_node_weight_count(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_scene",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_scene(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_scene_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_scene_count(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_scene_name",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_scene_name(gltf,scene)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_scene_node",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_scene_node(gltf,scene,i)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_scene_node_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_scene_node_count(gltf,scene)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_skin_joints",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_skin_joints(gltf,skin)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_skin_joint_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_skin_joint_count(gltf,skin)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_skin_skeleton",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_skin_skeleton(gltf,skin)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_copy",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_copy(gltf,texture,address,size)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_count(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_interpolation",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_interpolation(gltf,texture)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_save",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_save(gltf,texture,filename)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_size",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_size(gltf,texture)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_type",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_type(gltf,texture)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "gltf_texture_wrap_h",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_wrap_h(gltf,texture)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_texture_wrap_v",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "gltf_texture_wrap_v(gltf,texture)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_animate",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "__gltf_animate(gltf,animation,time)",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_animation_length",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "__gltf_animation_length(gltf,animation)",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_destroy",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "__gltf_destroy(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_load",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_reset",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "gm82gltf.gml",
+			"origname": "gm82gltf.gml",
+			"kind": 2,
+			"init": "__gltf_init",
+			"final": "",
+			"functions": [
+				{
+					"name": "gltf_animate",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_animate(gltf,animation,time)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_animation_length",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_animation_length(gltf,animation)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_draw_node",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_draw_node(gltf,node)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_draw_scene",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_draw_scene(gltf,scene)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_load",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_load(filename)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_destroy",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_destroy(gltf)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_set_environment_map",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_set_environment_map(texture)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gltf_use_shader",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gltf_use_shader([vertex,pixel])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_create_index_buffer",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_format_add",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_identify_meshless",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gltf_init",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "gltf_pixel.ps3",
+			"origname": "zig-out/pixel.ps3",
+			"kind": 4,
+			"init": "",
+			"final": "",
+			"functions": [],
+			"constants": []
+		},
+		{
+			"filename": "gltf_vertex.vs3",
+			"origname": "zig-out/vertex.vs3",
+			"kind": 4,
+			"init": "",
+			"final": "",
+			"functions": [],
+			"constants": []
+		},
+		{
+			"filename": "envmap.jpg",
+			"origname": "envmap.jpg",
+			"kind": 4,
+			"init": "",
+			"final": "",
+			"functions": [],
+			"constants": []
+		}
+	]
+}

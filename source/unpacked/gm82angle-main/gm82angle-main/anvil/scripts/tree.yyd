@@ -1,0 +1,43 @@
++util
+	|rect
+	|clickrect
+	|drawtooltip
+	|variable_name
++theming
+	|theme_init
+	|theme_apply
+	|theme_load
+	|theme_save
+	|draw_button_ext
++io
+	|cli_compile
+	|load_shader
+	|reload_shader
+	|edit_shader
+	|compile_shader
+	|compile_studio
+	|compile_shadertoy
+	|output_uniforms
+	|copy_uniforms
+	|pack_shader
+	|save_shader
+	|detect_texture_access_in_vs
+	|save_as
+	|clipboard_cleanup
++ui
+	|button_actions
+	|button_held
+	|button_draw
+	|textarea_set
+	|textarea_get
+	|textarea_draw
+	|textfield_activate
+	|textfield_actions
+	|textfield_set
+|globalvars
+|create
+|createui
+|drawui
+|update_window
+|copy_ps
+|copy_vs

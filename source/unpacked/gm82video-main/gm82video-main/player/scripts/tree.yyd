@@ -1,0 +1,9 @@
+|load_theme
+|draw_button_ext
+|fSeekStart
+|fPlay
+|fPause
+|fFast
+|fMute
+|format_time
+|load_and_play

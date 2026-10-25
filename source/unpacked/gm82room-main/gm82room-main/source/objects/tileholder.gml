@@ -1,0 +1,177 @@
+#define Create_0
+/*"/*'/**//* YYD ACTION
+lib_id=1
+action_id=603
+applies_to=self
+*/
+tile=noone
+tilesx=1
+tilesy=1
+blend=$ffffffff
+
+sel=0
+grab=0
+scaling=0
+modified=0
+selresize=0
+
+rothandx=-9999999
+rothandy=-9999999
+draghandx=-9999999
+draghandy=-9999999
+
+tilecount+=1
+
+post_brush_update=0
+#define Destroy_0
+/*"/*'/**//* YYD ACTION
+lib_id=1
+action_id=603
+applies_to=self
+*/
+if (selectt==id) {
+    clear_inspector()
+    selectt=noone
+}
+
+if (tile!=noone) {
+    tilecount-=1
+    tile_delete(tile)
+}
+
+ds_map_delete(uidmap,uid)
+
+if (bg==bg_background[tilebgpal]) {
+    u=floorto(x,gridx*autotiler_tree_size)
+    v=floorto(y,gridy*autotiler_tree_size)
+    name=string(u)+"_"+string(v)
+    if (ds_map_exists(autotiler_tree,name)) {
+        leaf=ds_map_find_value(autotiler_tree,name)
+        ds_grid_set(leaf,(x-u) div gridx,(y-v) div gridy,0)
+    }
+}
+#define Step_2
+/*"/*'/**//* YYD ACTION
+lib_id=1
+action_id=603
+applies_to=self
+*/
+if (sel) {
+    if (grab) {
+        do_dragging()
+        tile_set_position(tile,x,y)
+        if (selectt==id) update_inspector()
+    }
+    if (scaling) {
+        dx=global.mousex
+        dy=global.mousey
+
+        if (!keyboard_check(vk_alt)) {
+            dx=roundto(dx,gridx)
+            dy=roundto(dy,gridy)
+        }
+
+        dir=point_direction(x,y,dx,dy)
+        len=point_distance(x,y,dx,dy)
+
+        image_xscale=lengthdir_x(len,dir)
+        image_yscale=lengthdir_y(len,dir)
+
+        if (abs(image_xscale*tilew)<1) image_xscale=1
+        if (abs(image_yscale*tileh)<1) image_yscale=1
+
+        tilesx=image_xscale/tilew
+        tilesy=image_yscale/tileh
+
+        tile_set_scale(tile,tilesx,tilesy)
+
+        if (!direct_mbleft) {scaling=0 event_user(1) do_change_undo("scaling",0)}
+        update_inspector()
+    }
+    if (selresize) {
+        do_selection_resize()
+        tilesx=image_xscale/tilew
+        tilesy=image_yscale/tileh
+        tile_set_position(tile,x,y)
+        tile_set_scale(tile,tilesx,tilesy)
+    }
+}
+
+event_user(2)
+#define Other_10
+/*"/*'/**//* YYD ACTION
+lib_id=1
+action_id=603
+applies_to=self
+*/
+///draw selection handles
+
+d3d_transform_add_translation(-0.5,-0.5,0)
+draw_set_color_sel()
+
+draw_rectangle(bbox_left,bbox_top,bbox_right+1,bbox_bottom+1,1)
+draw_circle(x,y,4*zm,1)
+draw_line(x,y-4*zm,x,y+4*zm)
+draw_line(x-4*zm,y,x+4*zm,y)
+
+draghandx=x+image_xscale
+draghandy=y+image_yscale
+
+if (scaling) draw_line(x,y,draghandx,draghandy)
+draw_rectangle(draghandx-8*zm,draghandy-8*zm,draghandx+8*zm,draghandy+8*zm,1)
+draw_rectangle(draghandx-4*zm,draghandy-4*zm,draghandx+4*zm,draghandy+4*zm,1)
+
+draw_set_color($ffffff)
+draw_set_alpha(1)
+d3d_transform_set_identity()
+#define Other_11
+/*"/*'/**//* YYD ACTION
+lib_id=1
+action_id=603
+applies_to=self
+*/
+///sanitize scale
+
+if (abs(image_xscale*tilew)<1) image_xscale=1
+if (abs(image_yscale*tileh)<1) image_yscale=1
+
+tilesx=image_xscale/tilew
+tilesy=image_yscale/tileh
+
+x=floor(x)
+y=floor(y)
+
+tile_set_scale(tile,tilesx,tilesy)
+#define Other_12
+/*"/*'/**//* YYD ACTION
+lib_id=1
+action_id=603
+applies_to=self
+*/
+///post brush update
+if (post_brush_update) {
+    tile2[0]=find_smart_tile_at(x-gridx*0.5,y-gridy*0.5)
+    tile2[1]=find_smart_tile_at(x+gridx*0.5,y-gridy*0.5)
+    tile2[2]=find_smart_tile_at(x+gridx*1.5,y-gridy*0.5)
+    tile2[3]=find_smart_tile_at(x-gridx*0.5,y+gridy*0.5)
+    tile2[4]=find_smart_tile_at(x+gridx*1.5,y+gridy*0.5)
+    tile2[5]=find_smart_tile_at(x-gridx*0.5,y+gridy*1.5)
+    tile2[6]=find_smart_tile_at(x+gridx*0.5,y+gridy*1.5)
+    tile2[7]=find_smart_tile_at(x+gridx*1.5,y+gridy*1.5)
+
+    //table mode
+    byte=pack_bools(tile2[7],tile2[6],tile2[5],tile2[4],tile2[3],tile2[2],tile2[1],tile2[0])
+    index=autotiler_tables[bg_tilemode[tilebgpal],byte]
+    left=ds_grid_get(bg_tilemap[tilebgpal],index,0)
+    top=ds_grid_get(bg_tilemap[tilebgpal],index,1)
+
+    //variant calc
+    vu=ds_grid_get(bg_tilemap[tilebgpal],47,0)
+    vv=ds_grid_get(bg_tilemap[tilebgpal],47,1)
+    left=left+irandom(vu-1)*(Tilepanel.bgw/vu)
+    top=top+irandom(vv-1)*(Tilepanel.bgh/vv)
+
+    tile_set_region(tile,left,top,tilew,tileh)
+    modified=1
+    post_brush_update=0
+}

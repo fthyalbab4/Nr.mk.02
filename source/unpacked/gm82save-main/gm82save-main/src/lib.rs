@@ -1,0 +1,3045 @@
+#![allow(
+    static_mut_refs,
+    reason = "For a mostly single-threaded codebase, this is too much hassle. Just be careful in multi-threaded parts."
+)]
+#![allow(
+    unsafe_op_in_unsafe_fn,
+    reason = "Unsafe is practically implied here, no point in cluttering the codebase with unsafe blocks."
+)]
+
+#[cfg(not(all(windows, target_arch = "x86")))]
+compile_error!("this tool only works on windows 32-bit");
+
+mod asset;
+#[macro_use]
+mod delphi;
+mod code_form;
+mod compiler;
+mod events;
+mod font_render;
+mod ide;
+mod list;
+mod load;
+mod regular;
+mod save;
+mod save_exe;
+mod stub;
+
+use crate::{
+    delphi::{ExtractFileExt, TMenuItem, TTreeNode, UStr, UStrCopy},
+    ide::get_triggers,
+    load::UStrPtr,
+    regular::{extension_watcher::update_extensions, project_watcher},
+    save::GetAsset,
+    save_exe::GetAssetList,
+};
+use chashmap::CHashMap;
+use ide::AssetListTrait;
+use itertools::Itertools;
+use lazy_static::lazy_static;
+use rayon::prelude::*;
+use regex::Regex;
+use std::{
+    arch::{asm, naked_asm},
+    collections::{HashMap, HashSet},
+    ffi::{OsStr, c_void},
+    io::Write,
+    os::windows::process::CommandExt,
+    path::PathBuf,
+    ptr::{self, addr_of, addr_of_mut},
+    time::SystemTime,
+};
+
+#[derive(Debug)]
+pub enum Error {
+    IoError(std::io::Error),
+    FileIoError(std::io::Error, PathBuf),
+    DirIoError(std::io::Error, PathBuf),
+    PngDecodeError(PathBuf, png::DecodingError),
+    UnicodeError(String),
+    AssetNotFound(String, &'static str, String),
+    SyntaxError(PathBuf),
+    UnknownKey(PathBuf, String),
+    UnknownAction(u32, u32),
+    ParseIntError(std::num::ParseIntError),
+    ParseFloatError(std::num::ParseFloatError),
+    InvalidVersion(String),
+    DuplicateAsset(String),
+    DuplicateIncludedFile(String),
+    DuplicateTrigger(String),
+    BadAssetName(String, char),
+    BadIncludedFileName(String, char),
+    BadTriggerName(String, char),
+    OldGM82,
+    Other(String),
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn fmt_path(p: &PathBuf) -> impl std::fmt::Display + '_ {
+            let mut components = p.components();
+            for _ in 0..components.clone().count().saturating_sub(3) {
+                components.next();
+            }
+            components.as_path().display()
+        }
+        match self {
+            Self::IoError(e) => write!(f, "io error: {}", e),
+            Self::FileIoError(e, p) => write!(f, "io error in file {}: {}", fmt_path(p), e),
+            Self::DirIoError(e, p) => write!(f, "io error in directory {}: {}", fmt_path(p), e),
+            Self::PngDecodeError(p, e) => write!(f, "couldn't decode image {}: {}", fmt_path(p), e),
+            Self::UnicodeError(s) => write!(f, "couldn't encode {}", s),
+            Self::AssetNotFound(s, t, src) => write!(f, "couldn't find {} {} (from {})", t, s, src),
+            Self::SyntaxError(p) => write!(f, "syntax error in file {}", fmt_path(p)),
+            Self::UnknownKey(p, k) => write!(f, "unknown key in {}: {:?}", fmt_path(p), k),
+            Self::UnknownAction(lib_id, act_id) => write!(f, "unknown action {} in lib with id {}", act_id, lib_id),
+            Self::ParseIntError(e) => write!(f, "integer parse error: {}", e),
+            Self::ParseFloatError(e) => write!(f, "float parse error: {}", e),
+            Self::InvalidVersion(v) => write!(f, "invalid exe_version {}", v),
+            Self::DuplicateAsset(n) => write!(f, "multiple assets named {}", n),
+            Self::DuplicateIncludedFile(n) => write!(f, "multiple included files named {}", n),
+            Self::DuplicateTrigger(n) => write!(f, "multiple triggers named {}", n),
+            Self::BadAssetName(n, c) => {
+                if *c == '\0' {
+                    write!(f, "asset name \"{n}\" cannot be used as a Windows filename")
+                } else if *c == '.' || *c == ' ' {
+                    write!(f, "asset name \"{n}\" is illegal")
+                } else {
+                    write!(f, "asset name {n} may not contain character {c}")
+                }
+            },
+            Self::BadIncludedFileName(n, c) => {
+                if *c == '\0' {
+                    write!(f, "included file name \"{n}\" cannot be used as a Windows filename")
+                } else if *c == '.' || *c == ' ' {
+                    write!(f, "included file name \"{n}\" is illegal")
+                } else {
+                    write!(f, "included file name {n} may not contain character {c}")
+                }
+            },
+            Self::BadTriggerName(n, c) => {
+                if *c == '\0' {
+                    write!(f, "trigger name \"{n}\" cannot be used as a Windows filename")
+                } else if *c == '.' || *c == ' ' {
+                    write!(f, "trigger name \"{n}\" is illegal")
+                } else {
+                    write!(f, "trigger name {n} may not contain character {c}")
+                }
+            },
+            Self::OldGM82 => write!(f, "this project was made with a newer version of gm82save, please update"),
+            Self::Other(s) => write!(f, "other error: {}", s),
+        }
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::IoError(err)
+    }
+}
+
+impl From<std::num::ParseIntError> for Error {
+    fn from(err: std::num::ParseIntError) -> Self {
+        Error::ParseIntError(err)
+    }
+}
+
+impl From<std::num::ParseFloatError> for Error {
+    fn from(err: std::num::ParseFloatError) -> Self {
+        Error::ParseFloatError(err)
+    }
+}
+
+// line iterator that strips right end but only if not in a string
+pub struct GMLLines<'a>(std::str::Lines<'a>, u8);
+
+impl<'a> GMLLines<'a> {
+    fn new(lines: std::str::Lines<'a>) -> Self {
+        Self(lines, 0)
+    }
+}
+
+impl<'a> Iterator for GMLLines<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // trim line only if EOL is not in a string
+        let line = self.0.next()?;
+        let trimmed = line.trim_end();
+        for c in trimmed.bytes() {
+            if self.1 == 0 && (c == b'"' || c == b'\'') {
+                self.1 = c;
+            } else if c == self.1 {
+                self.1 = 0;
+            }
+        }
+        Some(if self.1 == 0 { trimmed } else { line })
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+const ACTION_TOKEN: &str = "/*\"/*'/**//* YYD ACTION";
+
+fn show_message(msg: impl AsRef<OsStr>) {
+    unsafe {
+        delphi::ShowMessage(&UStr::new(msg));
+    }
+}
+
+fn show_question(message: &UStr) -> i32 {
+    let mut answer: i32;
+    unsafe {
+        asm!(
+            "push 0",  // HelpFileName
+            "push -1", // Y
+            "push -1", // X
+            "push 0",  // HelpCtx
+            "call {}",
+            in(reg) 0x4d437c, // MessageDlgPosHelp
+            inlateout("eax") message.as_ptr() => answer,
+            in("edx") 3, // DlgType
+            in("ecx") 3, // Buttons
+            clobber_abi("C"),
+        );
+    }
+    answer
+}
+
+#[cfg(not(feature = "smooth_progress_bar"))]
+struct FakeSender;
+#[cfg(not(feature = "smooth_progress_bar"))]
+impl FakeSender {
+    fn send(&self, _: ()) {}
+}
+#[cfg(not(feature = "smooth_progress_bar"))]
+fn run_while_updating_bar<OP>(_bar_start: u32, _bar_end: u32, _count: u32, op: OP) -> Result<()>
+where
+    OP: Fn(FakeSender) -> Result<()> + Sync + Send,
+{
+    op(FakeSender)
+}
+
+#[cfg(feature = "smooth_progress_bar")]
+fn run_while_updating_bar<OP>(bar_start: u32, bar_end: u32, count: u32, op: OP) -> Result<()>
+where
+    OP: Fn(crossbeam_channel::Sender<()>) -> Result<()> + Send + Sync,
+{
+    if count > 0 {
+        let (tx, rx) = crossbeam_channel::unbounded();
+        let handle = {
+            // this is basically what crossbeam does
+            // note that the handle is joined at the end of the function
+            // but it should be done executing by the time we get there anyway
+            let f: Box<dyn FnOnce() -> Result<()> + Send> = Box::new(|| op(tx));
+            let f: Box<dyn FnOnce() -> Result<()> + Send + 'static> = unsafe { std::mem::transmute(f) };
+            std::thread::spawn(f)
+        };
+        let mut progress = 0;
+        'outer: loop {
+            'inner: loop {
+                match rx.try_recv() {
+                    Ok(()) => progress += 1,
+                    Err(crossbeam_channel::TryRecvError::Empty) => break 'inner,
+                    Err(_) => break 'outer,
+                }
+            }
+            delphi::advance_progress_form(progress * (bar_end - bar_start) / count + bar_start);
+            // if this errors, it'll error next time too so no need to check
+            if let Ok(()) = rx.recv_timeout(std::time::Duration::from_millis(20)) {
+                progress += 1;
+            }
+        }
+        handle.join().unwrap()
+    } else {
+        Ok(())
+    }
+}
+
+static mut SAVE_END: SystemTime = SystemTime::UNIX_EPOCH;
+static mut LAST_SAVE: f64 = 0.0;
+
+fn update_timestamp() {
+    unsafe {
+        SAVE_END = SystemTime::now();
+        delphi::Now(addr_of_mut!(LAST_SAVE));
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn reset_if_time_went_backwards() {
+    naked_asm!(
+        "movsd xmm0, qword ptr [{last_save}]", // load last save
+        "ucomisd xmm0, qword ptr [esp]",       // compare to now
+        "jb 2f", // jump if now > last save (i.e. no change needed)
+        "mov dword ptr [{last_save}], 0",      // null out last_save
+        "mov dword ptr [{last_save}+4], 0",
+        "2: add esp, 0x20", // return
+        "ret",
+        last_save = sym LAST_SAVE,
+    );
+}
+
+#[derive(Clone)]
+struct InstanceExtra {
+    pub name: u32,
+    pub xscale: f64,
+    pub yscale: f64,
+    pub blend: u32,
+    pub angle: f64,
+}
+
+impl InstanceExtra {
+    pub const DEFAULT: Self = Self { name: 0, xscale: 1.0, yscale: 1.0, blend: u32::MAX, angle: 0.0 };
+}
+
+impl Default for InstanceExtra {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
+#[derive(Clone)]
+struct TileExtra {
+    pub xscale: f64,
+    pub yscale: f64,
+    pub blend: u32,
+}
+
+impl TileExtra {
+    pub const DEFAULT: Self = Self { xscale: 1.0, yscale: 1.0, blend: u32::MAX };
+}
+
+impl Default for TileExtra {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
+unsafe extern "fastcall" fn stuff_to_do_on_project_init() {
+    EXTRA_DATA = None;
+    SEEN_ERROR = false;
+    project_watcher::unwatch();
+    let _: u32 = delphi_call!(0x7149c4); // reload action libraries (what this overwrote)
+    // insert blank resources
+    ide::SOUNDS.alloc(1);
+    ide::SPRITES.alloc(1);
+    ide::BACKGROUNDS.alloc(1);
+    ide::PATHS.alloc(1);
+    ide::SCRIPTS.alloc(1);
+    ide::FONTS.alloc(1);
+    ide::TIMELINES.alloc(1);
+    ide::OBJECTS.alloc(1);
+    ide::ROOMS.alloc(1);
+    // make defaults more sensible
+    *ide::settings::F5_SAVE_F6_LOAD = false;
+    *ide::settings::F9_SCREENSHOT = false;
+    *ide::settings::VSYNC_AND_FORCE_CPU |= 1 << 31; // swap creation code order
+    *ide::settings::PRIORITY = 1;
+    // refresh the gm82room checkbox
+    refresh_gm82room_checkbox();
+}
+
+#[unsafe(naked)]
+unsafe extern "fastcall" fn save_preferences_inj() {
+    naked_asm!(
+        "mov ecx, 0x716b78",
+        "call ecx",
+        "jmp {}",
+        sym save_preferences,
+    );
+}
+
+unsafe extern "fastcall" fn load_preferences() {
+    let autosave_name = ustr!("AutoSave");
+    let sounds_name = ustr!("SoundsInMediaPlayer");
+    let compatible_exes_name = ustr!("CompatibleExes");
+    // load as bool
+    let autosave: u32 = delphi_call!(0x716d20, autosave_name.as_ptr(), 0);
+    let sounds: u32 = delphi_call!(0x716d20, sounds_name.as_ptr(), 0);
+    let compatible_exes: u32 = delphi_call!(0x716d20, compatible_exes_name.as_ptr(), 0);
+    AUTOSAVE_ON_BUILD = (autosave as u8) != 0;
+    MEDIA_PLAYER_FOR_SOUNDS = (sounds as u8) != 0;
+    COMPATIBLE_EXES = (compatible_exes as u8) != 0;
+}
+
+unsafe extern "fastcall" fn save_preferences() {
+    let autosave_name = ustr!("AutoSave");
+    let sounds_name = ustr!("SoundsInMediaPlayer");
+    let compatible_exes_name = ustr!("CompatibleExes");
+    // save as bool
+    let _: u32 = delphi_call!(0x716b78, autosave_name.as_ptr(), u32::from(AUTOSAVE_ON_BUILD));
+    let _: u32 = delphi_call!(0x716b78, sounds_name.as_ptr(), u32::from(MEDIA_PLAYER_FOR_SOUNDS));
+    let _: u32 = delphi_call!(0x716b78, compatible_exes_name.as_ptr(), u32::from(COMPATIBLE_EXES));
+}
+
+unsafe extern "fastcall" fn open_preferences_form() {
+    let preferences_form = *(0x79a7f4 as *const *const *const *const usize);
+    let sounds = *preferences_form.add(0x42c / 4);
+    let autosave = *preferences_form.add(0x4c4 / 4);
+    let compatible_exes = *preferences_form.add(0x4c8 / 4);
+    // SetChecked
+    asm!(
+        "call {}",
+        in(reg) sounds.read().add(0xf0 / 4).read(),
+        in("eax") sounds,
+        in("edx") u32::from(MEDIA_PLAYER_FOR_SOUNDS),
+        clobber_abi("C"),
+    );
+    asm!(
+        "call {}",
+        in(reg) autosave.read().add(0xf0 / 4).read(),
+        in("eax") autosave,
+        in("edx") u32::from(AUTOSAVE_ON_BUILD),
+        clobber_abi("C"),
+    );
+    asm!(
+        "call {}",
+        in(reg) compatible_exes.read().add(0xf0 / 4).read(),
+        in("eax") compatible_exes,
+        in("edx") u32::from(COMPATIBLE_EXES),
+        clobber_abi("C"),
+    );
+}
+
+unsafe extern "fastcall" fn close_preferences_form() {
+    let preferences_form = *(0x79a7f4 as *const *const *const *const usize);
+    let sounds_checkbox = *preferences_form.add(0x42c / 4);
+    let autosave_checkbox = *preferences_form.add(0x4c4 / 4);
+    let compatible_exes_checkbox = *preferences_form.add(0x4c8 / 4);
+    let mut sounds: u8;
+    let mut autosave: u8;
+    let mut compatible_exes: u8;
+    // GetChecked
+    asm!(
+        "call {}",
+        in(reg) sounds_checkbox.read().add(0xec / 4).read(),
+        in("eax") sounds_checkbox,
+        lateout("al") sounds,
+        clobber_abi("C"),
+    );
+    asm!(
+        "call {}",
+        in(reg) autosave_checkbox.read().add(0xec / 4).read(),
+        in("eax") autosave_checkbox,
+        lateout("al") autosave,
+        clobber_abi("C"),
+    );
+    asm!(
+        "call {}",
+        in(reg) compatible_exes_checkbox.read().add(0xec / 4).read(),
+        in("eax") compatible_exes_checkbox,
+        lateout("al") compatible_exes,
+        clobber_abi("C"),
+    );
+    MEDIA_PLAYER_FOR_SOUNDS = sounds != 0;
+    AUTOSAVE_ON_BUILD = autosave != 0;
+    COMPATIBLE_EXES = compatible_exes != 0;
+
+    refresh_gm82room_checkbox();
+    // save to registry
+    let _: u32 = delphi_call!(0x718ac0);
+}
+
+unsafe extern "fastcall" fn toggle_gm82room_checkbox() {
+    let setting = 0x79a982 as *mut bool;
+    *setting = !*setting;
+    refresh_gm82room_checkbox();
+    // save to registry
+    let _: u32 = delphi_call!(0x718ac0);
+}
+
+unsafe fn refresh_gm82room_checkbox() {
+    let main_form = *(0x790100 as *const *const *mut bool);
+    let room_item = *main_form.add(0x3b8 / 4);
+    let _: u32 = delphi_call!(0x4c0238, room_item, !*(0x79a982 as *const bool) as u32);
+}
+
+#[derive(Default)]
+struct ExtraData {
+    settings: HashMap<String, String>,
+    game_information: HashMap<String, String>,
+    instances: HashMap<usize, InstanceExtra>,
+    tiles: HashMap<usize, TileExtra>,
+    triggers: HashMap<usize, HashMap<String, String>>,
+    sprites: CHashMap<usize, HashMap<String, String>>,
+    sounds: CHashMap<usize, HashMap<String, String>>,
+    backgrounds: CHashMap<usize, HashMap<String, String>>,
+    paths: CHashMap<usize, HashMap<String, String>>,
+    scripts: CHashMap<usize, HashMap<String, String>>,
+    objects: CHashMap<usize, HashMap<String, String>>,
+    rooms: CHashMap<usize, HashMap<String, String>>,
+    fonts: CHashMap<usize, HashMap<String, String>>,
+    timelines: CHashMap<usize, HashMap<String, String>>,
+}
+
+static mut EXTRA_DATA: Option<ExtraData> = None;
+
+unsafe extern "fastcall" fn about_inj(about_dialog: *const *const usize) {
+    let info = UStr::new(concat!("gm82save: ", env!("ABOUT_BUILD_DATE")));
+    let edition_label = *about_dialog.add(0xe5);
+    asm!(
+        "call {}",
+        in(reg) 0x4ee6d8, // TControl.SetText
+        in("eax") edition_label,
+        in("edx") info.as_ptr(),
+        clobber_abi("C"),
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn save_all_after_import() {
+    naked_asm!(
+        // call original function
+        "mov eax, 0x71c3e0",
+        "call eax",
+
+        // force a re-save
+        "2: jmp {unwatch}",
+        unwatch = sym project_watcher::unwatch,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn save_inj() {
+    naked_asm!(
+        "mov ecx, ebp",
+        "sub ecx, 4",
+        "mov edx, ebp",
+        "sub edx, 20",
+        "jmp {}",
+        sym save,
+    );
+}
+
+// set the high byte to nonzero if YYD save code was used
+// set the low byte to nonzero on success
+unsafe extern "fastcall" fn save(proj_path: &UStr, stream_ptr: *mut u32) -> u16 {
+    SEEN_ERROR = false;
+    const IS_YYD: u16 = 0x100;
+    let mut path: PathBuf = proj_path.to_os_string().into();
+    // filename ".gm82" works in the ui but rust doesn't get it so check for that specifically
+    let is_gm82 = path.extension() == Some("gm82".as_ref()) || path.file_name() == Some(".gm82".as_ref());
+    if !is_gm82 {
+        project_watcher::unwatch();
+        // CStream.Create
+        let buf = delphi_call!(0x405a4c, 0x52e8fc, 1);
+        stream_ptr.write(buf);
+        // save gmk
+        let success: u32 = delphi_call!(0x705798, buf);
+        return success as u16;
+    }
+
+    if let Err(e) = save::save_gmk(&mut path) {
+        // display the error
+        project_watcher::unwatch();
+        delphi::close_progress_form();
+        show_message(format!("Failed to save: {}", e));
+        0 | IS_YYD
+    } else {
+        if !SAVING_FOR_ROOM_EDITOR {
+            project_watcher::setup_watcher(&mut path);
+        }
+        delphi::close_progress_form();
+        1 | IS_YYD
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn load_inj() {
+    naked_asm!(
+        "mov ecx, ebp",
+        "sub ecx, 4",
+        "mov edx, ebp",
+        "sub edx, 12",
+        "mov eax,ebp",
+        "sub eax, 5",
+        "push eax",
+        "call {}",
+        "ret",
+        sym load,
+    );
+}
+
+unsafe extern "fastcall" fn load(proj_path: &UStr, stream_ptr: *mut u32, result_ptr: *mut bool) -> bool {
+    SEEN_ERROR = false;
+    SAW_APPLIES_TO_WARNING = false;
+    project_watcher::unwatch();
+    let path: PathBuf = proj_path.to_os_string().into();
+    // .gm82 works in the ui but rust doesn't get it so check for that specifically
+    let is_gm82 = path.extension() == Some("gm82".as_ref()) || path.file_name() == Some(".gm82".as_ref());
+    if !is_gm82 {
+        let stream = delphi_call!(0x405a4c, 0x52e8fc, 1);
+        stream_ptr.write(stream);
+        return false;
+    }
+
+    if let Err(e) = load::load_gmk(path) {
+        // display the error and reload
+        delphi::close_progress_form();
+        show_message(format!("Failed to load: {}", e));
+        ide::initialize_project();
+        ide::PROJECT_PATH.asg("");
+    } else {
+        delphi::close_progress_form();
+        result_ptr.write(true);
+    }
+    true
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn stuff_to_do_on_ide_start() {
+    unsafe extern "C" fn inj() {
+        regular::init();
+        // overwrite HelpBtn OnClick
+        (0x790100 as *const *const *mut usize)
+            .read()
+            .add(0x3fc / 4)
+            .read()
+            .add(0x110 / 4)
+            .write(start_shader_compiler as *const () as usize);
+    }
+    naked_asm!(
+        "mov eax, 0x77f464",
+        "mov byte ptr [eax], 0",
+        "jmp {}",
+        sym inj,
+    )
+}
+
+unsafe extern "fastcall" fn start_shader_compiler() {
+    if let Err(e) = std::process::Command::new("anvil.exe").spawn() {
+        show_message(format!("Couldn't start anvil.exe: {e}"));
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn load_recent_project_and_maybe_compile() {
+    unsafe extern "C" fn inj() {
+        let mut args = std::env::args().peekable();
+        while let Some(arg) = args.next() {
+            if arg == "--build" {
+                if let Some(path) = args.peek() {
+                    // we found a build arg, build project and close
+                    let path = UStr::new(path);
+                    let _: u32 = delphi_call!(0x6ce300, path.as_ptr(), 0, 0, 0);
+                    std::process::exit(0);
+                }
+            }
+        }
+    }
+    naked_asm!(
+        // load project
+        "mov ecx, 0x7059d8",
+        "call ecx",
+        "jmp {}",
+        sym inj,
+    );
+}
+
+unsafe extern "fastcall" fn skip_remove_temp_on_cmd_build() {
+    if !std::env::args().any(|arg| arg == "--build") {
+        let _: u32 = delphi_call!(0x534370);
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn gm81_or_gm82_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym gm81_or_gm82,
+    );
+}
+
+unsafe extern "fastcall" fn gm81_or_gm82(s: *const u16) -> i32 {
+    let s = UStr::from_ptr(&s);
+    // test .gm81
+    let out = delphi::CompareText(s, 0x6e0534 as _);
+    // test .gm82
+    if out != 0 { delphi::CompareText(s, 0x6dfbe4 as _) } else { out }
+}
+
+unsafe extern "fastcall" fn make_new_folder(_: u32, path_ptr: *const u16) {
+    let path_delphi = UStr::from_ptr(&path_ptr);
+    let mut path: PathBuf = path_delphi.to_os_string().into();
+    // .gm82 works in the ui but rust doesn't get it so check for that specifically
+    let is_gm82 = path.extension() == Some("gm82".as_ref()) || path.file_name() == Some(".gm82".as_ref());
+    if is_gm82 && !path.is_file() {
+        path.push(path.file_name().unwrap().to_owned());
+    }
+    ide::PROJECT_PATH.asg(path);
+    // throw this in here as well
+    project_watcher::unwatch();
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn install_extensions_to_exedir_if_possible() {
+    unsafe extern "fastcall" fn inj(out: &mut UStr, localappdata: *const u16) {
+        let mut exe_path = PathBuf::from(std::env::args().next().unwrap());
+        exe_path.pop();
+        exe_path.push("extensions");
+        if !matches!(std::fs::metadata(&exe_path).map(|md| md.permissions().readonly()), Ok(false)) {
+            // exe path's extensions are read only, give up and use localappdata
+            let _: u32 = delphi_call!(0x407f0c, out, localappdata);
+        } else {
+            // add a trailing slash
+            exe_path.push("");
+            let exe_path_ustr = UStr::new(exe_path);
+            let _: u32 = delphi_call!(0x407f0c, out, exe_path_ustr.as_ptr());
+        }
+    }
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym inj,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn uninstall_from_exedir_too() {
+    naked_asm!(
+        "call dword ptr [ecx + 0x38]",
+        "push 0",
+        "push 0",
+        // get exe path
+        "lea edx, dword ptr [esp + 4]",
+        "mov ecx, 0x520290", // TApplication.GetExeName (firt arg unnecessary)
+        "call ecx",
+        // extract path
+        "mov eax, dword ptr [esp + 4]",
+        "mov edx, esp",
+        "mov ecx, 0x41735c", // ExtractFilePath
+        "call ecx",
+        // concat "extensions\"
+        "mov eax, esp",
+        "mov edx, 0x712dec",
+        "mov ecx, 0x4082dc", // @UStrCat
+        "call ecx",
+        // add to list
+        "mov edx, dword ptr [esp]",
+        "mov eax, dword ptr [ebp - 0x10]",
+        "mov ecx, dword ptr [eax]",
+        "call dword ptr [ecx + 0x38]",
+        // cleanup strings
+        "mov eax, esp",
+        "mov edx, 2",
+        "mov ecx, 0x406e80", // @LStrArrayClr
+        "call ecx",
+        // return
+        "add esp, 8",
+        "mov dl, 1",
+        "ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn move_extensions_from_localappdata_to_exedir() {
+    unsafe extern "fastcall" fn inj() {
+        let mut exe_path = PathBuf::from(std::env::args().next().unwrap());
+        exe_path.pop();
+        exe_path.push("extensions");
+        if matches!(std::fs::metadata(&exe_path).map(|md| md.permissions().readonly()), Ok(false)) {
+            // we can write to the exe path :)
+            // ensure it exists
+            let _ = std::fs::create_dir_all(&exe_path);
+            let appdata_path = unsafe { UStr::from_ptr(&*(0x78898c as *const *const u16)) };
+            let appdata_path = PathBuf::from(appdata_path.to_os_string());
+            // list filenames and check whether we should proceed
+            if let Ok(iter) = std::fs::read_dir(&appdata_path) {
+                let filenames = iter
+                    .filter_map(|x| x.ok())
+                    .map(|x| x.file_name().to_string_lossy().into_owned())
+                    .take(30)
+                    .join("\n");
+                if filenames.is_empty() {
+                    return;
+                }
+                let message =
+                    format!("These extension files need to be moved to the install folder:\n\n{filenames}\n\nProceed?");
+                let answer = show_question(&UStr::new(message));
+                if answer != 6 {
+                    return;
+                }
+            } else {
+                return;
+            }
+            // perform operation
+            if let Ok(iter) = std::fs::read_dir(appdata_path) {
+                for item in iter.filter_map(|x| x.ok()) {
+                    if matches!(item.file_type().map(|i| i.is_file()), Ok(true)) {
+                        let appdata_item = item.path();
+                        exe_path.push(item.file_name());
+                        if exe_path.is_file() {
+                            // overwrite
+                            if let Ok(exe_modified) = exe_path.metadata().and_then(|m| m.modified()) {
+                                if let Ok(appdata_modified) = appdata_item.metadata().and_then(|m| m.modified()) {
+                                    if exe_modified > appdata_modified {
+                                        // exe is newer, delete appdata
+                                        let _ = std::fs::remove_file(appdata_item);
+                                    } else {
+                                        // appdata is newer, copy over
+                                        let _ = std::fs::rename(appdata_item, &exe_path);
+                                    }
+                                }
+                            }
+                        } else {
+                            // there is no exe item, so copy it over
+                            let _ = std::fs::rename(appdata_item, &exe_path);
+                        }
+                        exe_path.pop();
+                    }
+                }
+            }
+        }
+    }
+    naked_asm!(
+        "mov ecx, 0x408d1c",
+        "call ecx",
+        "jmp {}",
+        sym inj,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn fix_tile_null_pointer() {
+    naked_asm!(
+        "mov edx, 0x64e048",
+        "call edx",
+        "mov edx, 0x68ef07",
+        "mov ecx, 0x68ef6c",
+        "test eax, eax",
+        "cmovz edx, ecx",
+        "jmp edx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn inflate_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym inflate,
+    );
+}
+
+unsafe extern "fastcall" fn inflate(src: &delphi::TMemoryStream) -> delphi::DelphiBox<delphi::TMemoryStream> {
+    let dst = delphi::TMemoryStream::new();
+    let mut size: usize = 0;
+    src.read(&mut size as *mut usize as *mut u8, 4);
+    let mut data = Vec::with_capacity(size);
+    data.set_len(size);
+    src.read(data.as_mut_ptr(), size as u32);
+    let mut decoder = flate2::write::ZlibDecoder::new(dst);
+    decoder.write_all(&data).unwrap();
+    let dst = decoder.finish().unwrap();
+    dst.set_pos(0);
+    return dst;
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn deflate_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym deflate,
+    );
+}
+
+unsafe extern "fastcall" fn deflate(dst: &mut delphi::TMemoryStream, src: &delphi::TMemoryStream) {
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::new(DEFLATE_LEVEL));
+    encoder.write_all(src.get_slice()).unwrap();
+    let data = encoder.finish().unwrap();
+    let _ = dst.write(&data.len().to_le_bytes());
+    let _ = dst.write(&data);
+    src.set_pos(data.len() as _);
+}
+
+static mut DEFLATE_LEVEL: u32 = 6; // default
+
+#[unsafe(naked)]
+unsafe extern "C" fn build_small() {
+    naked_asm!(
+        "mov ecx, 9",
+        "mov {}, ecx",
+        "mov ecx, 0x4cf2f4",
+        "jmp ecx",
+        sym DEFLATE_LEVEL,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn build_fast() {
+    naked_asm!(
+        "mov ecx, 0x79a998",
+        "movzx ecx, byte ptr [ecx]",
+        "mov {}, ecx",
+        "mov ecx, 0x41735c",
+        "jmp ecx",
+        sym DEFLATE_LEVEL,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn reset_compression() {
+    naked_asm!(
+        "mov ecx, 6",
+        "mov {}, ecx",
+        "mov ecx, 0x51cc64",
+        "jmp ecx",
+        sym DEFLATE_LEVEL,
+    );
+}
+
+unsafe extern "stdcall" fn duplicate_room(room: &mut asset::Room, old_id: usize, new_id: usize) {
+    let room_names = ide::ROOMS.names();
+    fix_instances_when_renaming_room(
+        room,
+        room_names[old_id].to_os_string().to_str().unwrap(),
+        room_names[new_id].to_os_string().to_str().unwrap(),
+    );
+    freshen_room_ids(room);
+}
+
+unsafe fn freshen_room_ids(room: &mut asset::Room) {
+    if let Some(ExtraData { instances: instance_map, tiles: tile_map, .. }) = EXTRA_DATA.as_mut() {
+        let last_instance_id = *ide::LAST_INSTANCE_ID + 1;
+        let instances = room.get_instances_mut();
+        *ide::LAST_INSTANCE_ID += instances.len();
+        for (i, instance) in instances.into_iter().enumerate() {
+            let old_id = instance.id;
+            instance.id = last_instance_id + i;
+            if let Some(data) = instance_map.get(&old_id).cloned() {
+                instance_map.insert(instance.id, data);
+            }
+        }
+        let last_tile_id = *ide::LAST_TILE_ID + 1;
+        let tiles = room.get_tiles_mut();
+        *ide::LAST_TILE_ID += tiles.len();
+        for (i, tile) in tiles.into_iter().enumerate() {
+            let old_id = tile.id;
+            tile.id = last_tile_id + i;
+            if let Some(data) = tile_map.get(&old_id).cloned() {
+                tile_map.insert(tile.id, data);
+            }
+        }
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn setup_unicode_parse_inj() {
+    naked_asm!(
+        "mov ecx, edi",
+        "call {}",
+        "mov eax, 5",
+        "ret",
+        sym setup_unicode_parse,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn teardown_unicode_parse_inj() {
+    naked_asm!(
+        "mov ecx, 810",
+        "call {}",
+        "mov eax, 0x6ca2cc",
+        "jmp eax",
+        sym setup_unicode_parse,
+    );
+}
+
+unsafe extern "fastcall" fn setup_unicode_parse(version: i32) {
+    // this just patches CStream.ReadString to read with the active code page instead of UTF-8
+    // (and reverts that change after loading so nothing else breaks)
+    let cp = if version < 810 { [0, 0] } else { [0xe9, 0xfd] };
+    patch(0x52f0a2, &cp);
+    patch(0x52f0c5, &cp);
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn properly_update_object_timestamp_drag_drop() {
+    naked_asm!(
+        "mov eax, [esi + 0x46c]", // TObjectForm.index
+        "mov ecx, 0x62cd2c",      // update object timestamp
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn properly_update_timeline_timestamp_drag_drop() {
+    naked_asm!(
+        "mov eax, [esi + 0x430]", // TTimeLineForm.index
+        "mov ecx, 0x6fa7b0",      // update timeline timestamp
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn properly_update_object_timestamp_right_click() {
+    naked_asm!(
+        // show action modal
+        "mov ecx, 0x6ff4dc",
+        "call ecx",
+        // if it returned false, return false
+        "test al, al",
+        "jz 2f",
+        // update timestamp and return 1
+        "mov eax, [esi + 0x46c]",
+        "mov ecx, 0x62cd2c",
+        "call ecx",
+        "mov al, 1",
+        "2: ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn properly_update_timeline_timestamp_right_click() {
+    naked_asm!(
+        // show action modal
+        "mov ecx, 0x6ff4dc",
+        "call ecx",
+        // if it returned false, return false
+        "test al, al",
+        "jz 2f",
+        // update timestamp and return 1
+        "mov eax, [esi + 0x430]",
+        "mov ecx, 0x6fa7b0",
+        "call ecx",
+        "mov al, 1",
+        "2: ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn update_sprite_mask_timestamp() {
+    naked_asm!(
+        "mov eax, [ebx+0x42c]", // TMaskForm.theindex
+        "mov ecx, 0x6f5ac8",    // update sprite timestamp
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn update_origin_from_gmspr() {
+    naked_asm!(
+        // load sprite
+        "mov ecx, 0x5b3c40",
+        "call ecx",
+        // check that loading worked
+        "test al, al",
+        "jz 2f",
+        // if we're not on the first sprite, return
+        "cmp dword ptr [ebp - 0xc], 0",
+        "jnz 2f",
+        "mov eax, [ebp - 0x04]", // this
+        "mov edx, [ebp - 0x14]", // loaded sprite
+        "mov ecx, 0x5b33a8",     // sprite assign
+        "call ecx",
+        "mov al, 0", // we already did the load so skip the appending
+        "2: ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn update_path_timestamp_and_draw_form() {
+    naked_asm!(
+        "mov eax, [eax + 0x458]",
+        "mov edx, 0x7229e8", // update path timestamp
+        "call edx",
+        "mov byte ptr [ebx + 0x450], 1", // mark form as modified
+        "mov eax, ebx",
+        "mov edx, 0x720560", // draw path from
+        "jmp edx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn gm82_file_association_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym gm82_file_association,
+    );
+}
+
+unsafe extern "fastcall" fn gm82_file_association(reg: u32) {
+    let ext = UStr::new(r"\.gm82");
+    let _: u32 = delphi_call!(0x6dd850, reg, ext.as_ptr(), 0, ustr!("gm82file").as_ptr());
+    let _: u32 = delphi_call!(0x452568, reg, 0x80000001u32);
+    let _: u32 =
+        delphi_call!(0x6dd850, reg, ext.as_ptr(), UStr::new(r"\Software\Classes").as_ptr(), ustr!("gm82file").as_ptr());
+}
+
+unsafe extern "fastcall" fn check_gm_processes(name: usize, value: u32) {
+    let system = sysinfo::System::new_with_specifics(
+        sysinfo::RefreshKind::nothing().with_processes(sysinfo::ProcessRefreshKind::nothing()),
+    );
+    let path = std::env::current_exe().unwrap();
+    if system.processes().iter().filter(|(_, p)| p.exe() == Some(&path)).count() <= 1 {
+        let _: u32 = delphi_call!(0x716b78, name, value);
+    }
+}
+
+unsafe extern "stdcall" fn try_clipboard_a_few_times(clipboard_window: usize) -> usize {
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn OpenClipboard(clipboard_window: usize) -> usize;
+    }
+    // try 10 times
+    for _ in 0..10 {
+        match OpenClipboard(clipboard_window) {
+            0 => std::thread::sleep(std::time::Duration::from_millis(20)),
+            success => return success,
+        }
+    }
+    0
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn image_editor_dont_error_when_switching_tool() {
+    naked_asm!(
+        // set mouse down global to -1
+        "mov eax, 0x77f108",
+        "mov dword ptr [eax], -1",
+        // what this overwrote
+        "mov eax, [ebx + 0x768]",
+        "ret",
+    )
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn free_image_editor_bitmap() {
+    naked_asm!(
+        // call free on TheBitmap
+        "mov edx, 0x405a7c",
+        "call edx",
+        // get TransBitmap
+        "mov eax, dword ptr [esi]",
+        "mov eax, dword ptr [eax + 0x708]",
+        // check if it exists
+        "test eax, eax",
+        "jz 2f",
+        // free it
+        "mov edx, 0x405a7c",
+        "call edx",
+        // null it
+        "mov eax, dword ptr [esi]",
+        "xor edx, edx",
+        "mov dword ptr [eax + 0x708], edx",
+        "2: ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn copy_origin_on_new() {
+    naked_asm!(
+        "mov ecx, [eax+0xc]",
+        "mov [esi+0xc], ecx",
+        "mov ecx, [eax+0x10]",
+        "mov [esi+0x10], ecx",
+        "mov ecx, 0x405a7c",
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn floor_st0() {
+    naked_asm!(
+        // move the return address and put st0 on the stack before it so it's like an argument
+        "mov eax, [esp]",
+        "sub esp, 8",
+        // can't fucking say "fstp tword ptr [esp]" apparently so i guess i'm doing this
+        ".byte 0xdb, 0x3c, 0x24",
+        "push eax",
+        "mov eax, 0x410538",
+        "jmp eax",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn update_sprite_icon_on_revert() {
+    naked_asm!(
+        "mov ecx, 0x6f5980", // set sprite name (original function)
+        "call ecx",
+        "mov eax, [ebx + 0x40c]", // TSpriteForm.index
+        "mov ecx, 0x6f5bb4",      // update sprite icon
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn update_background_icon_on_revert() {
+    naked_asm!(
+        "mov ecx, 0x64de98", // set background name (original function)
+        "call ecx",
+        "mov eax, [ebx + 0x400]", // TBackgroundForm.index
+        "mov ecx, 0x64e0cc",      // update background icon
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn background_form_add_events() {
+    naked_asm!(
+        // call original function
+        "mov ecx, 0x64cdb4",
+        "call ecx",
+        // get clipboard button
+        "mov eax, [ebx + 0x39c]",
+        // set its OnClick
+        "lea edx, {clipboard}",
+        "mov [eax + 0x110], edx",
+        "mov [eax + 0x114], ebx",
+        "ret",
+        clipboard = sym create_background_from_clipboard_inj,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn create_background_from_clipboard_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym create_background_from_clipboard,
+    );
+}
+
+unsafe extern "fastcall" fn create_background_from_clipboard(background_form: *mut *mut asset::Background) {
+    let mut bitmap = delphi::TBitmap::new();
+    bitmap.SetPixelFormat(7);
+    if !bitmap.load_from_clipboard() {
+        // no image in clipboard
+        return;
+    }
+    bitmap.SetPixelFormat(7);
+    let background = &mut *background_form.add(0x3f0 / 4).read();
+    // if the frame's size is 0,0 then there's no background
+    // otherwise if we decide to ask do so here
+    background.frame.assign_from_bitmap(&bitmap);
+    // notify observers
+    background_form.cast::<u8>().add(0x3fc).write(1);
+    let bg_index = background_form.add(0x400 / 4).cast::<i32>().read();
+    let _: u32 = delphi_call!(0x64dfe0, bg_index);
+    let _: u32 = delphi_call!(0x64e0cc, bg_index);
+    let _: u32 = delphi_call!(0x64cdb4, background_form);
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn dont_show_action_tooltip_if_event_is_null() {
+    naked_asm!(
+        // if eax is not null, call CEvent.GetAction
+        "mov ecx, 0x5a502c",
+        "test eax, eax",
+        "jz 2f",
+        "jmp ecx",
+        // otherwise, skip to the end of that code block
+        // there's a function that updates the tooltip or something in there
+        // so skip it, so that the tooltip doesn't just stick around
+        "2: add dword ptr [esp], 0x25",
+        "ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn first_object_updates_room_forms() {
+    naked_asm!(
+        // get number of objects in resource tree
+        "mov eax, [0x79a9b8]",
+        "mov edx, 0x4ad490",
+        "call edx",
+        // skip if there are objects
+        "test eax, eax",
+        "jnz 2f",
+        // go over all room forms
+        "push ebx",
+        "xor ebx, ebx",
+        "4: cmp ebx, [0x77f3b8]",
+        "jge 3f",
+        // initialize objects tab
+        "mov eax, [0x77f3ac]",
+        "mov eax, [eax+4*ebx]",
+        "test eax, eax",
+        "je 5f",
+        "mov edx, 0x68a1e0",
+        "call edx",
+        "5: inc ebx",
+        "jmp 4b",
+        "3: pop ebx",
+        "2:",
+        // call overwritten tree node write function
+        "mov eax, [ebp-0xc]",
+        "mov ecx, [ebp-0x8]",
+        "mov edx, edi",
+        "push 0x71cb48",
+        "ret",
+    )
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn timeline_form_add_events() {
+    naked_asm!(
+        // call original function
+        "mov ecx, 0x6f7fac",
+        "call ecx",
+        // get event list
+        "mov eax, [ebx + 0x3d0]",
+        // set its OnDblClick
+        "lea edx, {event_list_dblclick}",
+        "mov [eax + 0x118], edx",
+        "mov [eax + 0x11c], ebx",
+        "ret",
+        event_list_dblclick = sym timeline_event_list_dblclick_inj,
+    )
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn timeline_event_list_dblclick_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym timeline_event_list_dblclick,
+    );
+}
+
+unsafe extern "fastcall" fn timeline_event_list_dblclick(timeline_form: *const u32) {
+    let event_list = timeline_form.add(0x3d0 / 4).read();
+    let mut screen_mouse_pos = [0u32; 2];
+    // TMouse.GetCursorPos
+    let _: u32 = delphi_call!(0x4fd580, *(0x788248 as *const u32), screen_mouse_pos.as_mut_ptr());
+    let mut client_mouse_pos = [0u32; 2];
+    // EventList.ScreenToClient
+    let _: u32 = delphi_call!(0x4ee1d0, event_list, screen_mouse_pos.as_ptr(), client_mouse_pos.as_mut_ptr());
+    // EventList.ItemAtPos
+    let id: i32 = delphi_call!(0x483b48, event_list, client_mouse_pos.as_mut_ptr(), 1);
+    if id >= 0 {
+        // TTimeLineForm.EditProperties1Click
+        let _: u32 = delphi_call!(0x6f9860, timeline_form);
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_form_add_events() {
+    naked_asm!(
+        // call original function
+        "mov ecx, 0x6c60f8",
+        "call ecx",
+
+        // get parent label/button
+        "mov eax, [ebx + 0x418]",
+        // set its OnClick
+        "lea edx, {parent}",
+        "mov [eax + 0x110], edx",
+        "mov [eax + 0x114], ebx",
+
+        // get mask label/button
+        "mov eax, [ebx + 0x410]",
+        // set its OnClick
+        "lea edx, {mask}",
+        "mov [eax + 0x110], edx",
+        "mov [eax + 0x114], ebx",
+
+        // get "depth label" / children button
+        "mov eax, [ebx + 0x414]",
+        // set its OnClick
+        "lea edx, {children}",
+        "mov [eax + 0x110], edx",
+        "mov [eax + 0x114], ebx",
+
+        // get event list
+        "mov eax, [ebx + 0x3d4]",
+        // set its OnDblClick
+        "lea edx, {object_dblclick}",
+        "mov [eax + 0x118], edx",
+        "mov [eax + 0x11c], ebx",
+
+        "ret",
+        parent = sym object_open_parent,
+        mask = sym object_open_mask,
+        children = sym object_show_children_inj,
+        object_dblclick = sym object_event_list_dblclick_inj,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_open_parent() {
+    naked_asm!(
+        // get theobject from form
+        "mov eax, [eax + 0x45c]",
+        // get parent_index from object
+        "mov eax, [eax + 0x14]",
+        // open the form
+        "mov ecx, 0x62cde0",
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_open_mask() {
+    naked_asm!(
+        // get theobject from form
+        "mov eax, [eax + 0x45c]",
+        // get mask_index from object
+        "mov eax, [eax + 0x18]",
+        // open the form
+        "mov ecx, 0x6f5b74",
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_show_children_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym object_show_children,
+    );
+}
+
+unsafe extern "fastcall" fn object_show_children(object_form: *const i32) {
+    const RESULT_PTR: *mut i32 = 0x79a9f0 as _;
+    *RESULT_PTR = -100;
+    let object_index = object_form.add(0x46c / 4).read();
+    let mut popup = delphi::TPopupMenu::new(0);
+    popup.SetAutoHotkeys(1);
+    popup.SetImages();
+
+    let mut children = ide::OBJECTS
+        .assets()
+        .iter()
+        .enumerate()
+        .filter_map(|(i, o)| Some((i, o.as_ref()?)))
+        .filter(|(_, o)| o.parent_index == object_index)
+        .map(|(i, _)| i)
+        .peekable();
+
+    if children.peek().is_some() {
+        for obj in children {
+            popup.Items.add_with_fake_tree_node(&ide::OBJECTS.names()[obj], 3, 1, obj, None);
+        }
+    } else {
+        let mut menu_item = TMenuItem::new(0);
+        menu_item.set_caption(&ustr!("<no children>"));
+        menu_item.set_image_index(-1);
+        popup.Items.add(menu_item);
+    }
+    popup.popup_at_cursor_pos();
+    let _: u32 = delphi_call!(0x62cde0, *RESULT_PTR);
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_event_list_dblclick_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym object_event_list_dblclick,
+    )
+}
+
+unsafe extern "fastcall" fn object_event_list_dblclick(object_form: *const u32) {
+    let event_list = object_form.add(0x3d4 / 4).read();
+    let mut screen_mouse_pos = [0u32; 2];
+    // TMouse.GetCursorPos
+    let _: u32 = delphi_call!(0x4fd580, *(0x788248 as *const u32), screen_mouse_pos.as_mut_ptr());
+    let mut client_mouse_pos = [0u32; 2];
+    // EventList.ScreenToClient
+    let _: u32 = delphi_call!(0x4ee1d0, event_list, screen_mouse_pos.as_ptr(), client_mouse_pos.as_mut_ptr());
+    // EventList.ItemAtPos
+    let id: i32 = delphi_call!(0x483b48, event_list, client_mouse_pos.as_mut_ptr(), 1);
+    if id >= 0 {
+        // TObjectForm.EditProperties1Click
+        let _: u32 = delphi_call!(0x6c77d0, object_form);
+    }
+}
+
+unsafe extern "fastcall" fn confirm_before_deleting_action(action_id: usize, event: *const asset::Event) -> usize {
+    if let Some(action) = event.as_ref().and_then(|event| event.get_actions().get(action_id)) {
+        if action.param_count > 0 {
+            let message = UStr::new(format!("Are you sure you want to delete this action?"));
+            let answer = show_question(&message);
+            if answer != 6 {
+                return -1i32 as usize;
+            }
+        }
+    }
+    action_id
+}
+
+macro_rules! deleting_action_inj {
+    ($name:ident, $test:literal, $mov:literal) => {
+        #[unsafe(naked)]
+        unsafe extern "fastcall" fn $name() {
+            naked_asm!(
+                // call original function
+                "call [edx + 0xec]",
+                // if we're cutting, don't ask
+                $test,
+                "je 2f",
+                // call confirm_before_deleting_action
+                "mov ecx, eax",
+                $mov,
+                "call {}",
+                "cmp eax, -1",
+                "jne 2f",
+                "add esp, 4",
+                "pop edi",
+                "pop esi",
+                "pop ebx",
+                "2: ret",
+                sym confirm_before_deleting_action,
+            );
+        }
+    }
+}
+
+deleting_action_inj!(
+    confirm_before_deleting_action_object,
+    "cmp dword ptr [esp + 0x10], 0x6c7873",
+    "mov edx, [esi + 0x817c]"
+);
+deleting_action_inj!(
+    confirm_before_deleting_action_timeline,
+    "cmp dword ptr [esp + 0x10], 0x6f9903",
+    "mov edx, [esi + 0x434]"
+);
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_clean_collide_events_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "mov edx, ebx",
+        "jmp {}",
+        sym object_clean_collide_events,
+    );
+}
+
+unsafe extern "fastcall" fn object_clean_collide_events(obj: &mut asset::Object, object_id: usize) {
+    let mut updated = false;
+    for (i, event) in obj.events[events::EV_COLLISION].iter_mut().enumerate() {
+        if event.action_count != 0 && ide::OBJECTS.assets().get_asset(i as i32).is_none() {
+            let _: u32 = delphi_call!(0x5a5090, event.as_ptr());
+            updated = true;
+        }
+    }
+    if updated {
+        let _: u32 = delphi_call!(0x62cd2c, object_id);
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn object_clean_triggers_inj() {
+    naked_asm!(
+        "mov ecx, ebx",
+        "jmp {}",
+        sym object_clean_triggers,
+    );
+}
+
+unsafe extern "fastcall" fn object_clean_triggers(trigger_id: usize) {
+    for (obj_id, obj_opt) in ide::OBJECTS.assets_mut().iter_mut().enumerate() {
+        let mut updated = false;
+        if let Some(obj) = obj_opt {
+            if let Some(event) = obj.events[events::EV_TRIGGER].get(trigger_id) {
+                if event.action_count != 0 && get_triggers()[trigger_id].is_none() {
+                    let _: u32 = delphi_call!(0x5a5090, event.as_ptr());
+                    updated = true;
+                }
+            }
+        }
+        if updated {
+            let _: u32 = delphi_call!(0x62cd2c, obj_id);
+        }
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn path_form_mouse_wheel_inj() {
+    naked_asm!(
+        // call TPathForm.Create
+        "mov ebx, 0x514e78",
+        "call ebx",
+        // set OnMouseWheel
+        "mov dword ptr [eax + 0x144], eax",
+        "lea edx, {}",
+        "mov dword ptr [eax + 0x140], edx",
+        "ret",
+        sym path_form_mouse_wheel,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn path_form_mouse_wheel() {
+    naked_asm!(
+        // check handled flag
+        "mov edx, [esp + 0x4]",
+        "cmp byte ptr [edx], 0",
+        "jnz 4f",
+        // set handled flag
+        "mov byte ptr [edx], 1",
+        "push eax",
+        // check if shift is being held
+        "mov edx, dword ptr [esp + 0x10]",
+        "test cx, 1",
+        "jnz 2f",
+        // no shift, so scroll vertically
+        "sub dword ptr [eax + 0x464], edx",
+        "jmp 3f",
+        // yes shift, so scroll horizontally
+        "2: sub dword ptr [eax + 0x460], edx",
+        "3:",
+        // update room background
+        "mov ecx, 0x7203ec",
+        "call ecx",
+        // draw path image
+        "mov eax, dword ptr [esp]",
+        "mov ecx, 0x720560",
+        "call ecx",
+        // update status bar
+        "pop eax",
+        "mov ecx, 0x720a68",
+        "call ecx",
+        "4:",
+        "ret 0xc",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn path_room_change_forces_room_editor_save() {
+    naked_asm!(
+        "mov ecx, 0x720560", // draw form
+        "call ecx",
+        "mov byte ptr {}, 1",
+        "ret",
+        sym PATH_FORM_UPDATED,
+    );
+}
+
+static mut PATH_FORM_UPDATED: bool = false;
+
+#[unsafe(naked)]
+unsafe extern "C" fn maybe_reload_extensions_when_typing() {
+    naked_asm!(
+        "mov [ebp-8], eax",
+        "call {}",
+        "mov eax, 0x6ab1bb",
+        "jmp eax",
+        sym update_extensions,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn code_editor_dont_resize_if_maximized() {
+    naked_asm!(
+        // are we maximized?
+        "cmp byte ptr [eax + 0x29a], 0x2",
+        "je 2f",
+        // if not, call actual function
+        "jmp [ebx + 0x98]",
+        // otherwise quit
+        "2: ret 0x8",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn code_editor_better_resize() {
+    naked_asm!(
+        // are we maximized?
+        "cmp byte ptr [eax + 0x29a], 0x2",
+        "jne 2f",
+        // if maximized, return from outer function
+        "add esp, 4",
+        // otherwise continue regular operation
+        "2: mov edx, [0x781dd0]",
+        "ret",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn code_editor_middle_click() {
+    naked_asm!(
+        // push return address
+        "mov ecx, 0x6b734e",
+        "push ecx",
+        // abort if not middle click
+        "cmp byte ptr [ebp - 1], 2",
+        "jnz 2f",
+        // save cursor position
+        "push dword ptr [ebx + 0x2ec]",
+        "push dword ptr [ebx + 0x2f0]",
+        // move cursor
+        "mov dword ptr [ebx + 0x2ec], edi",
+        "mov dword ptr [ebx + 0x2f0], esi",
+        // show resource on cursor position
+        "mov ecx, 0x6b2000",
+        "mov eax, ebx",
+        "call ecx",
+        // reset cursor
+        "pop dword ptr [ebx + 0x2f0]",
+        "pop dword ptr [ebx + 0x2ec]",
+        "2: ret",
+    );
+}
+
+unsafe extern "fastcall" fn code_editor_script_hint(name: *const u16, out: &mut UStr) {
+    // get script from name
+    let script_id: i32 = delphi_call!(0x655c2c, name);
+    if script_id >= 0 {
+        if let Some(Some(script)) = ide::SCRIPTS.assets().get(script_id as usize) {
+            if script.source.as_slice().get(..3) == Some(&[b'/' as u16; 3]) {
+                let count =
+                    script.source.as_slice().iter().position(|&c| c == b'\r' as u16).unwrap_or(script.source.len()) - 3;
+                let mut untrimmed = UStr::default();
+                // @UStrCopy
+                let _: u32 = delphi_call!(0x4086a8, script.source.as_ptr(), 4, count, &mut untrimmed);
+                // Trim
+                let _: u32 = delphi_call!(0x415dd0, untrimmed.as_ptr(), out);
+            }
+        }
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn completion_script_args_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "call {}",
+        // copy output of this to the argument on the stack
+        "mov eax, dword ptr [ebp-0x5c]",
+        "mov dword ptr [esp+8], eax",
+        "ret",
+        sym completion_script_args,
+    );
+}
+
+unsafe extern "fastcall" fn add_space_before_trigger_name(trigger_id: i32, out: &mut UStr) {
+    *out = ustr!(" ");
+    let mut tmp = UStr::default();
+    let _: u32 = delphi_call!(0x6bcce4, trigger_id, &mut tmp);
+    out.push_ustr(&tmp);
+}
+
+unsafe extern "fastcall" fn completion_script_args(script_id: usize, out: &mut UStr) {
+    let script = ide::SCRIPTS.assets().get_unchecked(script_id).as_deref().unwrap_unchecked();
+    if script.source.as_slice().get(..3) == Some(&[b'/' as u16; 3]) {
+        if let Some(paren_pos) = script.source.as_slice().iter().position(|&c| c == b'(' as u16) {
+            let count = script.source.as_slice().iter().position(|&c| c == b'\r' as u16).unwrap_or(script.source.len())
+                - paren_pos;
+            let mut untrimmed = UStr::default();
+            // @UStrCopy
+            let _: u32 = delphi_call!(0x4086a8, script.source.as_ptr(), paren_pos + 1, count, &mut untrimmed);
+            // Trim
+            let _: u32 = delphi_call!(0x415dd0, untrimmed.as_ptr(), out);
+            return;
+        }
+    }
+    *out = UStr::from_address(0x6baf10);
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn write_number_on_actions() {
+    naked_asm!(
+        // call original function
+        "mov ecx, 0x45b498",
+        "call ecx",
+        // move existing string to top of stack
+        "mov eax, [ebp-4]",
+        "push eax",
+        "mov dword ptr [ebp-4], 0",
+        // get action index from outer function (same for object and form)
+        "mov eax, [ebp]",
+        "mov eax, [eax-4]",
+        "inc eax",
+        // convert to int and put in original string
+        "lea edx, [ebp-4]",
+        "mov ecx, 0x41666c",
+        "call ecx",
+        // append ". "
+        "lea eax, [ebp-4]",
+        "lea edx, 2f",
+        "mov ecx, 0x4082dc",
+        "call ecx",
+        // append original string
+        "lea eax, [ebp-4]",
+        "mov edx, [esp]",
+        "mov ecx, 0x4082dc",
+        "call ecx",
+        // free original string
+        "lea eax, [esp]",
+        "mov ecx, 0x407ea8",
+        "call ecx",
+        // cleanup and return
+        "add esp, 4",
+        "ret",
+        // define the ". "
+        ".align 4",
+        ".short 1200, 2",
+        ".long -1, 2",
+        "2:",
+        ".short '.', ' ', 0",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn regen_temp_folder_when_making_file() {
+    naked_asm!(
+        "mov ecx, 0x407660",
+        "call ecx",
+        // ForceDirectories the temp directory
+        "mov eax, [0x788974]",
+        "mov ecx, 0x416eac",
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn get_temp_folder_but_also_regen_it() {
+    naked_asm!(
+        //UStrAsg temp_directory to the output
+        "mov edx, [0x788974]",
+        "mov ecx, 0x407eb8",
+        "call ecx",
+        // ForceDirectories the temp directory
+        "mov eax, [0x788974]",
+        "mov ecx, 0x416eac",
+        "jmp ecx",
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn trace_date_inj() {
+    naked_asm!(
+        // keep first two args
+        "push ecx",
+        "push eax",
+        // get date string
+        "call {}",
+        // take first two args back
+        "pop edx",
+        "pop ecx",
+        // store date string
+        "push eax",
+        // put args in right place
+        "xchg edx, eax",
+        // call UStrCat3
+        "push ebx",
+        "mov ebx, 0x40839c",
+        "call ebx",
+        "pop ebx",
+        // free date string
+        "mov eax, esp",
+        "mov edx, 0x407ea8",
+        "call edx",
+        // we done here
+        "pop eax",
+        "ret",
+        sym trace_date,
+    );
+}
+
+unsafe extern "fastcall" fn trace_date() -> UStr {
+    let now = time::OffsetDateTime::now_utc();
+    UStr::new(format!(
+        "[{}-{:02}-{:02} {:02}:{:02}:{:02} UTC | gm82save {}] Unhandled Exception - ",
+        now.year(),
+        u8::from(now.month()),
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second(),
+        env!("ERROR_BUILD_DATE"),
+    ))
+}
+
+static mut SEEN_ERROR: bool = false;
+
+unsafe extern "fastcall" fn patch_error_box(caption: *const u16, text: *const u16, _flags: u32) {
+    if SEEN_ERROR {
+        return;
+    }
+    SEEN_ERROR = true;
+    let mut message = UStr::from_ptr(&text).clone();
+    let extra_text = UStr::new(
+        "\r\nGame Maker will continue to run, but may be unstable. Enjoy!\r\n\r\n\
+        In the meantime, please send Floogle your TraceIDE.log file. It should be next to \
+        GameMaker.exe. Would you like to open the relevant folder now?",
+    );
+    // UStrCat
+    let _: u32 = delphi_call!(0x4082dc, &mut message, extra_text.as_ptr());
+    // TApplication.MessageBox
+    let answer: u32 = delphi_call!(0x51fbdc, *(0x7882ec as *const u32), message.as_ptr(), caption, 0x14);
+    if answer == 6 {
+        let path = std::env::current_exe()
+            .ok()
+            .and_then(|mut p| {
+                p.pop();
+                p.push("TraceIDE.log");
+                p.into_os_string().into_string().ok()
+            })
+            .unwrap_or_default();
+        let _ = std::process::Command::new("explorer.exe").raw_arg(format!("/select,\"{path}\"")).spawn();
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn get_treenode_count_and_preserve_resource_type() {
+    naked_asm!("mov ecx, 0x4ad490", "call ecx", "mov [esp], edi", "mov ecx, 0x71c6a5", "jmp ecx",)
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn add_three_newest_inj() {
+    naked_asm!(
+        // add a line
+        "mov eax, [esi + 0x38]",
+        "mov ecx, 0x4dd244",
+        "call ecx",
+        // add the three items
+        "pop edx", // resource type
+        "push ebp",
+        "mov ecx, [esi + 0x38]", // menu items
+        "call {}",
+        // cleanup
+        "xor eax, eax",
+        "pop edx",
+        "pop ecx",
+        "pop ecx",
+        "mov ecx, 0x71c6e2",
+        "jmp ecx",
+        sym add_three_newest,
+    );
+}
+
+unsafe extern "fastcall" fn add_three_newest(items: &TMenuItem, ty: u32, ebp: *const u8) {
+    unsafe fn inner<T: 'static, AL: AssetListTrait<T>>(items: &TMenuItem, ty: u32, ebp: *const u8, asset_list: &AL) {
+        let ids = asset_list
+            .assets()
+            .iter()
+            .enumerate()
+            .rev()
+            .filter(|(_, o)| o.is_some())
+            .map(|(i, _)| i)
+            .take(3)
+            .collect::<Vec<_>>();
+        for &id in ids.iter().rev() {
+            items.add_with_fake_tree_node(
+                &asset_list.names()[id],
+                3,
+                ty,
+                id,
+                ebp.sub(5).cast::<bool>().read().then(|| &*ebp.cast::<[u32; 6]>()),
+            );
+        }
+    }
+    match ty {
+        1 => inner(items, ty, ebp, &ide::OBJECTS),
+        2 => inner(items, ty, ebp, &ide::SPRITES),
+        3 => inner(items, ty, ebp, &ide::SOUNDS),
+        4 => inner(items, ty, ebp, &ide::ROOMS),
+        6 => inner(items, ty, ebp, &ide::BACKGROUNDS),
+        7 => inner(items, ty, ebp, &ide::SCRIPTS),
+        8 => inner(items, ty, ebp, &ide::PATHS),
+        9 => inner(items, ty, ebp, &ide::FONTS),
+        12 => inner(items, ty, ebp, &ide::TIMELINES),
+        _ => return,
+    };
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn get_asset_from_name_unicase<T: GetAssetList>() {
+    unsafe extern "fastcall" fn inj<T: GetAssetList>(name: *const u16) -> i32 {
+        let name = UStr::from_ptr(&name);
+        T::get_asset_list()
+            .names()
+            .par_iter()
+            .enumerate()
+            .find_map_first(|(i, n)| {
+                let res: i32 = delphi_call!(0x415924, name.as_ptr(), n.as_ptr());
+                (res == 0).then(|| i as i32)
+            })
+            .unwrap_or(-1)
+    }
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym inj::<T>,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn room_form_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym room_form,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn room_size() {
+    naked_asm!(
+        "mov eax, {width}",
+        "mov dword ptr [ebx+0xc], eax",
+        "mov eax, {height}",
+        "mov dword ptr [ebx+0x10], eax",
+        "mov eax, {speed}",
+        "mov dword ptr [ebx+0x8], eax",
+        // views
+        "mov ecx, 7 * 0x38",
+        "2:", // loop point
+        "mov eax, dword ptr {width}", // width
+        "mov dword ptr [ebx + 0x12c + ecx + 0xc], eax",  // view_w
+        "mov dword ptr [ebx + 0x12c + ecx + 0x1c], eax", // port_w
+        "mov eax, dword ptr {height}", // height
+        "mov dword ptr [ebx + 0x12c + ecx + 0x10], eax", // view_h
+        "mov dword ptr [ebx + 0x12c + ecx + 0x20], eax", // port_h
+        "sub ecx, 0x38",
+        "jge 2b",
+        "ret",
+        width = sym DEFAULT_ROOM_WIDTH,
+        height = sym DEFAULT_ROOM_HEIGHT,
+        speed = sym DEFAULT_ROOM_SPEED,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn fix_broken_room_size() {
+    naked_asm!(
+        // we already have speed in eax so do that one first
+        "cmp eax, 0",
+        "cmovz eax, {speed}",
+        "mov {speed}, eax",
+        // check width
+        "mov eax, 800",
+        "cmp dword ptr {width}, 0",
+        "cmovnz eax, {width}",
+        "mov {width}, eax",
+        // check height
+        "mov eax, 608",
+        "cmp dword ptr {height}, 0",
+        "cmovnz eax, {height}",
+        "mov {height}, eax",
+        "ret",
+        width = sym DEFAULT_ROOM_WIDTH,
+        height = sym DEFAULT_ROOM_HEIGHT,
+        speed = sym DEFAULT_ROOM_SPEED,
+    );
+}
+
+static mut DEFAULT_ROOM_WIDTH: u32 = 800;
+static mut DEFAULT_ROOM_HEIGHT: u32 = 608;
+static mut DEFAULT_ROOM_SPEED: u32 = 50;
+
+#[unsafe(naked)]
+unsafe extern "C" fn rename_room_inj() {
+    naked_asm!(
+        "mov ecx, ebx",
+        "mov edx, [ebp - 4]",
+        "call {}",
+        "test eax, eax", // for the jump afterwards
+        "ret",
+        sym rename_room,
+    );
+}
+
+unsafe extern "fastcall" fn rename_room(room_id: usize, new_name: *const u16) -> *const UStr {
+    let room_names = ide::ROOMS.names();
+    if let Some(room) = ide::ROOMS.assets_mut()[room_id].as_deref_mut() {
+        let new_name = UStr::from_ptr(&new_name);
+        let new_name_slice = new_name.as_slice();
+        if new_name_slice.is_empty() {
+            show_message("Can't give room an empty name.");
+            return ptr::null();
+        }
+        if new_name_slice.contains(&(b'=' as u16)) {
+            show_message("Can't use illegal character '=' in asset name.");
+            return ptr::null();
+        }
+        let old_name = room_names[room_id].to_os_string().into_string().unwrap();
+        let new_name = new_name.to_os_string().into_string().unwrap();
+        fix_instances_when_renaming_room(room, &old_name, &new_name);
+    }
+    &room_names[room_id]
+}
+
+lazy_static! {
+    static ref ROOM_RENAME_REGEX: Regex = Regex::new(r"=[ \t\r\n]*([^=]*?)_[0-9A-F]{8}").unwrap();
+}
+
+fn fix_instances_when_renaming_room(room: &mut asset::Room, old_name: &str, new_name: &str) {
+    let re: &Regex = &ROOM_RENAME_REGEX;
+    for inst in room.get_instances_mut() {
+        let code = inst.creation_code.to_os_string().into_string().unwrap();
+        let mut it = re.captures_iter(&code).filter_map(|c| c.get(1)).filter(|m| m.as_str() == old_name).peekable();
+        if it.peek().is_none() {
+            continue;
+        }
+        let mut new_code = String::with_capacity(code.len());
+        let mut last_match = 0;
+        for m in it {
+            new_code.push_str(&code[last_match..m.start()]);
+            new_code.push_str(&new_name);
+            last_match = m.end();
+        }
+        new_code.push_str(&code[last_match..]);
+        inst.creation_code = UStr::new(new_code);
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn dont_make_room_form_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym dont_make_room_form,
+    );
+}
+
+unsafe extern "fastcall" fn dont_make_room_form(node: Option<&TTreeNode>) {
+    // in theory this should never be null, but we've seen it be null so just double check
+    if let Some(node) = node {
+        // always open if gm82room is disabled, not opening a room, or not using gm82 format
+        if *(0x79a982 as *const bool)
+            || (*node.data).kind != 4
+            || (*ide::PROJECT_PATH).as_slice().last().copied() != Some(b'2' as u16)
+        {
+            let _: u32 = delphi_call!(0x71d608, node);
+        } else {
+            // actually just rename
+            let _: u32 = delphi_call!(0x4ad8b0, node);
+        }
+    }
+}
+
+#[unsafe(naked)]
+unsafe extern "C" fn show_instance_id_inj() {
+    naked_asm!(
+        "mov ecx, eax",
+        "mov eax, [ebx + 0x630]",
+        "push eax",
+        "call {}",
+        "ret",
+        sym show_instance_id,
+    );
+}
+
+unsafe extern "fastcall" fn show_instance_id(id: usize, out: &mut UStr, room_id: usize) {
+    if let Some(ExtraData { instances: insts, .. }) = EXTRA_DATA.as_mut() {
+        let suffix = {
+            let mut name = insts.entry(id).or_default().name;
+            if name == 0 {
+                loop {
+                    name = delphi::Random();
+                    if !insts.values().any(|ex| ex.name == name) {
+                        insts.get_mut(&id).unwrap().name = name;
+                        break;
+                    }
+                }
+            }
+            UStr::new(format!("_{:08X}", name))
+        };
+        let _: u32 = delphi_call!(0x40839c, out, ide::ROOMS.names()[room_id].as_ptr(), suffix.as_ptr());
+    } else {
+        let _: u32 = delphi_call!(0x41666c, id, out);
+    }
+}
+
+static mut SAW_APPLIES_TO_WARNING: bool = false;
+
+static mut SAVING_FOR_ROOM_EDITOR: bool = false;
+
+static mut AUTOSAVE_ON_BUILD: bool = false;
+
+static mut COMPATIBLE_EXES: bool = false;
+
+static mut MEDIA_PLAYER_FOR_SOUNDS: bool = false;
+
+#[unsafe(naked)]
+unsafe extern "fastcall" fn load_garbage_offset() {
+    naked_asm!(
+        "mov al, byte ptr [{}]",
+        "test al, al",
+        "mov eax, 3174000",
+        "mov edx, 3800000",
+        "cmovne eax, edx",
+        "ret",
+        sym COMPATIBLE_EXES,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "fastcall" fn save_exe_and_autosave() {
+    unsafe extern "fastcall" fn inj() {
+        if AUTOSAVE_ON_BUILD && !(*ide::PROJECT_PATH).is_empty() {
+            // TMainForm.Save1Click
+            let _: u32 = delphi_call!(0x6e0540, *(0x790100 as *const usize));
+        }
+    }
+    naked_asm!(
+        "push ebx",
+        "mov ebx, 0x6ce300",
+        "push dword ptr [esp + 8]",
+        "call ebx",
+        "pop ebx",
+        "jmp {}",
+        sym inj,
+    )
+}
+
+#[unsafe(naked)]
+unsafe extern "fastcall" fn run_exe_and_autosave() {
+    unsafe extern "fastcall" fn inj(out: bool) -> bool {
+        if AUTOSAVE_ON_BUILD && !(*ide::PROJECT_PATH).is_empty() {
+            // are we gmk or gmd? if so don't autosave
+            let ext = ExtractFileExt(&*ide::PROJECT_PATH);
+            let dont_autosave_extensions = [ustr!(".gmk"), ustr!(".gmd"), ustr!(".gm6")];
+            if dont_autosave_extensions.iter().all(|x| delphi::CompareText(&ext, x.as_ptr()) != 0) {
+                // also don't autosave over backups
+                let first_three = UStrCopy(&ext, 1, 3);
+                if delphi::CompareText(&first_three, ustr!(".gb").as_ptr()) != 0 {
+                    // TMainForm.Save1Click
+                    let _: u32 = delphi_call!(0x6e0540, *(0x790100 as *const usize));
+                }
+            }
+        }
+        return out;
+    }
+    naked_asm!(
+        "push ebx",
+        "mov ebx, 0x533978",
+        "push dword ptr [esp + 8]",
+        "call ebx",
+        "pop ebx",
+        "jmp {}",
+        sym inj,
+    );
+}
+
+#[unsafe(naked)]
+unsafe extern "fastcall" fn play_sound() {
+    unsafe extern "fastcall" fn inj(sound: &asset::Sound) {
+        if MEDIA_PLAYER_FOR_SOUNDS {
+            if let Some(data) = sound.data.as_deref() {
+                // TODO BROKEN
+                let mut path = UStr::default();
+                // get temp filename with extension
+                let _: u32 = delphi_call!(0x5342d4, sound.extension.as_ptr(), &mut path);
+                // TCustomMemoryStream.SaveToFile
+                let _: u32 = delphi_call!(0x43fe70, data, path.as_ptr());
+                // shell execute
+                let _: u32 = delphi_call!(0x5338dc, path.as_ptr(), 0, 0);
+            }
+        } else {
+            // CSound.Play
+            let _: u32 = delphi_call!(0x65003c, sound);
+        }
+    }
+    naked_asm!(
+        "mov ecx, eax",
+        "jmp {}",
+        sym inj,
+    );
+}
+
+unsafe extern "fastcall" fn room_form(room_id: usize) -> u32 {
+    if *(0x79a982 as *const bool) {
+        return delphi_call!(0x6884c8, room_id);
+    }
+    let editor_path = match std::env::current_exe() {
+        Ok(mut path) => {
+            path.set_file_name("gm82room.exe");
+            path
+        },
+        Err(_) => return delphi_call!(0x6884c8, room_id),
+    };
+    if editor_path.exists() {
+        let mut room_path = PathBuf::from((&*ide::PROJECT_PATH).to_os_string());
+        if room_path.extension() == Some("gm82".as_ref()) {
+            // if we haven't loaded as gm82 before, sanitize instance and tile ids, as there may be duplicates
+            if EXTRA_DATA.is_none() {
+                EXTRA_DATA = Some(Default::default());
+                let mut instance_ids = HashSet::new();
+                let mut tile_ids = HashSet::new();
+                for room in ide::ROOMS.assets_mut().iter_mut().map(|r| r.as_deref_mut()).flatten() {
+                    // check if all ids are unique, and if not, update *all* the ids for consistency
+                    let instances_ok = room.get_instances().iter().all(|inst| instance_ids.insert(inst.id));
+                    let tiles_ok = room.get_tiles().iter().all(|tile| tile_ids.insert(tile.id));
+                    if !instances_ok || !tiles_ok {
+                        freshen_room_ids(room);
+                    }
+                }
+                // force-save all open rooms just in case
+                for form in ide::ROOMS.forms().iter().map(|&f| f as *mut *const u8) {
+                    if !form.is_null() {
+                        let room = *form.add(0x61c / 4);
+                        let saveroom = *form.add(0x620 / 4);
+                        let _: u32 = delphi_call!(0x657994, saveroom, room); // copy room to saveroom
+                        let undoroom_ptr = form.add(0x62c / 4);
+                        if !(*undoroom_ptr).is_null() {
+                            let _: u32 = delphi_call!(0x405a7c, *undoroom_ptr); // free undo room
+                            *undoroom_ptr = ptr::null();
+                        }
+                        form.cast::<bool>().add(0x628).write(false); // clear ischanged flag
+                    }
+                }
+            }
+            // save game first, if needed
+            let project_modified = PATH_FORM_UPDATED || {
+                let out: u32 = delphi_call!(0x7060e8);
+                out != 0
+            };
+            if project_modified {
+                SAVING_FOR_ROOM_EDITOR = true;
+                let _: u32 = delphi_call!(0x51cc64, *(0x7882f0 as *const u32), 0xfff5); // set cursor
+                let success: u32 = delphi_call!(0x705c84, (*ide::PROJECT_PATH).as_ptr()); // save
+                let _: u32 = delphi_call!(0x51cc64, *(0x7882f0 as *const u32), 0); // reset cursor
+                SAVING_FOR_ROOM_EDITOR = false;
+                if success == 0 {
+                    return 0;
+                }
+            } else {
+                project_watcher::unwatch();
+            }
+            // sort out running gm82room
+            room_path.pop();
+            let mut asset_maps_path = room_path.clone();
+            room_path.push("rooms");
+            room_path.push(ide::ROOMS.names()[room_id].to_os_string());
+            let _: u32 = delphi_call!(0x51acd0, *(0x790100 as *const u32)); // hide main form
+            let result = std::process::Command::new(editor_path).arg(&room_path).spawn().and_then(|mut c| c.wait());
+            let _: u32 = delphi_call!(0x51acd8, *(0x790100 as *const u32)); // show main form
+
+            //bring ide to the front
+            type BOOL = i32;
+            type HANDLE = isize;
+            #[link(name = "user32")]
+            unsafe extern "system" {
+                fn GetActiveWindow() -> HANDLE;
+                fn keybd_event(bVK: u8, bScan: u8, dwFlags: u32, dwExtraInfo: isize);
+                fn SetForegroundWindow(hwnd: HANDLE) -> BOOL;
+            }
+            keybd_event(0x12, 0x38, 0, 0); //send alt keycode to trick windows into allowing the jump
+            SetForegroundWindow(GetActiveWindow());
+            keybd_event(0x12, 0x38, 0x0002, 0); //clear alt
+
+            if !matches!(result.map(|s| s.success()), Ok(true)) {
+                let message = UStr::new(format!(
+                    "It looks like gm82room crashed. Would you like to load its changes? \
+                     If it crashed during saving, it is recommended to click \"No\" and save."
+                ));
+                let answer = show_question(&message);
+                if answer != 6 {
+                    // update room timestamp so it re-saves
+                    let _: u32 = delphi_call!(0x6930cc, room_id);
+                    return 0;
+                }
+            }
+            {
+                let room_opt = &mut ide::ROOMS.assets_mut()[room_id];
+                let room = room_opt.as_mut().unwrap();
+                // remove this room's ids from the global thing
+                if let Some(ExtraData { instances: extra_inst, tiles: extra_tile, .. }) = EXTRA_DATA.as_mut() {
+                    for inst in room.get_instances() {
+                        extra_inst.remove(&inst.id);
+                    }
+                    for tile in room.get_tiles() {
+                        extra_tile.remove(&tile.id);
+                    }
+                }
+
+                *room_opt = None; // delete room
+            }
+            // reload whether assets exist
+            let asset_maps = {
+                let mut has_backgrounds = true;
+                let mut has_datafiles = true;
+                let mut has_fonts = true;
+                let mut has_objects = true;
+                let mut has_paths = true;
+                let mut has_scripts = true;
+                let mut has_sounds = true;
+                let mut has_sprites = true;
+                let mut has_timelines = true;
+                let mut has_triggers = true;
+                let project_path = PathBuf::from((&*ide::PROJECT_PATH).to_os_string());
+                load::read_txt(&project_path, |k, v| {
+                    Ok(match k {
+                        "has_backgrounds" => has_backgrounds = v.parse::<u8>()? != 0,
+                        "has_datafiles" => has_datafiles = v.parse::<u8>()? != 0,
+                        "has_fonts" => has_fonts = v.parse::<u8>()? != 0,
+                        "has_objects" => has_objects = v.parse::<u8>()? != 0,
+                        "has_paths" => has_paths = v.parse::<u8>()? != 0,
+                        "has_scripts" => has_scripts = v.parse::<u8>()? != 0,
+                        "has_sounds" => has_sounds = v.parse::<u8>()? != 0,
+                        "has_sprites" => has_sprites = v.parse::<u8>()? != 0,
+                        "has_timelines" => has_timelines = v.parse::<u8>()? != 0,
+                        "has_triggers" => has_triggers = v.parse::<u8>()? != 0,
+                        _ => (),
+                    })
+                })
+                .expect("reloading project failed");
+                load::load_asset_maps(
+                    &mut asset_maps_path,
+                    has_triggers,
+                    has_sprites,
+                    has_sounds,
+                    has_backgrounds,
+                    has_paths,
+                    has_scripts,
+                    has_objects,
+                    has_fonts,
+                    has_timelines,
+                )
+                .expect("loading updated indexes failed")
+            };
+            // reload paths
+            asset_maps_path.push("paths");
+            let path_names = &asset_maps.paths.index;
+            ide::PATHS.alloc(path_names.len());
+            if let Some(extra_data) = &mut EXTRA_DATA {
+                extra_data.paths.clear();
+            }
+            path_names
+                .iter()
+                .zip(ide::PATHS.assets_mut())
+                .zip(ide::PATHS.names_mut())
+                .enumerate()
+                .try_for_each(|(i, ((name, asset), name_p))| -> Result<()> {
+                    if !name.is_empty() {
+                        *name_p = UStr::new(name);
+                        let mut extra = HashMap::new();
+                        *asset = Some(load::load_path(&mut asset_maps_path.join(name), &asset_maps, &mut extra)?);
+                        if !extra.is_empty() {
+                            EXTRA_DATA.get_or_insert_default().paths.insert_new(i, extra);
+                        }
+                    }
+                    Ok(())
+                })
+                .expect("loading updated paths failed");
+            for (&form, path, name) in ide::PATHS
+                .forms()
+                .iter()
+                .zip(ide::PATHS.assets())
+                .zip(ide::PATHS.names())
+                .filter(|&((&f, _), _)| f != 0)
+                .filter_map(|((f, o), n)| o.as_ref().map(|p| (f, p, n)))
+            {
+                (*((form + 0x444) as *const *mut asset::Path)).as_mut().map(|p| p.assign(path));
+                (*((form + 0x448) as *const *mut asset::Path)).as_mut().map(|p| p.assign(path));
+                (*((form + 0x454) as *const *mut asset::Path)).as_mut().map(|p| p.assign(path));
+                *((form + 0x44c) as *mut UStr) = name.clone();
+                *((form + 0x450) as *mut bool) = false;
+                // update path form
+                let _: u32 = delphi_call!(0x71ffe4, form);
+            }
+            asset_maps_path.pop();
+            (**ide::RT_PATHS).DeleteChildren();
+            load::read_resource_tree(ide::RT_PATHS, 8, "paths", &asset_maps.paths.map, true, &mut asset_maps_path)
+                .expect("loading updated path tree failed");
+            // reload room
+            if let Some(extra_data) = &mut EXTRA_DATA {
+                extra_data.rooms.remove(&room_id);
+            }
+            let mut extra = HashMap::new();
+            ide::ROOMS.assets_mut()[room_id] = Some(
+                load::load_room(&mut room_path, &asset_maps, &mut extra)
+                    .map_err(|e| e.to_string())
+                    .expect("loading the updated room failed"),
+            );
+            if !extra.is_empty() {
+                EXTRA_DATA.get_or_insert_default().rooms.insert_new(room_id, extra);
+            }
+            room_path.pop();
+            room_path.pop();
+            update_timestamp();
+            project_watcher::setup_watcher(&mut room_path);
+            return 0;
+        }
+    }
+    delphi_call!(0x6884c8, room_id) // the default
+}
+
+unsafe fn patch(dest: usize, source: &[u8]) {
+    // the only winapi imports in the whole project, no need for crates
+    #[allow(non_camel_case_types)]
+    type PAGE_TYPE = u32;
+    const PAGE_READWRITE: PAGE_TYPE = 0x04;
+    type BOOL = i32;
+    type HANDLE = isize;
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn VirtualProtect(
+            lpaddress: *mut c_void,
+            dwsize: usize,
+            flnewprotect: PAGE_TYPE,
+            lpfloldprotect: *mut PAGE_TYPE,
+        ) -> BOOL;
+        fn GetCurrentProcess() -> HANDLE;
+        fn FlushInstructionCache<'a>(hprocess: HANDLE, lpbaseaddress: *const c_void, dwsize: usize) -> BOOL;
+    }
+
+    let mut old_protect = 0;
+    let dest = dest as *mut u8;
+    VirtualProtect(dest.cast(), source.len(), PAGE_READWRITE, &mut old_protect);
+    dest.copy_from(source.as_ptr(), source.len());
+    VirtualProtect(dest.cast(), source.len(), old_protect, &mut old_protect);
+    FlushInstructionCache(GetCurrentProcess(), dest.cast(), source.len());
+}
+
+unsafe fn patch_call(instr: usize, proc: *const ()) {
+    patch(instr + 1, &(proc as usize - (instr as usize + 5)).to_le_bytes());
+}
+
+#[cfg_attr(not(test), ctor::ctor)]
+pub unsafe fn injector() {
+    std::panic::set_hook(Box::new(|info| {
+        let msg = UStr::new(info.to_string() + "\r\n\r\nPlease send a screenshot of this error message to Floogle.");
+        let _: u32 = delphi_call!(0x51fbdc, *(0x7882ec as *const usize), msg.as_ptr(), 0, 0x10);
+        std::process::exit(-1);
+    }));
+
+    // do whatever needs doing when the IDE starts up
+    patch(0x6deb83, &[0x90, 0x90, 0xe8]);
+    patch_call(0x6deb83 + 2, stuff_to_do_on_ide_start as _);
+
+    // accept only the first commandline argument as a project path
+    patch(0x6dead7, &[0xeb]);
+
+    patch_call(0x6deb0f, load_recent_project_and_maybe_compile as _);
+
+    patch_call(0x6de7d3, skip_remove_temp_on_cmd_build as _);
+
+    // about dialog
+    #[rustfmt::skip]
+    patch(0x71be58, &[
+        0x8b, 0xc8, // mov ecx, eax
+        0xe9, // jmp [nothing yet]
+    ]);
+    patch_call(0x71be5a, about_inj as _);
+
+    // invalidate the cache after importing resources
+    patch_call(0x70ef38, save_all_after_import as _);
+
+    // call save() instead of CStream.Create and the "save gmk" function
+    let save_dest = 0x705cbd;
+    #[rustfmt::skip]
+    let mut save_patch = [
+        0xe8, 0x00, 0x00, 0x00, 0x00, // call save (my save)
+        0x84, 0xe4, // test ah,ah
+        0x74, 0x0e, // je 0x705cd4 (after this patch)
+        0x84, 0xc0, // test al,al
+        0x74, 0x25, // je 0x705cef (after save fail)
+        0xe9, 0x7e, 0x01, 0x00, 0x00, // jmp 0x705e4d (after save success)
+    ];
+    save_patch[1..5].copy_from_slice(&(save_inj as *const () as usize - (save_dest + 5)).to_le_bytes());
+    patch(save_dest, &save_patch);
+
+    // call load() instead of CStream.Create
+    // and insert a JZ to the post-load code (0x705af3)
+    let load_dest = 0x705a42;
+    #[rustfmt::skip]
+    let mut load_patch = [
+        0xe8, 0x00, 0x00, 0x00, 0x00, // call load (my load)
+        0x84, 0xc0, // test al,al
+        0x0f, 0x85, 0xa4, 0x00, 0x00, 0x00, // jne 0x705af3 (after load)
+    ];
+    load_patch[1..5].copy_from_slice(&(load_inj as *const () as usize - (load_dest + 5)).to_le_bytes());
+    patch(load_dest, &load_patch);
+
+    // check for .gm82 as well as .gm81 when dragging file onto game maker
+    patch_call(0x6df7e2, gm81_or_gm82_inj as _);
+    // check for .gm82 as well as .gm81 in open file dialog
+    patch_call(0x6e02ed, gm81_or_gm82_inj as _);
+    // check for .gm82 as well as .gm81 in "rename if using an old file extension" code
+    patch_call(0x6e0574, gm81_or_gm82_inj as _);
+    // replace now-unused .gm81 with .gm82
+    patch(0x6dfbec, &[b'2']);
+    // save new .gm82 projects to subfolder when using "save as" dialog
+    patch_call(0x6e06b3, make_new_folder as _);
+    // default to .gm82
+    patch(0x6e0734, &['2' as u8]);
+
+    // install extensions to own directory if possible
+    patch_call(0x713cdf, install_extensions_to_exedir_if_possible as _);
+
+    // uninstall extensions from own directory
+    patch(0x71428c, &[0xe8]);
+    patch_call(0x71428c, uninstall_from_exedir_too as _);
+
+    // move extensions to exedir from localappdata
+    patch_call(0x712a9a, move_extensions_from_localappdata_to_exedir as _);
+
+    // don't create localappdata folders
+    patch(0x71288c, &[0xeb]);
+    patch(0x7128fa, &[0xeb]);
+    patch(0x712968, &[0xeb]);
+    patch(0x5d05db, &[0xeb]);
+
+    // fix stupid null pointer error
+    patch(0x68ef02, &[0xe9]);
+    patch_call(0x68ef02, fix_tile_null_pointer as _);
+
+    // no need to refresh icon or redraw tree when closing resource forms
+    patch(0x64e133, &[0x90; 10]);
+    patch(0x6f5c1b, &[0x90; 10]);
+    patch(0x722af3, &[0x90; 5]);
+    patch(0x62ce43, &[0x90; 5]);
+    patch(0x6525ab, &[0x90; 5]);
+    patch(0x655f1b, &[0x90; 5]);
+    patch(0x6931d7, &[0x90; 5]);
+    patch(0x6fa8bb, &[0x90; 5]);
+    patch(0x6fcf0b, &[0x90; 5]);
+
+    // but do refresh icon when changes aren't saved
+    patch_call(0x6f5152, update_sprite_icon_on_revert as _);
+    patch_call(0x64d66a, update_background_icon_on_revert as _);
+
+    // attempt to fix clipboard sometimes getting a permission denied error
+    patch_call(0x488bb4, try_clipboard_a_few_times as _);
+
+    // fix memory leak in image editor
+    patch_call(0x643bd0, free_image_editor_bitmap as _);
+
+    // don't dereference null pointer when changing image editor tool while mouse is down
+    patch(0x643eb6, &[0x90, 0xe8]);
+    patch_call(0x643eb7, image_editor_dont_error_when_switching_tool as _);
+
+    // get default blend mode from form in image editor
+    patch(
+        0x64654d,
+        &[
+            0x8b, 0xc3, // mov eax, ebx
+            0xe8, 0x58, 0xf6, 0xff, 0xff, // call TImageEditorForm.DrawModeGroupClick
+            0x90, 0x90, 0x90, // nops
+        ],
+    );
+
+    // copy origin when New
+    patch_call(0x6ee2f8, copy_origin_on_new as _);
+
+    // fix grid snap
+    patch_call(0x64612b, floor_st0 as _);
+    patch_call(0x646164, floor_st0 as _);
+    patch_call(0x64639e, floor_st0 as _);
+    patch_call(0x6463d7, floor_st0 as _);
+
+    // don't skip font dwType 2 (otf)
+    patch(0x6fb501, &[0x90, 0x90]);
+
+    // don't skip font dwType 1 (bitmap fonts)
+    patch(0x6fb504, &[0x90, 0x90]);
+
+    // fix access violation when closing object/timeline window while mousing over action
+    patch_call(0x6c6f6f, dont_show_action_tooltip_if_event_is_null as _);
+    patch_call(0x6f9043, dont_show_action_tooltip_if_event_is_null as _);
+
+    // update room forms if first object is created
+    patch_call(0x71cfa2, first_object_updates_room_forms as _);
+
+    // background from clipboard button
+    patch_call(0x64cbc3, background_form_add_events as _);
+
+    // double clicking a timeline moment opens the first action
+    patch_call(0x6f7f42, timeline_form_add_events as _);
+
+    // go to parent by clicking on parent button
+    patch_call(0x6c515e, object_form_add_events as _);
+
+    // ask to confirm when deleting actions with content
+    // call <...>; nop
+    patch(0x6c7999, &[0xe8, 0, 0, 0, 0, 0x90]);
+    patch_call(0x6c7999, confirm_before_deleting_action_object as _);
+    patch(0x6f9a31, &[0xe8, 0, 0, 0, 0, 0x90]);
+    patch_call(0x6f9a31, confirm_before_deleting_action_timeline as _);
+
+    // clean collision events and mark as modified when deleting objects
+    patch_call(0x62ca82, object_clean_collide_events_inj as _);
+
+    // clean trigger events when deleting triggers
+    patch(0x6bcc94, &[0xe8, 0x00, 0x00, 0x00, 0x00, 0x90, 0x90]);
+    patch_call(0x6bcc94, object_clean_triggers_inj as _);
+
+    // add scrolling to path form
+    patch_call(0x71fdcb, path_form_mouse_wheel_inj as _);
+
+    // changing room in path form counts as a change
+    patch_call(0x7211ff, path_room_change_forces_room_editor_save as _);
+
+    // don't show Trace.log after debug run
+    patch(0x6d83f1, &[0xe9, 0x45, 0x05, 0x00, 0x00]);
+    // load DebugTraceCheckBox as TValueEdit
+    patch(
+        0x71a6bb,
+        &[
+            0xe8, 0xa0, 0x60, 0xe1, 0xff, // call TValueEdit.SetValue
+            0x90, 0x90, 0x90, // nop slide
+        ],
+    );
+    // save DebugTraceCheckBox as TValueEdit
+    patch(
+        0x71aad5,
+        &[
+            0x8b, 0x80, 0xa0, 0x02, 0x00, 0x00, // mov eax, DebugTraceCheckBox.i_value
+            0xa2, 0x98, 0xa9, 0x79, 0x00, // mov [compression_value], al
+        ],
+    );
+    // set default to 1
+    patch(0x71792e, &[0xb2, 0x01]);
+    // load from registry as int
+    patch(0x717936, &[0x96, 0xf4]);
+    // save to registry as int
+    patch(0x719068, &[0x94]);
+    // ShowDebugTrace -> TestComprLevel
+    #[rustfmt::skip]
+    patch(0x7187dc, &[
+        b'T', 0, b'e', 0, b's', 0, b't',
+        b'C', 0, b'o', 0, b'm', 0, b'p', 0, b'r', 0,
+        b'L', 0, b'e', 0, b'v', 0, b'e', 0, b'l'
+    ]);
+    #[rustfmt::skip]
+    patch(0x719da0, &[
+        b'T', 0, b'e', 0, b's', 0, b't', 0,
+        b'C', 0, b'o', 0, b'm', 0, b'p', 0, b'r', 0,
+        b'L', 0, b'e', 0, b'v', 0, b'e', 0, b'l', 0,
+    ]);
+
+    // set default HideWait to false
+    patch(0x717119, &[0x33, 0xd2]);
+
+    // use zlib-ng for compression
+    patch(0x52f34c, &[0xe9]);
+    patch_call(0x52f34c, deflate_inj as _);
+    patch(0x52f2e4, &[0xe9]);
+    patch_call(0x52f2e4, inflate_inj as _);
+    // build fast when making test build
+    patch_call(0x6ce8a2, build_fast as _);
+    patch_call(0x6ce8cb, reset_compression as _);
+    // build small when making release
+    patch_call(0x6ce775, build_small as _);
+    patch_call(0x6ce78f, reset_compression as _);
+
+    // compiler injections
+    compiler::inject();
+    // reset extra data, unwatch project folder, and add a blank object when loading a new project
+    patch_call(0x7059d2, stuff_to_do_on_project_init as _);
+
+    // read text as ANSI on pre-8.1
+    patch(0x70537b, &[0xe8]);
+    patch_call(0x70537b, setup_unicode_parse_inj as _);
+    // reset above
+    patch_call(0x705acc, teardown_unicode_parse_inj as _);
+
+    // .gm82 file associations
+    patch_call(0x6ddacd, gm82_file_association_inj as _);
+
+    // fix access violation when pasting empty clipboard
+    patch(0x6b8a7f + 1, &[0x0d]);
+
+    // check if extensions need updating when drawing code
+    patch(0x6ab18c, &[0xe9]);
+    patch_call(0x6ab18c, maybe_reload_extensions_when_typing as _);
+
+    // code form stuff
+    code_form::inject();
+
+    // code editor don't resize on maximize
+    // script resize
+    patch(0x65508c, &[0xe8, 0, 0, 0, 0, 0x90]);
+    patch_call(0x65508c, code_editor_better_resize as _);
+    // codeaction resize
+    patch(0x682bf0, &[0xe8, 0, 0, 0, 0, 0x90]);
+    patch_call(0x682bf0, code_editor_better_resize as _);
+
+    // but also don't resize on create *if* maximized
+    patch(0x653d83, &[0xe8, 0, 0, 0, 0, 0x90]);
+    patch_call(0x653d83, code_editor_dont_resize_if_maximized as _);
+
+    // middle click in code editor shows resource
+    // remove first check
+    patch(0x6b7182, &[0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+    // inject second check
+    patch_call(0x6b721b, code_editor_middle_click as _);
+
+    // code hint: faster extension function search and add script hints
+    patch(0x71364e, &[0xae, 0x22]);
+    #[rustfmt::skip]
+    patch(0x6bb12e, &[
+        // prior line: mov eax, [ebp-4]
+        0x8b, 0x55, 0xf8, // mov edx, [ebp-8]
+        0xe8, 0xde, 0x84, 0x05, 0x00, // call extension_get_helpline_from_function_name
+        0x8b, 0x55, 0xf8, // mov edx, [ebp-8]
+        0x8b, 0x02, // mov eax, [edx]
+        0x85, 0xc0, // test eax, eax
+        0x75, 0x10, // jnz to function end
+        0x8b, 0x4d, 0xfc, // mov ecx, [ebp-4]
+        0xe8, 0, 0, 0, 0, // call code_editor_script_hint
+        0xeb, 0x06, // jmp to function end
+    ]);
+    patch_call(0x6bb142, code_editor_script_hint as _);
+
+    // script args in code completion
+    patch_call(0x6baa91, completion_script_args_inj as _);
+    patch(0x6baa98, &[0xa8]); // get previous script name result
+
+    // fix triggers in code completion
+    patch(0x6baa1c, &[0x98, 0x23]); // get trigger const instead of name
+    patch(
+        0x6baa2e,
+        &[
+            0x6a, 0x00, // push 0
+            0x6a, 0x04, // push 4
+            0x8d, 0x54, 0x24, 0x4, // lea edx, [esp+4]
+            0x8b, 0xcb, // mov ecx, ebx (the mov to eax afterwards is useless but that's fine)
+        ],
+    );
+    patch_call(0x6baa3a, add_space_before_trigger_name as _);
+    patch(0x6baa41, &[0xb0]);
+
+    // show number on code actions
+    patch_call(0x7002fe, write_number_on_actions as _);
+
+    // default room editor settings
+    patch(0x657852, &[0xe8, 0, 0, 0, 0, 0x90, 0x90]);
+    patch_call(0x657852, room_size as _);
+
+    // nop out room view size stuff
+    patch(0x657904, &[0x90; 14]);
+    patch(0x65791c, &[0x90; 14]);
+
+    // fix instance references in creation code when renaming room
+    #[rustfmt::skip]
+    patch(0x692fbb, &[
+        0xe8, 0, 0, 0, 0, // call rename_room_inj
+        0x74, 0x2a, // jz to end of function
+        0x90, // nop
+    ]);
+    patch_call(0x692fbb, rename_room_inj as _);
+
+    // replace ids in new room when duplicating
+    #[rustfmt::skip]
+    patch(0x692e72, &[
+        0x8b, 0x14, 0x98, // mov edx, [eax+ebx*4]
+        0x8b, 0x04, 0xb0, // mov eax, [eax+esi*4]
+        0x56, // push esi (new id)
+        0x53, // push ebx (old id)
+        0x50, // push eax (room ptr)
+        0xe8, 0x14, 0x4b, 0xfc, 0xff, // call CRoom.Assign
+        0xe8, 0x00, 0x00, 0x00, 0x00, // call freshen_room_ids
+        0x90, 0x90, 0x90, // nop padding
+    ]);
+    patch_call(0x692e80, duplicate_room as _);
+
+    // show instance id in old room editor
+    patch_call(0x68fbc9, show_instance_id_inj as _);
+
+    // funky room editor shit
+    patch_call(0x69319c, room_form_inj as _);
+    // disable news (replace function with a ret)
+    patch(0x62c224, &[0xc3]);
+    // don't open gm82room when creating/duplicating a new room
+    patch_call(0x6e2f86, dont_make_room_form_inj as _);
+    patch_call(0x6e2f5c, dont_make_room_form_inj as _);
+    patch_call(0x6e169e, dont_make_room_form_inj as _);
+
+    // configs for default room editor settings
+    // force progress bar (replace check with nops)
+    patch(0x6ca266, &[0x90, 0x90]);
+    // replace ShowProgress with DefRoomW
+    patch(0x717cbc, b"\x08\0\0\0D\0e\0f\0R\0o\0o\0m\0W\0\0\0");
+    patch(0x719350, b"\x08\0\0\0D\0e\0f\0R\0o\0o\0m\0W\0\0\0");
+    // replace NoWebsite with DefRoomH
+    patch(0x7189e8, b"\x08\0\0\0D\0e\0f\0R\0o\0o\0m\0H\0\0\0");
+    patch(0x719e0c, b"\x08\0\0\0D\0e\0f\0R\0o\0o\0m\0H\0\0\0");
+    // replace NewsBrowser with DefRoomS
+    patch(0x718a24, b"\x08\0\0\0D\0e\0f\0R\0o\0o\0m\0S\0\0\0");
+    patch(0x719e48, b"\x08\0\0\0D\0e\0f\0R\0o\0o\0m\0S\0\0\0");
+    // read ShowProgress from reg as int
+    patch(0x7170f7, &[0x33, 0xd2]);
+    patch(0x7170fe, &[0xe8, 0xcd, 0xfc, 0xff, 0xff, 0xa3]);
+    patch(0x717104, &(addr_of!(DEFAULT_ROOM_WIDTH) as *const u32 as usize as u32).to_le_bytes());
+    // read NoWebsite from reg as int
+    patch(0x71799d, &[0xe8, 0x2e, 0xf4, 0xff, 0xff, 0xa3]);
+    patch(0x7179a3, &(addr_of!(DEFAULT_ROOM_HEIGHT) as *const u32 as usize as u32).to_le_bytes());
+    // read NewsBrowser from reg as int
+    patch(0x7179bf, &[0xe8, 0x0c, 0xf4, 0xff, 0xff, 0xe8]);
+    patch_call(0x7179c4, fix_broken_room_size as _);
+    // write ShowProgress to reg as int
+    patch(0x718bac, &[0x8b, 0x15, 0x2c, 0xa8, 0x79, 0x00, 0x90]);
+    patch(0x718bb9, &[0x43, 0xe0]);
+    patch(0x718bae, &(addr_of!(DEFAULT_ROOM_WIDTH) as *const u32 as usize as u32).to_le_bytes());
+    // write NoWebsite to reg as int
+    patch(0x71908e, &[0x8b, 0x15, 0x81, 0xa9, 0x79, 0x00, 0x90]);
+    patch(0x71909b, &[0x61, 0xdb]);
+    patch(0x719090, &(addr_of!(DEFAULT_ROOM_HEIGHT) as *const u32 as usize as u32).to_le_bytes());
+    // write NewsBrowser to reg as int
+    patch(0x7190b0, &[0x8b, 0x15, 0x83, 0xa9, 0x79, 0x00, 0x90]);
+    patch(0x7190bd, &[0x3f, 0xdb]);
+    patch(0x7190b2, &(addr_of!(DEFAULT_ROOM_SPEED) as *const u32 as usize as u32).to_le_bytes());
+    // write ShowProgress to form as ValueEdit
+    patch(0x71a272, &[0x8b, 0x15, 0x2c, 0xa8, 0x79, 0x00, 0xe8, 0xe3, 0x64, 0xe1, 0xff, 0x90, 0x90, 0x90, 0x90]);
+    patch(0x71a274, &(addr_of!(DEFAULT_ROOM_WIDTH) as *const u32 as usize as u32).to_le_bytes());
+    // write NoWebsite to form as ValueEdit
+    patch(0x71a4ec, &[0x8b, 0x15, 0x81, 0xa9, 0x79, 0x00, 0xe8, 0x69, 0x62, 0xe1, 0xff, 0x90, 0x90, 0x90, 0x90]);
+    patch(0x71a4ee, &(addr_of!(DEFAULT_ROOM_HEIGHT) as *const u32 as usize as u32).to_le_bytes());
+    // write NewsBrowser to form as ValueEdit
+    patch(0x71a51d, &[0x8b, 0x15, 0x83, 0xa9, 0x79, 0x00, 0xe8, 0x38, 0x62, 0xe1, 0xff, 0x90, 0x90, 0x90, 0x90]);
+    patch(0x71a51f, &(addr_of!(DEFAULT_ROOM_SPEED) as *const u32 as usize as u32).to_le_bytes());
+    // read ShowProgress from form as ValueEdit
+    patch(0x71a777, &[0x8b, 0x80, 0xa0, 0x02, 0x00, 0x00, 0xa3, 0x2c, 0xa8, 0x79, 0x00, 0x90, 0x90]);
+    patch(0x71a77e, &(addr_of!(DEFAULT_ROOM_WIDTH) as *const u32 as usize as u32).to_le_bytes());
+    // read NoWebsite from form as ValueEdit
+    patch(0x71a93f, &[0x8b, 0x80, 0xa0, 0x02, 0x00, 0x00, 0xa3, 0x81, 0xa9, 0x79, 0x00, 0x90, 0x90]);
+    patch(0x71a946, &(addr_of!(DEFAULT_ROOM_HEIGHT) as *const u32 as usize as u32).to_le_bytes());
+    // read NewsBrowser from form as ValueEdit
+    patch(0x71a96b, &[0x8b, 0x80, 0xa0, 0x02, 0x00, 0x00, 0xa3, 0x83, 0xa9, 0x79, 0x00, 0x90, 0x90]);
+    patch(0x71a972, &(addr_of!(DEFAULT_ROOM_SPEED) as *const u32 as usize as u32).to_le_bytes());
+    // additional preferences form changes
+    patch_call(0x71a52c, open_preferences_form as _);
+    patch(0x71a531, &[0x90; 15]);
+    patch_call(0x71aaf7, close_preferences_form as _);
+
+    // always run in advanced mode + do additional preferences changes
+    patch(
+        0x717955,
+        &[
+            0xc6, 0x05, 0x80, 0xa9, 0x79, 0x00, 0x01, // mov byte ptr [0x79a980], 1
+            0xe8, 0, 0, 0, 0, // call <...>
+            0xeb, 0x33, // jmp 0x717996
+        ],
+    );
+    patch_call(0x71795c, load_preferences as _);
+    patch_call(0x7190dd, save_preferences_inj as _);
+
+    // toggle gm82room instead of opening news
+    patch_call(0x6e2002, toggle_gm82room_checkbox as _);
+
+    // check for other processes before setting MakerRunning to false
+    patch(0x71af15, &[0xb9]);
+    patch_call(0x71af15, check_gm_processes as _);
+
+    patch_call(0x75e88c, trace_date_inj as _);
+
+    // error box only shows once and has custom message
+    patch_call(0x51fe33, patch_error_box as _);
+
+    // regenerate temp directory if it doesn't exist
+    patch_call(0x5342e8, regen_temp_folder_when_making_file as _);
+    patch_call(0x6ce82b, get_temp_folder_but_also_regen_it as _);
+
+    // add three newest resources to popup menus
+    patch_call(0x71c6a0, get_treenode_count_and_preserve_resource_type as _);
+    patch(0x71c6dd, &[0xe9]);
+    patch_call(0x71c6dd, add_three_newest_inj as _);
+
+    // only delete resource if resource is focused
+    patch(
+        0x6e33b2,
+        &[
+            0x50, // push eax
+            0xe8, 0xa8, 0x42, 0xe1, 0xff, // call TWinControl.Focused
+            0x85, 0xc0, // test eax, eax
+            0x58, // pop eax
+            0x74, 0x07, // je past this call and test
+            0xe8, 0x7a, 0xd1, 0xdc, 0xff, // call TCustomTreeView.GetSelected
+            0x85, 0xc0, // test eax, eax
+            0x0f, 0x84, 0xc7, 0x00, 0x00, 0x0, // je 0x6e3491 (end of function)
+        ],
+    );
+
+    // case insensitive ctrl-r
+    patch_call(0x6e144a, get_asset_from_name_unicase::<asset::Object> as _);
+    patch_call(0x6e1460, get_asset_from_name_unicase::<asset::Room> as _);
+    patch_call(0x6e1476, get_asset_from_name_unicase::<asset::Sprite> as _);
+    patch_call(0x6e148c, get_asset_from_name_unicase::<asset::Sound> as _);
+    patch_call(0x6e149f, get_asset_from_name_unicase::<asset::Background> as _);
+    patch_call(0x6e14b2, get_asset_from_name_unicase::<asset::Path> as _);
+    patch_call(0x6e14c5, get_asset_from_name_unicase::<asset::Font> as _);
+    patch_call(0x6e14d8, get_asset_from_name_unicase::<asset::Timeline> as _);
+    patch_call(0x6e14eb, get_asset_from_name_unicase::<asset::Script> as _);
+
+    // case insensitive name conflicts
+    patch_call(0x6d25f8, get_asset_from_name_unicase::<asset::Sprite> as _);
+    patch_call(0x6d2631, get_asset_from_name_unicase::<asset::Sound> as _);
+    patch_call(0x6d266a, get_asset_from_name_unicase::<asset::Background> as _);
+    patch_call(0x6d26a3, get_asset_from_name_unicase::<asset::Path> as _);
+    patch_call(0x06d26dc, get_asset_from_name_unicase::<asset::Script> as _);
+    patch_call(0x6d2715, get_asset_from_name_unicase::<asset::Font> as _);
+    patch_call(0x6d274e, get_asset_from_name_unicase::<asset::Timeline> as _);
+    patch_call(0x6d2787, get_asset_from_name_unicase::<asset::Object> as _);
+    patch_call(0x6d27c0, get_asset_from_name_unicase::<asset::Room> as _);
+
+    patch_call(0x6d2832, get_asset_from_name_unicase::<asset::Sprite> as _);
+    patch_call(0x6d2867, get_asset_from_name_unicase::<asset::Sound> as _);
+    patch_call(0x6d289c, get_asset_from_name_unicase::<asset::Background> as _);
+    patch_call(0x6d28d1, get_asset_from_name_unicase::<asset::Path> as _);
+    patch_call(0x6d2906, get_asset_from_name_unicase::<asset::Script> as _);
+    patch_call(0x6d293b, get_asset_from_name_unicase::<asset::Font> as _);
+    patch_call(0x6d2970, get_asset_from_name_unicase::<asset::Timeline> as _);
+    patch_call(0x6d29a5, get_asset_from_name_unicase::<asset::Object> as _);
+    patch_call(0x6d29da, get_asset_from_name_unicase::<asset::Room> as _);
+
+    // update timestamps when setting name
+    unsafe fn patch_timestamps(dest: usize) {
+        patch(dest, &[0x8b, 0xc3, 0xe8, 0xe0, 0x00, 0x00, 0x00]);
+    }
+    patch(0x62cbe9, &[0x8b, 0xc3, 0xe8, 0x3c, 0x01, 0x00, 0x00]); // objects
+    patch_timestamps(0x6f59e1); // sprites
+    patch_timestamps(0x652381); // sounds
+    patch_timestamps(0x692fe5); // rooms
+    patch_timestamps(0x64def9); // backgrounds
+    patch_timestamps(0x655c01); // scripts
+    patch_timestamps(0x722901); // paths
+    patch_timestamps(0x6fcd19); // fonts
+    patch_timestamps(0x6fa6c9); // timelines
+
+    // fix objects/timelines updating the wrong timestamp
+    patch_call(0x6c73ef, properly_update_object_timestamp_drag_drop as _);
+    patch_call(0x6f94c3, properly_update_timeline_timestamp_drag_drop as _);
+    patch_call(0x6c7512, properly_update_object_timestamp_right_click as _);
+    patch_call(0x6f95e6, properly_update_timeline_timestamp_right_click as _);
+
+    // don't show save/discard question when deleting object
+    patch(0x62ca28, &[0x90; 5]);
+
+    // load first sprite in full
+    patch_call(0x63aff1, update_origin_from_gmspr as _);
+
+    // update timestamp properly in mask form
+    unsafe fn patch_timestamp_mask(dest: usize) {
+        patch(dest, &[0xe8, 0, 0, 0, 0, 0x90, 0x90, 0x90]);
+        patch_call(dest, update_sprite_mask_timestamp as _);
+    }
+    patch_timestamp_mask(0x6f3208);
+    patch_timestamp_mask(0x6f33fa);
+    patch_timestamp_mask(0x6f34e8);
+    patch_timestamp_mask(0x6f3555);
+
+    // update path timestamp when changing room (important for gm82room)
+    patch_call(0x7211ff, update_path_timestamp_and_draw_form as _);
+
+    // check for time going backwards
+    patch(0x4199fb, &[0xe9]);
+    patch_call(0x4199fb, reset_if_time_went_backwards as _);
+
+    patch_call(0x651cb0, play_sound as _);
+
+    patch_call(0x6d83dc, run_exe_and_autosave as _);
+    patch_call(0x6ce781, save_exe_and_autosave as _);
+
+    patch(0x6cdf32, &[0xe8]);
+    patch_call(0x6cdf32, load_garbage_offset as _);
+
+    // skip deleting rundata icon (wine can't delete it here, so it's already gone from rundata)
+    patch(0x6cccce, &[0x0f, 0x85, 0xd9, 0x00, 0x00, 0x00, 0x00]);
+
+    patch_call(0x6cd928, save_exe::save_assets_inj::<asset::Sound> as _);
+    patch_call(0x6cd943, save_exe::save_assets_inj::<asset::Sprite> as _);
+    patch_call(0x6cd95e, save_exe::save_assets_inj::<asset::Background> as _);
+    patch_call(0x06cd979, save_exe::save_assets_inj::<asset::Path> as _);
+    patch_call(0x6cd994, save_exe::save_assets_inj::<asset::Script> as _);
+    patch_call(0x6cd9af, save_exe::save_assets_inj::<asset::Font> as _);
+    patch_call(0x6cd9ca, save_exe::save_assets_inj::<asset::Timeline> as _);
+    patch_call(0x6cd9e1, save_exe::save_assets_inj::<asset::Object> as _);
+    patch_call(0x6cd9f8, save_exe::save_assets_inj::<asset::Room> as _);
+
+    patch_call(0x6cda40, save_exe::write_event_tables as _);
+
+    patch_call(0x6ce104, save_exe::write_encrypted_gamedata_inj as _);
+}

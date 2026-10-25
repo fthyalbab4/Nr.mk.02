@@ -1,0 +1,8 @@
+build
+*.gex
+*.ps*
+*.vs*
+cache
+gm82gex.py
+desktop.ini
+

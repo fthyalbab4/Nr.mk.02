@@ -1,0 +1,287 @@
+{
+	"name": "Game Maker 8.2 Test",
+	"folder": "gm82",
+	"version": "0.6",
+	"author": "renex, Verve",
+	"date": "04/09/2025",
+	"license": "Free to use, also for commercial games.",
+	"description": "Part of the standard Game Maker 8.2 distribution. This extension package allows realtime room editing.",
+	"helpfile": "",
+	"hidden": false,
+	"dependencies": [
+		"Game Maker 8.2 Core",
+		"Game Maker 8.2 Buffer"
+	],
+	"files": [
+		{
+			"filename": "gm82test.gml",
+			"origname": "gm82test.gml",
+			"kind": 2,
+			"init": "__gm82test_init",
+			"final": "",
+			"functions": [
+				{
+					"name": "assert",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "assert(expression,expected,[message])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "benchmark_start",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "benchmark_start()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "benchmark_end",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "benchmark_end()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "benchmark_report",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "benchmark_report(name)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "benchmark_end_and_report",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "benchmark_end_and_report(name)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "test_is_stub",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "test_is_stub()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "test_path_reload",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "test_path_reload()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "test_room_exclude_object",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "test_room_exclude_object(object)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "test_room_start",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "test_room_start()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "test_room_status",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "test_room_status()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "trycatch",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "trycatch(code/script)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "variable_instance_count",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_instance_count(id)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "variable_instance_get_all",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_instance_get_all(id)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "variable_instance_get_next",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_instance_get_next()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82test_init",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82test_room_poll",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82test_room_request",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "variable_global_count",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_global_count()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "variable_global_get_all",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_global_get_all()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "variable_global_get_next",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_global_get_next()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "inst_meta.dll",
+			"origname": "build/Release/gm82test.dll",
+			"kind": 1,
+			"init": "__gm82_inst_meta_init",
+			"final": "__gm82_inst_meta_final",
+			"functions": [
+				{
+					"name": "__gm82_inst_meta_init",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82_inst_meta_final",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82_inst_meta_count",
+					"extname": "variable_instance_names_start",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82_inst_meta_next",
+					"extname": "variable_instance_names_next",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 1
+				},
+				{
+					"name": "__gm82_var_name_count",
+					"extname": "__gm82_var_name_count",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82_var_name_get",
+					"extname": "__gm82_var_name_get",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 1
+				}
+			],
+			"constants": []
+		}
+	]
+}

@@ -1,0 +1,7 @@
+.zig-cache/
+zig-out/
+test/
+*.glb
+*.gex
+*.gm81
+desktop.ini

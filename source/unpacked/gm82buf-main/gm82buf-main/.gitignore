@@ -1,0 +1,6 @@
+build
+*.gex
+*.dll
+todo.txt
+gm82gex.py
+desktop.ini

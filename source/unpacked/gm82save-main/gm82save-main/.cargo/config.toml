@@ -1,0 +1,12 @@
+[build]
+target="i686-pc-windows-msvc"
+
+[target.i686-pc-windows-msvc]
+rustflags = ["-Ctarget-feature=+crt-static"]
+
+[target.win7-pc-windows-msvc]
+rustflags = ["-Ctarget-feature=+crt-static"]
+
+[target.i686-pc-windows-gnu]
+# silence linker warnings, fixup doesn't seem to do any harm
+rustflags = ["-C", "link-arg=-Wl,--enable-stdcall-fixup"]

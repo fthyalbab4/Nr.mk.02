@@ -1,0 +1,4377 @@
+{
+	"name": "Game Maker 8.2 Core",
+	"folder": "gm82",
+	"version": "1.6",
+	"author": "renex, Floogle, Lovey01, cam900, Adamcake, Yal, Verve",
+	"date": "30/06/2026",
+	"license": "Free to use, also for commercial games.",
+	"description": "Part of the standard Game Maker 8.2 distribution. This extension package contains a vast number of helper functions, and some newer functions introduced in GM:Studio. This extension is also required for using the other GM 8.2 extensions.",
+	"helpfile": "",
+	"hidden": false,
+	"dependencies": [],
+	"files": [
+		{
+			"filename": "gm82core.dll",
+			"origname": "build/Release/gm82core.dll",
+			"kind": 1,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "angle_abs",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "angle_abs(angle)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "angle_difference",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "angle_difference(ang1,ang2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "angle_difference_3d",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "angle_difference_3d(x1,y1,z1,x2,y2,z2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "angle_mean",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "angle_mean(ang1,ang2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "approach",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "approach(val,goto,stepsize)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "approach_angle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "approach_angle(ang1,ang2,step)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "approach_angle_biased",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "approach_angle_biased(ang1,ang2,step,bias)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "box_distance",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "box_distance(length,dir)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ceilto",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "ceilto(val,to)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "circle_in_circle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "circle_in_circle(ax,ay,radiusa,bx,by,radiusb)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "clerp2",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "clerp2(fromA,fromB,toA,toB,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "color_inverse",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "color_inverse(color)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "color_reverse",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "color_reverse(color)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "cosine",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "cosine(a,b,amount)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "darccos",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "darccos(x)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "darcsin",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "darcsin(x)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "darctan",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "darctan(x)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "darctan2",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "darctan2(y,x)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "date_get_current_timezone",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "date_get_current_timezone()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "dcos",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "dcos(angle)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dot_product_3d_normalized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "dot_product_3d_normalized(x1,y1,z1,x2,y2,z2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dot_product_normalized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "dot_product_normalized(x1,y1,x2,y2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dsecant",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "dsecant(angle)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dsin",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "dsin(angle)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dtan",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "dtan(angle)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "error_is_enabled",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "error_is_enabled()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "error_set_enabled",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "error_set_enabled(enabled)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "esign",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "esign(val,default)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "execute_program_silent_async",
+					"extname": "__gm82core_execute_program_silent_async",
+					"calltype": 12,
+					"helpline": "execute_program_silent_async(command)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "filename_short",
+					"extname": "__gm82core_shortfn",
+					"calltype": 12,
+					"helpline": "filename_short(fname)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 1
+				},
+				{
+					"name": "file_create",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "file_create(filename)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "file_get_timestamp",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "file_get_timestamp(filename)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "file_size",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "file_size(filename)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "floorto",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "floorto(val,to)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "game_get_state",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "game_get_state()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_battery_level",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_battery_level()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_battery_status",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_battery_status()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_cpu_usage",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_cpu_usage()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_delta",
+					"extname": "hrt_delta",
+					"calltype": 12,
+					"helpline": "get_delta()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_ram_usage",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_ram_usage()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_system_language",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_system_language()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_system_region",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_system_region()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_timer",
+					"extname": "hrt_now",
+					"calltype": 12,
+					"helpline": "get_timer()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_windows_version",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "get_windows_version()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "hrt_time_delta",
+					"extname": "hrt_delta",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "hrt_time_now",
+					"extname": "hrt_now",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "inch",
+					"extname": "approach",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "inch_angle",
+					"extname": "approach_angle",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "include_file_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "include_file_count()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "include_file_exists",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "include_file_exists(filename)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "include_file_get_string",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "include_file_get_string(filename)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 1
+				},
+				{
+					"name": "include_file_name",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "include_file_name(index)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "include_file_size",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "include_file_size(filename)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "in_range",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "in_range(val,min,max)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "io_get_language",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "io_get_language()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "io_set_roomend_clear",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "io_set_roomend_clear(enabled)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "keyboard_get_capslock",
+					"extname": "get_capslock",
+					"calltype": 12,
+					"helpline": "keyboard_get_capslock()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "keyboard_get_scrolllock",
+					"extname": "get_scrolllock",
+					"calltype": 12,
+					"helpline": "keyboard_get_scrolllock()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "lengthdir_zx",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lengthdir_zx(len,dir,dirz)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "lengthdir_zy",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lengthdir_zy(len,dir,dirz)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "lengthdir_zz",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lengthdir_zz(len,dir,dirz)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "lerp2",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lerp2(fromA,fromB,toA,toB,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "lerproach",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lerproach(val,go,lerp,approach)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "lerp_angle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lerp_angle(from,to,amount)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "lines_intersect",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "lines_intersect(x1, y1, x2, y2, x3, y3, x4, y4, segment)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "modwrap",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "modwrap(val,min,max)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "os_get_language",
+					"extname": "get_system_language",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "os_get_region",
+					"extname": "get_system_region",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "pack_bools",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "pack_bools(b7,b6,b5,b4,b3,b2,b1,b0)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "perlin_noise",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "perlin_noise(x,y,z)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "pivot_pos_x",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "pivot_pos_x(px,py,dir)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "pivot_pos_y",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "pivot_pos_y(px,py,dir)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "point_direction_pitch",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "point_direction_pitch(x1,y1,z1,x2,y2,z2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "point_in_circle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "point_in_circle(px,py,cx,cy,radius)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "point_in_rectangle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "point_in_rectangle(px,py,x1,y1,x2,y2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "point_in_triangle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "point_in_triangle(px,py,x1,y1,x2,y2,x3,y3)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "point_line_distance",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "point_line_distance(px,py,x1,y1,x2,y2,segment)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "point_line_lerp",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "point_line_lerp(px,py,x1,y1,x2,y2,segment)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "power_next",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "power_next(x)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "process_exists",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "process_exists(name)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "range_collision",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "range_collision(a1,a2,b1,b2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "real_hex",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "real_hex(string)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "rectangle_in_circle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "rectangle_in_circle(x1,y1,x2,y2,cx,cy,radius)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "rectangle_in_rectangle",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "rectangle_in_rectangle(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "room_goto_cancel",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "room_goto_cancel()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "roundto",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "roundto(val,to)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "roundto_unbiased",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "roundto_unbiased(val,to)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "round_unbiased",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "round_unbiased(val)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "saturate",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "saturate(val)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "secant",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "secant(rad)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "set_working_directory",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "set_working_directory(directory)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "sleep_ext",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "sleep_ext(ms)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "smoothstep",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "smoothstep(min,max,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_hex",
+					"extname": "string_hex",
+					"calltype": 12,
+					"helpline": "string_hex(val)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "string_token_next",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "string_token_next()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 1
+				},
+				{
+					"name": "string_token_start",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "string_token_start(string,sep)",
+					"hidden": false,
+					"argtypes": [
+						1,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "triangle_is_clockwise",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "triangle_is_clockwise(x1,y1,x2,y2,x3,y3)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "unclerp",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "unclerp(a,b,val)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "unlerp",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "unlerp(a,b,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "unpack_bool",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "unpack_bool(byte,which)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "window_exists",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "window_exists(caption)",
+					"hidden": false,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "window_get_caption_color",
+					"extname": "get_window_col",
+					"calltype": 12,
+					"helpline": "window_get_caption_color()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_is_maximized",
+					"extname": "__gm82core_getmaximized",
+					"calltype": 12,
+					"helpline": "window_is_maximized()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_is_minimized",
+					"extname": "__gm82core_getminimized",
+					"calltype": 12,
+					"helpline": "window_is_minimized()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_maximize",
+					"extname": "__gm82core_setmaximized",
+					"calltype": 12,
+					"helpline": "window_maximize()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_minimize",
+					"extname": "__gm82core_setminimized",
+					"calltype": 12,
+					"helpline": "window_minimize()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_restore",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "window_restore()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_set_close_enabled",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "window_set_close_enabled(enabled)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "window_set_dpiaware",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "window_set_dpiaware()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "window_set_fixed",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "window_set_fixed(enabled)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "window_set_foreground",
+					"extname": "__gm82core_set_foreground",
+					"calltype": 12,
+					"helpline": "window_set_foreground()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_addfonttemp",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_checkstart",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_dllcheck",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_execute_program_silent",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_execute_program_silent_exitcode",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_getfore",
+					"extname": "get_foreground_window",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_getmaximized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_getminimized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_hrt_init",
+					"extname": "__hrt_init",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_include_file_get_buffer",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_remfonttemp",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_setdir",
+					"extname": "set_dll_loaddir",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_setmaximized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_setminimized",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_set_foreground",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__registry_read_dword",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1,
+						1
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__registry_read_sz",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1,
+						1
+					],
+					"returntype": 1
+				},
+				{
+					"name": "__registry_write_dword",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1,
+						1,
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": [
+				{
+					"name": "gs_running",
+					"value": "-1",
+					"hidden": false
+				},
+				{
+					"name": "gs_room_restart",
+					"value": "1",
+					"hidden": false
+				},
+				{
+					"name": "gs_room_change",
+					"value": "-100",
+					"hidden": false
+				},
+				{
+					"name": "gs_game_restart",
+					"value": "-200",
+					"hidden": false
+				},
+				{
+					"name": "gs_game_load",
+					"value": "-300",
+					"hidden": false
+				},
+				{
+					"name": "gs_error_abort",
+					"value": "-400",
+					"hidden": false
+				}
+			]
+		},
+		{
+			"filename": "accelerators.gml",
+			"origname": "source\\accelerators.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "alarm_get",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "alarm_get(numb)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "alarm_set",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "alarm_set(numb,steps)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "animation_stop",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "animation_stop()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "array_from_string",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "array_from_string(name,string)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "event_alarm",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_alarm(numb)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "event_beginstep",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_beginstep()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "event_draw",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_draw()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "event_endstep",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_endstep()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "event_inherit_object",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_inherit_object(object)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "event_step",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_step()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "event_trigger",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "event_trigger(trig)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "file_text_writelf",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "file_text_writelf(file)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "global_array_from_string",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "global_array_from_string(name,string)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "is_equal",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "is_equal(a,b)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "object_is_child_of",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "object_is_child_of(object)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "object_other_is_child_of",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "object_other_is_child_of(object)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "pick",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "pick(which,opt1,opt2,...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "random_color",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "random_color()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "tile_add_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "tile_add_ext(background,left,top,width,height,x,y,depth,xscale,yscale,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "tile_find_anywhere",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "tile_find_anywhere(x,y)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "unpick",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "unpick(option,opt1,opt2,...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "compiler.gml",
+			"origname": "source\\compiler.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "code_compile",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "code_compile(string)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "code_destroy",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "code_destroy(code)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "code_execute",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "code_execute(code,[arg0,arg1...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "code_exists",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "code_exists(code)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "code_get_argcount",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "code_get_argcount(code)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "code_return",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "data_structures.gml",
+			"origname": "source\\data_structures.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "dslist",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dslist([list,pos,value])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "dsmap",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dsmap([map,key,value])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_add",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_add(bag,item,[item...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_clear",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_clear(bag)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_create()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_destroy",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_destroy(bag)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_empty",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_empty(bag)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_grab",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_grab(bag)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_quick",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_quick(bag,item,[item...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_remove",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_remove(bag,item)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_bag_size",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_bag_size(bag)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_grid_set_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_grid_set_many(grid,x1,y1,value1,x2,y2,value2...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_add_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_add_many(list,[val...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_all",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_all(list,callback)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_any",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_any(list,callback)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_concat",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_concat(list, lists...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_contains",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_contains(list,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_contains_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_contains_ext(list,values...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_equal",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_equal(list1,list2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_filter",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_filter(list,callback)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_find_first",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_find_first(list)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_find_last",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_find_last(list)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_foreach",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_foreach(list,callback)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_map",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_map(list,callback)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_pop",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_pop(list)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_reverse",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_reverse(list)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_str",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_str(list)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "ds_list_union",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_union(list, lists...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_list_unique",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_list_unique(list)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_add_copy",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_add_copy(src,dest)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_get",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_get(map,key)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_read_ini",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_read_ini(map,filename)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_read_ini_string",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_read_ini_string(map,string)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_read_safe",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_read_safe(map,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_search",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_search(map,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_set",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_set(map,key,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_set_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_set_many(map,key1,value1,key2,value2...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_write_ini",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_write_ini(map,filename)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "ds_map_write_ini_string",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_map_write_ini_string(map)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 1
+				},
+				{
+					"name": "ds_priority_add_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_priority_add_many(queue,val1,prio1,val2,prio2...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_queue_enqueue_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_queue_enqueue_many(queue,val...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "ds_stack_push_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "ds_stack_push_many(stack,val...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "dss_map_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_map_create()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "dss_list_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_list_create()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "dss_queue_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_queue_create()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "dss_stack_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_stack_create()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "dss_grid_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_grid_create(w,h)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dss_priority_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_priority_create()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "dss_get_type",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_get_type(dss)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "dss_destroy",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "dss_destroy(dss)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "is_undefined",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "is_undefined(value)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_bag_check",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": [
+				{
+					"name": "dss_type_map",
+					"value": "0.0625",
+					"hidden": false
+				},
+				{
+					"name": "dss_type_list",
+					"value": "0.125",
+					"hidden": false
+				},
+				{
+					"name": "dss_type_queue",
+					"value": "0.1875",
+					"hidden": false
+				},
+				{
+					"name": "dss_type_stack",
+					"value": "0.25",
+					"hidden": false
+				},
+				{
+					"name": "dss_type_grid",
+					"value": "0.3125",
+					"hidden": false
+				},
+				{
+					"name": "dss_type_priority",
+					"value": "0.375",
+					"hidden": false
+				}
+			]
+		},
+		{
+			"filename": "drawing.gml",
+			"origname": "source\\drawing.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "animation_pingpong",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "animation_pingpong([index,number])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "draw_background_pos",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_background_pos(back,x1,y1,x2,y2,x3,y3,x4,y4,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_background_tiled_extra",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_background_tiled_extra(back,x,y,xscale,yscale,angle,color,alpha,hrepeats,vrepeats)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_rect",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_rect(x,y,w,h,[color,alpha,angle])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "draw_reset",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_reset()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "draw_self_as",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_self_as(sprite,[image])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "draw_self_blend",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_self_blend(color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_self_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_self_ext(xscale,yscale,angle,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_self_floored",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_self_floored()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "draw_set1",
+					"extname": "draw_setb",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "draw_set2",
+					"extname": "draw_seta",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "draw_seta",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_seta(halign,valign)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_setb",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_setb(color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_setf",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_setf(font,halign,valign,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_set_rgba",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_set_rgba(r,g,b,a)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_spotlight",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_spotlight(sprite,image,x,y,xscale,yscale,rotation,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_sprite_ext_fixed",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_sprite_ext_fixed(sprite,image,x,y,xscale,yscale,angle,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_sprite_part_centered",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_sprite_part_centered(sprite,subimg,left,top,width,height,x,y)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_sprite_part_extra",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_sprite_part_extra(sprite,subimg,left,top,width,height,x,y,xscale,yscale,rotation,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_sprite_tiled_extra",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_sprite_tiled_extra(sprite,image,x,y,xscale,yscale,angle,color,alpha,hrepeats,vrepeats)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "draw_text_1color",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "draw_text_1color(x,y,string,color,alpha)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "gm82core.gml",
+			"origname": "source\\gm82core.gml",
+			"kind": 2,
+			"init": "__gm82core_init",
+			"final": "",
+			"functions": [
+				{
+					"name": "current_frame",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "current_frame (read-only)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "delta_time",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "delta_time (read-only)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "fps_fast",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "fps_fast (read-only)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "fps_real",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "fps_real (read-only)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "game_restart",
+					"extname": "__gm82core_restart",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_frame_end",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_init",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_restart",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_update",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": [
+				{
+					"name": "chr_cr",
+					"value": "ansi_char($0d)",
+					"hidden": false
+				},
+				{
+					"name": "chr_crlf",
+					"value": "ansi_char($0d)+ansi_char($0a)",
+					"hidden": false
+				},
+				{
+					"name": "chr_lf",
+					"value": "ansi_char($0a)",
+					"hidden": false
+				},
+				{
+					"name": "directory_appdata",
+					"value": "string_copy(temp_directory,1,string_pos(\"\\AppData\\\",temp_directory)+8)",
+					"hidden": false
+				},
+				{
+					"name": "execute_running",
+					"value": "259",
+					"hidden": false
+				},
+				{
+					"name": "gm82core_object",
+					"value": "object_add()",
+					"hidden": false
+				},
+				{
+					"name": "ha_bottom",
+					"value": "3",
+					"hidden": false
+				},
+				{
+					"name": "ha_left",
+					"value": "0",
+					"hidden": false
+				},
+				{
+					"name": "ha_right",
+					"value": "1",
+					"hidden": false
+				},
+				{
+					"name": "ha_top",
+					"value": "2",
+					"hidden": false
+				},
+				{
+					"name": "infinity",
+					"value": "9218868437227405312",
+					"hidden": false
+				},
+				{
+					"name": "minus_infinity",
+					"value": "-9218868437227405312",
+					"hidden": false
+				},
+				{
+					"name": "path_action_continue",
+					"value": "2",
+					"hidden": false
+				},
+				{
+					"name": "path_action_restart",
+					"value": "1",
+					"hidden": false
+				},
+				{
+					"name": "path_action_reverse",
+					"value": "3",
+					"hidden": false
+				},
+				{
+					"name": "path_action_stop",
+					"value": "0",
+					"hidden": false
+				},
+				{
+					"name": "undefined",
+					"value": "ansi_char(0)",
+					"hidden": false
+				},
+				{
+					"name": "vk_caps",
+					"value": "20",
+					"hidden": false
+				},
+				{
+					"name": "vk_equals",
+					"value": "187",
+					"hidden": false
+				},
+				{
+					"name": "vk_menu",
+					"value": "93",
+					"hidden": false
+				},
+				{
+					"name": "vk_minus",
+					"value": "189",
+					"hidden": false
+				},
+				{
+					"name": "vk_oem1",
+					"value": "186",
+					"hidden": false
+				},
+				{
+					"name": "vk_oem2",
+					"value": "191",
+					"hidden": false
+				},
+				{
+					"name": "vk_oem3",
+					"value": "192",
+					"hidden": false
+				},
+				{
+					"name": "__gm82core_compiler",
+					"value": "object_add()",
+					"hidden": true
+				}
+			]
+		},
+		{
+			"filename": "included.gml",
+			"origname": "source\\included.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "include_file_get_buffer",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "include_file_get_buffer(filename,buffer)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "indexing.gml",
+			"origname": "source\\indexing.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "background_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "background_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "font_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "font_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "object_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "object_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "path_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "path_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "room_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "room_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "sound_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "sound_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "sprite_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "sprite_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "timeline_find",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "timeline_find(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "instances.gml",
+			"origname": "source\\instances.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "collision_check_fast",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "collision_check_fast(obj, [distance])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "direction_to_object",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "direction_to_object(obj)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "distance_to_center",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "distance_to_center(obj)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "distance_to_instance",
+					"extname": "distance_to_center",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "instances_place",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instances_place(x,y,obj1,[obj2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instances_position",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instances_position(x,y,obj1,[obj2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_assign_groups",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_assign_groups(object,[groupvarname])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_create_depth",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_create_depth(x,y,depth,object)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "instance_create_depth_moving",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_create_depth_moving(x,y,depth,object,speed,direction,[gravity,[gravdir]])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_create_depth_moving_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_create_depth_moving_ext(x,y,depth,object,speed,direction,[addhspeed,addvspeed,[gravity,[gravdir]]])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_create_moving",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_create_moving(x,y,object,speed,direction,[gravity,[gravdir]])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_create_moving_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_create_moving_ext(x,y,object,speed,direction,[addhspeed,addvspeed,[gravity,[gravdir]]])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_destroy_id",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_destroy_id(index)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "instance_destroy_other",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_destroy_other()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "instance_nearest_notme",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_nearest_notme(x,y,obj)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "instance_place_list",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_place_list(x,y,obj1,[obj2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_position_list",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_position_list(x,y,obj1,[obj2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "instance_some",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "instance_some(object)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "move_and_collide",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "move_and_collide(dx,dy,ind,[_iterations,xoff,yoff,_x_constraint,_y_constraint])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "move_contact_solid_hv",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "move_contact_solid_hv(hspeed,vspeed)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "move_towards_fixed",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "move_towards_fixed(x,y,speed)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "move_towards_gravity",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "move_towards_gravity(xto,yto,gravity)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "move_towards_jump",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "move_towards_jump(x,y,hspeed_limit,vspeed,gravity)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "move_wrap",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "move_wrap(hor,vert,margin)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "outside_room",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "outside_room()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "place_meetings",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "place_meetings(x,y,obj1,[obj2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "position_free",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "position_free(x,y)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "position_meetings",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "position_meetings(x,y,obj1,[obj2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "variable_instance_exists",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_instance_exists(instance_id,name)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "variable_instance_get",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_instance_get(instance_id,name)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "variable_instance_set",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "variable_instance_set(instance_id,name,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82core_recursive_group_assign",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "match.gml",
+			"origname": "source\\match.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "match_any",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_any(substr,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "match_exact",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_exact(pattern,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "match_found",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_found([...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "match_not_any",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_not_any(pattern,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "match_not_exact",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_not_exact(pattern,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "match_not_some",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_not_some(pattern,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "match_some",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "match_some(substr,str)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": [
+				{
+					"name": "match_lower",
+					"value": "\"abcdefghijklmnopqrstuvwxyz\"",
+					"hidden": false
+				},
+				{
+					"name": "match_upper",
+					"value": "\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"",
+					"hidden": false
+				},
+				{
+					"name": "match_letters",
+					"value": "match_lower+match_upper",
+					"hidden": false
+				},
+				{
+					"name": "match_digits",
+					"value": "\"0123456789\"",
+					"hidden": false
+				},
+				{
+					"name": "match_alphanum",
+					"value": "match_letters+match_digits",
+					"hidden": false
+				},
+				{
+					"name": "match_identifier",
+					"value": "match_alphanum+\"_\"",
+					"hidden": false
+				},
+				{
+					"name": "match_identifier_start",
+					"value": "match_letters+\"_\"",
+					"hidden": false
+				},
+				{
+					"name": "match_whitespace",
+					"value": "ansi_char(9)+ansi_char(10)+ansi_char(13)+\" \"",
+					"hidden": false
+				},
+				{
+					"name": "match_quotes",
+					"value": "\"'\"+'\"'",
+					"hidden": false
+				}
+			]
+		},
+		{
+			"filename": "math.gml",
+			"origname": "source\\math.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "bigchoose",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "bigchoose([option,option,...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "bigchoose_clear",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "bigchoose_clear()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "bigchoose_get",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "bigchoose_get()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "bigchoose_weighted",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "bigchoose_weighted([option,weight],[option,weight],...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "bigchoose_weighted_get",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "bigchoose_weighted_get()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "choose_weighted",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "choose_weighted(val1,weight1,val2,weight2...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "color_blend",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "color_blend(col1,col2)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "color_get_luminance",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "color_get_luminance(color)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "distance_to_path",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "distance_to_path(x,y,path)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "envelerp",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "envelerp(val,func,[x1,y1,x2,y2,...up to 7 pairs])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "gauss",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gauss(range)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "gauss_range",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "gauss_range(min,max)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "irandom_fresh",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "irandom_fresh(oldval,min,max)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "make_color_hsv_standard",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "make_color_hsv_standard(hue 0-360,sat 0-100,val 0-100)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "merge_color_corrected",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "merge_color_corrected(col1,col2,factor)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "path_ease",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "path_ease(path,x)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "path_get_approximate_pos",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "path_get_approximate_pos(x,y,path)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "path_get_height",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "path_get_height(path)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "path_get_width",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "path_get_width(path)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "strings.gml",
+			"origname": "source\\strings.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "date_get_timestamp",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "date_get_timestamp([date])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "directory_previous",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "directory_previous(dir)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "filename_remove_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "filename_remove_ext(filename)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "stringify",
+					"extname": "str_sep",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "string_better",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_better(val)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_copy_end",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_copy_end(string,count)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_delete_end",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_delete_end(string,count)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_ends_with",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_ends_with(string,substr)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_hexdigits",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_hexdigits(string)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_justify",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_justify(string,width)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_magnitude",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_magnitude(number,magnitude,unit1,unit2...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "string_number",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_number(string)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_ord_at",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_ord_at(str,pos)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_pad",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_pad(number,digits)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_replace_many",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_replace_many(string,what1,with1,[what2,with2,...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "string_starts_with",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_starts_with(string,substr)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "string_trim",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_trim(string,[trim1,trim2...])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "string_truncate",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_truncate(str,width,[ellipsis])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "string_wrap",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "string_wrap(string,width,[mode,[break_chars]])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "strong",
+					"extname": "str_cat",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "str_cat",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "str_cat(val1,val2,val3...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "str_ins",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "str_ins(str%ing,val1,val2...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "str_sep",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "str_sep(sep,val1,val2,...)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "system.gml",
+			"origname": "source\\system.gml",
+			"kind": 2,
+			"init": "",
+			"final": "",
+			"functions": [
+				{
+					"name": "datetime_current_filename",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "datetime_current_filename()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "date_get_moon_phase",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "date_get_moon_phase([date])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "date_is_easter",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "date_is_easter([date])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "execute_program_async",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "execute_program_async(cmdline)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "execute_program_async_result",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "execute_program_async_result()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "execute_program_silent",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "execute_program_silent(command)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "extension_detect",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "extension_detect(name)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "file_find_list",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "file_find_list(directory,query,attr,recursive,excludedirs)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "file_text_read_all",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "file_text_read_all(fname,[separator])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "file_text_write_all",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "file_text_write_all(filename,string)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "font_add_file",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "font_add_file(filename,fontname,size,bold,italic,first,last)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "font_add_winui",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "font_add_winui(filename)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "get_frametime_usage",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "get_frametime_usage()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "get_open_filename_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "get_open_filename_ext(filter,filename,startdir)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "get_save_filename_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "get_save_filename_ext(filter,filename,startdir)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "keyboard_get_keyname",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "keyboard_get_keyname(key)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "message_default",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "message_default()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "mouse_back_button",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "mouse_back_button()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "mouse_check_direct",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "mouse_check_direct(button)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "mouse_forward_button",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "mouse_forward_button()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "mouse_in_window",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "mouse_in_window()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "registry_read_dword",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "registry_read_dword(key,[default])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "registry_read_sz",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "registry_read_sz(key,[default])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "registry_write_dword",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "registry_write_dword(key,value)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "url_open",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "url_open(url)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "window_has_focus",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "window_has_focus()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "msgbg.jpeg",
+			"origname": "include\\msgbg.jpeg",
+			"kind": 4,
+			"init": "",
+			"final": "",
+			"functions": [],
+			"constants": []
+		},
+		{
+			"filename": "msgbut.gmspr",
+			"origname": "include\\msgbut.gmspr",
+			"kind": 4,
+			"init": "",
+			"final": "",
+			"functions": [],
+			"constants": []
+		},
+		{
+			"filename": "msgbut_core.gmspr",
+			"origname": "include\\msgbut_core.gmspr",
+			"kind": 4,
+			"init": "",
+			"final": "",
+			"functions": [],
+			"constants": []
+		}
+	]
+}

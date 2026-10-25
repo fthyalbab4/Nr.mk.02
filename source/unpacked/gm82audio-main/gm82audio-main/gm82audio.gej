@@ -1,0 +1,1071 @@
+{
+	"name": "Game Maker 8.2 Audio",
+	"folder": "gm82",
+	"version": "1.3",
+	"author": "renex, RandyGaul",
+	"date": "28/08/2025",
+	"license": "Free to use, also for commercial games.",
+	"description": "Part of the standard Game Maker 8.2 distribution. This extension package provides a custom C++ Audio Engine wrapping cute_sound. The extension does not override the builtin audio engine - functions start with audio_. cute_sound is copyright (c) 2023 Randy Gaul https://randygaul.github.io/",
+	"helpfile": "",
+	"hidden": false,
+	"dependencies": [
+		"Game Maker 8.2 Core",
+		"Game Maker 8.2 Buffer"
+	],
+	"files": [
+		{
+			"filename": "gm82audio.dll",
+			"origname": "build/Release/gm82audio.dll",
+			"kind": 1,
+			"init": "",
+			"final": "__gm82audio_end",
+			"functions": [
+				{
+					"name": "audio_all_pause",
+					"extname": "__gm82audio_global_pause",
+					"calltype": 12,
+					"helpline": "audio_all_pause()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_all_resume",
+					"extname": "__gm82audio_global_resume",
+					"calltype": 12,
+					"helpline": "audio_all_resume()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_all_volume",
+					"extname": "__gm82audio_global_volume",
+					"calltype": 12,
+					"helpline": "audio_all_volume(volume)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_delete",
+					"extname": "__gm82audio_delete",
+					"calltype": 12,
+					"helpline": "audio_delete(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_get_pos",
+					"extname": "__gm82audio_get_pos",
+					"calltype": 12,
+					"helpline": "audio_get_pos(inst)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_instance_count",
+					"extname": "__gm82audio_instance_count",
+					"calltype": 12,
+					"helpline": "audio_instance_count()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_instance_number",
+					"extname": "__gm82audio_instance_number",
+					"calltype": 12,
+					"helpline": "audio_instance_number(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_isplaying",
+					"extname": "__gm82audio_isplaying",
+					"calltype": 12,
+					"helpline": "audio_isplaying(index)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_get_pos",
+					"extname": "__gm82audio_music_get_pos",
+					"calltype": 12,
+					"helpline": "audio_music_get_pos()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_loop",
+					"extname": "__gm82audio_music_loop",
+					"calltype": 12,
+					"helpline": "audio_music_loop(enabled)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_pan",
+					"extname": "__gm82audio_music_pan",
+					"calltype": 12,
+					"helpline": "audio_music_pan(pan)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_pause",
+					"extname": "__gm82audio_music_pause",
+					"calltype": 12,
+					"helpline": "audio_music_pause()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_pitch",
+					"extname": "__gm82audio_music_pitch",
+					"calltype": 12,
+					"helpline": "audio_music_pitch(pitch)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_resume",
+					"extname": "__gm82audio_music_resume",
+					"calltype": 12,
+					"helpline": "audio_music_resume()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_set_all",
+					"extname": "__gm82audio_music_set_all",
+					"calltype": 12,
+					"helpline": "audio_music_set_all(volume,pan,pitch,loops)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_set_pos",
+					"extname": "__gm82audio_music_set_pos",
+					"calltype": 12,
+					"helpline": "audio_music_set_pos(pos)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_volume",
+					"extname": "__gm82audio_music_volume",
+					"calltype": 12,
+					"helpline": "audio_music_volume(volume)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_pause",
+					"extname": "__gm82audio_sound_pause",
+					"calltype": 12,
+					"helpline": "audio_pause(inst)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_resume",
+					"extname": "__gm82audio_sound_resume",
+					"calltype": 12,
+					"helpline": "audio_resume(inst)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_all",
+					"extname": "__gm82audio_set_all",
+					"calltype": 12,
+					"helpline": "audio_set_all(inst,vol,pan,pitch,loops)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_loop",
+					"extname": "__gm82audio_set_loop",
+					"calltype": 12,
+					"helpline": "audio_set_loop(inst,enabled)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_pan",
+					"extname": "__gm82audio_set_pan",
+					"calltype": 12,
+					"helpline": "audio_set_pan(index,pan)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_pitch",
+					"extname": "__gm82audio_set_pitch",
+					"calltype": 12,
+					"helpline": "audio_set_pitch(index,pitch)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_pos",
+					"extname": "__gm82audio_set_pos",
+					"calltype": 12,
+					"helpline": "audio_set_pos(inst,pos)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_volume",
+					"extname": "__gm82audio_set_volume",
+					"calltype": 12,
+					"helpline": "audio_set_volume(index,volume)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_sfx_stop",
+					"extname": "__gm82audio_stop_all",
+					"calltype": 12,
+					"helpline": "audio_sfx_stop()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_sfx_volume",
+					"extname": "__gm82audio_set_sfx_volume",
+					"calltype": 12,
+					"helpline": "audio_sfx_volume(volume)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_stop",
+					"extname": "__gm82audio_sound_stop",
+					"calltype": 12,
+					"helpline": "audio_stop(sound/inst)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_end",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_exists",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_fill_inst_list",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_builtin_count",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_def_pan",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_def_pitch",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_def_vol",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_error",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [],
+					"returntype": 1
+				},
+				{
+					"name": "__gm82audio_get_length",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_loop_point_a",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_get_loop_point_b",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_init",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_load",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						1,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_load_builtin",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_load_mem",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_load_raw",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_music_crossfade",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_music_play",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_music_stop",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_music_switch",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_set_loop_points",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_sfx_play",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_update",
+					"extname": "",
+					"calltype": 12,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				}
+			],
+			"constants": []
+		},
+		{
+			"filename": "gm82audio.gml",
+			"origname": "source/gm82audio.gml",
+			"kind": 2,
+			"init": "__gm82audio_init",
+			"final": "",
+			"functions": [
+				{
+					"name": "audio_all_stop",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_all_stop()",
+					"hidden": false,
+					"argtypes": [],
+					"returntype": 2
+				},
+				{
+					"name": "audio_apply_3d",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_apply_3d(inst,vol,pitch,x,y,z,hspeed,vspeed,zspeed,mindist,maxdist,listener_direction,falloff_model,volume_model)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_exists",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_exists(sound/inst)",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "audio_get_instance_list",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_get_instance_list(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_get_length",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_get_length(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_get_loop_point_a",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_get_loop_point_a(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_get_loop_point_b",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_get_loop_point_b(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_load",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_load(filename)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_load_buffer",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_load_buffer(buffer)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_load_buffer_raw",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_load_buffer_raw(buffer,samplerate,channels,bits,signed)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_load_directory",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_load_directory(dir)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_load_included",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_load_included(filename)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_load_raw",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_load_raw(filename,samplerate,channels,bits,signed)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_loop",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_loop(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_loop_single",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_loop_single(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_crossfade",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_crossfade(sound,fadetime)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_crossfade_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_crossfade_ext(sound,fadetime,vol,pan,pitch,loop)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_play",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_play(sound,[fadeintime])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_play_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_play_ext(sound,fadeintime,vol,pan,pitch,loop)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_stop",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_stop([fadeouttime])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_switch",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_switch(sound,fadeouttime,[fadeintime])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "audio_music_switch_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_music_switch_ext(sound,fadeouttime,fadeintime,vol,pan,pitch,loop)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_pack_create",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_pack_create(sourcedir,filename)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_pack_extract",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_pack_extract(filename,outdir)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_pack_load",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_pack_load(filename)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_pack_unload",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_pack_unload(pack)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_play",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_play(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_play_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_play_ext(sound,vol,pan,pitch,loop)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_play_single",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_play_single(sound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_play_single_ext",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_play_single_ext(sound,vol,pan,pitch,loop)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2,
+						2,
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_preload_sound",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_preload_sound(gmsound)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "audio_set_loop_points",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "audio_set_loop_points(soundid,a,[b])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "sound_add",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_check",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_init",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82audio_step",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": [
+				{
+					"name": "falloff_exp",
+					"value": "0",
+					"hidden": false
+				},
+				{
+					"name": "falloff_invexp",
+					"value": "1",
+					"hidden": false
+				},
+				{
+					"name": "falloff_linear",
+					"value": "2",
+					"hidden": false
+				},
+				{
+					"name": "volume_front",
+					"value": "0",
+					"hidden": false
+				},
+				{
+					"name": "volume_omni",
+					"value": "1",
+					"hidden": false
+				}
+			]
+		}
+	]
+}

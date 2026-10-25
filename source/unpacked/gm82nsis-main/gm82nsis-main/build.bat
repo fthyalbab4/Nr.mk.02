@@ -1,0 +1,1 @@
+start "" "C:\Program Files (x86)\NSIS\makensis.exe" gm82.nsi

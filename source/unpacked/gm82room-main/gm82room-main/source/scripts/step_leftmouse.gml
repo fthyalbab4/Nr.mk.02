@@ -1,0 +1,191 @@
+var yes,dx,dy,tex,l,t,r,b;
+
+if (erasing) exit
+
+if (mode==1 and tilebgpal!=noone) if ((mousein or autotiler_rectangle) and window_focused and tilemap_complete and bg_tilemode[tilebgpal]) {
+    //smart mode
+
+    if (mouse_check_modal_pressed(mb_left)) {
+        autotiler_last_click=noone
+        if (keyboard_check(vk_shift)) {
+            autotiler_rectangle=1
+            autotiler_rectangle_x=floor(global.mousex/gridx)
+            autotiler_rectangle_y=floor(global.mousey/gridy)
+        }
+    }
+    if (mouse_check_modal(mb_left)) {
+        if (direct_mbright and autotiler_rectangle==1) {autotiler_rectangle=0 exit}
+        project_modified()
+        if (!autotiler_rectangle) bresenham(
+            floor(global.mousex_old/gridx),floor(global.mousey_old/gridy),
+            floor(global.mousex/gridx),floor(global.mousey/gridy),
+            draw_tilesmart_brush,1
+        )
+    } else {
+        if (autotiler_rectangle==1) {
+            left=min(floor(global.mousex/gridx),autotiler_rectangle_x)
+            right=max(floor(global.mousex/gridx),autotiler_rectangle_x)
+            top=min(floor(global.mousey/gridy),autotiler_rectangle_y)
+            bottom=max(floor(global.mousey/gridy),autotiler_rectangle_y)
+            ur=(right-left)+1
+            vr=(bottom-top)+1
+            v=top repeat (vr) {u=left repeat (ur) {
+                draw_tilesmart_brush(u,v,1)
+            u+=1}v+=1}
+            autotiler_rectangle=0
+            update_tilesmart_tiles()
+            project_modified()
+        }
+    }
+    exit
+}
+
+if (mouse_check_modal_pressed(mb_left)) {
+    with (TextField) textfield_actions()
+    if (point_distance(mouse_wx,mouse_wy,width-48-160,48+32)<32 && !hide3dgizmo) {
+        grabknob=1
+        knoffmx=mouse_wx
+        knoffmy=mouse_wy
+        knoffx=knobx
+        knoffy=knoby
+    } else if (!mousein) {
+        //click on menus
+        with (Button) if (instance_position(mouse_wx,mouse_wy,id)) {
+            event_user(2)
+        }
+    } else {
+        //click on workspace
+        if (selection && abs(global.mousex-(selleft+selwidth))<8*zm && abs(global.mousey-(seltop+selheight))<8*zm) {
+            storex=selwidth
+            storey=selheight
+            with (instance) if (sel) {
+                start_selection_resize()
+            }
+            with (tileholder) if (sel) {
+                start_selection_resize()
+            }
+            selsize=1
+        } else {
+            objects_leftclick()
+            tiles_leftclick()
+        }
+        backgrounds_leftclick()
+        views_leftclick()
+        settings_leftclick()
+        paths_leftclick()
+    }
+}
+if (selecting) {
+    l=min(selx,global.mousex)
+    t=min(sely,global.mousey)
+    r=max(selx,global.mousex)
+    b=max(sely,global.mousey)
+
+    if (mode==0) {
+        with (instance) {
+            if (rectangle_in_rectangle(bbox_left,bbox_top,bbox_right+1,bbox_bottom+1,l,t,r,b)) {
+                if (collision_rectangle(l,t,r,b,id,1,0)) sel=1 else sel=memsel
+            } else sel=memsel
+        }
+    }
+    if (mode==1) {
+        with (tileholder) {
+            if (rectangle_in_rectangle(bbox_left,bbox_top,bbox_right+1,bbox_bottom+1,l,t,r,b)) sel=1
+            else sel=memsel
+        }
+    }
+    if (mode==5) {
+        if (!keyboard_check(vk_control)) ds_list_clear(path_sel)
+
+        for (p=0;p<pointnum;p+=1) {
+            px=path_get_point_x(current_path,p)
+            py=path_get_point_y(current_path,p)
+            if (point_in_rectangle(px,py,l,t,r,b)) if (ds_list_find_index(path_sel,p)==-1) ds_list_add(path_sel,p)
+        }
+    }
+    if (!direct_mbleft) {
+        selecting=0
+        selection=0
+        sel=num_selected()
+        if (sel==1) {
+            if (mode==0) {
+                with (instance) if (sel) {select=id update_inspector()}
+            }
+            if (mode==1) {
+                with (tileholder) if (sel) {selectt=id update_inspector()}
+            }
+        } else update_inspector()
+        if (sel>1) {
+            selection=1
+            update_selection_bounds()
+        }
+    }
+}
+
+
+//painting!  :3
+if (paint) {
+    step_painting()
+}
+
+if (selsize) {
+    selection=1
+    if (keyboard_check(vk_alt)) {
+        selwidth=(global.mousex-selleft)
+        selheight=(global.mousey-seltop)
+    } else {
+        selwidth=roundto_unbiased(global.mousex,gridx)-selleft
+        selheight=roundto_unbiased(global.mousey,gridy)-seltop
+    }
+
+    if (abs(selwidth)<gridx) selwidth=esign(selwidth,1)*gridx
+    if (abs(selheight)<gridy) selheight=esign(selheight,1)*gridy
+
+    if (!direct_mbleft) {
+        selsize=0
+    }
+}
+
+if (grabknob) {
+    knoby=knoffy+mouse_wx-knoffmx
+    knobx=knoffx-(mouse_wy-knoffmy)
+    knobz=(knobz*19+knobzgo)/20
+    if (!direct_mbleft) {
+        grabknob=0
+    }
+} else {
+    knobx=approach(knobx*0.95,0,0.1)
+    knoby=approach(knoby*0.95,0,0.1)
+    knobz=approach(knobz*0.98,0,0.01)
+}
+
+if (grab_background) {
+    if (keyboard_check(vk_alt)) {
+        bg_xoffset[bg_current]=global.mousex+grab_bgoffx
+        bg_yoffset[bg_current]=global.mousey+grab_bgoffy
+    } else {
+        bg_xoffset[bg_current]=roundto_unbiased(global.mousex+grab_bgoffx,gridx)
+        bg_yoffset[bg_current]=roundto_unbiased(global.mousey+grab_bgoffy,gridy)
+    }
+    update_backgroundpanel()
+
+    if (!direct_mbleft) grab_background=false
+}
+
+if (drag_point) {
+    pxo=path_get_point_x(current_path,current_pathpoint)
+    pyo=path_get_point_y(current_path,current_pathpoint)
+    if (keyboard_check(vk_alt)) path_change_point(current_path,current_pathpoint,global.mousex,global.mousey,path_get_point_speed(current_path,current_pathpoint))
+    else path_change_point(current_path,current_pathpoint,fmx,fmy,path_get_point_speed(current_path,current_pathpoint))
+
+    if (pxo!=path_get_point_x(current_path,current_pathpoint) || pyo!=path_get_point_y(current_path,current_pathpoint)) {
+        generate_path_model(current_pathname)
+        dsmap(pathmap_edited,current_pathname,true)
+        update_inspector()
+        update_selection_bounds()
+    }
+
+    if (!mouse_check_direct(mb_left) && !mouse_check_button_pressed(mb_left)) {
+        drag_point=0
+    }
+}

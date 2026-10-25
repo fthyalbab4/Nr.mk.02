@@ -1,0 +1,7 @@
+Release
+*.gex
+*.dll
+gm82gex.py
+build
+desktop.ini
+

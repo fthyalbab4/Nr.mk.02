@@ -1,0 +1,289 @@
+{
+	"name": "Game Maker 8.2 Video",
+	"folder": "gm82",
+	"version": "1.0",
+	"author": "renex",
+	"date": "28/08/2025",
+	"license": "Free to use, also for commercial games.",
+	"description": "Extension to allow video playback onto surfaces. Requires Core, Network, DirectX9, and either Sound or Audio.",
+	"helpfile": "",
+	"hidden": false,
+	"dependencies": [
+		"Game Maker 8.2 Core",
+		"Game Maker 8.2 DirectX9"
+	],
+	"files": [
+		{
+			"filename": "gm82video.gml",
+			"origname": "gm82video.gml",
+			"kind": 2,
+			"init": "__gm82video_init",
+			"final": "",
+			"functions": [
+				{
+					"name": "video_destroy",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_destroy(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_draw",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_draw(video,x,y,[w,h,[color,alpha]])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "video_get_fps",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_fps(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_frames",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_frames(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_height",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_height(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_length",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_length(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_progress",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_progress(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_size",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_size(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_surface",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_surface(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_texture",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_texture(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_get_width",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_get_width(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_isplaying",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_isplaying(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_play",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_play(filename.rv2,[options])",
+					"hidden": false,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "video_reset",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_reset(video)",
+					"hidden": false,
+					"argtypes": [
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_seek",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_seek(video,position)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_set_loop",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_set_loop(video,loop)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_set_pause",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_set_pause(video,paused)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_set_speed",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_set_speed(video,speed)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "video_set_volume",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "video_set_volume(video,volume)",
+					"hidden": false,
+					"argtypes": [
+						2,
+						2
+					],
+					"returntype": 2
+				},
+				{
+					"name": "__gm82video_init",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82video_postinit",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82video_step",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				},
+				{
+					"name": "__gm82video_update_frame",
+					"extname": "",
+					"calltype": 2,
+					"helpline": "",
+					"hidden": true,
+					"argtypes": null,
+					"returntype": 2
+				}
+			],
+			"constants": [
+				{
+					"name": "__gm82video_object",
+					"value": "object_add()",
+					"hidden": true
+				},
+				{
+					"name": "video_use_interframe",
+					"value": "2",
+					"hidden": false
+				},
+				{
+					"name": "video_loop",
+					"value": "1",
+					"hidden": false
+				}
+			]
+		}
+	]
+}

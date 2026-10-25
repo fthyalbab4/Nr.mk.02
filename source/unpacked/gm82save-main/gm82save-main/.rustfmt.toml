@@ -1,0 +1,19 @@
+edition = "2024" # rust
+max_width = 120  # line width
+
+# Trail commas *on blocks* in match arms as well as single line expressions (default).
+match_block_trailing_comma = true
+
+# If they're separated, it's probably for good reason.
+merge_derives = false
+
+# Reformat all lines to LF (\n) in case they aren't for whatever reason.
+newline_style = "Unix"
+
+# Puts grouped (no extra newline, adjacent) imports in alphabetical order.
+reorder_imports = true
+
+# Use different formatting for items/expr if they satisfy "small".
+# A good example of this is needlessly breaking vec.iter().map(|x| y).collect() into 4 lines,
+# or breaking up a function call with simple expressions but many arguments overall.
+use_small_heuristics = "Max"
