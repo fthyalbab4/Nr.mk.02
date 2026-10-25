@@ -2313,13 +2313,19 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         }
         if (rt) {
             /* Phase 6: GM8 constants self=-1 other=-2 all=-3 noone=-4 */
+            /* Phase 8: snapshot instance indices so create/destroy mid-with is safe */
             int target_id = (int)target_val;
             gm82_instance *prev_self = self;
             extern void gm82_gml_set_other(gm82_instance *o);
             extern gm82_instance *gm82_gml_get_other(void);
             gm82_instance *prev_other = gm82_gml_get_other();
             gm82_gml_set_other(prev_self);
-            for (int i = 0; i < rt->instance_count; i++) {
+            int snap_n = rt->instance_count;
+            if (snap_n < 0) snap_n = 0;
+            if (snap_n > 4096) snap_n = 4096;
+            int snap_ids[4096];
+            int n = 0;
+            for (int i = 0; i < snap_n && n < 4096; i++) {
                 gm82_instance *inst = &rt->instances[i];
                 if (!inst->alive) continue;
                 int match = 0;
@@ -2329,6 +2335,18 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 else if (target_id == -4) match = 0;
                 else match = (inst->id == target_id || inst->object_index == target_id);
                 if (!match) continue;
+                snap_ids[n++] = inst->id;
+            }
+            for (int s = 0; s < n; s++) {
+                int id_want = snap_ids[s];
+                gm82_instance *inst = NULL;
+                for (int i = 0; i < rt->instance_count; i++) {
+                    if (rt->instances[i].alive && rt->instances[i].id == id_want) {
+                        inst = &rt->instances[i];
+                        break;
+                    }
+                }
+                if (!inst) continue;
                 if (body_buf[0] == '{') gm82_gml_eval_block(rt, inst, body_buf);
                 else gm82_gml_eval_stmt(rt, inst, body_buf);
             }
