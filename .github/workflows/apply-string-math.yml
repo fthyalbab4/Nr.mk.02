@@ -8,9 +8,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: APPLY_ALL_SEQUENTIAL
-        run: bash tools/gap_fill_20261013/APPLY_ALL_SEQUENTIAL.sh
+      - name: Materialize verified gap-fill sources
+        run: |
+          python3 tools/gap_fill_20261013/MATERIALIZE_GAPFILL_BLOB.py
+          python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: APPLY_ALL_SEQUENTIAL materialize gap-fill on tree"
+          commit_message: "chore: materialize gap-fill actions/runtime/eval (host-verified)"
           file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
