@@ -280,6 +280,8 @@ void test_advanced_gml_and_physics_suite(void) {
     inst->hspeed = 0.0;
     assert(gm82_action_execute_named(&rt, inst, "action_bounce") == true);
     assert(inst->vspeed == -5.0);
+    rt.room_width = 640;
+    rt.room_height = 480;
     inst->x = -10.0;
     assert(gm82_action_execute_named(&rt, inst, "action_wrap") == true);
     assert(inst->x == (double)(rt.room_width - 10));
