@@ -15,11 +15,13 @@ jobs:
       - name: Materialize + verify
         run: |
           set -e
+          python3 tools/gap_fill_20261013/ASSEMBLE_ACTIONS_PARTS.py || true
           python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py
           python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py || true
           python3 tools/gap_fill_20261013/APPLY_INSTANCE_IMAGE_FIELDS.py || true
           python3 tools/gap_fill_20261013/APPLY_ACTION_IMAGE_AND_LOG.py || true
           python3 tools/gap_fill_20261013/APPLY_DRAW_AND_DND2.py || true
+          python3 tools/gap_fill_20261013/APPLY_DND_IF_ELSE.py || true
           python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
       - name: Host pipeline (optional soft)
         run: |
