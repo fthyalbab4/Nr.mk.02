@@ -1,1 +1,1 @@
-trigger phase1 parts assemble
+trigger phase1 part1 complete
