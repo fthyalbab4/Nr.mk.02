@@ -1,1 +1,1 @@
-trigger phase1 part1 complete
+trigger phase2 runtime+input materialize
