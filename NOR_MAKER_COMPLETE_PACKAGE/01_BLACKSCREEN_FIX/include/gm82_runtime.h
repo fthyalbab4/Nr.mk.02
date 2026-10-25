@@ -37,6 +37,9 @@ typedef struct {
     double  image_speed;
     double  image_xscale;
     double  image_yscale;
+    double  image_angle;
+    double  image_alpha;
+    int32_t image_blend;
     int32_t depth;
     int32_t solid;
     int32_t visible;

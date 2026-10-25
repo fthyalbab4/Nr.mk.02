@@ -65,7 +65,17 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     inst->persistent = 0;
     inst->image_index = 0;
     inst->image_xscale = 1.0;
+
     inst->image_yscale = 1.0;
+
+    inst->image_angle = 0.0;
+
+    inst->image_alpha = 1.0;
+
+    inst->image_blend = 0xffffff;
+    inst->image_angle = 0.0;
+    inst->image_alpha = 1.0;
+    inst->image_blend = 0xffffff;
     inst->image_speed = 1.0;
     if (rt->objects && object_index >= 0 && object_index < rt->objects->count) {
         const gm82_decoded_object *o = &rt->objects->items[object_index];
@@ -112,7 +122,15 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->xstart = x;
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
-    inst->image_xscale = 1.0; inst->image_yscale = 1.0;
+    inst->image_xscale = 1.0;
+
+    inst->image_yscale = 1.0;
+
+    inst->image_angle = 0.0;
+
+    inst->image_alpha = 1.0;
+
+    inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
@@ -514,7 +532,9 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
                                 dx, dy,
                                 inst->image_xscale,
                                 inst->image_yscale,
-                                0.0, 0xFFFFFF, 1.0);
+                                inst->image_angle,
+                                (double)(inst->image_blend ? inst->image_blend : 0xFFFFFF),
+                                inst->image_alpha > 0.0 ? inst->image_alpha : 1.0);
         }
     }
     gm82_events_fire_post_draw_all(rt);
