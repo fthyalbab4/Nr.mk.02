@@ -3,7 +3,7 @@
 محرك/نواة لإعادة تشغيل مشاريع **Game Maker 8.2 / GMK** على Android.
 
 > **تحذير صادق:** هذا **ليس** IDE كامل ولا «محاكاة 100% مثل ويندوز» بعد.  
-> ما هو مُثبت اليوم: مسار **host** (load → decode → step → soft draw) على عينات GMK، وتجهيز JNI/WebView.
+> ما هو مُثبت اليوم: اختبارات host للمحرك ومسار تشغيل Android الموحد الذي يستضيف Studio في WebView ومشغل GM82 الأصلي عبر JNI. يلزم بناء APK واختباره على جهاز/محاكي Android للتحقق من التكامل الكامل.
 
 ## الحالة المختصرة
 
@@ -18,9 +18,10 @@
 
 ## هيكل مهم
 
-- `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` — نواة C + android JNI
-- `assets/www/` — جسر JS للحلقة الأصلية
-- `tools/` — اختبارات host pipeline / SO smoke
+- `app/src/main/` — تطبيق Android الموحد وواجهة Studio ومشغل JNI
+- `app/src/main/assets/www/vendor/` — تبعيات الواجهة المحلية
+- `tests/reference/` و `app/src/main/cpp/tests/` — اختبارات مرجعية واختبارات host
+- `tools/` — فحوص المحرك، فهرسة موارد GMK، واختبارات الاستيراد
 - `STEP_LOG.md` — سجل خطوات فعلية
 
 ## بناء host (بدون NDK)
@@ -33,13 +34,13 @@ gcc -O2 -Iinclude -o pipeline_test tools/host_pipeline_test.c src/*.c ... -lz -l
 
 ## بناء Android
 
-يحتاج **Android NDK**. انسخ `android/CMakeLists.txt` إلى `app/src/main/cpp/` وطبق `gradle_native_snippet.gradle`، ثم:
+يتطلب **Android SDK وNDK**. إعداد CMake وNDK مضاف إلى المشروع؛ بعد تثبيت المتطلبات:
 
 ```bash
 ./gradlew assembleDebug
 ```
 
-ثم احقن `NorNative` في WebView (`NorNativeWebBridge`).
+يسجل `MainActivity` جسر `NorNative` في WebView ويضم مشغل GM82 الأصلي في النشاط نفسه.
 
 ## قواعد للوكلاء
 
