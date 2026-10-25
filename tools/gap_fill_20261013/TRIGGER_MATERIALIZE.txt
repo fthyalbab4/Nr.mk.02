@@ -1,1 +1,1 @@
-trigger 2026-10-25 soft ci + APPLY_DND_IF_ELSE
+trigger phase1 runtime arena defer phases
