@@ -501,6 +501,9 @@ double gml_math_get_epsilon(void);
 double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad);
 double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
 double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_hypot(double x, double y);
+double gml_clamp_angle(double angle);
+double gml_lerp_angle(double a, double b, double t);
 
 #ifdef __cplusplus
 }

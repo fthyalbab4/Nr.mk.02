@@ -517,6 +517,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "angle_difference") == 0) {
             *out = gml_angle_difference(arg, nargs >= 2 ? args[1] : 0); return true;
         }
+        if (strcmp(id, "hypot") == 0) {
+            *out = gml_hypot(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "clamp_angle") == 0) {
+            *out = gml_clamp_angle(arg); return true;
+        }
+        if (strcmp(id, "lerp_angle") == 0) {
+            *out = gml_lerp_angle(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
         if (strcmp(id, "power_next") == 0) {
             *out = gml_power_next(arg); return true;
         }
