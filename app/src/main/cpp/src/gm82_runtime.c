@@ -372,6 +372,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
             else if (inst->vspeed < 0) { inst->vspeed += f; if (inst->vspeed > 0) inst->vspeed = 0; }
         }
 
+        /* Phase 2: sub-pixel motion — keep full double precision (no early int cast) */
         inst->x += inst->hspeed;
         inst->y += inst->vspeed;
     }
@@ -390,78 +391,103 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    const int n_col = rt->instance_count;
-    for (int i = 0; i < n_col; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        int32_t sw = 16, sh = 16, sox = 0, soy = 0;
-        if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
-            sw = rt->sprites->frames[inst->sprite_index].width;
-            sh = rt->sprites->frames[inst->sprite_index].height;
-            sox = rt->sprites->frames[inst->sprite_index].origin_x;
-            soy = rt->sprites->frames[inst->sprite_index].origin_y;
+    /* Phase 2: spatial hash broadphase (64px cells) + AABB + optional pixel mask */
+    {
+        enum { CELL = 64, HASH = 256 };
+        int16_t head[HASH];
+        int16_t next_i[GM82_MAX_INSTANCES];
+        for (int i = 0; i < HASH; i++) head[i] = -1;
+        const int n_col = rt->instance_count;
+        for (int i = 0; i < n_col && i < GM82_MAX_INSTANCES; i++) {
+            next_i[i] = -1;
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive) continue;
+            int cx = (int)(inst->x / CELL);
+            int cy = (int)(inst->y / CELL);
+            unsigned h = (unsigned)((cx * 73856093) ^ (cy * 19349663)) & (HASH - 1);
+            next_i[i] = head[h];
+            head[h] = (int16_t)i;
         }
-        {
-            double xs = inst->image_xscale != 0 ? inst->image_xscale : 1.0;
-            double ys = inst->image_yscale != 0 ? inst->image_yscale : 1.0;
-            if (xs < 0) xs = -xs;
-            if (ys < 0) ys = -ys;
+        for (int i = 0; i < n_col; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive) continue;
+            int32_t sw = 16, sh = 16, sox = 0, soy = 0;
+            const gm82_decoded_frame *fa = NULL;
+            if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
+                fa = &rt->sprites->frames[inst->sprite_index];
+                sw = fa->width; sh = fa->height;
+                sox = fa->origin_x; soy = fa->origin_y;
+            }
+            double xs = inst->image_xscale != 0.0 ? inst->image_xscale : 1.0;
+            double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1;
-            if (sh < 1) sh = 1;
-        }
-        for (int j = 0; j < n_col; j++) {
-            if (i == j) continue;
-            gm82_instance *other = &rt->instances[j];
-            if (!other->alive) continue;
-            int32_t ow = 16, oh = 16, oox = 0, ooy = 0;
-            if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
-                ow = rt->sprites->frames[other->sprite_index].width;
-                oh = rt->sprites->frames[other->sprite_index].height;
-                oox = rt->sprites->frames[other->sprite_index].origin_x;
-                ooy = rt->sprites->frames[other->sprite_index].origin_y;
-            }
-            {
-                double xs = other->image_xscale != 0 ? other->image_xscale : 1.0;
-                double ys = other->image_yscale != 0 ? other->image_yscale : 1.0;
-                if (xs < 0) xs = -xs;
-                if (ys < 0) ys = -ys;
-                ow = (int32_t)(ow * xs); oh = (int32_t)(oh * ys);
-                oox = (int32_t)(oox * xs); ooy = (int32_t)(ooy * ys);
-                if (ow < 1) ow = 1;
-                if (oh < 1) oh = 1;
-            }
+            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
-            double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
-            if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
-                continue;
-            gm82_events_fire_collision(rt, inst, other);
-            if (other->solid) {
-                double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
-                double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);
-                if (overlap_y <= overlap_x) {
-                    if ((ay1 + ay2) * 0.5 < (by1 + by2) * 0.5) {
-                        inst->y = by1 - (ay2 - inst->y);
-                        if (inst->vspeed > 0) inst->vspeed = 0;
-                    } else {
-                        inst->y = by2 + (inst->y - ay1);
-                        if (inst->vspeed < 0) inst->vspeed = 0;
-                    }
-                } else {
-                    if ((ax1 + ax2) * 0.5 < (bx1 + bx2) * 0.5) {
-                        inst->x = bx1 - (ax2 - inst->x);
-                        if (inst->hspeed > 0) inst->hspeed = 0;
-                    } else {
-                        inst->x = bx2 + (inst->x - ax1);
-                        if (inst->hspeed < 0) inst->hspeed = 0;
+
+            int cx0 = (int)(ax1 / CELL) - 1, cy0 = (int)(ay1 / CELL) - 1;
+            int cx1 = (int)(ax2 / CELL) + 1, cy1 = (int)(ay2 / CELL) + 1;
+            for (int cy = cy0; cy <= cy1; cy++) {
+                for (int cx = cx0; cx <= cx1; cx++) {
+                    unsigned h = (unsigned)((cx * 73856093) ^ (cy * 19349663)) & (HASH - 1);
+                    for (int j = head[h]; j >= 0; j = next_i[j]) {
+                        if (j <= i) continue;
+                        gm82_instance *other = &rt->instances[j];
+                        if (!other->alive) continue;
+                        int32_t ow = 16, oh = 16, oox = 0, ooy = 0;
+                        const gm82_decoded_frame *fb = NULL;
+                        if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
+                            fb = &rt->sprites->frames[other->sprite_index];
+                            ow = fb->width; oh = fb->height;
+                            oox = fb->origin_x; ooy = fb->origin_y;
+                        }
+                        double oxs = other->image_xscale != 0.0 ? other->image_xscale : 1.0;
+                        double oys = other->image_yscale != 0.0 ? other->image_yscale : 1.0;
+                        ow = (int32_t)(ow * oxs); oh = (int32_t)(oh * oys);
+                        oox = (int32_t)(oox * oxs); ooy = (int32_t)(ooy * oys);
+                        if (ow < 1) ow = 1; if (oh < 1) oh = 1;
+                        double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
+                        if (!(ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1))
+                            continue;
+                        /* precise pixel if both masks exist */
+                        if (fa && fb && fa->bitmask && fb->bitmask) {
+                            if (!gm82_frames_collide_pixel(fa, (int32_t)inst->x - sox, (int32_t)inst->y - soy,
+                                                           fb, (int32_t)other->x - oox, (int32_t)other->y - ooy))
+                                continue;
+                        }
+                        gm82_events_fire_collision(rt, inst, other);
+                        if (other->solid) {
+                            double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
+                            double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);
+                            if (overlap_y <= overlap_x) {
+                                if ((ay1 + ay2) * 0.5 < (by1 + by2) * 0.5) {
+                                    inst->y -= overlap_y;
+                                    if (inst->vspeed > 0) inst->vspeed = 0;
+                                } else {
+                                    inst->y += overlap_y;
+                                    if (inst->vspeed < 0) inst->vspeed = 0;
+                                }
+                            } else {
+                                if ((ax1 + ax2) * 0.5 < (bx1 + bx2) * 0.5) {
+                                    inst->x -= overlap_x;
+                                    if (inst->hspeed > 0) inst->hspeed = 0;
+                                } else {
+                                    inst->x += overlap_x;
+                                    if (inst->hspeed < 0) inst->hspeed = 0;
+                                }
+                            }
+                            ax1 = inst->x - sox; ay1 = inst->y - soy;
+                            ax2 = ax1 + sw; ay2 = ay1 + sh;
+                        }
+                        if (inst->solid && !other->solid) {
+                            /* symmetric notify already via fire on both pairs when j>i only once */
+                        }
                     }
                 }
             }
         }
     }
 
-    rt->frame_phase = 4; /* End Step */
     gm82_events_fire_end_step_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = 0;
