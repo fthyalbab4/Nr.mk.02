@@ -344,6 +344,48 @@ bool gm82_frame_test_pixel(const gm82_decoded_frame *frame, int32_t px, int32_t 
     return (frame->bitmask[idx >> 3] & (1 << (idx & 7))) != 0;
 }
 
+bool gm82_pixel_format_convert_16_to_32(const uint8_t *src_16bit, size_t num_pixels,
+                                        gm82_pixel_format fmt, uint8_t *dst_rgba32) {
+    if (!src_16bit || !dst_rgba32 || num_pixels == 0) return false;
+    const uint16_t *src = (const uint16_t *)src_16bit;
+    for (size_t i = 0; i < num_pixels; i++) {
+        uint16_t px = src[i];
+        if (fmt == GM82_PIXEL_FORMAT_RGBA4444) {
+            uint8_t r = (px >> 12) & 0x0F;
+            uint8_t g = (px >> 8)  & 0x0F;
+            uint8_t b = (px >> 4)  & 0x0F;
+            uint8_t a = px         & 0x0F;
+            dst_rgba32[i*4+0] = (r << 4) | r;
+            dst_rgba32[i*4+1] = (g << 4) | g;
+            dst_rgba32[i*4+2] = (b << 4) | b;
+            dst_rgba32[i*4+3] = (a << 4) | a;
+        } else if (fmt == GM82_PIXEL_FORMAT_RGB565) {
+            uint8_t r = (px >> 11) & 0x1F;
+            uint8_t g = (px >> 5)  & 0x3F;
+            uint8_t b = px         & 0x1F;
+            dst_rgba32[i*4+0] = (r << 3) | (r >> 2);
+            dst_rgba32[i*4+1] = (g << 2) | (g >> 4);
+            dst_rgba32[i*4+2] = (b << 3) | (b >> 2);
+            dst_rgba32[i*4+3] = 255;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool gm82_pixel_format_convert_bgra_to_rgba(const uint8_t *src_bgra, size_t num_pixels,
+                                            uint8_t *dst_rgba) {
+    if (!src_bgra || !dst_rgba || num_pixels == 0) return false;
+    for (size_t i = 0; i < num_pixels; i++) {
+        dst_rgba[i*4+0] = src_bgra[i*4+2];
+        dst_rgba[i*4+1] = src_bgra[i*4+1];
+        dst_rgba[i*4+2] = src_bgra[i*4+0];
+        dst_rgba[i*4+3] = src_bgra[i*4+3];
+    }
+    return true;
+}
+
 bool gm82_frames_collide_pixel(const gm82_decoded_frame *f1, int32_t x1, int32_t y1,
                                const gm82_decoded_frame *f2, int32_t x2, int32_t y2) {
     if (!f1 || !f2) return false;

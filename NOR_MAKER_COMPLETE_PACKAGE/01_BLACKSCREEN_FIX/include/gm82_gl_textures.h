@@ -28,6 +28,12 @@ typedef struct {
 } gm82_gl_texture;
 
 typedef struct {
+    uint32_t tex_id;
+    float u0, v0, u1, v1;
+    int32_t width, height;
+} gm82_texture_region;
+
+typedef struct {
     gm82_gl_texture *sprites;
     int sprite_count;
     gm82_gl_texture *backgrounds;
@@ -41,6 +47,8 @@ void gm82_gl_atlas_free(gm82_gl_atlas *a);
 /* Upload RGBA buffers – returns false if no GL context (expected in unit tests) */
 bool gm82_gl_upload_sprites(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites);
 bool gm82_gl_upload_backgrounds(gm82_gl_atlas *a, const gm82_decoded_background_list *bgs);
+
+bool gm82_gl_atlas_get_region(const gm82_gl_atlas *a, int sprite_index, gm82_texture_region *out_region);
 
 /* Draw one textured quad in room pixels – STUB without GLES headers */
 bool gm82_gl_draw_texture(uint32_t tex_id, float x, float y, float w, float h);
