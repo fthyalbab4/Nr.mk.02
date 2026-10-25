@@ -1,24 +1,26 @@
-# GAPS_HONEST — auto sequential (no device)
+# GAPS_HONEST
 
-## Done without user intervention (host-verified locally ok=4 fail=0)
-- String last_string producers, string_repeat, string_concat, string_format path
-- modwrap / smoothstep / lerproach + portable_compat
-- DnD batch1 + batch2 (message, scores/lives/health relative, timeline, particles burst, …)
-- instance image_angle / alpha / blend + create init
-- runtime **draw** uses angle/blend/alpha via gml_draw_sprite_ext
+## Host-closed (code + local pipeline ok=4 fail=0 after APPLY_ALL)
+- String: last_string producers, string_repeat, string_concat, format path
+- Math: modwrap, smoothstep, lerproach + portable_compat
+- DnD batches 1–2 + image transform/color fields
+- Runtime draw uses inst image_angle / blend / alpha
 - UNMAPPED_ACTION / UNMAPPED_GML_FN logs
-- Scripts: APPLY_* + `APPLY_ALL_SEQUENTIAL.sh` + workflow
 
-## Still needs user / device / external
-1. Physical APK install + logcat playtest
-2. Real GMK/cloud FAIL lines → implement those exact symbols
-3. Full typed string expression VM (operators in all scopes)
-4. Full DnD if-chain / every action id
-5. REA + Windows portable DLLs (binaries + permission)
-6. OpenSLES hardware path validation
+## On main right now (verify)
+```bash
+bash tools/gap_fill_20261013/APPLY_ALL_SEQUENTIAL.sh
+python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
+bash tools/run_host_pipeline.sh   # expect SUMMARY ok=4 fail=0
+```
+Or GitHub Actions → **apply-string-math** → Run (auto-commits tree).
 
-## Materialize on GitHub main
-Actions → **apply-string-math** → Run  
-or: `bash tools/gap_fill_20261013/APPLY_ALL_SEQUENTIAL.sh`
+## Cannot close without device / your FAIL logs / REA setup
+1. APK on physical device
+2. Symbols only known after UNMAPPED_* from real games
+3. Full typed string expression VM
+4. Every GM8 DnD if-chain action id
+5. REA + GM82Core.dll analysis
+6. OpenSLES on hardware
 
-No fake 100% Windows parity.
+**Honest: host gaps above are closed in the APPLY tree; GitHub blob for large eval.c must be materialized via APPLY/Actions. Not 100% Windows portable.**
