@@ -379,29 +379,43 @@ bool gm82_frame_test_pixel(const gm82_decoded_frame *frame, int32_t px, int32_t 
 
 bool gm82_pixel_format_convert_16_to_32(const uint8_t *src_16bit, size_t num_pixels,
                                         gm82_pixel_format fmt, uint8_t *dst_rgba32) {
-    if (!src_16bit || !dst_rgba32 || num_pixels == 0) return false;
-    const uint16_t *src = (const uint16_t *)src_16bit;
+    if (!src_16bit || !dst_rgba32 || num_pixels == 0 || num_pixels > SIZE_MAX / 4)
+        return false;
+    if (fmt != GM82_PIXEL_FORMAT_RGBA4444 &&
+        fmt != GM82_PIXEL_FORMAT_ARGB4444 &&
+        fmt != GM82_PIXEL_FORMAT_RGB565)
+        return false;
+
     for (size_t i = 0; i < num_pixels; i++) {
-        uint16_t px = src[i];
+        uint16_t px;
+        memcpy(&px, src_16bit + i * sizeof(px), sizeof(px));
+        uint8_t *dst = dst_rgba32 + i * 4;
         if (fmt == GM82_PIXEL_FORMAT_RGBA4444) {
-            uint8_t r = (px >> 12) & 0x0F;
-            uint8_t g = (px >> 8)  & 0x0F;
-            uint8_t b = (px >> 4)  & 0x0F;
-            uint8_t a = px         & 0x0F;
-            dst_rgba32[i*4+0] = (r << 4) | r;
-            dst_rgba32[i*4+1] = (g << 4) | g;
-            dst_rgba32[i*4+2] = (b << 4) | b;
-            dst_rgba32[i*4+3] = (a << 4) | a;
-        } else if (fmt == GM82_PIXEL_FORMAT_RGB565) {
-            uint8_t r = (px >> 11) & 0x1F;
-            uint8_t g = (px >> 5)  & 0x3F;
-            uint8_t b = px         & 0x1F;
-            dst_rgba32[i*4+0] = (r << 3) | (r >> 2);
-            dst_rgba32[i*4+1] = (g << 2) | (g >> 4);
-            dst_rgba32[i*4+2] = (b << 3) | (b >> 2);
-            dst_rgba32[i*4+3] = 255;
+            uint8_t r = (uint8_t)((px >> 12) & 0x0F);
+            uint8_t g = (uint8_t)((px >> 8) & 0x0F);
+            uint8_t b = (uint8_t)((px >> 4) & 0x0F);
+            uint8_t a = (uint8_t)(px & 0x0F);
+            dst[0] = (uint8_t)((r << 4) | r);
+            dst[1] = (uint8_t)((g << 4) | g);
+            dst[2] = (uint8_t)((b << 4) | b);
+            dst[3] = (uint8_t)((a << 4) | a);
+        } else if (fmt == GM82_PIXEL_FORMAT_ARGB4444) {
+            uint8_t a = (uint8_t)((px >> 12) & 0x0F);
+            uint8_t r = (uint8_t)((px >> 8) & 0x0F);
+            uint8_t g = (uint8_t)((px >> 4) & 0x0F);
+            uint8_t b = (uint8_t)(px & 0x0F);
+            dst[0] = (uint8_t)((r << 4) | r);
+            dst[1] = (uint8_t)((g << 4) | g);
+            dst[2] = (uint8_t)((b << 4) | b);
+            dst[3] = (uint8_t)((a << 4) | a);
         } else {
-            return false;
+            uint8_t r = (uint8_t)((px >> 11) & 0x1F);
+            uint8_t g = (uint8_t)((px >> 5) & 0x3F);
+            uint8_t b = (uint8_t)(px & 0x1F);
+            dst[0] = (uint8_t)((r << 3) | (r >> 2));
+            dst[1] = (uint8_t)((g << 2) | (g >> 4));
+            dst[2] = (uint8_t)((b << 3) | (b >> 2));
+            dst[3] = 255;
         }
     }
     return true;
@@ -409,12 +423,16 @@ bool gm82_pixel_format_convert_16_to_32(const uint8_t *src_16bit, size_t num_pix
 
 bool gm82_pixel_format_convert_bgra_to_rgba(const uint8_t *src_bgra, size_t num_pixels,
                                             uint8_t *dst_rgba) {
-    if (!src_bgra || !dst_rgba || num_pixels == 0) return false;
+    if (!src_bgra || !dst_rgba || num_pixels == 0 || num_pixels > SIZE_MAX / 4)
+        return false;
     for (size_t i = 0; i < num_pixels; i++) {
-        dst_rgba[i*4+0] = src_bgra[i*4+2];
-        dst_rgba[i*4+1] = src_bgra[i*4+1];
-        dst_rgba[i*4+2] = src_bgra[i*4+0];
-        dst_rgba[i*4+3] = src_bgra[i*4+3];
+        const uint8_t *src = src_bgra + i * 4;
+        uint8_t *dst = dst_rgba + i * 4;
+        uint8_t b = src[0], g = src[1], r = src[2], a = src[3];
+        dst[0] = r;
+        dst[1] = g;
+        dst[2] = b;
+        dst[3] = a;
     }
     return true;
 }

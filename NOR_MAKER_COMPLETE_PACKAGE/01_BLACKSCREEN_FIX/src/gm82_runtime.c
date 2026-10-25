@@ -118,12 +118,6 @@ void gm82_runtime_compact_instances(gm82_runtime *rt) {
     rt->instance_count = write_idx;
 }
 
-void gm82_runtime_process_deferred_queues(gm82_runtime *rt) {
-    if (!rt) return;
-    /* Compact dead instances at stage transitions */
-    gm82_runtime_compact_instances(rt);
-}
-
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y) {
     if (!rt) return NULL;
     if (rt->instance_count >= GM82_MAX_INSTANCES) {
@@ -139,14 +133,17 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0;
+
     inst->image_yscale = 1.0;
+
     inst->image_angle = 0.0;
+
     inst->image_alpha = 1.0;
+
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
-    gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
@@ -207,6 +204,7 @@ void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
             }
         }
     }
+    inst->alive = 0;
 }
 
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
@@ -318,10 +316,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
     rt->frame_phase = GM82_PHASE_BEGIN_STEP;
     gm82_events_fire_begin_step_all(rt);
     rt->frame_phase = GM82_PHASE_ALARM;
-
-    rt->is_processing_step = 0;
-    gm82_runtime_process_deferred_queues(rt);
-    rt->is_processing_step = 1;
 
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
@@ -505,9 +499,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
     gm82_events_fire_end_step_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = GM82_PHASE_IDLE;
-
-    rt->is_processing_step = 0;
-    gm82_runtime_process_deferred_queues(rt);
 
     if (rt->view_enabled && rt->view_w > 0) {
         gm82_instance *follow_inst = NULL;

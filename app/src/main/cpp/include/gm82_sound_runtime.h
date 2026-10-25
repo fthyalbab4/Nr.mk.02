@@ -43,12 +43,8 @@ void gm82_sound_stop_all(gm82_sound_runtime *sr);
 
 /* GML-style (uses bound global) */
 void gm82_sound_set_global(gm82_sound_runtime *sr);
-double gml_sound_play(double sound_index);
-double gml_sound_loop(double sound_index);
-double gml_sound_stop(double sound_index);
-double gml_sound_stop_all(void);
-double gml_sound_is_playing(double sound_index); /* always 0 without device */
-double gml_sound_isplaying(double sound_index);
+/* Additional runtime-backed controls; play/stop stubs live in gm82_gml_builtins. */
+double gml_sound_is_playing(double sound_index);
 double gml_sound_exists(double sound_index);
 double gml_sound_volume(double sound_index, double volume);
 double gml_sound_pitch(double sound_index, double pitch);

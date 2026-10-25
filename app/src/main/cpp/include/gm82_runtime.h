@@ -8,7 +8,6 @@
 #include "gm82_arena.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "gm82_arena.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,14 +71,8 @@ typedef struct {
     double  timeline_speed;
     int32_t timeline_running;
     gm82_var vars[32];
-    int32_t  var_count;
+    int32_t var_count;
 } gm82_instance;
-
-typedef struct {
-    int32_t object_index;
-    double x, y;
-    int32_t override_id;
-} gm82_pending_create_req;
 
 typedef struct {
     gm82_instance instances[GM82_MAX_INSTANCES];
@@ -89,16 +82,7 @@ typedef struct {
     int32_t room_width, room_height;
     int32_t room_speed;
     int32_t current_room;
-
-    gm82_arena room_arena;
-
-    gm82_pending_create_req pending_creates[128];
-    int32_t                 pending_create_count;
-
-    int32_t                 pending_destroys[128];
-    int32_t                 pending_destroy_count;
-
-    int32_t                 is_processing_step;
+    int32_t room_loading; /* suppress per-instance Create until room setup completes */
 
     const gm82_decoded_object_list     *objects;
     const gm82_decoded_sprite_list     *sprites;
@@ -139,7 +123,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y);
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst);
 void gm82_runtime_compact_instances(gm82_runtime *rt);
-void gm82_runtime_process_deferred_queues(gm82_runtime *rt);
 
 #ifdef __cplusplus
 }

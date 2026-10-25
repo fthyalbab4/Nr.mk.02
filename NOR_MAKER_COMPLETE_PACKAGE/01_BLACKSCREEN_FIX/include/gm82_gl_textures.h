@@ -52,8 +52,6 @@ bool gm82_gl_upload_sprites(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sp
 bool gm82_gl_upload_backgrounds(gm82_gl_atlas *a, const gm82_decoded_background_list *bgs);
 bool gm82_gl_atlas_build_grid(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites, int32_t max_atlas_dim);
 
-bool gm82_gl_atlas_get_region(const gm82_gl_atlas *a, int sprite_index, gm82_texture_region *out_region);
-
 /* Draw one textured quad in room pixels – STUB without GLES headers */
 bool gm82_gl_draw_texture(uint32_t tex_id, float x, float y, float w, float h);
 
