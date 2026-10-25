@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Materialize from tools/gap_fill_20261013/blobs/*.zlib.b64"""
 import zlib, base64
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,9 +22,15 @@ MAP = {
 }
 for key, paths in MAP.items():
     bpath = BLOBDIR / f"{key}.zlib.b64"
-    if not bpath.exists():
-        print("MISSING", bpath); continue
-    data = zlib.decompress(base64.b64decode(bpath.read_text().strip()))
+    p1 = BLOBDIR / f"{key}.zlib.b64.part1"
+    p2 = BLOBDIR / f"{key}.zlib.b64.part2"
+    if p1.exists() and p2.exists():
+        raw = p1.read_text().strip() + p2.read_text().strip()
+    elif bpath.exists():
+        raw = bpath.read_text().strip()
+    else:
+        print("MISSING", key); continue
+    data = zlib.decompress(base64.b64decode(raw))
     for rel in paths:
         p = ROOT / rel
         p.parent.mkdir(parents=True, exist_ok=True)
