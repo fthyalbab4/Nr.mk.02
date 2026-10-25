@@ -1,4 +1,5 @@
 #include "gml_vm.h"
+#include "gm82_gml_builtins.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -475,19 +476,18 @@ static gml_value call(gml_vm *vm, const gml_ast *n) {
         }
     } else if (!strcmp(n->text, "string_repeat") && c == 2) {
         const char *s = text_of(a[0]);
-        int count = (int)num(a[1]);
-        if (count <= 0) r = gml_value_string("");
-        else {
-            if (count > 1000) count = 1000;
-            size_t slen = strlen(s);
-            char *buf = malloc(slen * count + 1);
+        double requested = num(a[1]);
+        if (!isfinite(requested) || requested <= 0.0) requested = 0.0;
+        if (requested > 1000.0) requested = 1000.0;
+        size_t repeats = (size_t)requested;
+        size_t slen = strlen(s);
+        r = gml_value_string("");
+        if (repeats > 0 && slen > 0 && repeats <= (SIZE_MAX - 1) / slen) {
+            size_t out_sz = repeats * slen + 1;
+            char *buf = (char *)malloc(out_sz);
             if (buf) {
-                char *p = buf;
-                for (int i = 0; i < count; i++) {
-                    memcpy(p, s, slen);
-                    p += slen;
-                }
-                *p = 0;
+                gml_string_repeat(s, requested, buf, out_sz);
+                gml_value_free(&r);
                 r = gml_value_string(buf);
                 free(buf);
             }

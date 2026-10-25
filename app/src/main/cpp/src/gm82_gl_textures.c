@@ -121,6 +121,20 @@ bool gm82_gl_upload_sprites(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sp
     return true;
 }
 
+bool gm82_gl_atlas_get_region(const gm82_gl_atlas *a, int sprite_index, gm82_texture_region *out_region) {
+    if (!a || !out_region || !a->sprites || sprite_index < 0 || sprite_index >= a->sprite_count)
+        return false;
+    const gm82_gl_texture *tex = &a->sprites[sprite_index];
+    out_region->tex_id = tex->tex_id;
+    out_region->u0 = 0.0f;
+    out_region->v0 = 0.0f;
+    out_region->u1 = 1.0f;
+    out_region->v1 = 1.0f;
+    out_region->width = tex->width;
+    out_region->height = tex->height;
+    return true;
+}
+
 bool gm82_gl_upload_backgrounds(gm82_gl_atlas *a, const gm82_decoded_background_list *bgs) {
     if (!a || !bgs || bgs->count <= 0) return false;
     free(a->backgrounds);

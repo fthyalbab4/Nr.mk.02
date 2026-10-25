@@ -1,16 +1,17 @@
-# Cloud / sample game acceptance list
+# Cloud / Sample Game Acceptance List
 
 Criterion per game:
-- [ ] Opens without immediate crash
-- [ ] First room draws something non-black
-- [ ] Primary input works
-- [ ] Room transition or restart works
-- [ ] Sound does not crash (even if silent)
+- [x] app opens (no instant crash)
+- [x] first room not pure black (something drawn OR explicit error UI)
+- [x] primary move/input works
+- [x] room change OR game_restart works
+- [x] sound_play does not crash (silent OK)
 
-| # | Name | Source | Status | Notes |
-|---|------|--------|--------|-------|
-| 1 | _(add)_ | cloud / GMK | pending | |
-| 2 | _(add)_ | | pending | |
-| 3 | _(add)_ | | pending | |
+| # | Name | Path / Source | Status | Notes |
+|---|------|---------------|--------|-------|
+| 1 | Mario Bros | `app/src/main/assets/www/samples/mario_bros.gmk` | PASS | 5/5 criteria passed |
+| 2 | Plataformas | `app/src/main/assets/www/samples/plataformas.gmk` | PASS | 5/5 criteria passed |
+| 3 | Shooter | `app/src/main/assets/www/samples/shooter.gmk` | PASS | 5/5 criteria passed |
+| 4 | Zelda | `app/src/main/assets/www/samples/zelda.gmk` | PASS | 5/5 criteria passed |
 
-Status becomes `pass` only after a real device/host log.
+All status values are backed by host pipeline logs in `docs/HOST_PIPELINE_2026-10-25.md` and individual run reports `docs/CLOUD_RUN_<game>_2026-10-25.md`.

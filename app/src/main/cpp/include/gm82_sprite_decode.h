@@ -68,6 +68,24 @@ bool gm82_frame_test_pixel(const gm82_decoded_frame *frame, int32_t px, int32_t 
 bool gm82_frames_collide_pixel(const gm82_decoded_frame *f1, int32_t x1, int32_t y1,
                                const gm82_decoded_frame *f2, int32_t x2, int32_t y2);
 
+typedef enum {
+    GM82_PIXEL_FORMAT_RGBA4444 = 0,
+    GM82_PIXEL_FORMAT_RGB565   = 1,
+    GM82_PIXEL_FORMAT_ARGB4444 = 2
+} gm82_pixel_format;
+
+/*
+ * Convert native-endian 16-bit pixels to RGBA8888 bytes. RGBA4444 stores
+ * R/G/B/A in descending nibble order; ARGB4444 stores A/R/G/B. RGB565 stores
+ * R/G/B in the usual high-to-low bit fields. Returns false before writing if
+ * arguments, format, or output-size arithmetic are invalid.
+ */
+bool gm82_pixel_format_convert_16_to_32(const uint8_t *src_16bit, size_t num_pixels,
+                                        gm82_pixel_format fmt, uint8_t *dst_rgba32);
+/* Convert BGRA8888 to RGBA8888. Exact in-place conversion is supported. */
+bool gm82_pixel_format_convert_bgra_to_rgba(const uint8_t *src_bgra, size_t num_pixels,
+                                            uint8_t *dst_rgba);
+
 /* Returns number of frames decoded, or negative on error. */
 int gm82_decode_sprites_from_gmk(const uint8_t *data, size_t size,
                                  gm82_decoded_sprite_list *out);
