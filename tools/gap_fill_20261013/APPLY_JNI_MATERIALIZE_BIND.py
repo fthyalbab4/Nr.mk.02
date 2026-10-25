@@ -2,12 +2,19 @@
 from pathlib import Path
 import zlib, base64
 ROOT = Path(__file__).resolve().parents[2]
-blob = ROOT / "tools/gap_fill_20261013/blobs/jni_java_bridge.zlib.b64"
-dest = ROOT / "app/src/main/cpp/src/gm82_jni_java_bridge.c"
-if not blob.exists():
-    print("missing jni blob")
+B = ROOT / "tools/gap_fill_20261013/blobs"
+parts = sorted(B.glob("jni_java_bridge.zlib.b64.part*"))
+if not parts:
+    single = B / "jni_java_bridge.zlib.b64"
+    if single.exists():
+        raw = single.read_text().strip()
+    else:
+        print("missing jni blob parts")
+        raise SystemExit(0)
 else:
-    data = zlib.decompress(base64.b64decode(blob.read_text().strip()))
-    dest.write_bytes(data)
-    print("jni", len(data), b"materialize_get_objects" in data)
+    raw = "".join(p.read_text().strip() for p in parts)
+data = zlib.decompress(base64.b64decode(raw))
+dest = ROOT / "app/src/main/cpp/src/gm82_jni_java_bridge.c"
+dest.write_bytes(data)
+print("jni", len(data), b"materialize_get_objects" in data)
 print("APPLY_JNI_DONE")
