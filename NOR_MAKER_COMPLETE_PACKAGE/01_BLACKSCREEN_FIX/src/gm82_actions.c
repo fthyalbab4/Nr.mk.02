@@ -305,6 +305,264 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         gml_set_health((argc >= 1) ? (double)args[0] : 100.0);
         return true;
     }
+    if (strcmp(name, "action_draw_text") == 0) {
+        const char *txt = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "";
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        gml_draw_text(x, y, txt);
+        return true;
+    }
+    if (strcmp(name, "action_draw_score") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Score: %g", gml_get_score());
+        gml_draw_text(x, y, buf);
+        return true;
+    }
+    if (strcmp(name, "action_draw_life") == 0 || strcmp(name, "action_draw_lives") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Lives: %g", gml_get_lives());
+        gml_draw_text(x, y, buf);
+        return true;
+    }
+    if (strcmp(name, "action_path") == 0) {
+        double path = (argc >= 1) ? (double)args[0] : 0;
+        double spd = (argc >= 2) ? (double)args[1] : 1.0;
+        double endact = (argc >= 3) ? (double)args[2] : 0;
+        double abs_val = (argc >= 4) ? (double)args[3] : 1;
+        gml_path_start(path, spd, endact, abs_val);
+        return true;
+    }
+    if (strcmp(name, "action_path_end") == 0) {
+        gml_path_end();
+        return true;
+    }
+    
+    if (strcmp(name, "action_message") == 0 || strcmp(name, "action_show_message") == 0) {
+        const char *txt = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "message";
+        gml_draw_text(self->x, self->y, txt);
+        return true;
+    }
+    if (strcmp(name, "action_set_cursor") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_fullscreen") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_sprite_transform") == 0) {
+        if (argc >= 1) self->image_xscale = (double)args[0] != 0.0 ? (double)args[0] : 1.0;
+        if (argc >= 2) self->image_yscale = (double)args[1] != 0.0 ? (double)args[1] : 1.0;
+        if (argc >= 3) self->image_angle = (double)args[2];
+        return true;
+    }
+    if (strcmp(name, "action_sprite_color") == 0) {
+        if (argc >= 1) self->image_blend = (int32_t)args[0];
+        if (argc >= 2) {
+            double a = (double)args[1];
+            self->image_alpha = (a > 1.0) ? (a / 255.0) : a;
+        }
+        return true;
+    }
+    if (strcmp(name, "action_move_random") == 0) {
+        int rw = (rt && rt->room_width > 0) ? rt->room_width : 640;
+        int rh = (rt && rt->room_height > 0) ? rt->room_height : 480;
+        self->x = (double)(rw > 0 ? (rand() % rw) : 0);
+        self->y = (double)(rh > 0 ? (rand() % rh) : 0);
+        return true;
+    }
+    if (strcmp(name, "action_linear_step") == 0) {
+        double tx = (argc >= 1) ? (double)args[0] : self->x;
+        double ty = (argc >= 2) ? (double)args[1] : self->y;
+        double sp = (argc >= 3) ? (double)args[2] : 1.0;
+        gml_move_towards_point(tx, ty, sp);
+        return true;
+    }
+    if (strcmp(name, "action_highscore_show") == 0 || strcmp(name, "action_highscore_clear") == 0) {
+        return true;
+    }
+
+    
+    if (strcmp(name, "action_set_sprite") == 0) {
+        if (argc >= 1) self->sprite_index = args[0];
+        if (argc >= 2) self->image_index = args[1];
+        return true;
+    }
+    if (strcmp(name, "action_draw_health") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "HP: %g", gml_get_health());
+        gml_draw_text(x, y, buf);
+        return true;
+    }
+    if (strcmp(name, "action_set_score_relative") == 0 || strcmp(name, "action_score") == 0) {
+        double d = (argc >= 1) ? (double)args[0] : 1.0;
+        gml_set_score(gml_get_score() + d);
+        return true;
+    }
+    if (strcmp(name, "action_set_lives_relative") == 0) {
+        double d = (argc >= 1) ? (double)args[0] : 1.0;
+        gml_set_lives(gml_get_lives() + d);
+        return true;
+    }
+    if (strcmp(name, "action_set_health_relative") == 0) {
+        double d = (argc >= 1) ? (double)args[0] : 1.0;
+        gml_set_health(gml_get_health() + d);
+        return true;
+    }
+    if (strcmp(name, "action_sound_volume") == 0) {
+        gml_sound_volume((argc >= 1) ? args[0] : 0, (argc >= 2) ? (double)args[1] : 1.0);
+        return true;
+    }
+    /* DnD conditionals — true = condition holds (op: 0== 1< 2> 3<= 4>= 5!=) */
+    if (strcmp(name, "action_if_score") == 0 || strcmp(name, "action_if_lives") == 0 ||
+        strcmp(name, "action_if_health") == 0) {
+        double cur = 0.0;
+        if (strcmp(name, "action_if_score") == 0) cur = gml_get_score();
+        else if (strcmp(name, "action_if_lives") == 0) cur = gml_get_lives();
+        else cur = gml_get_health();
+        double thr = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        int ok;
+        switch (op) {
+            case 1: ok = (cur < thr); break;
+            case 2: ok = (cur > thr); break;
+            case 3: ok = (cur <= thr); break;
+            case 4: ok = (cur >= thr); break;
+            case 5: ok = (cur != thr); break;
+            default: ok = (cur == thr); break;
+        }
+        return ok ? true : false;
+    }
+    if (strcmp(name, "action_if_dice") == 0) {
+        int n = (argc >= 1 && args[0] > 0) ? args[0] : 2;
+        return (rand() % n) == 0;
+    }
+    if (strcmp(name, "action_if_number") == 0) {
+        int obj = (argc >= 1) ? args[0] : -1;
+        int thr = (argc >= 2) ? args[1] : 0;
+        int op = (argc >= 3) ? args[2] : 2;
+        int cnt = 0;
+        for (int i = 0; i < rt->instance_count; i++) {
+            if (!rt->instances[i].alive) continue;
+            if (obj < 0 || rt->instances[i].object_index == obj) cnt++;
+        }
+        switch (op) {
+            case 1: return cnt < thr;
+            case 2: return cnt > thr;
+            case 3: return cnt <= thr;
+            case 4: return cnt >= thr;
+            case 5: return cnt != thr;
+            default: return cnt == thr;
+        }
+    }
+    /* Phase 4: expanded DnD conditionals */
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int obj = (argc >= 3) ? args[2] : -4; /* all */
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *o = &rt->instances[i];
+            if (!o->alive || o == self) continue;
+            if (obj >= 0 && o->object_index != obj) continue;
+            double dx = o->x - x, dy = o->y - y;
+            if (dx*dx + dy*dy < 16.0) return false; /* not empty */
+        }
+        return true;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int obj = (argc >= 3) ? args[2] : -1;
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *o = &rt->instances[i];
+            if (!o->alive || o == self) continue;
+            if (obj >= 0 && o->object_index != obj) continue;
+            double dx = o->x - x, dy = o->y - y;
+            if (dx*dx + dy*dy < 256.0) return true;
+        }
+        return false;
+    }
+    if (strcmp(name, "action_if_object") == 0) {
+        int obj = (argc >= 1) ? args[0] : -1;
+        double x = (argc >= 2) ? (double)args[1] : self->x;
+        double y = (argc >= 3) ? (double)args[2] : self->y;
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *o = &rt->instances[i];
+            if (!o->alive) continue;
+            if (obj >= 0 && o->object_index != obj) continue;
+            double dx = o->x - x, dy = o->y - y;
+            if (dx*dx + dy*dy < 256.0) return true;
+        }
+        return false;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        /* args: value, op, compare — uses score as proxy when no var table */
+        double cur = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double thr = (argc >= 3) ? (double)args[2] : 0.0;
+        switch (op) {
+            case 1: return cur < thr;
+            case 2: return cur > thr;
+            case 3: return cur <= thr;
+            case 4: return cur >= thr;
+            case 5: return cur != thr;
+            default: return cur == thr;
+        }
+    }
+    if (strcmp(name, "action_if_mouse") == 0) {
+        int btn = (argc >= 1) ? args[0] : 0;
+        extern double gml_mouse_check_button(double button);
+        return gml_mouse_check_button((double)(btn + 1)) != 0.0;
+    }
+    if (strcmp(name, "action_if_sound") == 0) {
+        /* soft: always false unless sound system reports playing */
+        return false;
+    }
+    if (strcmp(name, "action_if_next_room") == 0) {
+        int cur = 0, n = 0;
+        if (rt->rooms) n = rt->rooms->count;
+        /* soft: assume current is 0 if not tracked */
+        return (cur + 1) < n;
+    }
+    if (strcmp(name, "action_if_previous_room") == 0) {
+        return false; /* no current room index field; soft false */
+    }
+    if (strcmp(name, "action_if") == 0) {
+        /* generic: arg0 as truthy */
+        return (argc >= 1) ? (args[0] != 0) : false;
+    }
+    if (strcmp(name, "action_else") == 0 || strcmp(name, "action_block_end") == 0 ||
+        strcmp(name, "action_block_begin") == 0) {
+        return true;
+    }
+    if (strcmp(name, "action_partemit_create") == 0 || strcmp(name, "action_partemit_burst") == 0) {
+        gml_part_particles_create(0, self->x, self->y, 0, 8);
+        return true;
+    }
+    if (strcmp(name, "action_timeline_set") == 0) {
+        if (argc >= 1) self->timeline_index = args[0];
+        if (argc >= 2) self->timeline_position = (double)args[1];
+        self->timeline_running = 1;
+        return true;
+    }
+    if (strcmp(name, "action_timeline_start") == 0) {
+        self->timeline_running = 1;
+        return true;
+    }
+    if (strcmp(name, "action_timeline_stop") == 0) {
+        self->timeline_running = 0;
+        return true;
+    }
+    if (strcmp(name, "action_timeline_clear") == 0) {
+        self->timeline_index = -1;
+        self->timeline_running = 0;
+        return true;
+    }
+
     if (strcmp(name, "action_set_alarm") == 0) {
         int idx = (argc >= 1) ? args[0] : 0;
         int val = (argc >= 2) ? args[1] : 30;
@@ -344,6 +602,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
         return gml_game_load(path) > 0;
     }
+    fprintf(stderr, "UNMAPPED_ACTION %s\n", name);
     return false;
 }
 
@@ -385,12 +644,15 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
                 strcmp(ar->name, "action_another_room") == 0)
                 continue;
             gm82_action_execute_ref(rt, self, ar);
+            if (!self->alive) break;
         }
         break;
     }
 }
 
-void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
+/* Phase 4: nested if/else/block runner for event_type filter */
+static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
+                                    const gm82_action_table *table, int event_type) {
     if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
@@ -398,18 +660,63 @@ void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_ac
         if (strcmp(table->objects[i].object_name, oname) != 0 &&
             strcmp(table->objects[i].object_name, "_global_actions") != 0)
             continue;
+        /* skip_depth: >0 means skipping until matching block_end / else handling */
+        int skip_depth = 0;
+        int else_skip = 0; /* after taken if-branch, skip else */
         for (int a = 0; a < table->objects[i].count; a++) {
             if (!self->alive) break;
             gm82_action_ref *ar = &table->objects[i].items[a];
-            if (ar->event_type == 3 || ar->event_type == -1) {
-                if (strcmp(ar->name, "action_set_hspeed") == 0 ||
-                    strcmp(ar->name, "action_speed_horizontal") == 0 ||
-                    strcmp(ar->name, "action_reverse_xdir") == 0 ||
-                    strcmp(ar->name, "action_reverse_x") == 0 ||
-                    strcmp(ar->name, "action_move") == 0) {
-                    gm82_action_execute_ref(rt, self, ar);
+            if (event_type >= 0) {
+                if (!(ar->event_type == event_type || ar->event_type == -1)) continue;
+            }
+            const char *nm = ar->name;
+            int is_if = (strncmp(nm, "action_if", 9) == 0);
+            int is_else = (strcmp(nm, "action_else") == 0);
+            int is_begin = (strcmp(nm, "action_block_begin") == 0);
+            int is_end = (strcmp(nm, "action_block_end") == 0);
+
+            if (skip_depth > 0) {
+                if (is_begin) skip_depth++;
+                else if (is_end) {
+                    skip_depth--;
+                    if (skip_depth == 0 && else_skip) {
+                        /* finished false-if block; next else should run? no — condition was false so else runs */
+                        else_skip = 0;
+                    }
+                } else if (is_else && skip_depth == 1) {
+                    /* entering else of skipped if → stop skipping, run else body */
+                    skip_depth = 0;
+                    else_skip = 0;
+                    continue;
                 }
+                continue;
+            }
+
+            if (is_else) {
+                /* else after true branch: skip else body */
+                skip_depth = 1;
+                else_skip = 1;
+                continue;
+            }
+            if (is_begin || is_end) continue;
+
+            bool ok = gm82_action_execute_ref(rt, self, ar);
+            if (!self->alive) break;
+            if (is_if && !ok) {
+                skip_depth = 1;
+                else_skip = 0; /* else should execute */
+            } else if (is_if && ok) {
+                else_skip = 1; /* mark that else should be skipped when we see it */
             }
         }
     }
 }
+
+void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
+    gm82_actions_fire_event(rt, self, table, 3);
+}
+
+void gm82_actions_fire_draw(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
+    gm82_actions_fire_event(rt, self, table, 8);
+}
+

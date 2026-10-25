@@ -33,3 +33,7 @@
 ## 2026-10-19 - Arrow Key Directional Navigation for Interactive Card Grids
 **Learning:** In interactive card grids with `tabindex="0"`, relying solely on `Tab` for keyboard navigation forces users to tab through every focusable child element inside each card before reaching the next card. Attaching `ArrowRight`/`ArrowDown` keydown listeners to move forward to `nextElementSibling` and `ArrowLeft`/`ArrowUp` to move backward to `previousElementSibling` on grid cards allows fluid, directional keyboard navigation directly between sibling grid cards.
 **Action:** Always bind standard directional arrow key listeners (`ArrowRight`/`ArrowDown` -> `nextElementSibling`, `ArrowLeft`/`ArrowUp` -> `previousElementSibling`) on interactive grid card elements to allow users to navigate grid items intuitively.
+
+## 2026-10-20 - Card Action Button Tab Stop Elimination
+**Learning:** In interactive grid cards that already serve as primary focus targets (`tabindex="0"` with `Enter`/`Space` listeners), embedded action buttons without `tabindex="-1"` create redundant double tab stops for keyboard users, doubling navigation effort.
+**Action:** Set `tabindex="-1"` on embedded card buttons when the parent container card handles keyboard activation, ensuring a streamlined single tab stop per grid card.

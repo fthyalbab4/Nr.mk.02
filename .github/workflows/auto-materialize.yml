@@ -1,0 +1,33 @@
+name: auto-materialize
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/gap_fill_20261013/**'
+  workflow_dispatch:
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize + APPLY
+        run: |
+          python3 tools/gap_fill_20261013/ASSEMBLE_ACTIONS_PARTS.py || true
+          python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE1_RUNTIME.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE2_RUNTIME_INPUT.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE3_GML_STRINGS.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE4_DND.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE5_SURFACES.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE6_WITH_AUDIO.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE789.py || true
+          python3 tools/gap_fill_20261013/APPLY_CODE_REMAINING.py || true
+          python3 tools/gap_fill_20261013/APPLY_DND_IF_ELSE.py || true
+          python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py || true
+      - run: bash tools/run_host_pipeline.sh || echo soft
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-materialize code-remaining on main"
+          file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"

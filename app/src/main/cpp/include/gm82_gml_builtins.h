@@ -28,6 +28,8 @@ gm82_runtime *gm82_gml_get_runtime(void);
 
 /* Set "self" instance for instance-scoped builtins */
 void gm82_gml_set_self(gm82_instance *self);
+void gm82_gml_set_other(gm82_instance *o);
+gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
@@ -103,6 +105,10 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
+double gml_surface_copy(double dest, double src);
+double gml_surface_getpixel(double id, double x, double y);
+double gml_surface_clear(double id, double color, double alpha);
+
 double gml_draw_clear(double color);
 double gml_draw_clear_alpha(double color, double alpha);
 
@@ -502,11 +508,18 @@ double gml_math_get_epsilon(void);
 double gml_rectangle_in_circle(double rx1, double ry1, double rx2, double ry2, double cx, double cy, double rad);
 double gml_rectangle_in_rectangle(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
 double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, double x3, double y3);
+double gml_hypot(double x, double y);
+double gml_clamp_angle(double angle);
+double gml_lerp_angle(double a, double b, double t);
 
 #ifdef __cplusplus
 }
 #endif
 
+
+double gml_execute_string(const char *code);
+double gml_is_real(double val);
+double gml_is_string(double val);
 
 void gml_show_debug_message(const char *msg);
 double gml_randomize(void);

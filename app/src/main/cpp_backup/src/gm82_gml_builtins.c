@@ -758,6 +758,21 @@ double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, dou
     return val > 0.0 ? 1.0 : 0.0;
 }
 
+double gml_hypot(double x, double y) {
+    return sqrt(x * x + y * y);
+}
+
+double gml_clamp_angle(double angle) {
+    double a = fmod(angle, 360.0);
+    if (a < 0.0) a += 360.0;
+    return a;
+}
+
+double gml_lerp_angle(double a, double b, double t) {
+    double diff = gml_angle_difference(b, a);
+    return gml_clamp_angle(a + diff * t);
+}
+
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     if (!g_rt) return -4;
     if (x1 > x2) { double t=x1; x1=x2; x2=t; }
@@ -3784,6 +3799,21 @@ double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2,
 int gml_script_find(const char *name) {
     if (!g_scripts || !name) return -1;
     return gm82_script_find(g_scripts, name);
+}
+
+double gml_execute_string(const char *code) {
+    if (!code || !code[0]) return 0.0;
+    return (double)gm82_gml_eval_block(g_rt, g_self, code);
+}
+
+double gml_is_real(double val) {
+    (void)val;
+    return 1.0;
+}
+
+double gml_is_string(double val) {
+    (void)val;
+    return 0.0;
 }
 
 void gml_show_debug_message(const char *msg) {

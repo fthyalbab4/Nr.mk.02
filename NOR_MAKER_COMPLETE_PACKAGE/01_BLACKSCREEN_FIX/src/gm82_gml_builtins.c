@@ -758,6 +758,21 @@ double gml_triangle_is_clockwise(double x1, double y1, double x2, double y2, dou
     return val > 0.0 ? 1.0 : 0.0;
 }
 
+double gml_hypot(double x, double y) {
+    return sqrt(x * x + y * y);
+}
+
+double gml_clamp_angle(double angle) {
+    double a = fmod(angle, 360.0);
+    if (a < 0.0) a += 360.0;
+    return a;
+}
+
+double gml_lerp_angle(double a, double b, double t) {
+    double diff = gml_angle_difference(b, a);
+    return gml_clamp_angle(a + diff * t);
+}
+
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     if (!g_rt) return -4;
     if (x1 > x2) { double t=x1; x1=x2; x2=t; }
@@ -1313,10 +1328,6 @@ double gml_draw_background_ext(double bg, double x, double y, double xscale, dou
     return gml_draw_background(bg, x, y);
 }
 
-double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha) {
-    (void)xscale; (void)yscale; (void)rot; (void)color; (void)alpha;
-    return gml_draw_surface(id, x, y);
-}
 
 #define GM82_DEBUG_MAX 64
 static char g_debug_logs[GM82_DEBUG_MAX][128];
@@ -1833,6 +1844,7 @@ void gml_draw_text_ext(double x, double y, const char *str, double sep, double w
 }
 
 #define GM82_SURFACE_MAX 32
+#define GM82_SURF_STACK 8
 typedef struct {
     int used;
     int32_t w, h;
@@ -1843,6 +1855,9 @@ static gm82_surface g_surfaces[GM82_SURFACE_MAX];
 static int g_surf_target = -1;
 static uint8_t *g_draw_buf_saved = NULL;
 static int32_t g_draw_w_saved = 0, g_draw_h_saved = 0;
+/* Phase 5: nested set_target stack */
+static int g_surf_stack[GM82_SURF_STACK];
+static int g_surf_stack_n = 0;
 
 double gml_surface_create(double w, double h) {
     int iw = (int)w, ih = (int)h;
@@ -1894,6 +1909,8 @@ double gml_surface_set_target(double id) {
         g_draw_buf_saved = g_draw_buf;
         g_draw_w_saved = g_draw_w;
         g_draw_h_saved = g_draw_h;
+    } else if (g_surf_stack_n < GM82_SURF_STACK) {
+        g_surf_stack[g_surf_stack_n++] = g_surf_target;
     }
     g_surf_target = i;
     g_draw_buf = g_surfaces[i].rgba;
@@ -1904,6 +1921,14 @@ double gml_surface_set_target(double id) {
 
 double gml_surface_reset_target(void) {
     if (g_surf_target < 0) return 0;
+    if (g_surf_stack_n > 0) {
+        int prev = g_surf_stack[--g_surf_stack_n];
+        g_surf_target = prev;
+        g_draw_buf = g_surfaces[prev].rgba;
+        g_draw_w = g_surfaces[prev].w;
+        g_draw_h = g_surfaces[prev].h;
+        return 1;
+    }
     g_draw_buf = g_draw_buf_saved;
     g_draw_w = g_draw_w_saved;
     g_draw_h = g_draw_h_saved;
@@ -1911,23 +1936,91 @@ double gml_surface_reset_target(void) {
     return 1;
 }
 
-double gml_draw_surface(double id, double x, double y) {
-    int i = (int)id;
-    if (i < 0 || i >= GM82_SURFACE_MAX || !g_surfaces[i].used || !g_draw_buf) return 0;
-    int dx0 = (int)x, dy0 = (int)y;
-    int sw = g_surfaces[i].w, sh = g_surfaces[i].h;
-    const uint8_t *src = g_surfaces[i].rgba;
-    for (int sy = 0; sy < sh; sy++) {
-        int dy = dy0 + sy;
-        if (dy < 0 || dy >= g_draw_h) continue;
-        for (int sx = 0; sx < sw; sx++) {
-            int dx = dx0 + sx;
-            if (dx < 0 || dx >= g_draw_w) continue;
+/* Phase 5: alpha-aware blit surface → current target */
+static void surf_blit(const uint8_t *src, int sw, int sh, int dx0, int dy0,
+                      double xscale, double yscale, double alpha) {
+    if (!g_draw_buf || !src || alpha <= 0.0) return;
+    if (xscale == 0.0) xscale = 1.0;
+    if (yscale == 0.0) yscale = 1.0;
+    int dw = (int)(sw * fabs(xscale));
+    int dh = (int)(sh * fabs(yscale));
+    if (dw < 1) dw = 1;
+    if (dh < 1) dh = 1;
+    for (int dy = 0; dy < dh; dy++) {
+        int sy = (int)(dy / fabs(yscale));
+        if (sy < 0 || sy >= sh) continue;
+        int py = dy0 + dy;
+        if (py < 0 || py >= g_draw_h) continue;
+        for (int dx = 0; dx < dw; dx++) {
+            int sx = (int)(dx / fabs(xscale));
+            if (sx < 0 || sx >= sw) continue;
+            int px = dx0 + dx;
+            if (px < 0 || px >= g_draw_w) continue;
             const uint8_t *s = src + ((size_t)sy * (size_t)sw + (size_t)sx) * 4;
             if (s[3] == 0) continue;
-            uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4;
-            d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
+            uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+            double a = (s[3] / 255.0) * alpha;
+            if (a >= 0.999) {
+                d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
+            } else {
+                d[0] = (uint8_t)(s[0] * a + d[0] * (1.0 - a));
+                d[1] = (uint8_t)(s[1] * a + d[1] * (1.0 - a));
+                d[2] = (uint8_t)(s[2] * a + d[2] * (1.0 - a));
+                d[3] = 255;
+            }
         }
+    }
+}
+
+double gml_draw_surface(double id, double x, double y) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_SURFACE_MAX || !g_surfaces[i].used) return 0;
+    surf_blit(g_surfaces[i].rgba, g_surfaces[i].w, g_surfaces[i].h, (int)x, (int)y, 1.0, 1.0, 1.0);
+    return 1;
+}
+
+double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha) {
+    (void)rot; (void)color; /* rotation optional later */
+    int i = (int)id;
+    if (i < 0 || i >= GM82_SURFACE_MAX || !g_surfaces[i].used) return 0;
+    if (alpha <= 0.0) return 1;
+    if (alpha > 1.0) alpha = 1.0;
+    surf_blit(g_surfaces[i].rgba, g_surfaces[i].w, g_surfaces[i].h, (int)x, (int)y, xscale, yscale, alpha);
+    return 1;
+}
+
+double gml_surface_copy(double dest, double src) {
+    int d = (int)dest, s = (int)src;
+    if (d < 0 || d >= GM82_SURFACE_MAX || !g_surfaces[d].used) return 0;
+    if (s < 0 || s >= GM82_SURFACE_MAX || !g_surfaces[s].used) return 0;
+    int w = g_surfaces[d].w < g_surfaces[s].w ? g_surfaces[d].w : g_surfaces[s].w;
+    int h = g_surfaces[d].h < g_surfaces[s].h ? g_surfaces[d].h : g_surfaces[s].h;
+    for (int y = 0; y < h; y++) {
+        memcpy(g_surfaces[d].rgba + (size_t)y * (size_t)g_surfaces[d].w * 4,
+               g_surfaces[s].rgba + (size_t)y * (size_t)g_surfaces[s].w * 4,
+               (size_t)w * 4);
+    }
+    return 1;
+}
+
+double gml_surface_getpixel(double id, double x, double y) {
+    int i = (int)id, px = (int)x, py = (int)y;
+    if (i < 0 || i >= GM82_SURFACE_MAX || !g_surfaces[i].used) return 0;
+    if (px < 0 || py < 0 || px >= g_surfaces[i].w || py >= g_surfaces[i].h) return 0;
+    const uint8_t *p = g_surfaces[i].rgba + ((size_t)py * (size_t)g_surfaces[i].w + (size_t)px) * 4;
+    return (double)((p[0] << 16) | (p[1] << 8) | p[2]);
+}
+
+double gml_surface_clear(double id, double color, double alpha) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_SURFACE_MAX || !g_surfaces[i].used) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+    uint8_t a = (uint8_t)(alpha > 1.0 ? 255 : (alpha < 0 ? 0 : alpha * 255));
+    int n = g_surfaces[i].w * g_surfaces[i].h;
+    uint8_t *p = g_surfaces[i].rgba;
+    for (int k = 0; k < n; k++) {
+        p[k*4+0]=r; p[k*4+1]=g; p[k*4+2]=b; p[k*4+3]=a;
     }
     return 1;
 }
@@ -3808,6 +3901,21 @@ double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2,
 int gml_script_find(const char *name) {
     if (!g_scripts || !name) return -1;
     return gm82_script_find(g_scripts, name);
+}
+
+double gml_execute_string(const char *code) {
+    if (!code || !code[0]) return 0.0;
+    return (double)gm82_gml_eval_block(g_rt, g_self, code);
+}
+
+double gml_is_real(double val) {
+    (void)val;
+    return 1.0;
+}
+
+double gml_is_string(double val) {
+    (void)val;
+    return 0.0;
 }
 
 void gml_show_debug_message(const char *msg) {

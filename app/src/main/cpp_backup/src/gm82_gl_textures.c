@@ -34,7 +34,57 @@ void gm82_gl_atlas_free(gm82_gl_atlas *a) {
 #endif
     free(a->sprites);
     free(a->backgrounds);
+    free(a->entries);
     memset(a, 0, sizeof(*a));
+}
+
+bool gm82_gl_atlas_build_grid(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites, int32_t max_atlas_dim) {
+    if (!a || !sprites || sprites->count <= 0) return false;
+    if (max_atlas_dim < 256) max_atlas_dim = 2048;
+
+    free(a->entries);
+    a->entries = (gm82_gl_atlas_entry *)calloc((size_t)sprites->count, sizeof(gm82_gl_atlas_entry));
+    if (!a->entries) return false;
+    a->entry_count = sprites->count;
+
+    int32_t cur_x = 0, cur_y = 0, row_h = 0;
+    int32_t atlas_w = 0, atlas_h = 0;
+
+    for (int i = 0; i < sprites->count; i++) {
+        int32_t sw = sprites->frames[i].width;
+        int32_t sh = sprites->frames[i].height;
+        if (sw <= 0 || sh <= 0) continue;
+
+        if (cur_x + sw > max_atlas_dim) {
+            cur_x = 0;
+            cur_y += row_h;
+            row_h = 0;
+        }
+
+        a->entries[i].sprite_index = i;
+        a->entries[i].x = cur_x;
+        a->entries[i].y = cur_y;
+        a->entries[i].w = sw;
+        a->entries[i].h = sh;
+
+        cur_x += sw;
+        if (sh > row_h) row_h = sh;
+        if (cur_x > atlas_w) atlas_w = cur_x;
+        if (cur_y + row_h > atlas_h) atlas_h = cur_y + row_h;
+    }
+
+    a->atlas_width = atlas_w > 0 ? atlas_w : 1;
+    a->atlas_height = atlas_h > 0 ? atlas_h : 1;
+
+    for (int i = 0; i < sprites->count; i++) {
+        if (a->entries[i].w <= 0 || a->entries[i].h <= 0) continue;
+        a->entries[i].u1 = (float)a->entries[i].x / (float)a->atlas_width;
+        a->entries[i].v1 = (float)a->entries[i].y / (float)a->atlas_height;
+        a->entries[i].u2 = (float)(a->entries[i].x + a->entries[i].w) / (float)a->atlas_width;
+        a->entries[i].v2 = (float)(a->entries[i].y + a->entries[i].h) / (float)a->atlas_height;
+    }
+
+    return true;
 }
 
 bool gm82_gl_upload_sprites(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites) {
