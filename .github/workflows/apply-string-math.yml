@@ -8,11 +8,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Materialize blobs
+      - name: Materialize
         run: |
           python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py
+          python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py || true
+          python3 tools/gap_fill_20261013/APPLY_INSTANCE_IMAGE_FIELDS.py || true
+          python3 tools/gap_fill_20261013/APPLY_ACTION_IMAGE_AND_LOG.py || true
+          python3 tools/gap_fill_20261013/APPLY_DRAW_AND_DND2.py || true
           python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: materialize gap-fill from blobs"
+          commit_message: "chore: materialize gap-fill sources"
           file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
