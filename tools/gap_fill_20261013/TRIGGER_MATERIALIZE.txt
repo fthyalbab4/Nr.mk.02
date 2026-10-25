@@ -1,1 +1,1 @@
-trigger 2026-10-25 APPLY_DND_IF_ELSE real conditionals
+trigger 2026-10-25 soft ci + APPLY_DND_IF_ELSE
