@@ -44,6 +44,12 @@ typedef struct {
     int ready;
 } gm82_gl_atlas;
 
+typedef struct {
+    uint32_t tex_id;
+    float u0, v0, u1, v1;
+    int32_t width, height;
+} gm82_texture_region;
+
 void gm82_gl_atlas_init(gm82_gl_atlas *a);
 void gm82_gl_atlas_free(gm82_gl_atlas *a);
 
@@ -51,6 +57,9 @@ void gm82_gl_atlas_free(gm82_gl_atlas *a);
 bool gm82_gl_upload_sprites(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites);
 bool gm82_gl_upload_backgrounds(gm82_gl_atlas *a, const gm82_decoded_background_list *bgs);
 bool gm82_gl_atlas_build_grid(gm82_gl_atlas *a, const gm82_decoded_sprite_list *sprites, int32_t max_atlas_dim);
+
+/* Return a full normalized region for one sprite's separate texture. */
+bool gm82_gl_atlas_get_region(const gm82_gl_atlas *a, int sprite_index, gm82_texture_region *out_region);
 
 /* Draw one textured quad in room pixels – STUB without GLES headers */
 bool gm82_gl_draw_texture(uint32_t tex_id, float x, float y, float w, float h);
