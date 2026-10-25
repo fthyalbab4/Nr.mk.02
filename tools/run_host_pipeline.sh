@@ -82,7 +82,6 @@ int main(int argc, char **argv) {
     for (int i = 0; i < frames; i++) {
         gm82_input_begin_frame(&input);
         gm82_input_key_down(&input, 39);
-        /* movement inject removed — rely on keyboard + events */
         gm82_runtime_step(&rt);
     }
     double x1 = x0, y1 = y0;
@@ -105,21 +104,14 @@ int main(int argc, char **argv) {
     gm82_decoded_sprite_list_free(&sprites);
     gm82_decoded_background_list_free(&bgs);
     free(buf);
-
-    gml_set_score(1234.0);
-    gml_set_lives(5.0);
-    gml_set_health(80.0);
+    gml_set_score(1234.0); gml_set_lives(5.0); gml_set_health(80.0);
     gml_game_save("test_save.dat");
-    gml_set_score(0.0);
-    gml_set_lives(1.0);
-    gml_set_health(10.0);
+    gml_set_score(0.0); gml_set_lives(1.0); gml_set_health(10.0);
     gml_game_load("test_save.dat");
-    if (gml_get_score() == 1234.0 && gml_get_lives() == 5.0 && gml_get_health() == 80.0) {
+    if (gml_get_score() == 1234.0 && gml_get_lives() == 5.0 && gml_get_health() == 80.0)
         printf("SAVE_LOAD_TEST ok\n");
-    } else {
+    else
         printf("SAVE_LOAD_TEST fail\n");
-    }
-
     printf("PIPELINE_OK\n");
     return 0;
 }
@@ -129,6 +121,7 @@ gcc -O2 -I"$INC" -I"$CPP" -o "$ROOT/build_host/pipeline_min" \
   "$ROOT/build_host/host_pipeline_min.c" "$ROOT/build_host/opensles_stub.c" \
   "$SRC/gm82_runtime.c" "$SRC/gm82_events.c" "$SRC/gm82_input.c" \
   "$SRC/gm82_gml_builtins.c" "$SRC/gm82_gml_eval.c" "$SRC/gm82_gml_string_vm.c" \
+  "$SRC/gm82_portable_compat.c" \
   "$SRC/gm82_actions.c" "$SRC/gm82_view.c" "$SRC/gm82_path.c" \
   "$SRC/gm82_timeline.c" "$SRC/gm82_script.c" \
   "$SRC/gm82_particles.c" "$SRC/gm82_mp_grid.c" \

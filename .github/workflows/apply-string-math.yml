@@ -8,8 +8,10 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: python3 tools/gap_fill_20261013/APPLY_STRING_AND_MATH.py
+      - run: |
+          python3 tools/gap_fill_20261013/APPLY_STRING_AND_MATH.py
+          python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: apply string last_string + string_repeat + modwrap/smoothstep/lerproach"
+          commit_message: "chore: apply string/math + DnD extras on primary tree"
           file_pattern: "app/src/main/cpp/**/*.c NOR_MAKER_COMPLETE_PACKAGE/**/*.c"
