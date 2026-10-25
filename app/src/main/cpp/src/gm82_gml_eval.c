@@ -1470,6 +1470,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "surface_exists") == 0) {
             *out = gml_surface_exists(arg); return true;
         }
+        if (strcmp(id, "surface_copy") == 0) {
+            *out = gml_surface_copy(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "surface_getpixel") == 0) {
+            *out = gml_surface_getpixel(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "surface_clear") == 0) {
+            *out = gml_surface_clear(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 1); return true;
+        }
         if (strcmp(id, "surface_set_target") == 0) {
             *out = gml_surface_set_target(arg); return true;
         }

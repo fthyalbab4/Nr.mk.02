@@ -103,6 +103,10 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
+double gml_surface_copy(double dest, double src);
+double gml_surface_getpixel(double id, double x, double y);
+double gml_surface_clear(double id, double color, double alpha);
+
 double gml_draw_clear(double color);
 double gml_draw_clear_alpha(double color, double alpha);
 
