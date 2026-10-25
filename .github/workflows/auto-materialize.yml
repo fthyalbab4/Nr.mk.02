@@ -14,18 +14,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Materialize + APPLY
         run: |
-          python3 tools/gap_fill_20261013/ASSEMBLE_ACTIONS_PARTS.py || echo "no parts skip"
-          python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py || echo "materialize soft"
-          python3 tools/gap_fill_20261013/APPLY_PHASE1_RUNTIME.py || echo "phase1 soft"
-          python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py || true
-          python3 tools/gap_fill_20261013/APPLY_INSTANCE_IMAGE_FIELDS.py || true
-          python3 tools/gap_fill_20261013/APPLY_ACTION_IMAGE_AND_LOG.py || true
-          python3 tools/gap_fill_20261013/APPLY_DRAW_AND_DND2.py || true
+          python3 tools/gap_fill_20261013/ASSEMBLE_ACTIONS_PARTS.py || true
+          python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE1_RUNTIME.py || true
+          python3 tools/gap_fill_20261013/APPLY_PHASE2_RUNTIME_INPUT.py || true
           python3 tools/gap_fill_20261013/APPLY_DND_IF_ELSE.py || true
-          python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py || echo "verify soft"
-      - name: Host pipeline soft
-        run: bash tools/run_host_pipeline.sh || echo "pipeline soft"
+          python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py || true
+      - run: bash tools/run_host_pipeline.sh || echo soft
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-materialize phase1+gap-fill on main"
+          commit_message: "chore: auto-materialize phase1+2 on main"
           file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
