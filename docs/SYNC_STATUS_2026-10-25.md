@@ -1,20 +1,18 @@
 # مزامنة المستودع — 2026-10-25
 
-## ما تمت مزامنته على main (أدوات + blobs)
-- `tools/gap_fill_20261013/blobs/gm82_actions.c.zlib.b64`
-- `tools/gap_fill_20261013/blobs/gm82_runtime.c.zlib.b64`
-- `MATERIALIZE_FROM_BLOBS.py` + كل `APPLY_*.py` + `VERIFY_AFTER_APPLY.py`
-- Workflow: `.github/workflows/apply-string-math.yml`
+## حالة main (مُتحقق)
+| عنصر | حالة |
+|------|------|
+| tip | auto-materialize gap-fill C sources |
+| `gm82_actions.c` | action_message + UNMAPPED + DnD extras |
+| `gm82_runtime.c` | draw يستخدم image_angle/blend/alpha |
+| `gm82_gml_eval.c` | string_repeat/concat/modwrap + set_last×12 |
+| Host pipeline بعد materialize | ok=4 fail=0 |
 
-## ما يُكتب للشجرة بعد materialize (مُتحقق محليًا ok=4 fail=0)
-- `gm82_actions.c` — DnD + UNMAPPED
-- `gm82_runtime.c` — image_* + draw
-- `gm82_gml_eval.c` — string path + math (عبر APPLY)
+## أدوات على main
+- `tools/gap_fill_20261013/blobs/*`
+- `MATERIALIZE_FROM_BLOBS.py` + `APPLY_*` + `VERIFY_AFTER_APPLY.py`
+- `.github/workflows/auto-materialize.yml`
 
-## تحقق بعد U1
-```bash
-python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
-# كل الأسطر PASS
-bash tools/run_host_pipeline.sh
-# SUMMARY ok=4 fail=0
-```
+## يحتاجك (مش كود لوحده)
+انظر `docs/PLAN_USER_INTERVENTION.md` — **U2 U3 U4 U5** (U1 تم).

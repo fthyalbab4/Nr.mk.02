@@ -1,13 +1,13 @@
-# ما لم يُنفَّذ — يحتاج تدخلك أو بيئة
+# ما لم يُنفَّذ — عندك أنت
 
-مفصّل في `docs/PLAN_USER_INTERVENTION.md`:
+| بند | الحالة |
+|-----|--------|
+| U1 materialize على main | **تم** |
+| U3 NDK / APK native | مفتوح |
+| U2 جهاز + logcat UNMAPPED | مفتوح |
+| object_index 1:1 | بعد FAIL |
+| GML/DnD كامل GM8 | تدريجي من UNMAPPED |
+| U4 REA/DLL/GEX | مفتوح |
+| U5 OpenSLES جهاز | مفتوح |
 
-1. **U1** materialize workflow على GitHub (مرة)
-2. **U3** rebuild native/APK بـ NDK
-3. **U2** APK + لمس + logcat على جهاز
-4. object_index غرف 1:1 (بعد FAIL حقيقي)
-5. GML/DnD كامل GM8 (تدريجي من UNMAPPED_*)
-6. REA+Ghidra / DLL-GEX (**U4**)
-7. OpenSLES على جهاز (**U5**)
-
-تم بالكود (بعد materialize): string path، DnD موسّع، image_*، UNMAPPED logs، host 4/4.
+تفاصيل: `docs/PLAN_USER_INTERVENTION.md`

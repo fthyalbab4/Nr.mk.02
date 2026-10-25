@@ -1,40 +1,34 @@
 # خطة ما يحتاج تدخلك (صريح)
 
-هذه البنود **لا تُغلق بالكود وحده**. باقي الفجوات القابلة للسد بالكود تُعالَج عبر materialize على المستودع.
+آخر مزامنة كود على main: commit **auto-materialize** (`13b5bd4a`) — المصادر الحية فيها gap-fill.
 
-## U1 — تشغيل materialize على GitHub (مرة واحدة)
-1. افتح: https://github.com/fthyalbab4/Nr.mk.02/actions
-2. اختر workflow **apply-string-math**
-3. **Run workflow** على `main`
-4. انتظر الـ commit: `chore: materialize gap-fill sources`
-5. تحقق: الملفات تحت `app/src/main/cpp/src/` صارت فيها `action_message` و `string_repeat` و `inst->image_angle` في الرسم
+## U1 — materialize على الشجرة — **تم ✓**
+- Workflow `auto-materialize` نجح وكتب:
+  - `gm82_actions.c` (DnD + UNMAPPED)
+  - `gm82_runtime.c` (image_angle/alpha/blend في الرسم)
+  - `gm82_gml_eval.c` (string_repeat/concat/modwrap/last_string)
+- لا حاجة تعيد U1 إلا لو رجعت الشجرة لخلف.
 
-بدون هذه الخطوة تبقى الـ blobs/scripts جاهزة لكن الشجرة الحية قديمة.
-
-## U2 — جهاز أندرويد
-1. ثبّت APK debug بعد `gradle assembleDebug` (أو من Actions إن وُجد)
+## U2 — جهاز أندرويد + logcat — **مطلوب منك**
+1. ثبّت APK debug
 2. شغّل لعبة GMK/سحابة
-3. انسخ **logcat** كامل عند أي توقف/خطأ
-4. ابحث عن أسطر: `UNMAPPED_ACTION` و `UNMAPPED_GML_FN`
-5. أرسل القائمة هنا → تُنفَّذ الرموز بالاسم
+3. انسخ logcat عند أي خطأ
+4. ابحث عن: `UNMAPPED_ACTION` و `UNMAPPED_GML_FN`
+5. أرسل القائمة → تُنفَّذ الرموز بالاسم على المستودع
 
-## U3 — NDK / `.so` جديد
-على جهاز فيه Android NDK:
+## U3 — NDK / بناء `.so` + APK — **مطلوب منك أو CI فيه NDK**
 ```bash
 cd app && ./gradlew assembleDebug
 ```
-ارفع الـ APK أو تأكد أن الـ CI يبني بـ NDK. بدون ذلك تعديلات C لا تصل للعب على الموبايل.
+بدون native مُحدَّث، تعديلات C لا تصل لجهازك.
 
-## U4 — ألعاب تعتمد DLL/GEX
-إن لعبة تحتاج `GM82Core` extension / external DLL:
-- وفر الباينري + تصريح تحليل، أو
-- شغّل REA/Ghidra محليًا (`morluto/rea`) وانشر نتائج الدوال الناقصة كقائمة أسماء
+## U4 — DLL / GEX / REA — **مطلوب منك**
+- باينري + تصريح تحليل، أو مخرجات REA/Ghidra بأسماء الدوال الناقصة.
 
-## U5 — اختبار صوت OpenSLES
-على جهاز حقيقي: تشغيل صوت داخل لعبة + تأكيد لا كراش. host queue وحده لا يكفي.
+## U5 — OpenSLES على جهاز — **مطلوب منك**
+- تشغيل صوت داخل لعبة على جهاز حقيقي.
 
-## ترتيب مقترح لك
-1. U1 (دقيقة واحدة على GitHub)
-2. U3 إن أمكن (بناء APK)
-3. U2 (logcat)
-4. U4/U5 حسب الحاجة
+## ترتيب مقترح
+1. **U3** بناء APK (إن قدرت)
+2. **U2** لعب + logcat
+3. **U4 / U5** حسب اللعبة
