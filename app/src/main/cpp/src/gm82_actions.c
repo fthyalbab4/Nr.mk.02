@@ -410,7 +410,6 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
     for (int i = 0; i < table->count; i++) {
         if (strcmp(table->objects[i].object_name, oname) != 0) continue;
         for (int a = 0; a < table->objects[i].count; a++) {
-            if (!self->alive) break;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type != 0) continue;
             if (strcmp(ar->name, "action_next_room") == 0 ||
@@ -435,7 +434,6 @@ void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_ac
             strcmp(table->objects[i].object_name, "_global_actions") != 0)
             continue;
         for (int a = 0; a < table->objects[i].count; a++) {
-            if (!self->alive) break;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type == 3 || ar->event_type == -1) {
                 if (strcmp(ar->name, "action_set_hspeed") == 0 ||

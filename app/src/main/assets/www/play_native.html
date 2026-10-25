@@ -1,19 +1,14 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NOR Maker — تشغيل المحرك الأصلي</title>
-  <style>
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #141428; color: #eef2ff; font: 16px system-ui, sans-serif; }
-    main { max-width: 40rem; padding: 2rem; text-align: center; line-height: 1.8; }
-  </style>
-</head>
+<html><head><meta charset="utf-8"/><title>NOR native play</title>
+<style>body{margin:0;background:#141428;color:#9cf;font-family:monospace}
+#s{padding:12px}</style></head>
 <body>
-  <main>
-    <h1>NOR Maker</h1>
-    <p>تشغيل محرك GMK الأصلي أصبح داخل تطبيق Android نفسه.</p>
-    <p>افتح المشروع في Studio، واستورد ملف GMK مدعومًا، ثم استخدم زر «تشغيل GMK الأصلي» في النشاط. هذه الصفحة المستقلة لا تشغّل JNI مباشرة.</p>
-  </main>
-</body>
-</html>
+<div id="s">Native loop runs in Java (ImageView). This page is optional.</div>
+<script src="nor_native_loop_bridge.js"></script>
+<script src="index_html_native_loop_patch.js"></script>
+<script>
+if (window.NorNative) {
+  document.getElementById('s').textContent = 'NorNative present: ' + (NorNative.importStatus ? NorNative.importStatus() : 'ok');
+}
+</script>
+</body></html>

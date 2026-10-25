@@ -1860,6 +1860,18 @@ static bool parse_primary(gml_parser *p, double *out) {
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; *out = 0; return true;
         }
+        if (strcmp(id, "string_letters") == 0) {
+            char tmp[256];
+            gml_string_letters((p->str_mask & 1) ? p->str_args[0] : "", tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
+        }
+        if (strcmp(id, "string_repeat") == 0) {
+            char tmp[256];
+            gml_string_repeat((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 1, tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; *out = 0; return true;
+        }
         if (strcmp(id, "string_delete") == 0) {
             char tmp[256];
             gml_string_delete((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 1, nargs >= 3 ? args[2] : 0, tmp, sizeof(tmp));

@@ -305,17 +305,6 @@ static gml_value call(gml_vm *vm, const gml_ast *n) {
         r = gml_value_real(x < lo ? lo : (x > hi ? hi : x));
     } else if (!strcmp(n->text, "power") && c == 2) {
         r = gml_value_real(pow(num(a[0]), num(a[1])));
-    } else if (!strcmp(n->text, "power_next") && c == 1) {
-        double val = num(a[0]);
-        double p = 1.0;
-        if (val > 1.0) { while (p < val) p *= 2.0; }
-        r = gml_value_real(p);
-    } else if (!strcmp(n->text, "math_set_epsilon") && c == 1) {
-        extern double gml_math_set_epsilon(double);
-        r = gml_value_real(gml_math_set_epsilon(num(a[0])));
-    } else if (!strcmp(n->text, "math_get_epsilon") && (c == 0 || c == 1)) {
-        extern double gml_math_get_epsilon(void);
-        r = gml_value_real(gml_math_get_epsilon());
     } else if (!strcmp(n->text, "degtorad") && c == 1) {
         r = gml_value_real(num(a[0]) * 3.14159265358979323846 / 180.0);
     } else if (!strcmp(n->text, "radtodeg") && c == 1) {

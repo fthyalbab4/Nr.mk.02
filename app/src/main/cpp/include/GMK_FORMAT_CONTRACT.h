@@ -1,5 +1,5 @@
-#ifndef GMK_FORMAT_CONTRACT_H
-#define GMK_FORMAT_CONTRACT_H
+#ifndef GM82_GMK_FORMAT_H
+#define GM82_GMK_FORMAT_H
 
 #include <stddef.h>
 #include <stdint.h>

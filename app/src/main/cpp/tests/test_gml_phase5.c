@@ -18,6 +18,12 @@ static void test_string_expansions(void) {
     gml_string_replace_all("foo bar foo baz foo", "foo", "qux", buf, sizeof(buf));
     assert(strcmp(buf, "qux bar qux baz qux") == 0);
 
+    gml_string_letters("Hello123World45!", buf, sizeof(buf));
+    assert(strcmp(buf, "HelloWorld") == 0);
+
+    gml_string_repeat("Abc", 3, buf, sizeof(buf));
+    assert(strcmp(buf, "AbcAbcAbc") == 0);
+
     puts("test_string_expansions PASS");
 }
 

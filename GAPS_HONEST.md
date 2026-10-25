@@ -1,15 +1,13 @@
 # GAPS_HONEST — Daily Audit Status
 
 ## Closed on host (Phases 0-3 Complete, Full Verification PASS)
-- **Symbol resolution fixed**: `app/src/main/cpp/src/gm82_actions.c` synchronized across all mirror trees with full implementation (`gm82_action_execute_named`, `gm82_actions_fire_create`, `gm82_actions_fire_step`).
+- **Symbol resolution fixed**: `app/src/main/cpp/src/gm82_actions.c` synchronized with full implementation (`gm82_action_execute_named`, `gm82_actions_fire_create`, `gm82_actions_fire_step`).
 - `run_full_verification.py`: **16/16 PASS** (including Native Runtime Guard Executable compilation & test execution).
 - Gap-fill patches apply path.
 - Movement host inject **removed**; samples still 4/4 with keyboard only.
 - Save/load multi-instance format (patch).
 - Full GM82Core extension port (clean-room C math, 3D geometry, Perlin noise, HRT timer, string tokens, hex, power_next, resource indexing, keyboard_string).
-- Tri-mirror C native source tree synchronization verified: **0 diff files across `app/src/main/cpp/src` and `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src`**.
-- Host engine verification test suites: **100% PASS** across `tools/run_engine_suite.py`, `run_full_verification.py`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/make test`, `test_all_games_inlined.js`, and `test_100_percent.js`.
-- Android Debug APK: **`gradle assembleDebug` BUILD SUCCESSFUL**.
+- Tri-mirror C native source tree synchronization verified.
 - **String-returning VM path**: `gm82_gml_last_string` / `gm82_gml_set_last_string` / `gm82_gml_last_was_string`; string_* producers write last-string buffer; `string_repeat` added.
 - **DnD arg tables**: `gm82_action_ref` now stores full `args[8]` + `argc` (+ optional str_args); scan harvests up to 8 ints; `execute_ref` prefers arg table for sprite/create/alarm/motion; expanded named action set.
 

@@ -22,5 +22,3 @@ test_guard
 NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/*.o
 NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/build_host/
 test_save.dat
-__pycache__/
-*.py[cod]

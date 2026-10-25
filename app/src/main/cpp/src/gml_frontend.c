@@ -207,132 +207,24 @@ static gml_ast *parse_expression(gml_lexer *l) {
     return lhs;
 }
 
-static int keyword_matches(gml_lexer *l, const char *word) {
-    skip_space_comments(l);
-    size_t n = strlen(word);
-    if (l->pos + n > l->len || strncmp(l->src + l->pos, word, n) != 0) return 0;
-    if (l->pos + n < l->len) {
-        unsigned char next = (unsigned char)l->src[l->pos + n];
-        if (isalnum(next) || next == '_') return 0;
-    }
-    return 1;
-}
-
-static int consume_keyword(gml_lexer *l, const char *word) {
-    if (!keyword_matches(l, word)) return 0;
-    l->pos += strlen(word);
-    return 1;
-}
-
-static int consume_char(gml_lexer *l, char c) {
-    skip_space_comments(l);
-    if (l->pos >= l->len || l->src[l->pos] != c) return 0;
-    l->pos++;
-    return 1;
-}
-
-static gml_ast *parse_statement(gml_lexer *l);
-
-static gml_ast *parse_block(gml_lexer *l) {
-    if (!consume_char(l, '{')) return NULL;
-    gml_ast *block = ast_new(GML_AST_BLOCK);
-    while (l->pos < l->len) {
-        skip_space_comments(l);
-        if (consume_char(l, '}')) return block;
-        if (l->pos >= l->len) break;
-        if (consume_char(l, ';')) continue;
-        size_t before = l->pos;
-        gml_ast *stmt = parse_statement(l);
-        if (stmt) ast_add_child(block, stmt);
-        if (l->pos == before) {
-            snprintf(l->error, sizeof(l->error), "unexpected token at byte %zu", l->pos);
-            break;
-        }
-    }
-    if (!l->error[0]) snprintf(l->error, sizeof(l->error), "unterminated block");
-    return block;
-}
-
 static gml_ast *parse_statement(gml_lexer *l) {
     skip_space_comments(l);
     if (l->pos >= l->len) return NULL;
 
-    if (l->src[l->pos] == '{') return parse_block(l);
-
-    if (consume_keyword(l, "return")) {
+    /* Check for return statement */
+    if (strncmp(l->src + l->pos, "return", 6) == 0 && (l->pos + 6 >= l->len || !isalnum((unsigned char)l->src[l->pos+6]))) {
+        l->pos += 6;
         gml_ast *ret = ast_new(GML_AST_RETURN);
         if (ret) ret->left = parse_expression(l);
-        consume_char(l, ';');
+        skip_space_comments(l);
+        if (l->pos < l->len && l->src[l->pos] == ';') l->pos++;
         return ret;
-    }
-    if (consume_keyword(l, "exit")) {
-        gml_ast *node = ast_new(GML_AST_EXIT);
-        consume_char(l, ';');
-        return node;
-    }
-    if (consume_keyword(l, "break")) {
-        gml_ast *node = ast_new(GML_AST_BREAK);
-        consume_char(l, ';');
-        return node;
-    }
-    if (consume_keyword(l, "continue")) {
-        gml_ast *node = ast_new(GML_AST_CONTINUE);
-        consume_char(l, ';');
-        return node;
-    }
-    if (consume_keyword(l, "if")) {
-        gml_ast *node = ast_new(GML_AST_IF);
-        node->left = parse_expression(l);
-        consume_keyword(l, "then");
-        node->right = parse_statement(l);
-        if (consume_keyword(l, "else")) ast_add_child(node, parse_statement(l));
-        return node;
-    }
-    if (consume_keyword(l, "while")) {
-        gml_ast *node = ast_new(GML_AST_WHILE);
-        node->left = parse_expression(l);
-        node->right = parse_statement(l);
-        return node;
-    }
-    if (consume_keyword(l, "do")) {
-        gml_ast *node = ast_new(GML_AST_DO_UNTIL);
-        node->right = parse_statement(l);
-        if (!consume_keyword(l, "until")) snprintf(l->error, sizeof(l->error), "expected 'until' after do body");
-        node->left = parse_expression(l);
-        consume_char(l, ';');
-        return node;
-    }
-    if (consume_keyword(l, "for")) {
-        gml_ast *node = ast_new(GML_AST_FOR);
-        if (!consume_char(l, '(')) snprintf(l->error, sizeof(l->error), "expected '(' after for");
-        gml_ast *init = parse_expression(l);
-        if (!consume_char(l, ';')) snprintf(l->error, sizeof(l->error), "expected ';' after for initializer");
-        gml_ast *condition = parse_expression(l);
-        if (!consume_char(l, ';')) snprintf(l->error, sizeof(l->error), "expected ';' after for condition");
-        gml_ast *post = parse_expression(l);
-        if (!consume_char(l, ')')) snprintf(l->error, sizeof(l->error), "expected ')' after for clauses");
-        if (!init) init = ast_new(GML_AST_NUMBER);
-        if (!condition) {
-            condition = ast_new(GML_AST_NUMBER);
-            if (condition) condition->number = 1.0;
-        }
-        if (!post) post = ast_new(GML_AST_NUMBER);
-        ast_add_child(node, init);
-        ast_add_child(node, condition);
-        ast_add_child(node, post);
-        ast_add_child(node, parse_statement(l));
-        return node;
-    }
-    if (consume_keyword(l, "repeat")) {
-        gml_ast *node = ast_new(GML_AST_REPEAT);
-        node->left = parse_expression(l);
-        node->right = parse_statement(l);
-        return node;
     }
 
     gml_ast *expr = parse_expression(l);
     if (expr) {
-        consume_char(l, ';');
+        skip_space_comments(l);
+        if (l->pos < l->len && l->src[l->pos] == ';') l->pos++;
         gml_ast *stmt = ast_new(GML_AST_EXPR_STMT);
         if (stmt) stmt->left = expr;
         return stmt;
@@ -353,21 +245,9 @@ int gml_parse_program(const char *code, gml_ast **out_ast, char *errbuf, size_t 
         skip_space_comments(&l);
         if (l.pos >= l.len) break;
         if (l.src[l.pos] == ';') { l.pos++; continue; }
-        size_t before = l.pos;
         gml_ast *stmt = parse_statement(&l);
         if (stmt) ast_add_child(block, stmt);
-        if (l.error[0]) break;
-        if (l.pos == before) {
-            snprintf(l.error, sizeof(l.error), "unexpected token at byte %zu", l.pos);
-            break;
-        }
-    }
-
-    if (l.error[0]) {
-        if (errbuf && errbuf_size > 0) snprintf(errbuf, errbuf_size, "%s", l.error);
-        gml_ast_free(block);
-        *out_ast = NULL;
-        return 0;
+        else break;
     }
 
     *out_ast = block;
