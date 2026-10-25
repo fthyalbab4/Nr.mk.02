@@ -1,18 +1,28 @@
-# GAPS_HONEST — Daily Audit Status
+# GAPS_HONEST — Sequential execution progress
 
-## Closed / advanced on host (2026-10-25 sequential)
-- String producers → `gm82_gml_set_last_string` (APPLY_STRING_AND_MATH.py)
-- `string_repeat`, `string_format` last-string path
-- `modwrap` / `smoothstep` / `lerproach` in eval + `gm82_portable_compat`
-- DnD extras: message, move_random, linear_step, sprite_transform (scale), safe no-ops
-- Host pipeline includes `gm82_portable_compat.c` — local **ok=4 fail=0**
+## Closed / advanced on host (2026-10-25)
+- String producers → `last_string` + `string_repeat` + format path (`APPLY_STRING_AND_MATH.py`)
+- `modwrap` / `smoothstep` / `lerproach` via `gm82_portable_compat`
+- DnD extras: message, move_random, linear_step, sprite_transform/color, highscore no-ops
+- **`image_angle` / `image_alpha` / `image_blend`** on `gm82_instance` + create init
+- **`UNMAPPED_ACTION` / `UNMAPPED_GML_FN`** stderr logs for FAIL-driven fill
+- Host pipeline + portable_compat — local **ok=4 fail=0**
+
+## Materialize on main
+```bash
+python3 tools/gap_fill_20261013/APPLY_STRING_AND_MATH.py
+python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py
+python3 tools/gap_fill_20261013/APPLY_INSTANCE_IMAGE_FIELDS.py
+python3 tools/gap_fill_20261013/APPLY_ACTION_IMAGE_AND_LOG.py
+# or Actions → apply-string-math → Run
+```
 
 ## Still open
-1. **Device APK playtest** — physical device / logcat
-2. **Cloud/GMK FAIL → named symbol** — needs real FAIL logs
-3. **Full typed string VM** — still partial (buffer path improved, not full concat scopes)
-4. **Full DnD action id map** — expanded, not complete catalog
-5. **image_angle / image_alpha / image_blend** on `gm82_instance` — not in struct yet
-6. **REA / Win32 DLL** — not done
+1. Device APK playtest / logcat
+2. FAIL-driven symbol implementation (use UNMAPPED_* lines)
+3. Full typed string expression VM
+4. Complete GM8 action id catalog
+5. soft_render use of angle/alpha/blend (fields exist; draw path partial)
+6. REA / Win32 DLL
 
-No fake 100% Windows portable claim.
+No fake 100% Windows portable.

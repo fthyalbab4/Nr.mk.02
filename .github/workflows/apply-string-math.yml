@@ -8,10 +8,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: |
+      - name: Apply sequential gap scripts
+        run: |
           python3 tools/gap_fill_20261013/APPLY_STRING_AND_MATH.py
           python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py
+          python3 tools/gap_fill_20261013/APPLY_INSTANCE_IMAGE_FIELDS.py
+          python3 tools/gap_fill_20261013/APPLY_ACTION_IMAGE_AND_LOG.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: apply string/math + DnD extras on primary tree"
-          file_pattern: "app/src/main/cpp/**/*.c NOR_MAKER_COMPLETE_PACKAGE/**/*.c"
+          commit_message: "chore: apply sequential gap-fill (string/math/DnD/image fields/unmapped logs)"
+          file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
