@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <fnmatch.h>
 #include "gm82_gml_builtins.h"
+#include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
@@ -38,10 +39,16 @@ static int g_draw_blend_mode = 0;
 
 static gm82_runtime *g_rt = NULL;
 static gm82_instance *g_self = NULL;
+static gm82_instance *g_other = NULL;
+static int g_sound_playing[64];
+static int g_sound_playing_n = 0;
 
 void gm82_gml_set_runtime(gm82_runtime *rt) { g_rt = rt; }
 gm82_runtime *gm82_gml_get_runtime(void) { return g_rt; }
 void gm82_gml_set_self(gm82_instance *self) { g_self = self; }
+void gm82_gml_set_other(gm82_instance *o) { g_other = o; }
+gm82_instance *gm82_gml_get_other(void) { return g_other; }
+
 gm82_instance *gm82_gml_get_self(void) { return g_self; }
 
 double gml_instance_create(double x, double y, double object_index) {
@@ -3914,5 +3921,20 @@ double gml_random_get_seed(void) { return g_random_seed; }
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
-__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
-__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }
+
+/* Phase 6+code: track ids + feed software mixer (PCM may be silence if no decode) */
+static gm82_audio_mixer g_mixer;
+static int g_mixer_inited = 0;
+static int16_t g_click_pcm[512];
+static int g_sound_channels[64];
+
+static void ensure_mixer(void) {
+    if (g_mixer_inited) return;
+    gm82_audio_mixer_init(&g_mixer, 22050);
+    for (int i = 0; i < 512; i++) {
+        int16_t v = (i < 32) ? (int16_t)((i * 800) - 12800) : 0;
+        g_click_pcm[i] = v;
+    }
+    for (int i = 0; i < 64; i++) g_sound_channels[i] = -1;
+    g_mixer_inited = 1;
+}
