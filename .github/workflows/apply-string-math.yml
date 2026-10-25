@@ -1,0 +1,15 @@
+name: apply-string-math
+on:
+  workflow_dispatch:
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/gap_fill_20261013/APPLY_STRING_AND_MATH.py
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: apply string last_string + string_repeat + modwrap/smoothstep/lerproach"
+          file_pattern: "app/src/main/cpp/**/*.c NOR_MAKER_COMPLETE_PACKAGE/**/*.c"
