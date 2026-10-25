@@ -14,6 +14,10 @@ TESTS = [
     ("test_gml_vm_expanded", "app/src/main/cpp/tests/test_gml_vm_expanded.c"),
     ("test_gml_ds_collisions", "app/src/main/cpp/tests/test_gml_ds_collisions.c"),
     ("test_paths_particles_mpgrid", "app/src/main/cpp/tests/test_paths_particles_mpgrid.c"),
+    # Imported from the friend's Full Core package; compiled against the current modular core.
+    ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
+    ("test_friend_gml_exec", "app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c"),
+    ("test_friend_format_import", "app/src/main/cpp/tests/friend_reference/test_friend_format_import.c"),
 ]
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
