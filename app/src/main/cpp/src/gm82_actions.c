@@ -253,6 +253,12 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
             self->hspeed = -self->hspeed;
         if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480))
             self->vspeed = -self->vspeed;
+        if (self->hspeed == 0.0 && self->vspeed == 0.0) return true;
+        if (self->x >= 0 && self->x <= (rt->room_width ? rt->room_width : 640) &&
+            self->y >= 0 && self->y <= (rt->room_height ? rt->room_height : 480)) {
+            if (fabs(self->vspeed) >= fabs(self->hspeed)) self->vspeed = -self->vspeed;
+            else self->hspeed = -self->hspeed;
+        }
         return true;
     }
     if (strcmp(name, "action_wrap") == 0) {
