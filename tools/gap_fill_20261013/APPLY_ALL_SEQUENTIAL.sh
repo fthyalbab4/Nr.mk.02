@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Prefer blob materialize (exact host-verified tree), else incremental APPLY_*
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-if [[ -f tools/gap_fill_20261013/MATERIALIZE_GAPFILL_BLOB.py ]]; then
+if [[ -f tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py ]]; then
+  python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py
+elif [[ -f tools/gap_fill_20261013/MATERIALIZE_GAPFILL_BLOB.py ]]; then
   python3 tools/gap_fill_20261013/MATERIALIZE_GAPFILL_BLOB.py
 else
   python3 tools/gap_fill_20261013/APPLY_STRING_AND_MATH.py
@@ -16,6 +17,3 @@ if [[ -f tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py ]]; then
   python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
 fi
 echo "APPLY_ALL_SEQUENTIAL_OK"
-if [[ "${RUN_PIPELINE:-0}" == "1" ]]; then
-  bash tools/run_host_pipeline.sh
-fi
