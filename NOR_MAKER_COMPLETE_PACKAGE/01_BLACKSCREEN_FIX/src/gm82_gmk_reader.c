@@ -66,6 +66,15 @@ static uint8_t *inflate_block(const uint8_t *src, size_t src_len, size_t *out_le
     return dst;
 }
 
+
+/* Phase 7: load summary for host/debug (honest partial loader) */
+static void gm82_gmk_fill_summary(gm82_gmk_load_result *r) {
+    if (!r || !r->ir) return;
+    gm82_project_ir *ir = r->ir;
+    snprintf(r->error, sizeof(r->error),
+             "GMK partial ok sprites=%d bgs=%d rooms=%d objs=%d (materialize required)",
+             ir->sprite_count, ir->background_count, ir->room_count, ir->object_count);
+}
 gm82_gmk_load_result gm82_gmk_load_from_memory(const uint8_t *data, size_t size) {
     gm82_gmk_load_result r;
     memset(&r, 0, sizeof(r));
@@ -157,8 +166,7 @@ gm82_gmk_load_result gm82_gmk_load_from_memory(const uint8_t *data, size_t size)
 
     r.ir = ir;
     r.ok = true;
-    snprintf(r.error, sizeof(r.error),
-             "GMK loaded (partial) – materialize required before play");
+    gm82_gmk_fill_summary(&r);
     return r;
 }
 

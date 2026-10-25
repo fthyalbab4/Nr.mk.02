@@ -30,8 +30,13 @@ void gm82_gles_batch_init(gm82_gles_batch *batch);
 void gm82_gles_batch_flush(gm82_gles_batch *batch);
 void gm82_gles_draw_sprite(gm82_gles_batch *batch, uint32_t tex_id, float x, float y, float w, float h, uint32_t color, gm82_blend_mode blend);
 
+int gm82_gles_soft_fbo_create(int w, int h);
+void gm82_gles_soft_fbo_destroy(int id);
+int gm82_gles_soft_fbo_bind(int id);
+uint8_t *gm82_gles_soft_fbo_rgba(int id, int *w, int *h);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* GM82_GLES_H */
