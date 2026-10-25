@@ -1,31 +1,27 @@
 # Merge PR #192 — conflict resolution (2026-10-25)
 
 **PR:** https://github.com/fthyalbab4/Nr.mk.02/pull/192  
-**State before:** `mergeable_state: dirty` (binary test executables + diverged main)
+**GitHub merge:** blocked (`dirty` — binary test conflicts + diverged main)
 
-## Conflicts
+## Conflict resolution (done locally)
 
-Only **binary** test artifacts under `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/` (no source conflict markers):
-- test_4_game_smoke, test_gml_*, test_mario_physics_parity, test_paths_particles_mpgrid
+- **Binary tests** under `NOR_MAKER_COMPLETE_PACKAGE/.../tests/`: keep **main** (rebuild from sources).
+- **Sources:** auto-merged; unique code ported without replacing whole engine.
 
-**Resolution:** keep `main` binaries (rebuild from sources after land).
+## Landed on main
 
-## Unique code landed (not replace whole engine)
-
-| Item | Where |
+| Item | Status |
 |------|--------|
-| `gml_hypot`, `gml_clamp_angle`, `gml_lerp_angle` | builtins.c + header + eval dispatch |
-| DnD `action_draw_text/score/life`, `action_path`, `action_path_end` | gm82_actions.c |
-| phase5 tests for hypot/angles | test_gml_phase5.c |
+| DnD `action_draw_text/score/life`, `action_path`, `action_path_end` + alive-safe fire | **on main** `gm82_actions.c` (commit `420fc15`) |
+| `gml_hypot` / `clamp_angle` / `lerp_angle` | **via** `tools/gap_fill_20261013/APPLY_PR192_UNIQUE.py` + workflow `land-pr192` |
 
-## How to apply on a checkout
+## Apply remaining builtins/eval
 
 ```bash
 python3 tools/gap_fill_20261013/APPLY_PR192_UNIQUE.py
+# or Actions → land-pr192 → Run workflow
 ```
 
-Idempotent. After apply, primary sources should contain the symbols above.
+## Close PR
 
-## PR close
-
-After verify on main, close #192 as superseded by this land (or merge if GitHub becomes clean).
+After hypot symbols visible on main, close #192 as **landed manually** (not GitHub green merge).
