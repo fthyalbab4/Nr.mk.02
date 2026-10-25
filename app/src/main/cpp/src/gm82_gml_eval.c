@@ -620,6 +620,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "dot_product_3d_normalized") == 0) {
             *out = gml_dot_product_3d_normalized(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
         }
+        if (strcmp(id, "dot_product_normal") == 0 && nargs == 4) {
+            *out = gml_dot_product_normal(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "dot_product_3d_normal") == 0 && nargs == 6) {
+            *out = gml_dot_product_3d_normal(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
         if (strcmp(id, "color_inverse") == 0) {
             *out = gml_color_inverse(arg); return true;
         }
@@ -1555,8 +1561,23 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_queue_clear") == 0) {
             *out = gml_ds_queue_clear(arg); return true;
         }
-        if (strcmp(id, "ds_grid_set_region") == 0) {
-            *out = gml_ds_grid_set_region(args[0], args[1], args[2], args[3], args[4], nargs >= 6 ? args[5] : 0); return true;
+        if (strcmp(id, "ds_grid_set_region") == 0 && nargs >= 6) {
+            *out = gml_ds_grid_set_region(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "ds_grid_add_region") == 0 && nargs == 6) {
+            *out = gml_ds_grid_add_region(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "ds_grid_multiply_region") == 0 && nargs == 6) {
+            *out = gml_ds_grid_multiply_region(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "ds_grid_set_grid_region") == 0 && nargs == 8) {
+            *out = gml_ds_grid_set_grid_region(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
+        }
+        if (strcmp(id, "ds_grid_add_grid_region") == 0 && nargs == 8) {
+            *out = gml_ds_grid_add_grid_region(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
+        }
+        if (strcmp(id, "ds_grid_multiply_grid_region") == 0 && nargs == 8) {
+            *out = gml_ds_grid_multiply_grid_region(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
         }
         if (strcmp(id, "ds_grid_get_sum") == 0) {
             *out = gml_ds_grid_get_sum(args[0], args[1], args[2], args[3], args[4]); return true;
@@ -1647,6 +1668,33 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "date_get_second") == 0) {
             *out = gml_date_get_second(arg); return true;
+        }
+        if (strcmp(id, "date_compare_datetime") == 0 && nargs == 2) {
+            *out = gml_date_compare_datetime(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_compare_date") == 0 && nargs == 2) {
+            *out = gml_date_compare_date(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_compare_time") == 0 && nargs == 2) {
+            *out = gml_date_compare_time(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_second_span") == 0 && nargs == 2) {
+            *out = gml_date_second_span(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_minute_span") == 0 && nargs == 2) {
+            *out = gml_date_minute_span(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_hour_span") == 0 && nargs == 2) {
+            *out = gml_date_hour_span(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_day_span") == 0 && nargs == 2) {
+            *out = gml_date_day_span(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_month_span") == 0 && nargs == 2) {
+            *out = gml_date_month_span(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "date_year_span") == 0 && nargs == 2) {
+            *out = gml_date_year_span(args[0], args[1]); return true;
         }
         if (strcmp(id, "current_time") == 0) {
             *out = gml_current_time(); return true;
@@ -2002,16 +2050,11 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "string_repeat") == 0) {
             const char *src = (p->str_mask & 1) ? p->str_args[0] : "";
-            int n = (int)(nargs >= 2 ? args[1] : arg);
-            if (n < 0) n = 0;
-            if (n > 64) n = 64;
-            char tmp[256]; tmp[0]=0;
-            size_t pos=0;
-            for (int i=0;i<n && pos+1<sizeof(tmp);i++) {
-                size_t L=strlen(src);
-                if (pos+L >= sizeof(tmp)-1) break;
-                memcpy(tmp+pos, src, L); pos+=L; tmp[pos]=0;
-            }
+            double repeat_count = nargs >= 2 ? args[1] : arg;
+            if (!isfinite(repeat_count) || repeat_count < 0.0) repeat_count = 0.0;
+            if (repeat_count > 64.0) repeat_count = 64.0;
+            char tmp[256];
+            gml_string_repeat(src, repeat_count, tmp, sizeof(tmp));
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }

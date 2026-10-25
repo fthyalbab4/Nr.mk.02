@@ -263,7 +263,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass 
     float dt = delta > 0.0f ? delta : 0.016667f;
     gm82_input_bind_global(&g_engine_input);
     if (g_engine_loaded && g_engine_rt.running) {
-        gm82_runtime_step_dt(&g_engine_rt, (double)dt);
+        gm82_runtime_step(&g_engine_rt);
     }
     if (!g_engine_loaded) {
         for (int i = 0; i < g_instance_count; i++) {

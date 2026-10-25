@@ -196,7 +196,6 @@ void test_gml_builtins_suite(void) {
 }
 
 void test_retro_rom_suite(void) {
-    (void)system("mkdir -p /tmp/nor_core_tests");
     const char *nes_path = "/tmp/nor_core_tests/test.nes";
     const char *gbc_path = "/tmp/nor_core_tests/test.gbc";
     const char *gba_path = "/tmp/nor_core_tests/test.gba";

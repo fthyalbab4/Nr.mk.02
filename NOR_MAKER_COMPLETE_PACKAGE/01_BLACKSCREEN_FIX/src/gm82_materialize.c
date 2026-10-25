@@ -9,19 +9,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
-/* Code-track: retain last materialize decode lists for runtime bind (not freed mid-session) */
-static gm82_decoded_object_list g_mat_objects;
-static gm82_script_list g_mat_scripts;
-static int g_mat_objects_valid = 0;
-static int g_mat_scripts_valid = 0;
-
-const gm82_decoded_object_list *gm82_materialize_get_objects(void) {
-    return g_mat_objects_valid ? &g_mat_objects : NULL;
-}
-const gm82_script_list *gm82_materialize_get_scripts(void) {
-    return g_mat_scripts_valid ? &g_mat_scripts : NULL;
-}
 gm82_materialize_options gm82_materialize_default_options(void) {
     gm82_materialize_options o = {0};
     o.cache_dir = NULL;
@@ -253,19 +240,13 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
     ok = gm82_materialize_backgrounds(ir, &local) && ok;
     ok = gm82_materialize_rooms(ir, &local) && ok;
 
-    /* Decode objects/sounds/scripts and RETAIN object+script lists for runtime */
+    /* Decode objects and sounds to populate counts and metadata in IR */
     if (ir->source_data && ir->source_data_size > 0) {
-        if (g_mat_objects_valid) {
-            gm82_decoded_object_list_free(&g_mat_objects);
-            g_mat_objects_valid = 0;
-        }
-        gm82_decoded_object_list_init(&g_mat_objects);
-        int nobj = gm82_decode_objects_from_gmk(ir->source_data, ir->source_data_size, &g_mat_objects);
+        gm82_decoded_object_list obj_list;
+        int nobj = gm82_decode_objects_from_gmk(ir->source_data, ir->source_data_size, &obj_list);
         if (nobj > 0) {
             ir->object_count = nobj;
-            g_mat_objects_valid = 1;
-        } else {
-            gm82_decoded_object_list_free(&g_mat_objects);
+            gm82_decoded_object_list_free(&obj_list);
         }
 
         gm82_decoded_sound_list snd_list;
@@ -275,12 +256,10 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
             gm82_decoded_sound_list_free(&snd_list);
         }
 
-        gm82_script_list_init(&g_mat_scripts);
-        g_mat_scripts_valid = 0;
-        int nscr = gm82_decode_scripts_from_gmk(ir->source_data, ir->source_data_size, &g_mat_scripts);
+        gm82_script_list scr_list;
+        int nscr = gm82_decode_scripts_from_gmk(ir->source_data, ir->source_data_size, &scr_list);
         if (nscr > 0) {
             ir->script_count = nscr;
-            g_mat_scripts_valid = 1;
         }
     }
 

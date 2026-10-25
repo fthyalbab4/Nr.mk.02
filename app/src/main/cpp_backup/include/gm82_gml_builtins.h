@@ -28,8 +28,6 @@ gm82_runtime *gm82_gml_get_runtime(void);
 
 /* Set "self" instance for instance-scoped builtins */
 void gm82_gml_set_self(gm82_instance *self);
-void gm82_gml_set_other(gm82_instance *o);
-gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
@@ -105,10 +103,6 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
-double gml_surface_copy(double dest, double src);
-double gml_surface_getpixel(double id, double x, double y);
-double gml_surface_clear(double id, double color, double alpha);
-
 double gml_draw_clear(double color);
 double gml_draw_clear_alpha(double color, double alpha);
 

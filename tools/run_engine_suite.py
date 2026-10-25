@@ -7,6 +7,7 @@ TESTS = [
     ("test_full_suite", "app/src/main/cpp/test_full_suite.c"),
     ("test_runtime_guard", "app/src/main/cpp/tests/test_runtime_guard.c"),
     ("test_dual_load", "app/src/main/cpp/tests/test_dual_load.c"),
+    ("test_input_key_bounds", "app/src/main/cpp/tests/test_input_key_bounds.c"),
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),
     ("test_mario_physics_parity", "app/src/main/cpp/tests/test_mario_physics_parity.c"),
     ("test_gml_comprehensive", "app/src/main/cpp/tests/test_gml_comprehensive.c"),
@@ -14,6 +15,10 @@ TESTS = [
     ("test_gml_vm_expanded", "app/src/main/cpp/tests/test_gml_vm_expanded.c"),
     ("test_gml_ds_collisions", "app/src/main/cpp/tests/test_gml_ds_collisions.c"),
     ("test_paths_particles_mpgrid", "app/src/main/cpp/tests/test_paths_particles_mpgrid.c"),
+    ("test_event_order", "app/src/main/cpp/tests/test_event_order.c"),
+    ("test_phase1_arena_sprites_lifecycle", "app/src/main/cpp/tests/test_phase1_arena_sprites_lifecycle.c"),
+    ("test_gml_string_repeat", "app/src/main/cpp/tests/test_gml_string_repeat.c"),
+    ("test_nr01_compat_apis", "app/src/main/cpp/tests/test_nr01_compat_apis.c"),
     # Imported from the friend's Full Core package; compiled against the current modular core.
     ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
     ("test_friend_gml_exec", "app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c"),

@@ -1,10 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <time.h>
+#include <stdint.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include "gm82_gml_builtins.h"
-#include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
@@ -39,16 +39,10 @@ static int g_draw_blend_mode = 0;
 
 static gm82_runtime *g_rt = NULL;
 static gm82_instance *g_self = NULL;
-static gm82_instance *g_other = NULL;
-static int g_sound_playing[64];
-static int g_sound_playing_n = 0;
 
 void gm82_gml_set_runtime(gm82_runtime *rt) { g_rt = rt; }
 gm82_runtime *gm82_gml_get_runtime(void) { return g_rt; }
 void gm82_gml_set_self(gm82_instance *self) { g_self = self; }
-void gm82_gml_set_other(gm82_instance *o) { g_other = o; }
-gm82_instance *gm82_gml_get_other(void) { return g_other; }
-
 gm82_instance *gm82_gml_get_self(void) { return g_self; }
 
 double gml_instance_create(double x, double y, double object_index) {
@@ -1395,6 +1389,47 @@ double gml_string_digits(const char *str, char *out, size_t out_sz) {
     }
     out[k] = 0;
     return (double)k;
+}
+
+double gml_string_repeat(const char *str, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    if (!str) { out[0] = 0; return 0; }
+    size_t slen = strlen(str);
+    if (!isfinite(count) || count <= 0.0 || slen == 0 || slen == SIZE_MAX) {
+        out[0] = 0;
+        return 0;
+    }
+
+    size_t source_span = slen + 1;
+    uintptr_t src_begin = (uintptr_t)str;
+    uintptr_t dst_begin = (uintptr_t)out;
+    uintptr_t src_span = (uintptr_t)source_span;
+    uintptr_t dst_span = (uintptr_t)out_sz;
+    int overlap = (size_t)src_span != source_span || (size_t)dst_span != out_sz ||
+                  src_begin > UINTPTR_MAX - src_span ||
+                  dst_begin > UINTPTR_MAX - dst_span;
+    if (!overlap) {
+        uintptr_t src_end = src_begin + src_span;
+        uintptr_t dst_end = dst_begin + dst_span;
+        overlap = src_begin < dst_end && dst_begin < src_end;
+    }
+    char *source_copy = NULL;
+    const char *source = str;
+    if (overlap) {
+        source_copy = (char *)malloc(source_span);
+        if (!source_copy) { out[0] = 0; return 0; }
+        memcpy(source_copy, str, source_span);
+        source = source_copy;
+    }
+
+    size_t max_repeats = (out_sz - 1) / slen;
+    size_t repeats = count >= (double)max_repeats ? max_repeats : (size_t)count;
+    size_t written = repeats * slen;
+    for (size_t i = 0; i < repeats; i++)
+        memcpy(out + i * slen, source, slen);
+    out[written] = 0;
+    free(source_copy);
+    return (double)written;
 }
 
 double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz) {
@@ -3921,84 +3956,5 @@ double gml_random_get_seed(void) { return g_random_seed; }
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
-
-/* Phase 6+code: track ids + feed software mixer (PCM may be silence if no decode) */
-static gm82_audio_mixer g_mixer;
-static int g_mixer_inited = 0;
-static int16_t g_click_pcm[512];
-static int g_sound_channels[64];
-
-static void ensure_mixer(void) {
-    if (g_mixer_inited) return;
-    gm82_audio_mixer_init(&g_mixer, 22050);
-    for (int i = 0; i < 512; i++) {
-        int16_t v = (i < 32) ? (int16_t)((i * 800) - 12800) : 0;
-        g_click_pcm[i] = v;
-    }
-    for (int i = 0; i < 64; i++) g_sound_channels[i] = -1;
-    g_mixer_inited = 1;
-}
-
-#ifndef GM82_WEAK
-#if defined(__GNUC__) || defined(__clang__)
-#define GM82_WEAK __attribute__((weak))
-#else
-#define GM82_WEAK
-#endif
-#endif
-
-GM82_WEAK double gml_sound_play(double sound_index) {
-    ensure_mixer();
-    int id = (int)sound_index;
-    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
-    int ch = gm82_audio_mixer_play(&g_mixer, g_click_pcm, 512, 0.4f, 0);
-    if (id >= 0 && id < 64) g_sound_channels[id] = ch;
-    return 1;
-}
-GM82_WEAK double gml_sound_loop(double sound_index) {
-    ensure_mixer();
-    int id = (int)sound_index;
-    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
-    int ch = gm82_audio_mixer_play(&g_mixer, g_click_pcm, 512, 0.3f, 1);
-    if (id >= 0 && id < 64) g_sound_channels[id] = ch;
-    return 1;
-}
-GM82_WEAK double gml_sound_isplaying(double sound_index) {
-    ensure_mixer();
-    int id = (int)sound_index;
-    if (id >= 0 && id < 64 && g_sound_channels[id] >= 0 &&
-        gm82_audio_mixer_is_channel_active(&g_mixer, g_sound_channels[id]))
-        return 1.0;
-    for (int i = 0; i < g_sound_playing_n; i++)
-        if (g_sound_playing[i] == id) return 1.0;
-    return 0.0;
-}
-GM82_WEAK double gml_sound_stop(double sound_index) {
-    ensure_mixer();
-    int id = (int)sound_index;
-    if (id >= 0 && id < 64 && g_sound_channels[id] >= 0) {
-        int ch = g_sound_channels[id];
-        if (ch >= 0 && ch < GM82_MIXER_CHANNELS)
-            g_mixer.channels[ch].active = 0;
-        g_sound_channels[id] = -1;
-    }
-    int w = 0;
-    for (int i = 0; i < g_sound_playing_n; i++) {
-        if (g_sound_playing[i] == id) continue;
-        g_sound_playing[w++] = g_sound_playing[i];
-    }
-    g_sound_playing_n = w;
-    return 1;
-}
-GM82_WEAK double gml_sound_stop_all(void) {
-    ensure_mixer();
-    gm82_audio_mixer_stop_all(&g_mixer);
-    g_sound_playing_n = 0;
-    for (int i = 0; i < 64; i++) g_sound_channels[i] = -1;
-    return 1;
-}
-
-void gm82_audio_host_mix(int16_t *out, size_t frames) {
-    ensure_mixer();
-    gm82_audio_mixer_mix_s16(&g_mixer, out, frames);
-}
+__attribute__((weak)) double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
+__attribute__((weak)) double gml_sound_stop(double sound_index) { (void)sound_index; return 1; }

@@ -4,8 +4,7 @@ build_host/
 .cxx/
 app/.cxx/
 app/build/
-NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_*
-!NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_*.c
+.externalNativeBuild/
 dist/
 coverage/
 .DS_Store

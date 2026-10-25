@@ -5,9 +5,9 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_script.h"
 #include "gm82_background_decode.h"
+#include "gm82_arena.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "gm82_arena.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,7 +71,7 @@ typedef struct {
     double  timeline_speed;
     int32_t timeline_running;
     gm82_var vars[32];
-    int32_t  var_count;
+    int32_t var_count;
 } gm82_instance;
 
 typedef struct {
@@ -82,6 +82,7 @@ typedef struct {
     int32_t room_width, room_height;
     int32_t room_speed;
     int32_t current_room;
+    int32_t room_loading; /* suppress per-instance Create until room setup completes */
 
     const gm82_decoded_object_list     *objects;
     const gm82_decoded_sprite_list     *sprites;
@@ -102,6 +103,7 @@ typedef struct {
     int32_t destroy_queue_count;
     int32_t frame_phase;
     double  step_accumulator;
+    int32_t step_room_speed;
 } gm82_runtime;
 
 void gm82_runtime_flush_destroy_queue(gm82_runtime *rt);

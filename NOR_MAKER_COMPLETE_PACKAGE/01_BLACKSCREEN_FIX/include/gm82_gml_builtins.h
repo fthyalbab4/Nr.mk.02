@@ -28,8 +28,6 @@ gm82_runtime *gm82_gml_get_runtime(void);
 
 /* Set "self" instance for instance-scoped builtins */
 void gm82_gml_set_self(gm82_instance *self);
-void gm82_gml_set_other(gm82_instance *o);
-gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
@@ -105,10 +103,6 @@ double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
 double gml_draw_surface(double id, double x, double y);
-double gml_surface_copy(double dest, double src);
-double gml_surface_getpixel(double id, double x, double y);
-double gml_surface_clear(double id, double color, double alpha);
-
 double gml_draw_clear(double color);
 double gml_draw_clear_alpha(double color, double alpha);
 
@@ -352,6 +346,7 @@ double gml_sound_stop(double sound_index);
 double gml_sound_isplaying(double sound_index);
 double gml_sound_volume(double sound_index, double vol);
 double gml_sound_loop(double sound_index);
+double gml_sound_stop_all(void);
 double gml_sound_pitch(double sound_index, double pitch);
 double gml_sound_pan(double sound_index, double pan);
 
@@ -414,6 +409,11 @@ double gml_string_delete(const char *str, double index, double count, char *out,
 double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz);
 double gml_string_lower(const char *str, char *out, size_t out_sz);
 double gml_string_upper(const char *str, char *out, size_t out_sz);
+/* Returns bytes written; repeats are truncated toward zero and only whole
+ * copies are emitted. Output is always NUL-terminated when out_sz > 0.
+ * Input/output overlap is supported; invalid or non-finite counts write empty.
+ */
+double gml_string_repeat(const char *str, double count, char *out, size_t out_sz);
 double gml_array_length_1d(double array_id);
 double gml_array_length_2d(double array_id, double row);
 double gml_array_height_2d(double array_id);

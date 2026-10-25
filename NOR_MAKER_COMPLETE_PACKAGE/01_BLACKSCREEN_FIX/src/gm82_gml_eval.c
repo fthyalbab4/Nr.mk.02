@@ -178,16 +178,6 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
 
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
-    /* Phase 6: GM8 special values */
-    if (strcmp(name, "self") == 0) { *out = s ? (double)s->id : -1; return true; }
-    if (strcmp(name, "other") == 0) {
-        extern gm82_instance *gm82_gml_get_other(void);
-        gm82_instance *o = gm82_gml_get_other();
-        *out = o ? (double)o->id : -2;
-        return true;
-    }
-    if (strcmp(name, "all") == 0) { *out = -3; return true; }
-    if (strcmp(name, "noone") == 0) { *out = -4; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
     if (strcmp(name, "lives") == 0) { *out = gml_get_lives(); return true; }
@@ -1480,15 +1470,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "surface_exists") == 0) {
             *out = gml_surface_exists(arg); return true;
         }
-        if (strcmp(id, "surface_copy") == 0) {
-            *out = gml_surface_copy(arg, nargs >= 2 ? args[1] : 0); return true;
-        }
-        if (strcmp(id, "surface_getpixel") == 0) {
-            *out = gml_surface_getpixel(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "surface_clear") == 0) {
-            *out = gml_surface_clear(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 1); return true;
-        }
         if (strcmp(id, "surface_set_target") == 0) {
             *out = gml_surface_set_target(arg); return true;
         }
@@ -2002,16 +1983,11 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "string_repeat") == 0) {
             const char *src = (p->str_mask & 1) ? p->str_args[0] : "";
-            int n = (int)(nargs >= 2 ? args[1] : arg);
-            if (n < 0) n = 0;
-            if (n > 64) n = 64;
-            char tmp[256]; tmp[0]=0;
-            size_t pos=0;
-            for (int i=0;i<n && pos+1<sizeof(tmp);i++) {
-                size_t L=strlen(src);
-                if (pos+L >= sizeof(tmp)-1) break;
-                memcpy(tmp+pos, src, L); pos+=L; tmp[pos]=0;
-            }
+            double repeat_count = nargs >= 2 ? args[1] : arg;
+            if (!isfinite(repeat_count) || repeat_count < 0.0) repeat_count = 0.0;
+            if (repeat_count > 64.0) repeat_count = 64.0;
+            char tmp[256];
+            gml_string_repeat(src, repeat_count, tmp, sizeof(tmp));
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }
@@ -2312,46 +2288,14 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
             body_buf[k] = 0;
         }
         if (rt) {
-            /* Phase 6: GM8 constants self=-1 other=-2 all=-3 noone=-4 */
-            /* Phase 8: snapshot instance indices so create/destroy mid-with is safe */
             int target_id = (int)target_val;
-            gm82_instance *prev_self = self;
-            extern void gm82_gml_set_other(gm82_instance *o);
-            extern gm82_instance *gm82_gml_get_other(void);
-            gm82_instance *prev_other = gm82_gml_get_other();
-            gm82_gml_set_other(prev_self);
-            int snap_n = rt->instance_count;
-            if (snap_n < 0) snap_n = 0;
-            if (snap_n > 4096) snap_n = 4096;
-            int snap_ids[4096];
-            int n = 0;
-            for (int i = 0; i < snap_n && n < 4096; i++) {
+            for (int i = 0; i < rt->instance_count; i++) {
                 gm82_instance *inst = &rt->instances[i];
-                if (!inst->alive) continue;
-                int match = 0;
-                if (target_id == -3) match = 1;
-                else if (target_id == -1) match = (inst == prev_self);
-                else if (target_id == -2) match = (prev_other && inst == prev_other);
-                else if (target_id == -4) match = 0;
-                else match = (inst->id == target_id || inst->object_index == target_id);
-                if (!match) continue;
-                snap_ids[n++] = inst->id;
-            }
-            for (int s = 0; s < n; s++) {
-                int id_want = snap_ids[s];
-                gm82_instance *inst = NULL;
-                for (int i = 0; i < rt->instance_count; i++) {
-                    if (rt->instances[i].alive && rt->instances[i].id == id_want) {
-                        inst = &rt->instances[i];
-                        break;
-                    }
+                if (inst->alive && (inst->id == target_id || inst->object_index == target_id || target_id == -1 /* all */)) {
+                    if (body_buf[0] == '{') gm82_gml_eval_block(rt, inst, body_buf);
+                    else gm82_gml_eval_stmt(rt, inst, body_buf);
                 }
-                if (!inst) continue;
-                if (body_buf[0] == '{') gm82_gml_eval_block(rt, inst, body_buf);
-                else gm82_gml_eval_stmt(rt, inst, body_buf);
             }
-            gm82_gml_set_other(prev_other);
-            gm82_gml_set_self(prev_self);
         }
         return true;
     }

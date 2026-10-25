@@ -24,7 +24,6 @@ void gm82_runtime_init(gm82_runtime *rt) {
     gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
     rt->frame_phase = 0;
-    rt->step_accumulator = 0.0;
 }
 
 void gm82_runtime_cleanup(gm82_runtime *rt) {
@@ -294,24 +293,6 @@ static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
     inst->vspeed = -sin(rad) * inst->speed;
-}
-
-void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
-    if (!rt || !rt->running) return;
-    double target_sec = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0 / 30.0);
-    if (dt <= 0.0) {
-        gm82_runtime_step(rt);
-        return;
-    }
-    rt->step_accumulator += dt;
-    /* Limit maximum accumulated lag (max 4 target frames) */
-    if (rt->step_accumulator > target_sec * 4.0) {
-        rt->step_accumulator = target_sec * 4.0;
-    }
-    while (rt->step_accumulator >= target_sec) {
-        gm82_runtime_step(rt);
-        rt->step_accumulator -= target_sec;
-    }
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {
