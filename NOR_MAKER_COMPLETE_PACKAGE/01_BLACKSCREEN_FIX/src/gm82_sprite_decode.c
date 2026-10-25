@@ -322,6 +322,39 @@ int gm82_sprite_resolve_frame(const gm82_sprite_group_list *G, int sprite_index,
     return g->frame_start + idx;
 }
 
+void gm82_pixel_convert_to_rgba32(const uint8_t *src, uint8_t *dst_rgba, int32_t width, int32_t height, int format) {
+    if (!src || !dst_rgba || width <= 0 || height <= 0) return;
+    int32_t total = width * height;
+    if (format == GM82_FORMAT_RGBA8888) {
+        memcpy(dst_rgba, src, (size_t)total * 4);
+    } else if (format == GM82_FORMAT_BGRA8888) {
+        for (int32_t i = 0; i < total; i++) {
+            dst_rgba[i * 4 + 0] = src[i * 4 + 2];
+            dst_rgba[i * 4 + 1] = src[i * 4 + 1];
+            dst_rgba[i * 4 + 2] = src[i * 4 + 0];
+            dst_rgba[i * 4 + 3] = src[i * 4 + 3];
+        }
+    } else if (format == GM82_FORMAT_RGB565) {
+        const uint16_t *src16 = (const uint16_t *)src;
+        for (int32_t i = 0; i < total; i++) {
+            uint16_t px = src16[i];
+            dst_rgba[i * 4 + 0] = (uint8_t)(((px >> 11) & 0x1F) * 255 / 31);
+            dst_rgba[i * 4 + 1] = (uint8_t)(((px >> 5) & 0x3F) * 255 / 63);
+            dst_rgba[i * 4 + 2] = (uint8_t)((px & 0x1F) * 255 / 31);
+            dst_rgba[i * 4 + 3] = 255;
+        }
+    } else if (format == GM82_FORMAT_ARGB4444) {
+        const uint16_t *src16 = (const uint16_t *)src;
+        for (int32_t i = 0; i < total; i++) {
+            uint16_t px = src16[i];
+            dst_rgba[i * 4 + 0] = (uint8_t)(((px >> 8) & 0x0F) * 17);
+            dst_rgba[i * 4 + 1] = (uint8_t)(((px >> 4) & 0x0F) * 17);
+            dst_rgba[i * 4 + 2] = (uint8_t)((px & 0x0F) * 17);
+            dst_rgba[i * 4 + 3] = (uint8_t)(((px >> 12) & 0x0F) * 17);
+        }
+    }
+}
+
 void gm82_frame_build_bitmask(gm82_decoded_frame *frame, uint8_t alpha_tolerance) {
     if (!frame || !frame->rgba || frame->width <= 0 || frame->height <= 0) return;
     free(frame->bitmask);
