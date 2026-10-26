@@ -129,6 +129,13 @@ double gml_ds_list_clear(double id);
 double gml_ds_list_delete(double id, double pos);
 double gml_ds_list_find_index(double id, double value);
 double gml_ds_list_empty(double id);
+double gml_ds_list_add_many(double id, const double *values, int count);
+double gml_ds_list_contains(double id, double value);
+double gml_ds_list_find_first(double id, double value);
+double gml_ds_list_find_last(double id, double value);
+double gml_ds_list_pop(double id);
+double gml_ds_list_reverse(double id);
+double gml_ds_list_unique(double id);
 
 /* ds_map (numeric keys only) */
 double gml_ds_map_create(void);

@@ -129,6 +129,13 @@ double gml_ds_list_clear(double id);
 double gml_ds_list_delete(double id, double pos);
 double gml_ds_list_find_index(double id, double value);
 double gml_ds_list_empty(double id);
+double gml_ds_list_add_many(double id, const double *values, int count);
+double gml_ds_list_contains(double id, double value);
+double gml_ds_list_find_first(double id, double value);
+double gml_ds_list_find_last(double id, double value);
+double gml_ds_list_pop(double id);
+double gml_ds_list_reverse(double id);
+double gml_ds_list_unique(double id);
 
 /* ds_map (numeric keys only) */
 double gml_ds_map_create(void);
@@ -467,6 +474,14 @@ double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2
 double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_min(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_mean(double id, double x1, double y1, double x2, double y2);
+double gml_place_snapped(double x, double y, double hsnap, double vsnap);
+double gml_move_contact(double dir, double maxdist);
+double gml_move_bounce(double advanced);
+double gml_mp_grid_clear_cell(double id, double cx, double cy);
+double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2);
+double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid);
+double gml_mp_grid_add_instances(double id, double obj, double prec);
+double gml_mp_grid_draw(double id);
 double gml_place_meeting_precise(double x, double y, double object_index);
 double gml_angle_abs(double angle);
 double gml_angle_mean(double ang1, double ang2);

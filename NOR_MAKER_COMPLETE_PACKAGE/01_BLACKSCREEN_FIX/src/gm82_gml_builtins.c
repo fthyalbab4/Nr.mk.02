@@ -2155,7 +2155,56 @@ double gml_ds_list_find_index(double id, double value) {
 double gml_ds_list_empty(double id) {
     return gml_ds_list_size(id) == 0 ? 1.0 : 0.0;
 }
-
+double gml_ds_list_add_many(double id, const double *values, int count) {
+    if (!values || count < 0) return 0;
+    int added = 0;
+    for (int i = 0; i < count; i++) {
+        if (!gml_ds_list_add(id, values[i])) break;
+        added++;
+    }
+    return (double)added;
+}
+double gml_ds_list_contains(double id, double value) {
+    return gml_ds_list_find_index(id, value) >= 0 ? 1.0 : 0.0;
+}
+double gml_ds_list_find_first(double id, double value) {
+    return gml_ds_list_find_index(id, value);
+}
+double gml_ds_list_find_last(double id, double value) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return -1;
+    for (int j = g_ds_lists[i].size - 1; j >= 0; j--)
+        if (g_ds_lists[i].data[j] == value) return (double)j;
+    return -1;
+}
+double gml_ds_list_pop(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used || g_ds_lists[i].size <= 0) return 0;
+    return g_ds_lists[i].data[--g_ds_lists[i].size];
+}
+double gml_ds_list_reverse(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
+    for (int l = 0, r = g_ds_lists[i].size - 1; l < r; l++, r--) {
+        double tmp = g_ds_lists[i].data[l];
+        g_ds_lists[i].data[l] = g_ds_lists[i].data[r];
+        g_ds_lists[i].data[r] = tmp;
+    }
+    return 1;
+}
+double gml_ds_list_unique(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
+    int old_size = g_ds_lists[i].size;
+    for (int j = 0; j < g_ds_lists[i].size; j++) {
+        for (int k = j + 1; k < g_ds_lists[i].size;) {
+            if (g_ds_lists[i].data[k] == g_ds_lists[i].data[j])
+                gml_ds_list_delete(id, k);
+            else k++;
+        }
+    }
+    return old_size != g_ds_lists[i].size ? 1.0 : 0.0;
+}
 double gml_ds_list_insert(double id, double pos, double value) {
     int i = (int)id, p = (int)pos;
     if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
@@ -2519,6 +2568,33 @@ double gml_mp_grid_add_cell(double id, double cx, double cy, double solid) {
     gm82_mp_grid_add_cell(g_mp, (int)id, (int)cx, (int)cy, solid != 0);
     return 1;
 }
+
+double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
+    if (hsnap <= 0) hsnap = 1;
+    if (vsnap <= 0) vsnap = 1;
+    double rx = x / hsnap, ry = y / vsnap;
+    double fx = rx - floor(rx), fy = ry - floor(ry);
+    if (fx > 0.5) fx = 1.0 - fx;
+    if (fy > 0.5) fy = 1.0 - fy;
+    return (fx < 1e-6 && fy < 1e-6) ? 1.0 : 0.0;
+}
+double gml_move_contact(double dir, double maxdist) { return gml_move_contact_solid(dir, maxdist); }
+double gml_move_bounce(double advanced) { return gml_move_bounce_solid(advanced); }
+double gml_mp_grid_clear_cell(double id, double cx, double cy) {
+    if (g_mp) gm82_mp_grid_clear_cell(g_mp, (int)id, (int)cx, (int)cy);
+    return 0;
+}
+double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2) {
+    if (g_mp) gm82_mp_grid_clear_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2);
+    return 0;
+}
+double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid) {
+    if (g_mp) gm82_mp_grid_add_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2, solid != 0);
+    return 0;
+}
+double gml_mp_grid_add_instances(double id, double obj, double prec) { (void)id;(void)obj;(void)prec; return 0; }
+double gml_mp_grid_draw(double id) { (void)id; return 0; }
+
 double gml_mp_grid_path(double id, double xstart, double ystart, double xgoal, double ygoal, double allowdiag) {
     if (!g_mp) return 0;
     g_mp_path_n = gm82_mp_grid_path(g_mp, (int)id, xstart, ystart, xgoal, ygoal,

@@ -2155,7 +2155,56 @@ double gml_ds_list_find_index(double id, double value) {
 double gml_ds_list_empty(double id) {
     return gml_ds_list_size(id) == 0 ? 1.0 : 0.0;
 }
-
+double gml_ds_list_add_many(double id, const double *values, int count) {
+    if (!values || count < 0) return 0;
+    int added = 0;
+    for (int i = 0; i < count; i++) {
+        if (!gml_ds_list_add(id, values[i])) break;
+        added++;
+    }
+    return (double)added;
+}
+double gml_ds_list_contains(double id, double value) {
+    return gml_ds_list_find_index(id, value) >= 0 ? 1.0 : 0.0;
+}
+double gml_ds_list_find_first(double id, double value) {
+    return gml_ds_list_find_index(id, value);
+}
+double gml_ds_list_find_last(double id, double value) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return -1;
+    for (int j = g_ds_lists[i].size - 1; j >= 0; j--)
+        if (g_ds_lists[i].data[j] == value) return (double)j;
+    return -1;
+}
+double gml_ds_list_pop(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used || g_ds_lists[i].size <= 0) return 0;
+    return g_ds_lists[i].data[--g_ds_lists[i].size];
+}
+double gml_ds_list_reverse(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
+    for (int l = 0, r = g_ds_lists[i].size - 1; l < r; l++, r--) {
+        double tmp = g_ds_lists[i].data[l];
+        g_ds_lists[i].data[l] = g_ds_lists[i].data[r];
+        g_ds_lists[i].data[r] = tmp;
+    }
+    return 1;
+}
+double gml_ds_list_unique(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
+    int old_size = g_ds_lists[i].size;
+    for (int j = 0; j < g_ds_lists[i].size; j++) {
+        for (int k = j + 1; k < g_ds_lists[i].size;) {
+            if (g_ds_lists[i].data[k] == g_ds_lists[i].data[j])
+                gml_ds_list_delete(id, k);
+            else k++;
+        }
+    }
+    return old_size != g_ds_lists[i].size ? 1.0 : 0.0;
+}
 double gml_ds_list_insert(double id, double pos, double value) {
     int i = (int)id, p = (int)pos;
     if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
@@ -4226,34 +4275,4 @@ GM82_WEAK double gml_sound_stop_all(void) {
 void gm82_audio_host_mix(int16_t *out, size_t frames) {
     ensure_mixer();
     gm82_audio_mixer_mix_s16(&g_mixer, out, frames);
-}
-
-/* Phase 6: soft sound play tracking (host has no real audio device guarantee) */
-double gml_sound_play(double sound_index) {
-    int id = (int)sound_index;
-    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
-    return 1;
-}
-double gml_sound_loop(double sound_index) {
-    return gml_sound_play(sound_index);
-}
-double gml_sound_isplaying(double sound_index) {
-    int id = (int)sound_index;
-    for (int i = 0; i < g_sound_playing_n; i++)
-        if (g_sound_playing[i] == id) return 1.0;
-    return 0.0;
-}
-double gml_sound_stop(double sound_index) {
-    int id = (int)sound_index;
-    int w = 0;
-    for (int i = 0; i < g_sound_playing_n; i++) {
-        if (g_sound_playing[i] == id) continue;
-        g_sound_playing[w++] = g_sound_playing[i];
-    }
-    g_sound_playing_n = w;
-    return 1;
-}
-double gml_sound_stop_all(void) {
-    g_sound_playing_n = 0;
-    return 1;
 }

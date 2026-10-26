@@ -647,6 +647,27 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_list_sort") == 0) {
             *out = gml_ds_list_sort(arg, nargs >= 2 ? args[1] : 1); return true;
         }
+        if (strcmp(id, "ds_list_add_many") == 0) {
+            *out = gml_ds_list_add_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
+        if (strcmp(id, "ds_list_contains") == 0 && nargs >= 2) {
+            *out = gml_ds_list_contains(arg, args[1]); return true;
+        }
+        if (strcmp(id, "ds_list_find_first") == 0 && nargs >= 2) {
+            *out = gml_ds_list_find_first(arg, args[1]); return true;
+        }
+        if (strcmp(id, "ds_list_find_last") == 0 && nargs >= 2) {
+            *out = gml_ds_list_find_last(arg, args[1]); return true;
+        }
+        if (strcmp(id, "ds_list_pop") == 0) {
+            *out = gml_ds_list_pop(arg); return true;
+        }
+        if (strcmp(id, "ds_list_reverse") == 0) {
+            *out = gml_ds_list_reverse(arg); return true;
+        }
+        if (strcmp(id, "ds_list_unique") == 0) {
+            *out = gml_ds_list_unique(arg); return true;
+        }
         if (strcmp(id, "point_in_rectangle") == 0) {
             *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
         }
@@ -1633,6 +1654,35 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "mp_grid_add_cell") == 0) {
             *out = gml_mp_grid_add_cell(args[0], args[1], args[2], nargs >= 4 ? args[3] : 1); return true;
         }
+
+        if (strcmp(id, "place_snapped") == 0) {
+            double yarg = (nargs >= 2) ? args[1] : 0;
+            double hs = (nargs >= 3) ? args[2] : 1;
+            double vs = (nargs >= 4) ? args[3] : 1;
+            *out = gml_place_snapped(arg, yarg, hs, vs); return true;
+        }
+        if (strcmp(id, "move_contact") == 0) {
+            *out = gml_move_contact(arg, nargs >= 2 ? args[1] : 1000); return true;
+        }
+        if (strcmp(id, "move_bounce") == 0) {
+            *out = gml_move_bounce(nargs >= 1 ? arg : 0); return true;
+        }
+        if (strcmp(id, "mp_grid_clear_cell") == 0) {
+            *out = gml_mp_grid_clear_cell(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "mp_grid_clear_rectangle") == 0) {
+            *out = gml_mp_grid_clear_rectangle(args[0], args[1], args[2], args[3], nargs >= 5 ? args[4] : 0); return true;
+        }
+        if (strcmp(id, "mp_grid_add_rectangle") == 0) {
+            *out = gml_mp_grid_add_rectangle(args[0], args[1], args[2], args[3], args[4], nargs >= 6 ? args[5] : 1); return true;
+        }
+        if (strcmp(id, "mp_grid_add_instances") == 0) {
+            *out = gml_mp_grid_add_instances(arg, nargs >= 2 ? args[1] : -1, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "mp_grid_draw") == 0) {
+            *out = gml_mp_grid_draw(arg); return true;
+        }
+
         if (strcmp(id, "mp_grid_path") == 0) {
             *out = gml_mp_grid_path(args[0], args[1], args[2], args[3], args[4], nargs >= 6 ? args[5] : 1); return true;
         }

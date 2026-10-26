@@ -121,6 +121,16 @@ int main(void) {
     assert(gml_ds_list_find_value(l1, 0) == 10.0);
     assert(gml_ds_list_find_value(l1, 1) == 30.0);
     assert(gml_ds_list_find_value(l1, 2) == 40.0);
+    assert(gml_ds_list_contains(l1, 30.0) == 1.0);
+    assert(gml_ds_list_find_first(l1, 30.0) == 1.0);
+    assert(gml_ds_list_find_last(l1, 30.0) == 1.0);
+    gml_ds_list_add(l1, 30.0);
+    assert(gml_ds_list_unique(l1) == 1.0);
+    assert(gml_ds_list_size(l1) == 3.0);
+    assert(gml_ds_list_pop(l1) == 40.0);
+    assert(gml_ds_list_size(l1) == 2.0);
+    assert(gml_ds_list_reverse(l1) == 1.0);
+    assert(gml_ds_list_find_value(l1, 0) == 30.0);
     gml_ds_list_destroy(l1);
 
     /* Test precise bitmask frame collision */
