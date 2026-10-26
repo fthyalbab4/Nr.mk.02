@@ -2519,6 +2519,33 @@ double gml_mp_grid_add_cell(double id, double cx, double cy, double solid) {
     gm82_mp_grid_add_cell(g_mp, (int)id, (int)cx, (int)cy, solid != 0);
     return 1;
 }
+
+double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
+    if (hsnap <= 0) hsnap = 1;
+    if (vsnap <= 0) vsnap = 1;
+    double rx = x / hsnap, ry = y / vsnap;
+    double fx = rx - floor(rx), fy = ry - floor(ry);
+    if (fx > 0.5) fx = 1.0 - fx;
+    if (fy > 0.5) fy = 1.0 - fy;
+    return (fx < 1e-6 && fy < 1e-6) ? 1.0 : 0.0;
+}
+double gml_move_contact(double dir, double maxdist) { return gml_move_contact_solid(dir, maxdist); }
+double gml_move_bounce(double advanced) { return gml_move_bounce_solid(advanced); }
+double gml_mp_grid_clear_cell(double id, double cx, double cy) {
+    if (g_mp) gm82_mp_grid_clear_cell(g_mp, (int)id, (int)cx, (int)cy);
+    return 0;
+}
+double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2) {
+    if (g_mp) gm82_mp_grid_clear_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2);
+    return 0;
+}
+double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid) {
+    if (g_mp) gm82_mp_grid_add_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2, solid != 0);
+    return 0;
+}
+double gml_mp_grid_add_instances(double id, double obj, double prec) { (void)id;(void)obj;(void)prec; return 0; }
+double gml_mp_grid_draw(double id) { (void)id; return 0; }
+
 double gml_mp_grid_path(double id, double xstart, double ystart, double xgoal, double ygoal, double allowdiag) {
     if (!g_mp) return 0;
     g_mp_path_n = gm82_mp_grid_path(g_mp, (int)id, xstart, ystart, xgoal, ygoal,
@@ -4199,4 +4226,34 @@ GM82_WEAK double gml_sound_stop_all(void) {
 void gm82_audio_host_mix(int16_t *out, size_t frames) {
     ensure_mixer();
     gm82_audio_mixer_mix_s16(&g_mixer, out, frames);
+}
+
+/* Phase 6: soft sound play tracking (host has no real audio device guarantee) */
+double gml_sound_play(double sound_index) {
+    int id = (int)sound_index;
+    if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
+    return 1;
+}
+double gml_sound_loop(double sound_index) {
+    return gml_sound_play(sound_index);
+}
+double gml_sound_isplaying(double sound_index) {
+    int id = (int)sound_index;
+    for (int i = 0; i < g_sound_playing_n; i++)
+        if (g_sound_playing[i] == id) return 1.0;
+    return 0.0;
+}
+double gml_sound_stop(double sound_index) {
+    int id = (int)sound_index;
+    int w = 0;
+    for (int i = 0; i < g_sound_playing_n; i++) {
+        if (g_sound_playing[i] == id) continue;
+        g_sound_playing[w++] = g_sound_playing[i];
+    }
+    g_sound_playing_n = w;
+    return 1;
+}
+double gml_sound_stop_all(void) {
+    g_sound_playing_n = 0;
+    return 1;
 }
