@@ -1847,7 +1847,7 @@ static const unsigned char FONT8[96][8] = {
     /* 87 W */ {0x63,0x63,0x63,0x6B,0x7F,0x77,0x63,0x00},
     /* 88 X */ {0x66,0x66,0x3C,0x18,0x3C,0x66,0x66,0x00},
     /* 89 Y */ {0x66,0x66,0x66,0x3C,0x18,0x18,0x18,0x00},
-    /* 90 Z */ {0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00},
+    /* 90 Z */ {0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00}
 };
 
 static void draw_glyph(int x, int y, char ch) {
@@ -4588,8 +4588,7 @@ double gml_pick(double x){ return x; }
 double gml_unpick(double x){ return x; }
 double gml_date_get_timestamp(void){ return (double)time(NULL); }
 static const char *GM82CORE_STUBS[] = {
-  "animation_pingpong", "animation_stop", "array_from_string", "background_find", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_self_as", "draw_self_blend", "draw_self_ext", "draw_self_floored", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_all", "ds_list_any", "ds_list_concat", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "file_text_writelf", "font_add_file", "font_add_winui", "font_find", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "instance_place_list", "instance_position_list", "instances_place", "instances_position", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_contact_solid_hv", "move_towards_gravity", "move_towards_jump", "object_find", "path_find", "path_get_approximate_pos", "path_get_height", "path_get_width", "place_meetings", "position_meetings", "registry_read_dword", "registry_read_sz", "registry_write_dword", "sound_find", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "timeline_find", "url_open", "window_has_focus", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path", "room_find", "sprite_find"
-};
+  "animation_pingpong", "animation_stop", "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_self_as", "draw_self_blend", "draw_self_ext", "draw_self_floored", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_all", "ds_list_any", "ds_list_concat", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "instance_place_list", "instance_position_list", "instances_place", "instances_position", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_contact_solid_hv", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "place_meetings", "position_meetings", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path",};
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {
     if (!id || !out) return 0;
@@ -4597,3 +4596,67 @@ int gm82_gm82core_try_stub(const char *id, double *out) {
         if (strcmp(id, GM82CORE_STUBS[i]) == 0) { *out = 0.0; return 1; }
     return 0;
 }
+
+
+/* --- stub promote batch (additive) --- */
+double gml_window_has_focus(void) { return 1.0; }
+double gml_url_open(const char *url) { (void)url; return 0.0; }
+double gml_file_text_writelf(const char *path, const char *line) {
+    if (!path) return 0;
+    FILE *f = fopen(path, "a");
+    if (!f) return 0;
+    if (line) fputs(line, f);
+    fputc('\n', f);
+    fclose(f);
+    return 1.0;
+}
+double gml_ds_map_set(double id, double key, double val) {
+    return gml_ds_map_add(id, key, val);
+}
+double gml_instance_create_depth(double x, double y, double depth, double object_index) {
+    double iid = gml_instance_create(x, y, object_index);
+    gm82_runtime *rt = gm82_gml_get_runtime();
+    if (!rt || iid < 0) return iid;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive && (double)rt->instances[i].id == iid) {
+            rt->instances[i].depth = (int32_t)depth;
+            break;
+        }
+    }
+    return iid;
+}
+double gml_string_starts_with_ext(const char *s, const char *pre) {
+    if (!s || !pre) return 0;
+    size_t n = strlen(pre);
+    return strncmp(s, pre, n) == 0 ? 1.0 : 0.0;
+}
+double gml_string_ends_with_ext(const char *s, const char *suf) {
+    if (!s || !suf) return 0;
+    size_t n = strlen(s), m = strlen(suf);
+    if (m > n) return 0;
+    return strcmp(s + n - m, suf) == 0 ? 1.0 : 0.0;
+}
+double gml_move_wrap2(double hor, double vert) {
+    gm82_runtime *rt = gm82_gml_get_runtime();
+    gm82_instance *s = gm82_gml_get_self();
+    if (!rt || !s) return 0;
+    double w = 640, h = 480;
+    if (hor) { if (s->x < 0) s->x += w; if (s->x >= w) s->x -= w; }
+    if (vert) { if (s->y < 0) s->y += h; if (s->y >= h) s->y -= h; }
+    return 1.0;
+}
+static double gm82_find_object_by_name(const char *name) {
+    if (!name) return -1;
+    const gm82_decoded_object_list *L = gm82_materialize_get_objects();
+    if (!L || !L->items) return -1;
+    for (int i = 0; i < L->count; i++) {
+        if (strcmp(L->items[i].name, name) == 0) return (double)i;
+    }
+    return -1;
+}
+double gml_object_find(const char *name) { return gm82_find_object_by_name(name); }
+double gml_background_find(const char *name) { (void)name; return -1; }
+double gml_sound_find(const char *name) { (void)name; return -1; }
+double gml_font_find(const char *name) { (void)name; return -1; }
+double gml_path_find_name(const char *name) { (void)name; return -1; }
+double gml_timeline_find_name(const char *name) { (void)name; return -1; }
