@@ -974,6 +974,12 @@ static bool parse_primary(gml_parser *p, double *out) {
             }
             *out = idv; return true;
         }
+        if (strcmp(id, "instance_create_moving") == 0 && nargs >= 5) {
+            *out = gml_instance_create_moving(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "instance_create_depth_moving") == 0 && nargs >= 6) {
+            *out = gml_instance_create_depth_moving(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
         if (strcmp(id, "direction_to_object") == 0) {
             *out = 0;
             if (p->rt && p->self) {
@@ -1188,6 +1194,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "instance_destroy") == 0) {
             gml_instance_destroy(); *out = 0; return true;
+        }
+        if (strcmp(id, "instance_destroy_other") == 0) {
+            *out = gml_instance_destroy_other(); return true;
         }
         if (strcmp(id, "instance_nearest") == 0) {
             *out = gml_instance_nearest(args[0], args[1], args[2]); return true;

@@ -59,10 +59,32 @@ double gml_instance_create(double x, double y, double object_index) {
     gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
     return inst ? (double)inst->id : -1;
 }
+double gml_instance_create_moving(double x, double y, double object_index, double hspeed, double vspeed) {
+    if (!g_rt) return -1;
+    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
+    if (!inst) return -1;
+    inst->hspeed = hspeed;
+    inst->vspeed = vspeed;
+    return (double)inst->id;
+}
+double gml_instance_create_depth_moving(double x, double y, double depth, double object_index, double hspeed, double vspeed) {
+    if (!g_rt) return -1;
+    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
+    if (!inst) return -1;
+    inst->depth = (int32_t)depth;
+    inst->hspeed = hspeed;
+    inst->vspeed = vspeed;
+    return (double)inst->id;
+}
 
 void gml_instance_destroy(void) {
     if (!g_rt || !g_self) return;
     gm82_runtime_instance_destroy(g_rt, g_self);
+}
+double gml_instance_destroy_other(void) {
+    if (!g_rt || !g_other || !g_other->alive) return 0;
+    gm82_runtime_instance_destroy(g_rt, g_other);
+    return 1;
 }
 
 double gml_instance_number(double object_index) {

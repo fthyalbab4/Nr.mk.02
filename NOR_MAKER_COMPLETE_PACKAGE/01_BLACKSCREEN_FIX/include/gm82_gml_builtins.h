@@ -34,7 +34,10 @@ gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
 double gml_instance_create(double x, double y, double object_index);
+double gml_instance_create_moving(double x, double y, double object_index, double hspeed, double vspeed);
+double gml_instance_create_depth_moving(double x, double y, double depth, double object_index, double hspeed, double vspeed);
 void   gml_instance_destroy(void); /* destroys self */
+double gml_instance_destroy_other(void);
 double gml_instance_number(double object_index); /* -1 = all */
 double gml_instance_exists(double id_or_object);
 double gml_variable_instance_exists(double instance_id, const char *name);
