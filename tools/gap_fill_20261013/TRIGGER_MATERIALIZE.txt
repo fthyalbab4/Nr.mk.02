@@ -1,1 +1,1 @@
-trigger plain batch_all
+trigger with extra.c
