@@ -133,9 +133,13 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0;
+
     inst->image_yscale = 1.0;
+
     inst->image_angle = 0.0;
+
     inst->image_alpha = 1.0;
+
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;

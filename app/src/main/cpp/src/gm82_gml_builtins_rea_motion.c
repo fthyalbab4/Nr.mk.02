@@ -9,7 +9,15 @@ extern double gml_move_contact_solid(double dir, double maxdist);
 extern double gml_move_bounce_solid(double advanced);
 extern double gml_place_free(double x, double y);
 
-double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
+#ifndef GM82_WEAK
+#if defined(__GNUC__) || defined(__clang__)
+#define GM82_WEAK __attribute__((weak))
+#else
+#define GM82_WEAK
+#endif
+#endif
+
+GM82_WEAK double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
     if (hsnap <= 0) hsnap = 1;
     if (vsnap <= 0) vsnap = 1;
     double rx = x / hsnap;
@@ -21,15 +29,15 @@ double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
     return (fx < 1e-6 && fy < 1e-6) ? 1.0 : 0.0;
 }
 
-double gml_move_contact(double dir, double maxdist) {
+GM82_WEAK double gml_move_contact(double dir, double maxdist) {
     return gml_move_contact_solid(dir, maxdist);
 }
 
-double gml_move_bounce(double advanced) {
+GM82_WEAK double gml_move_bounce(double advanced) {
     return gml_move_bounce_solid(advanced);
 }
 
-double gml_mp_grid_clear_cell(double id, double cx, double cy) {
+GM82_WEAK double gml_mp_grid_clear_cell(double id, double cx, double cy) {
     extern gm82_mp_grid_world *gm82_mp_grid_active(void);
     /* use bind world through existing path in builtins - weak fallback */
     return 0;

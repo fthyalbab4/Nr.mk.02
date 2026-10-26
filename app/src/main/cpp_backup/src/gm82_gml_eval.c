@@ -656,6 +656,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "point_in_triangle") == 0) {
             *out = gml_point_in_triangle(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
         }
+        if (strcmp(id, "rectangle_in_circle") == 0 && nargs >= 7) {
+            *out = gml_rectangle_in_circle(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return true;
+        }
+        if (strcmp(id, "rectangle_in_rectangle") == 0 && nargs >= 8) {
+            *out = gml_rectangle_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
+        }
+        if (strcmp(id, "triangle_is_clockwise") == 0 && nargs >= 6) {
+            *out = gml_triangle_is_clockwise(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
         if (strcmp(id, "point_direction_3d") == 0) {
             *out = gml_point_direction_3d(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
         }
