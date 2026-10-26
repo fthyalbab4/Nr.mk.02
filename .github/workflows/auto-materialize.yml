@@ -13,14 +13,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: APPLY merges
+      - name: APPLY
         run: |
           python3 tools/gap_fill_20261013/APPLY_SOURCE_MERGE_CORE.py || true
           python3 tools/gap_fill_20261013/APPLY_SOURCE_MERGE_BATCH2.py || true
-          python3 tools/gap_fill_20261013/APPLY_EXEC_PLAN_20261026.py || true
-          python3 tools/gap_fill_20261013/APPLY_REA_MOTION_BUILTINS.py || true
+          python3 tools/gap_fill_20261013/APPLY_SOURCE_MERGE_BATCH_ALL.py || true
       - run: bash tools/run_host_pipeline.sh || echo soft
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-materialize source merge batch2"
+          commit_message: "chore: auto-materialize gm82core batch-all"
           file_pattern: "app/src/main/cpp/**"
