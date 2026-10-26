@@ -62,7 +62,6 @@ double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_string_digits(const char *src, char *dst, size_t max_len);
-void gml_string_letters(const char *src, char *dst, size_t max_len);
 
 /* ---- Collision (AABB via sprite size) ---- */
 double gml_place_meeting(double x, double y, double object_index);
@@ -581,4 +580,21 @@ double gml_randomize(void);
 double gml_random_set_seed(double seed);
 double gml_random_get_seed(void);
 
+/* batch2 */
+
+double gml_esign(double val, double defv);
+double gml_invlerp(double a, double b, double v);
+double gml_gauss(double mean, double deviation);
+double gml_angle_wrap(double ang);
+double gml_angle_normalize(double ang);
+double gml_arcsin(double x);
+double gml_arccos(double x);
+double gml_is_equal(double a, double b);
+double gml_random_color(void);
+double gml_object_is_child_of(double child, double parent);
+double gml_string_width(const char *s);
+double gml_string_height(const char *s);
+double gml_string_letters(const char *s);
+double gml_string_pad(double number, double digits);
+double gml_string_trim(const char *s);
 #endif
