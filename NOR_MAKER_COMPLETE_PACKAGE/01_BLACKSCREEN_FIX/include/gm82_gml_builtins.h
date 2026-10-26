@@ -146,6 +146,9 @@ double gml_ds_map_exists(double id, double key);
 double gml_ds_map_size(double id);
 double gml_ds_map_clear(double id);
 double gml_ds_map_delete(double id, double key);
+double gml_ds_map_get(double id, double key);
+double gml_ds_map_search(double id, double value);
+double gml_ds_map_add_copy(double id, double source_id);
 
 /* ds_stack */
 double gml_ds_stack_create(void);
@@ -155,6 +158,7 @@ double gml_ds_stack_pop(double id);
 double gml_ds_stack_top(double id);
 double gml_ds_stack_size(double id);
 double gml_ds_stack_empty(double id);
+double gml_ds_stack_push_many(double id, const double *values, int count);
 
 /* ds_queue */
 double gml_ds_queue_create(void);
@@ -166,6 +170,7 @@ double gml_ds_queue_tail(double id);
 double gml_ds_queue_size(double id);
 double gml_ds_queue_empty(double id);
 double gml_ds_queue_clear(double id);
+double gml_ds_queue_enqueue_many(double id, const double *values, int count);
 
 /* ds_grid */
 double gml_ds_grid_create(double w, double h);

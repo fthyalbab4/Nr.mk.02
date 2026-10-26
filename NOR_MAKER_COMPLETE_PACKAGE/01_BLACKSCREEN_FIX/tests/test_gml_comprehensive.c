@@ -133,6 +133,25 @@ int main(void) {
     assert(gml_ds_list_find_value(l1, 0) == 30.0);
     gml_ds_list_destroy(l1);
 
+    double m1 = gml_ds_map_create();
+    double m2 = gml_ds_map_create();
+    assert(gml_ds_map_add(m1, 7, 42) == 1.0);
+    assert(gml_ds_map_get(m1, 7) == 42.0);
+    assert(gml_ds_map_search(m1, 42) == 7.0);
+    assert(gml_ds_map_add_copy(m2, m1) == 1.0);
+    assert(gml_ds_map_get(m2, 7) == 42.0);
+    gml_ds_map_destroy(m1); gml_ds_map_destroy(m2);
+
+    double st = gml_ds_stack_create();
+    const double bulk[] = {1, 2, 3};
+    assert(gml_ds_stack_push_many(st, bulk, 3) == 3.0);
+    assert(gml_ds_stack_pop(st) == 3.0);
+    gml_ds_stack_destroy(st);
+    double q = gml_ds_queue_create();
+    assert(gml_ds_queue_enqueue_many(q, bulk, 3) == 3.0);
+    assert(gml_ds_queue_dequeue(q) == 1.0);
+    gml_ds_queue_destroy(q);
+
     /* Test precise bitmask frame collision */
     gm82_decoded_frame f1, f2;
     memset(&f1, 0, sizeof(f1));

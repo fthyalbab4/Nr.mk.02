@@ -2317,7 +2317,25 @@ double gml_ds_map_replace(double id, double key, double value) {
 double gml_ds_map_empty(double id) {
     return gml_ds_map_size(id) == 0 ? 1.0 : 0.0;
 }
-
+double gml_ds_map_get(double id, double key) {
+    return gml_ds_map_find_value(id, key);
+}
+double gml_ds_map_search(double id, double value) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_MAP_MAX || !g_ds_maps[i].used) return -1;
+    for (int j = 0; j < g_ds_maps[i].size; j++)
+        if (g_ds_maps[i].vals[j] == value) return g_ds_maps[i].keys[j];
+    return -1;
+}
+double gml_ds_map_add_copy(double id, double source_id) {
+    int dst = (int)id, src = (int)source_id;
+    if (dst < 0 || dst >= GM82_DS_MAP_MAX || src < 0 || src >= GM82_DS_MAP_MAX ||
+        !g_ds_maps[dst].used || !g_ds_maps[src].used) return 0;
+    g_ds_maps[dst].size = 0;
+    for (int j = 0; j < g_ds_maps[src].size; j++)
+        if (!gml_ds_map_add(id, g_ds_maps[src].keys[j], g_ds_maps[src].vals[j])) return 0;
+    return 1;
+}
 #define GM82_DS_STACK_MAX 16
 #define GM82_DS_STACK_CAP 128
 typedef struct {
@@ -2366,7 +2384,15 @@ double gml_ds_stack_size(double id) {
 double gml_ds_stack_empty(double id) {
     return gml_ds_stack_size(id) == 0 ? 1.0 : 0.0;
 }
-
+double gml_ds_stack_push_many(double id, const double *values, int count) {
+    if (!values || count < 0) return 0;
+    int added = 0;
+    for (int i = 0; i < count; i++) {
+        if (!gml_ds_stack_push(id, values[i])) break;
+        added++;
+    }
+    return (double)added;
+}
 #define GM82_DS_QUEUE_MAX 16
 #define GM82_DS_QUEUE_CAP 128
 typedef struct {
@@ -2432,6 +2458,15 @@ double gml_ds_queue_clear(double id) {
     if (i < 0 || i >= GM82_DS_QUEUE_MAX || !g_ds_queues[i].used) return 0;
     g_ds_queues[i].head = g_ds_queues[i].tail = g_ds_queues[i].size = 0;
     return 1;
+}
+double gml_ds_queue_enqueue_many(double id, const double *values, int count) {
+    if (!values || count < 0) return 0;
+    int added = 0;
+    for (int i = 0; i < count; i++) {
+        if (!gml_ds_queue_enqueue(id, values[i])) break;
+        added++;
+    }
+    return (double)added;
 }
 
 #define GM82_DS_PRIO_MAX 16

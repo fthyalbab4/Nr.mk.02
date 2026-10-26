@@ -790,6 +790,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_map_replace") == 0) {
             *out = gml_ds_map_replace(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
+        if (strcmp(id, "ds_map_get") == 0) {
+            *out = gml_ds_map_get(arg, (nargs >= 2) ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "ds_map_search") == 0) {
+            *out = gml_ds_map_search(arg, (nargs >= 2) ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "ds_map_add_copy") == 0) {
+            *out = gml_ds_map_add_copy(arg, (nargs >= 2) ? args[1] : -1); return true;
+        }
         if (strcmp(id, "ds_map_empty") == 0) {
             *out = gml_ds_map_empty(arg); return true;
         }
@@ -916,6 +925,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_stack_push") == 0) {
             *out = gml_ds_stack_push(arg, (nargs >= 2) ? args[1] : 0); return true;
         }
+        if (strcmp(id, "ds_stack_push_many") == 0) {
+            *out = gml_ds_stack_push_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
         if (strcmp(id, "ds_stack_pop") == 0) {
             *out = gml_ds_stack_pop(arg); return true;
         }
@@ -927,6 +939,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "ds_queue_enqueue") == 0) {
             *out = gml_ds_queue_enqueue(arg, (nargs >= 2) ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "ds_queue_enqueue_many") == 0) {
+            *out = gml_ds_queue_enqueue_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
         }
         if (strcmp(id, "ds_queue_dequeue") == 0) {
             *out = gml_ds_queue_dequeue(arg); return true;
