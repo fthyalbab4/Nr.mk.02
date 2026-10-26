@@ -14,6 +14,11 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+void gm82_runtime_cleanup(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_arena_free(&rt->room_arena);
+}
+
 void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     rt->next_id = 100001;
