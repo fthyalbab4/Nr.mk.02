@@ -1,20 +1,22 @@
-# GAPS_HONEST — Nr.mk.02 (2026-10-26, REA motion port)
+# GAPS_HONEST — Nr.mk.02 (2026-10-26 execution)
 
-## CLOSED (host-proven or code-landed)
+## CLOSED / landed
 | Area | Evidence |
 |------|----------|
 | Host pipeline 4 samples | ok=4 fail=0 |
-| anvil register table motion/mp_grid names | REA `0x63a5a8` → `place_snapped`, aliases, mp_grid clear/add rect (APPLY_REA_MOTION) |
-| Prior runtime/DnD/string/materialize | existing modules |
+| Sound redefinition fixed | single weak mixer path |
+| Materialize stderr stats | GM82_MATERIALIZE_STATS |
+| Motion/mp_grid from anvil table | APPLY_REA_MOTION |
+| REA candidate list | REA_ANVIL_CANDIDATES_REVIEW.md |
 
-## OPEN
-| ID | Gap |
-|----|-----|
-| O1 | Device APK logcat |
-| O2 | Complex GMK materialize depth |
-| O3 | Real PCM + OpenSL |
-| O4 | Hardware GLES FBO |
-| O5 | FAIL-driven builtins beyond register table |
-| O6 | Manual validate remaining room_instance_suspect addresses |
+## OPEN (real)
+| ID | Gap | Blocker |
+|----|-----|--------|
+| O1 | Device APK logcat | device |
+| O2 | Complex GMK materialize | FAIL logs |
+| O3 | PCM + OpenSL | device |
+| O4 | Hardware GLES FBO | only if FAIL |
+| O5 | FAIL builtins | needs O1 |
+| O6 | Deep read 22 anvil addrs | optional until FAIL |
 
-No 100% claims.
+No 100% claims. Host ok ≠ device parity.
