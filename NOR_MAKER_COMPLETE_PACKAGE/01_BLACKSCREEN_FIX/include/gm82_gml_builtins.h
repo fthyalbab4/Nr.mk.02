@@ -467,6 +467,14 @@ double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2
 double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_min(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_mean(double id, double x1, double y1, double x2, double y2);
+double gml_place_snapped(double x, double y, double hsnap, double vsnap);
+double gml_move_contact(double dir, double maxdist);
+double gml_move_bounce(double advanced);
+double gml_mp_grid_clear_cell(double id, double cx, double cy);
+double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2);
+double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid);
+double gml_mp_grid_add_instances(double id, double obj, double prec);
+double gml_mp_grid_draw(double id);
 double gml_place_meeting_precise(double x, double y, double object_index);
 double gml_angle_abs(double angle);
 double gml_angle_mean(double ang1, double ang2);

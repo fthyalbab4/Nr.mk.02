@@ -99,9 +99,11 @@ void gm82_input_pad_button(gm82_input_state *in, int pad, int btn, int down) {
     }
 }
 
+#include <math.h>
+
 double gml_keyboard_check(double key) {
+    if (!g_input || !isfinite(key)) return 0;
     int k = (int)key;
-    if (!g_input) return 0;
     if (k == 0) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->down[i]) return 0.0;
@@ -117,9 +119,9 @@ double gml_keyboard_check(double key) {
 }
 
 double gml_keyboard_check_pressed(double key) {
+    if (!g_input || !isfinite(key)) return 0;
     int k = (int)key;
-    if (!g_input) return 0;
-    if (k == 0) return 0.0; /* vk_nokey is never pressed */
+    if (k == 0) return 0.0;
     if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->pressed[i]) return 1.0;
@@ -130,9 +132,9 @@ double gml_keyboard_check_pressed(double key) {
 }
 
 double gml_keyboard_check_released(double key) {
+    if (!g_input || !isfinite(key)) return 0;
     int k = (int)key;
-    if (!g_input) return 0;
-    if (k == 0) return 0.0; /* vk_nokey is never released */
+    if (k == 0) return 0.0;
     if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->released[i]) return 1.0;
