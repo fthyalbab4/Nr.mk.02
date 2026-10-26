@@ -1664,6 +1664,14 @@ double gml_instance_position(double x, double y, double object_index) {
     return -4;
 }
 
+double gml_sprite_find(const char *name) {
+    if (!g_rt || !g_rt->sprites || !name || !name[0]) return -1;
+    for (int i = 0; i < g_rt->sprites->count; i++) {
+        if (strcmp(g_rt->sprites->frames[i].name, name) == 0) return (double)i;
+    }
+    return -1;
+}
+
 double gml_instance_deactivate_all(double notme) {
     if (!g_rt) return 0;
     for (int i = 0; i < g_rt->instance_count; i++) {

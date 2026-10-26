@@ -458,6 +458,7 @@ double gml_array_length_1d(double array_id);
 double gml_array_length_2d(double array_id, double row);
 double gml_array_height_2d(double array_id);
 double gml_instance_position(double x, double y, double object_index);
+double gml_sprite_find(const char *name);
 double gml_instance_deactivate_object(double object_index);
 double gml_instance_activate_object(double object_index);
 void gml_draw_text_ext(double x, double y, const char *str, double sep, double w);

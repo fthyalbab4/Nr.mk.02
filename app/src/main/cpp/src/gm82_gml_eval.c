@@ -1217,6 +1217,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_background_tiled") == 0) {
             *out = gml_draw_background_tiled(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
+        if (strcmp(id, "sprite_find") == 0) {
+            *out = gml_sprite_find((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
         if (p->rt && p->rt->scripts) {
             int sidx = gm82_script_find(p->rt->scripts, id);
             if (sidx >= 0) {
