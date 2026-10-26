@@ -13,13 +13,14 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: APPLY
+      - name: APPLY additive patches
         run: |
           python3 tools/gap_fill_20261013/APPLY_SOURCE_MERGE_CORE.py || true
           python3 tools/gap_fill_20261013/APPLY_SOURCE_MERGE_BATCH2.py || true
           python3 tools/gap_fill_20261013/APPLY_SOURCE_MERGE_BATCH_ALL.py || true
+          python3 tools/gap_fill_20261013/APPLY_O6_PARENT_CHAIN.py || true
       - run: bash tools/run_host_pipeline.sh || echo soft
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-materialize gm82core batch-all"
+          commit_message: "chore: auto-materialize O6 parent chain"
           file_pattern: "app/src/main/cpp/**"
