@@ -26,6 +26,10 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->frame_phase = 0;
 }
 
+void gm82_runtime_cleanup(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_arena_free(&rt->room_arena);
+}
 
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
     if (!rt || !out_ptrs) return 0;
@@ -217,12 +221,14 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     else
         gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
+    rt->step_accumulator = 0.0;
 
     const gm82_decoded_room *room = &rt->rooms->items[room_index];
     rt->current_room = room_index;
     rt->room_width = room->width;
     rt->room_height = room->height;
     rt->room_speed = room->speed > 0 ? room->speed : 30;
+    rt->step_room_speed = rt->room_speed;
     rt->view_enabled = 1;
     rt->view_x = 0; rt->view_y = 0;
     rt->view_w = room->width > 640 ? 320.0 : (double)room->width;
@@ -288,6 +294,30 @@ static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
     inst->vspeed = -sin(rad) * inst->speed;
+}
+
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !rt->running) return;
+    if (isnan(dt) || isinf(dt) || dt <= 0.0) return;
+
+    int32_t target_fps = rt->room_speed > 0 ? rt->room_speed : 30;
+    if (rt->step_room_speed != target_fps) {
+        rt->step_room_speed = target_fps;
+        rt->step_accumulator = 0.0;
+    }
+
+    double max_dt = 0.05;
+    if (dt > max_dt) dt = max_dt;
+
+    rt->step_accumulator += dt;
+    double fixed_dt = 1.0 / (double)target_fps;
+
+    int steps = 0;
+    while (rt->step_accumulator >= fixed_dt && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= fixed_dt;
+        steps++;
+    }
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {

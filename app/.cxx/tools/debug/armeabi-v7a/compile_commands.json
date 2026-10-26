@@ -1,7 +1,227 @@
 [
 {
-  "directory": "/app/applet/app/.cxx/Debug/4g1m6z65/armeabi-v7a",
-  "command": "/opt/android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dgm82_android_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/gm82_jni.c.o -c /app/applet/app/src/main/cpp/gm82_jni.c",
-  "file": "/app/applet/app/src/main/cpp/gm82_jni.c"
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/gm82_jni.c.o -c /app/app/src/main/cpp/gm82_jni.c",
+  "file": "/app/app/src/main/cpp/gm82_jni.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/gml_vm.c.o -c /app/app/src/main/cpp/gml_vm.c",
+  "file": "/app/app/src/main/cpp/gml_vm.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_actions.c.o -c /app/app/src/main/cpp/src/gm82_actions.c",
+  "file": "/app/app/src/main/cpp/src/gm82_actions.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_arena.c.o -c /app/app/src/main/cpp/src/gm82_arena.c",
+  "file": "/app/app/src/main/cpp/src/gm82_arena.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_audio_mixer.c.o -c /app/app/src/main/cpp/src/gm82_audio_mixer.c",
+  "file": "/app/app/src/main/cpp/src/gm82_audio_mixer.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_background_decode.c.o -c /app/app/src/main/cpp/src/gm82_background_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_background_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_events.c.o -c /app/app/src/main/cpp/src/gm82_events.c",
+  "file": "/app/app/src/main/cpp/src/gm82_events.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_font_decode.c.o -c /app/app/src/main/cpp/src/gm82_font_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_font_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_game_start.c.o -c /app/app/src/main/cpp/src/gm82_game_start.c",
+  "file": "/app/app/src/main/cpp/src/gm82_game_start.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gl_textures.c.o -c /app/app/src/main/cpp/src/gm82_gl_textures.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gl_textures.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gles.c.o -c /app/app/src/main/cpp/src/gm82_gles.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gles.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gmk_format.c.o -c /app/app/src/main/cpp/src/gm82_gmk_format.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gmk_format.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gmk_reader.c.o -c /app/app/src/main/cpp/src/gm82_gmk_reader.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gmk_reader.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gmk_resource_walk.c.o -c /app/app/src/main/cpp/src/gm82_gmk_resource_walk.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gmk_resource_walk.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gml_builtins.c.o -c /app/app/src/main/cpp/src/gm82_gml_builtins.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gml_builtins.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gml_eval.c.o -c /app/app/src/main/cpp/src/gm82_gml_eval.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gml_eval.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_gml_string_vm.c.o -c /app/app/src/main/cpp/src/gm82_gml_string_vm.c",
+  "file": "/app/app/src/main/cpp/src/gm82_gml_string_vm.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_input.c.o -c /app/app/src/main/cpp/src/gm82_input.c",
+  "file": "/app/app/src/main/cpp/src/gm82_input.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_jni_java_bridge.c.o -c /app/app/src/main/cpp/src/gm82_jni_java_bridge.c",
+  "file": "/app/app/src/main/cpp/src/gm82_jni_java_bridge.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_loader.c.o -c /app/app/src/main/cpp/src/gm82_loader.c",
+  "file": "/app/app/src/main/cpp/src/gm82_loader.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_mask.c.o -c /app/app/src/main/cpp/src/gm82_mask.c",
+  "file": "/app/app/src/main/cpp/src/gm82_mask.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_materialize.c.o -c /app/app/src/main/cpp/src/gm82_materialize.c",
+  "file": "/app/app/src/main/cpp/src/gm82_materialize.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_mp_grid.c.o -c /app/app/src/main/cpp/src/gm82_mp_grid.c",
+  "file": "/app/app/src/main/cpp/src/gm82_mp_grid.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_native_bridge.c.o -c /app/app/src/main/cpp/src/gm82_native_bridge.c",
+  "file": "/app/app/src/main/cpp/src/gm82_native_bridge.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_object_room_decode.c.o -c /app/app/src/main/cpp/src/gm82_object_room_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_object_room_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_opensles.c.o -c /app/app/src/main/cpp/src/gm82_opensles.c",
+  "file": "/app/app/src/main/cpp/src/gm82_opensles.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_particles.c.o -c /app/app/src/main/cpp/src/gm82_particles.c",
+  "file": "/app/app/src/main/cpp/src/gm82_particles.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_path.c.o -c /app/app/src/main/cpp/src/gm82_path.c",
+  "file": "/app/app/src/main/cpp/src/gm82_path.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_path_decode.c.o -c /app/app/src/main/cpp/src/gm82_path_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_path_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_portable_compat.c.o -c /app/app/src/main/cpp/src/gm82_portable_compat.c",
+  "file": "/app/app/src/main/cpp/src/gm82_portable_compat.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_project_ir.c.o -c /app/app/src/main/cpp/src/gm82_project_ir.c",
+  "file": "/app/app/src/main/cpp/src/gm82_project_ir.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_runtime.c.o -c /app/app/src/main/cpp/src/gm82_runtime.c",
+  "file": "/app/app/src/main/cpp/src/gm82_runtime.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_runtime_guard.c.o -c /app/app/src/main/cpp/src/gm82_runtime_guard.c",
+  "file": "/app/app/src/main/cpp/src/gm82_runtime_guard.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_script.c.o -c /app/app/src/main/cpp/src/gm82_script.c",
+  "file": "/app/app/src/main/cpp/src/gm82_script.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_soft_render.c.o -c /app/app/src/main/cpp/src/gm82_soft_render.c",
+  "file": "/app/app/src/main/cpp/src/gm82_soft_render.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_sound_decode.c.o -c /app/app/src/main/cpp/src/gm82_sound_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_sound_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_sound_runtime.c.o -c /app/app/src/main/cpp/src/gm82_sound_runtime.c",
+  "file": "/app/app/src/main/cpp/src/gm82_sound_runtime.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_sprite_decode.c.o -c /app/app/src/main/cpp/src/gm82_sprite_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_sprite_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_text_reader.c.o -c /app/app/src/main/cpp/src/gm82_text_reader.c",
+  "file": "/app/app/src/main/cpp/src/gm82_text_reader.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_timeline.c.o -c /app/app/src/main/cpp/src/gm82_timeline.c",
+  "file": "/app/app/src/main/cpp/src/gm82_timeline.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_timeline_decode.c.o -c /app/app/src/main/cpp/src/gm82_timeline_decode.c",
+  "file": "/app/app/src/main/cpp/src/gm82_timeline_decode.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gm82_view.c.o -c /app/app/src/main/cpp/src/gm82_view.c",
+  "file": "/app/app/src/main/cpp/src/gm82_view.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/gml_frontend.c.o -c /app/app/src/main/cpp/src/gml_frontend.c",
+  "file": "/app/app/src/main/cpp/src/gml_frontend.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/nor_format_native.c.o -c /app/app/src/main/cpp/src/nor_format_native.c",
+  "file": "/app/app/src/main/cpp/src/nor_format_native.c"
+},
+{
+  "directory": "/app/app/.cxx/Debug/6b2bn205/armeabi-v7a",
+  "command": "/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=armv7-none-linux-androideabi23 --sysroot=/opt/android-sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGM82_HAVE_JNI -Dgm82_android_EXPORTS -I/app/app/src/main/cpp/include -I/app/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/src/retro_rom_native.c.o -c /app/app/src/main/cpp/src/retro_rom_native.c",
+  "file": "/app/app/src/main/cpp/src/retro_rom_native.c"
 }
 ]

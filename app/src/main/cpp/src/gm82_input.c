@@ -118,13 +118,27 @@ double gml_keyboard_check(double key) {
 
 double gml_keyboard_check_pressed(double key) {
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input) return 0;
+    if (k == 0) return 0.0;
+    if (k == 1) {
+        for (int i = 0; i < GM82_KEY_MAX; i++)
+            if (g_input->pressed[i]) return 1.0;
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->pressed[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_released(double key) {
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input) return 0;
+    if (k == 0) return 0.0;
+    if (k == 1) {
+        for (int i = 0; i < GM82_KEY_MAX; i++)
+            if (g_input->released[i]) return 1.0;
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->released[k] ? 1.0 : 0.0;
 }
 
