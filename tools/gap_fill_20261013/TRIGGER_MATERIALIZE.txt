@@ -1,1 +1,1 @@
-trigger full b64
+trigger batch_all complete payloads
