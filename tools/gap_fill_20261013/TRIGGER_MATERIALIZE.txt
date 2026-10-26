@@ -1,1 +1,1 @@
-trigger source merge core
+trigger O6 fix apply
