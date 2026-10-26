@@ -5,9 +5,9 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_script.h"
 #include "gm82_background_decode.h"
+#include "gm82_arena.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "gm82_arena.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,7 +71,7 @@ typedef struct {
     double  timeline_speed;
     int32_t timeline_running;
     gm82_var vars[32];
-    int32_t  var_count;
+    int32_t var_count;
 } gm82_instance;
 
 typedef struct {
@@ -82,6 +82,7 @@ typedef struct {
     int32_t room_width, room_height;
     int32_t room_speed;
     int32_t current_room;
+    int32_t room_loading; /* suppress per-instance Create until room setup completes */
 
     const gm82_decoded_object_list     *objects;
     const gm82_decoded_sprite_list     *sprites;
@@ -101,6 +102,8 @@ typedef struct {
     int32_t destroy_queue[GM82_MAX_INSTANCES];
     int32_t destroy_queue_count;
     int32_t frame_phase;
+    double  step_accumulator;
+    int32_t step_room_speed;
 } gm82_runtime;
 
 void gm82_runtime_flush_destroy_queue(gm82_runtime *rt);
@@ -118,6 +121,7 @@ void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index);
 void gm82_runtime_step(gm82_runtime *rt);
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt);
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h);
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y);
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst);

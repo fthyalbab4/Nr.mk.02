@@ -74,6 +74,41 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_lerp(ARG_R(0), ARG_R(1), ARG_R(2)));
         return 1;
     }
+    if ((strcmp(name, "dot_product_normal") == 0 || strcmp(name, "dot_product_normalized") == 0) && count == 4) {
+        *out = gml_value_real(gml_dot_product_normal(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3)));
+        return 1;
+    }
+    if ((strcmp(name, "dot_product_3d_normal") == 0 || strcmp(name, "dot_product_3d_normalized") == 0) && count == 6) {
+        *out = gml_value_real(gml_dot_product_3d_normal(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "dot_product_3d") == 0 && count == 6) {
+        *out = gml_value_real(gml_dot_product_3d(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "date_current_datetime") == 0 && count == 0) {
+        *out = gml_value_real(gml_date_current_datetime());
+        return 1;
+    }
+    if (strcmp(name, "current_time") == 0 && count == 0) {
+        *out = gml_value_real(gml_current_time());
+        return 1;
+    }
+    if (strcmp(name, "date_get_year") == 0 && count == 1) { *out = gml_value_real(gml_date_get_year(ARG_R(0))); return 1; }
+    if (strcmp(name, "date_get_month") == 0 && count == 1) { *out = gml_value_real(gml_date_get_month(ARG_R(0))); return 1; }
+    if (strcmp(name, "date_get_day") == 0 && count == 1) { *out = gml_value_real(gml_date_get_day(ARG_R(0))); return 1; }
+    if (strcmp(name, "date_get_hour") == 0 && count == 1) { *out = gml_value_real(gml_date_get_hour(ARG_R(0))); return 1; }
+    if (strcmp(name, "date_get_minute") == 0 && count == 1) { *out = gml_value_real(gml_date_get_minute(ARG_R(0))); return 1; }
+    if (strcmp(name, "date_get_second") == 0 && count == 1) { *out = gml_value_real(gml_date_get_second(ARG_R(0))); return 1; }
+    if (strcmp(name, "date_compare_datetime") == 0 && count == 2) { *out = gml_value_real(gml_date_compare_datetime(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_compare_date") == 0 && count == 2) { *out = gml_value_real(gml_date_compare_date(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_compare_time") == 0 && count == 2) { *out = gml_value_real(gml_date_compare_time(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_second_span") == 0 && count == 2) { *out = gml_value_real(gml_date_second_span(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_minute_span") == 0 && count == 2) { *out = gml_value_real(gml_date_minute_span(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_hour_span") == 0 && count == 2) { *out = gml_value_real(gml_date_hour_span(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_day_span") == 0 && count == 2) { *out = gml_value_real(gml_date_day_span(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_month_span") == 0 && count == 2) { *out = gml_value_real(gml_date_month_span(ARG_R(0), ARG_R(1))); return 1; }
+    if (strcmp(name, "date_year_span") == 0 && count == 2) { *out = gml_value_real(gml_date_year_span(ARG_R(0), ARG_R(1))); return 1; }
 
     /* String built-ins */
     if (strcmp(name, "string_length") == 0 && count >= 1) {
@@ -376,6 +411,30 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "ds_grid_get_sum") == 0 && count >= 5) {
         *out = gml_value_real(gml_ds_grid_get_sum(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_set_region") == 0 && count == 6) {
+        *out = gml_value_real(gml_ds_grid_set_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_add_region") == 0 && count == 6) {
+        *out = gml_value_real(gml_ds_grid_add_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_multiply_region") == 0 && count == 6) {
+        *out = gml_value_real(gml_ds_grid_multiply_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_set_grid_region") == 0 && count == 8) {
+        *out = gml_value_real(gml_ds_grid_set_grid_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_add_grid_region") == 0 && count == 8) {
+        *out = gml_value_real(gml_ds_grid_add_grid_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
+        return 1;
+    }
+    if (strcmp(name, "ds_grid_multiply_grid_region") == 0 && count == 8) {
+        *out = gml_value_real(gml_ds_grid_multiply_grid_region(ARG_R(0), ARG_R(1), ARG_R(2), ARG_R(3), ARG_R(4), ARG_R(5), ARG_R(6), ARG_R(7)));
         return 1;
     }
 

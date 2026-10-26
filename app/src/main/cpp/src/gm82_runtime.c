@@ -25,6 +25,31 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->destroy_queue_count = 0;
     rt->frame_phase = 0;
 }
+void gm82_runtime_cleanup(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_arena_free(&rt->room_arena);
+}
+
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !isfinite(dt) || dt <= 0.0) return;
+    int speed = rt->room_speed > 0 ? rt->room_speed : (rt->step_room_speed > 0 ? rt->step_room_speed : 30);
+    if (speed != rt->step_room_speed) {
+        rt->step_room_speed = speed;
+        rt->step_accumulator = 0.0;
+    }
+    double frame_time = 1.0 / (double)speed;
+    rt->step_accumulator += dt;
+    int steps = 0;
+    while (rt->step_accumulator >= frame_time && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= frame_time;
+        steps++;
+    }
+    if (steps >= 4) {
+        rt->step_accumulator = 0.0;
+    }
+}
+
 
 
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
@@ -128,17 +153,16 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0;
-
     inst->image_yscale = 1.0;
-
     inst->image_angle = 0.0;
-
     inst->image_alpha = 1.0;
-
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
+    if (!rt->room_loading) {
+        gm82_events_fire_create_single(rt, inst);
+    }
     return inst;
 }
 
@@ -218,6 +242,8 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
 
+    rt->step_accumulator = 0.0;
+    rt->step_room_speed = rt->rooms->items[room_index].speed > 0 ? rt->rooms->items[room_index].speed : 30;
     const gm82_decoded_room *room = &rt->rooms->items[room_index];
     rt->current_room = room_index;
     rt->room_width = room->width;
@@ -240,6 +266,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     }
     rt->instance_count = w;
 
+    rt->room_loading = 1;
     for (int i = 0; i < room->instance_count; i++) {
         const gm82_decoded_instance *src = &room->instances[i];
         if (rt->objects && src->object_index >= 0 && src->object_index < rt->objects->count) {
@@ -249,9 +276,14 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
+    rt->room_loading = 0;
     rt->running = 1;
     rt->frame = 0;
-    gm82_events_fire_create_all(rt);
+    for (int i = w; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive) {
+            gm82_events_fire_create_single(rt, &rt->instances[i]);
+        }
+    }
     {
         int has_player = 0;
         for (int i = 0; i < rt->instance_count; i++) {
@@ -277,7 +309,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
                     rt->view_follow_object = oi; break;
                 }
             }
-            gm82_events_fire_create_all(rt);
         }
     }
     s_room_transition_depth--;

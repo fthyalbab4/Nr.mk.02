@@ -2,6 +2,8 @@
 #define GM82_MATERIALIZE_H
 
 #include "gm82_project_ir.h"
+#include "gm82_object_room_decode.h"
+#include "gm82_script.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -38,6 +40,11 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
 bool gm82_materialize_sprites(gm82_project_ir *ir, const gm82_materialize_options *opts);
 bool gm82_materialize_backgrounds(gm82_project_ir *ir, const gm82_materialize_options *opts);
 bool gm82_materialize_rooms(gm82_project_ir *ir, const gm82_materialize_options *opts);
+
+/* Retained after materialize_all for runtime bind */
+const gm82_decoded_object_list *gm82_materialize_get_objects(void);
+const gm82_script_list *gm82_materialize_get_scripts(void);
+
 
 #ifdef __cplusplus
 }
