@@ -1,1 +1,1 @@
-trigger O6 parent chain
+trigger O6 fix apply
