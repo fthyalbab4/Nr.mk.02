@@ -18,12 +18,41 @@ void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     rt->next_id = 100001;
     rt->room_speed = 30;
+    rt->step_room_speed = 30;
     rt->room_width = 640;
     rt->room_height = 480;
     /* Phase 1 memory arena ~4MB room-scoped (after memset) */
     gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
     rt->frame_phase = 0;
+}
+
+void gm82_runtime_cleanup(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_arena_free(&rt->room_arena);
+}
+
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !rt->running) return;
+    if (!isfinite(dt) || dt <= 0.0) return;
+
+    int target_fps = rt->room_speed > 0 ? rt->room_speed : 30;
+    if (rt->step_room_speed != target_fps) {
+        rt->step_accumulator = 0.0;
+        rt->step_room_speed = target_fps;
+    }
+    double step_dt = 1.0 / (double)target_fps;
+
+    rt->step_accumulator += dt;
+    int steps = 0;
+    while (rt->step_accumulator >= step_dt && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= step_dt;
+        steps++;
+    }
+    if (steps == 4 && rt->step_accumulator >= step_dt) {
+        rt->step_accumulator = 0.0;
+    }
 }
 
 
@@ -128,15 +157,18 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0;
+
     inst->image_yscale = 1.0;
+
     inst->image_angle = 0.0;
+
     inst->image_alpha = 1.0;
+
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
-    if (!rt->room_loading)
-        gm82_events_fire_create_single(rt, inst);
+    gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
@@ -221,6 +253,8 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->room_width = room->width;
     rt->room_height = room->height;
     rt->room_speed = room->speed > 0 ? room->speed : 30;
+    rt->step_accumulator = 0.0;
+    rt->step_room_speed = rt->room_speed;
     rt->view_enabled = 1;
     rt->view_x = 0; rt->view_y = 0;
     rt->view_w = room->width > 640 ? 320.0 : (double)room->width;
@@ -238,8 +272,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     }
     rt->instance_count = w;
 
-    int room_instance_start = rt->instance_count;
-    rt->room_loading = 1;
     for (int i = 0; i < room->instance_count; i++) {
         const gm82_decoded_instance *src = &room->instances[i];
         if (rt->objects && src->object_index >= 0 && src->object_index < rt->objects->count) {
@@ -249,14 +281,8 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
-    rt->room_loading = 0;
-    int room_instance_end = rt->instance_count;
     rt->running = 1;
     rt->frame = 0;
-    for (int i = room_instance_start; i < room_instance_end; i++) {
-        if (rt->instances[i].alive)
-            gm82_events_fire_create_single(rt, &rt->instances[i]);
-    }
     {
         int has_player = 0;
         for (int i = 0; i < rt->instance_count; i++) {
@@ -274,8 +300,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             for (int oi = 0; oi < rt->objects->count; oi++) {
                 const char *n = rt->objects->items[oi].name;
                 if (!n) continue;
-                if (strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "player") ||
-                    strstr(n, "mario") || strstr(n, "Player")) {
+                if (strcmp(n, "obj_player") == 0 || strcmp(n, "obj_mario") == 0 || strcmp(n, "obj_link") == 0) {
                     double sx = rt->room_width > 80 ? rt->room_width * 0.35 : 64;
                     double sy = rt->room_height > 80 ? rt->room_height * 0.35 : 64;
                     gm82_runtime_instance_create(rt, oi, sx, sy);
