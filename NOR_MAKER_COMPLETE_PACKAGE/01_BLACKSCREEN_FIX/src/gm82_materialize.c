@@ -298,5 +298,18 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
                  ir->sprite_count, ir->partial_count, ir->room_count);
         ir->error_message = strdup(buf);
     }
+    {
+        int oc = 0, sc = 0, inst = 0;
+        const gm82_decoded_object_list *mo = gm82_materialize_get_objects();
+        const gm82_script_list *ms = gm82_materialize_get_scripts();
+        if (mo) oc = mo->count;
+        if (ms) sc = ms->count;
+        for (int32_t ri = 0; ri < ir->room_count; ri++)
+            inst += ir->rooms[ri].instance_count;
+        fprintf(stderr,
+            "GM82_MATERIALIZE_STATS sprites=%d bgs=%d rooms=%d objects=%d scripts=%d instances=%d complete=%d\n",
+            ir->sprite_count, ir->background_count, ir->room_count, oc, sc, inst,
+            ir->complete ? 1 : 0);
+    }
     return ir->complete;
 }
