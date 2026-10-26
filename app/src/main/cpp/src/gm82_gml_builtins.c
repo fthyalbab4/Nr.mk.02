@@ -7,6 +7,7 @@
 #include <fnmatch.h>
 #include <sys/stat.h>
 #include "gm82_gml_builtins.h"
+#include "gm82_materialize.h"
 #include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_path.h"
@@ -4461,7 +4462,21 @@ double gml_random_color(void) {
     return (double)((r & 255) | ((g & 255) << 8) | ((b & 255) << 16));
 }
 double gml_object_is_child_of(double child, double parent) {
-    return ((int32_t)child == (int32_t)parent) ? 1.0 : 0.0;
+    /* walk parent chain using materialize object table (additive O6) */
+    int32_t c = (int32_t)child;
+    int32_t p = (int32_t)parent;
+    if (c == p) return 1.0;
+    const gm82_decoded_object_list *L = gm82_materialize_get_objects();
+    if (!L || !L->items || L->count <= 0) return 0.0;
+    int32_t cur = c;
+    for (int depth = 0; depth < 32; depth++) {
+        if (cur < 0 || cur >= L->count) return 0.0;
+        int32_t par = L->items[cur].parent_index;
+        if (par == p) return 1.0;
+        if (par < 0 || par == cur) return 0.0;
+        cur = par;
+    }
+    return 0.0;
 }
 double gml_string_width(const char *s) {
     if (!s) return 0;
@@ -4554,7 +4569,7 @@ double gml_outside_room(void){ gm82_instance *s=gm82_gml_get_self(); if(!s) retu
 double gml_position_free(double x,double y){ return gml_place_free(x,y); }
 double gml_collision_check_fast(double obj, double dist){ gm82_instance *s=gm82_gml_get_self(); if(!s) return 0; if(gml_instance_nearest(s->x,s->y,obj)<0) return 0; return (gml_distance_to_object(obj)<=dist)?1.0:0.0; }
 double gml_path_ease(double t,double kind){ (void)kind; t=gm82_clampf(t,0,1); return t*t*(3-2*t); }
-double gml_object_other_is_child_of(double parent){ gm82_instance *o=gm82_gml_get_other(); if(!o) return 0; return ((int32_t)o->object_index==(int32_t)parent)?1.0:0.0; }
+double gml_object_other_is_child_of(double parent){ gm82_instance *o=gm82_gml_get_other(); if(!o) return 0; return gml_object_is_child_of((double)o->object_index, parent); }
 double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir){ return gml_instance_create_moving(x,y,obj,sp,dir,grav,gdir); }
 double gml_instance_some(double obj){ gm82_runtime *rt=gm82_gml_get_runtime(); if(!rt) return -4; int32_t oi=(int32_t)obj; int n=0; for(int i=0;i<rt->instance_count;i++) if(rt->instances[i].alive&&(oi<0||rt->instances[i].object_index==oi)) n++; if(n<=0) return -4; int picki=rand()%n,c=0; for(int i=0;i<rt->instance_count;i++){ if(!rt->instances[i].alive) continue; if(oi>=0&&rt->instances[i].object_index!=oi) continue; if(c==picki) return (double)rt->instances[i].id; c++; } return -4; }
 double gml_filename_remove_ext(const char *s){ static char out[512]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} strncpy(out,s,sizeof(out)-1); out[sizeof(out)-1]=0; char *dot=strrchr(out,'.'); if(dot)*dot=0; gm82_gml_set_last_string(out); return (double)strlen(out); }

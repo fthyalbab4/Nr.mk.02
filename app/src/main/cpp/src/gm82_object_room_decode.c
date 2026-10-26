@@ -97,6 +97,8 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         int32_t vis_i = rd_i32(d + off + 8);
         int32_t depth_i = rd_i32(d + off + 12);
         int32_t pers_i = (off + 16 + 4 <= ol) ? rd_i32(d + off + 16) : 0;
+        int32_t parent_i = (off + 20 + 4 <= ol) ? rd_i32(d + off + 20) : -1;
+        if (parent_i < -1 || parent_i > 512) parent_i = -1;
         /* Reject zlib false-positives (scripts/extensions misread as objects) */
         if (solid_i != 0 && solid_i != 1) { free(d); continue; }
         if (vis_i != 0 && vis_i != 1) { free(d); continue; }
@@ -111,6 +113,7 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         o->visible = vis_i;
         o->depth = depth_i;
         o->persistent = pers_i;
+        o->parent_index = parent_i;
         o->event_count = 0;
         if ((ver == 430 || ver == 400) && off + 32 <= ol) {
             size_t p = off + 32;
