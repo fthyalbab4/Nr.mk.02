@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import zlib, base64
 ROOT = Path(__file__).resolve().parents[2]
 D = Path(__file__).parent
-def load(name):
-    return zlib.decompress(base64.b64decode((D/name).read_text().strip())).decode()
-EXTRA = load("batch_all_extra.zlib.b64")
-EVAL = load("batch_all_eval.zlib.b64")
-DECL = load("batch_all_decls.zlib.b64")
+EXTRA = (D / "batch_all_extra.c").read_text()
+EVAL = (D / "batch_all_eval_snip.c").read_text()
+DECL = (D / "batch_all_decls.h").read_text()
 b = ROOT / "app/src/main/cpp/src/gm82_gml_builtins.c"
 e = ROOT / "app/src/main/cpp/src/gm82_gml_eval.c"
 h = ROOT / "app/src/main/cpp/include/gm82_gml_builtins.h"

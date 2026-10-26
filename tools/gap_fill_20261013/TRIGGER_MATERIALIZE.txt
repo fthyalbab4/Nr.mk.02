@@ -1,1 +1,1 @@
-trigger batch_all complete payloads
+trigger plain batch_all
