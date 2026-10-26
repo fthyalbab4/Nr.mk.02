@@ -1,1 +1,1 @@
-trigger source merge core
+trigger batch2 source merge
