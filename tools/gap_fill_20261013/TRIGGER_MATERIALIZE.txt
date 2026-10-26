@@ -1,1 +1,1 @@
-trigger mario touch v2 mouse-only c
+trigger mario sendKey fix
