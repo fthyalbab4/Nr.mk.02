@@ -71,6 +71,12 @@ int main(void) {
     assert(res == 1.0);
     gm82_gml_eval_expr(&rt, inst, "point_in_rectangle(15, 5, 0, 0, 10, 10)", &res);
     assert(res == 0.0);
+    gm82_gml_eval_expr(&rt, inst, "rectangle_in_circle(4, 4, 6, 6, 5, 5, 2)", &res);
+    assert(res == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "rectangle_in_rectangle(0, 0, 10, 10, 5, 5, 15, 15)", &res);
+    assert(res == 2.0);
+    gm82_gml_eval_expr(&rt, inst, "triangle_is_clockwise(0, 0, 0, 1, 1, 0)", &res);
+    assert(res == 0.0);
 
     /* Test degree trigonometric functions */
     assert(gml_abs(gml_dsin(90.0) - 1.0) < 1e-6);
