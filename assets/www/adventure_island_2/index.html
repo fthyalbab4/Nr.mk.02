@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Adventure Island II - NES HTML5 Recreation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            background: #000000;
+            padding: 10px;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: 512px;
+            height: 480px;
+            background-color: #000;
+            border: 2px solid #333;
+        }
+        @media (max-width: 600px) {
+            canvas {
+                width: 95vw;
+                height: 89vw;
+            }
+        }
+        #touch-controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 512px;
+            margin-top: 15px;
+            touch-action: manipulation;
+        }
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 45px);
+            grid-template-rows: repeat(3, 45px);
+            gap: 2px;
+        }
+        .btn-touch {
+            background: #333;
+            color: #fff;
+            border: 2px solid #555;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .btn-touch:active, .btn-touch.active {
+            background: #e60012;
+            border-color: #ff4d4d;
+        }
+        .action-btns {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn-round {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: #d32f2f;
+            border: 3px solid #b71c1c;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+        .btn-round:active, .btn-round.active {
+            background: #ff5252;
+        }
+        .meta-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-rect {
+            padding: 6px 16px;
+            background: #555;
+            border-radius: 12px;
+            font-size: 12px;
+            border: 1px solid #777;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="256" height="240"></canvas>
+
+    <div id="touch-controls">
+        <div class="dpad">
+            <div></div>
+            <div class="btn-touch" id="btn-up">▲</div>
+            <div></div>
+            <div class="btn-touch" id="btn-left">◀</div>
+            <div class="btn-touch" id="btn-center"></div>
+            <div class="btn-touch" id="btn-right">▶</div>
+            <div></div>
+            <div class="btn-touch" id="btn-down">▼</div>
+            <div></div>
+        </div>
+
+        <div class="action-btns">
+            <div class="btn-touch btn-round" id="btn-b">B</div>
+            <div class="btn-touch btn-round" id="btn-a">A</div>
+        </div>
+    </div>
+
+    <div class="meta-btns">
+        <div class="btn-touch btn-rect" id="btn-select">SELECT</div>
+        <div class="btn-touch btn-rect" id="btn-start">START</div>
+    </div>
+</div>
+
+<script src="rom_data.js"></script>
+<script src="engine.js"></script>
+<script src="gameplay.js"></script>
+<script src="stages_and_audio.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const engine = new NESGraphicsEngine('gameCanvas');
+        const game = new AdventureIslandGame(engine);
+        const stageMgr = new AdventureIslandStageManager(game, engine);
+
+        if (window.ROM_DATA) {
+            const romBytes = Uint8Array.from(atob(window.ROM_DATA.rom_b64), c => c.charCodeAt(0));
+            // Extract CHR ROM (131072 bytes starting after 16 byte header + 131072 PRG)
+            const chrBytes = romBytes.subarray(16 + 131072, 16 + 131072 + 131072);
+            engine.setCHRData(chrBytes);
+        } else {
+            // Generates fallback pattern table if ROM payload is not present
+            const dummyCHR = new Uint8Array(8192 * 16);
+            for(let i=0; i<dummyCHR.length; i+=16) {
+                for(let row=0; row<8; row++) {
+                    dummyCHR[i+row] = 0xFF;
+                    dummyCHR[i+row+8] = 0xAA;
+                }
+            }
+            engine.setCHRData(dummyCHR);
+        }
+
+        stageMgr.loadStage(0, 0);
+
+        // Main Game Loop
+        function gameLoop() {
+            game.update();
+            if (stageMgr.boss) stageMgr.updateBoss();
+            stageMgr.renderGame();
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        // Keyboard Controls
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') game.input.left = true;
+            if (e.key === 'ArrowRight') game.input.right = true;
+            if (e.key === 'ArrowUp') game.input.up = true;
+            if (e.key === 'ArrowDown') game.input.down = true;
+            if (e.key === 'z' || e.key === 'Z' || e.key === 'a' || e.key === 'A') game.input.jump = true;
+            if (e.key === 'x' || e.key === 'X' || e.key === 's' || e.key === 'S') game.input.attack = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft') game.input.left = false;
+            if (e.key === 'ArrowRight') game.input.right = false;
+            if (e.key === 'ArrowUp') game.input.up = false;
+            if (e.key === 'ArrowDown') game.input.down = false;
+            if (e.key === 'z' || e.key === 'Z' || e.key === 'a' || e.key === 'A') game.input.jump = false;
+            if (e.key === 'x' || e.key === 'X' || e.key === 's' || e.key === 'S') game.input.attack = false;
+        });
+    });
+</script>
+
+</body>
+</html>
