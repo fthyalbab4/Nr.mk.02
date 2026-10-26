@@ -1980,6 +1980,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "file_delete") == 0) {
             *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
+        if (strcmp(id, "file_create") == 0) {
+            *out = gml_file_create((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
+        if (strcmp(id, "file_size") == 0) {
+            *out = gml_file_size((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
+        if (strcmp(id, "file_get_timestamp") == 0) {
+            *out = gml_file_get_timestamp((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
         if (strcmp(id, "ini_open") == 0) {
             *out = gml_ini_open((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }

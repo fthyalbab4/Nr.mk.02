@@ -228,6 +228,9 @@ double gml_file_text_writeln(double id);
 double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
+double gml_file_create(const char *path);
+double gml_file_size(const char *path);
+double gml_file_get_timestamp(const char *path);
 
 double gml_date_current_datetime(void);
 double gml_date_get_year(double datetime);

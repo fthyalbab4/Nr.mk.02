@@ -152,6 +152,14 @@ int main(void) {
     assert(gml_ds_queue_dequeue(q) == 1.0);
     gml_ds_queue_destroy(q);
 
+    const char *file_fixture = "build_host/gml_file_fixture.tmp";
+    gml_file_delete(file_fixture);
+    assert(gml_file_create(file_fixture) == 1.0);
+    assert(gml_file_exists(file_fixture) == 1.0);
+    assert(gml_file_size(file_fixture) == 0.0);
+    assert(gml_file_get_timestamp(file_fixture) >= 0.0);
+    gml_file_delete(file_fixture);
+
     /* Test precise bitmask frame collision */
     gm82_decoded_frame f1, f2;
     memset(&f1, 0, sizeof(f1));

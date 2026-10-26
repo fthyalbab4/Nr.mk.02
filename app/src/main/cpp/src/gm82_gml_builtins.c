@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <dirent.h>
 #include <fnmatch.h>
+#include <sys/stat.h>
 #include "gm82_gml_builtins.h"
 #include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
@@ -2960,6 +2961,23 @@ double gml_file_exists(const char *path) {
 double gml_file_delete(const char *path) {
     if (!path) return 0;
     return remove(path) == 0 ? 1.0 : 0.0;
+}
+double gml_file_create(const char *path) {
+    if (!path || !path[0]) return 0;
+    FILE *f = fopen(path, "wb");
+    if (!f) return 0;
+    fclose(f);
+    return 1;
+}
+double gml_file_size(const char *path) {
+    struct stat st;
+    if (!path || stat(path, &st) != 0) return -1;
+    return (double)st.st_size;
+}
+double gml_file_get_timestamp(const char *path) {
+    struct stat st;
+    if (!path || stat(path, &st) != 0) return -1;
+    return (double)st.st_mtime;
 }
 
 /* Ported from Nr.mk.01 — complete, do not replace other file I/O */
