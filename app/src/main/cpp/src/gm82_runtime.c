@@ -79,11 +79,6 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     inst->image_yscale = 1.0;
 
     inst->image_angle = 0.0;
-
-    inst->image_alpha = 1.0;
-
-    inst->image_blend = 0xffffff;
-    inst->image_angle = 0.0;
     inst->image_alpha = 1.0;
     inst->image_blend = 0xffffff;
     inst->image_speed = 1.0;
