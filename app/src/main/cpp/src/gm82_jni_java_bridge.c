@@ -235,10 +235,53 @@ void gm82_native_key_up(int vk) {
 }
 
 void gm82_native_touch(int x, int y, int action) {
-    (void)x; (void)y;
-    if (action == 0) {
+    /* Virtual on-screen pad (Mario / GM keyboard parity):
+     *  Left 40%:  left half = VK_LEFT(37), right half of zone = VK_RIGHT(39)
+     *  Right 40%: jump = VK_SPACE(32) + VK_UP(38)
+     *  action: 0=DOWN 1=UP 2=MOVE (Android MotionEvent masked)
+     */
+    if (!g_bridge_initialized) return;
+    int sw = g_bridge_surface_w > 0 ? g_bridge_surface_w : 640;
+    int sh = g_bridge_surface_h > 0 ? g_bridge_surface_h : 480;
+    if (sw < 1) sw = 640;
+    if (sh < 1) sh = 480;
+
+    int left_zone = (x < sw * 40 / 100);
+    int right_zone = (x > sw * 60 / 100);
+    int lower = (y > sh * 45 / 100);
+
+    int want_left = 0, want_right = 0, want_jump = 0;
+    if (action == 0 || action == 2 || action == 5) { /* DOWN / MOVE / POINTER_DOWN */
+        if (left_zone && lower) {
+            if (x < sw * 20 / 100) want_left = 1;
+            else want_right = 1;
+        }
+        if (right_zone && lower) want_jump = 1;
+        /* center tap = jump (fallback) */
+        if (!left_zone && !right_zone && lower) want_jump = 1;
+    }
+    /* UP / POINTER_UP / CANCEL: release handled below when action is up */
+    if (action == 1 || action == 6 || action == 3) {
+        want_left = want_right = want_jump = 0;
+    }
+
+    static int held_left = 0, held_right = 0, held_jump = 0;
+    if (want_left && !held_left) { gm82_native_key_down(37); held_left = 1; }
+    if (!want_left && held_left) { gm82_native_key_up(37); held_left = 0; }
+    if (want_right && !held_right) { gm82_native_key_down(39); held_right = 1; }
+    if (!want_right && held_right) { gm82_native_key_up(39); held_right = 0; }
+    if (want_jump && !held_jump) {
         gm82_native_key_down(32);
-    } else if (action == 1) {
+        gm82_native_key_down(38);
+        held_jump = 1;
+    }
+    if (!want_jump && held_jump) {
+        gm82_native_key_up(32);
+        gm82_native_key_up(38);
+        held_jump = 0;
+    }
+    (void)y;
+} else if (action == 1) {
         gm82_native_key_up(32);
     }
 }
