@@ -1,4 +1,4 @@
-# GAPS_HONEST — Nr.mk.02 (2026-10-26)
+# GAPS_HONEST — Nr.mk.02 (2026-10-26, post-REA review)
 
 No invented “100% of all GMK”. Acceptance = checklist cells on named targets.
 
@@ -17,18 +17,18 @@ No invented “100% of all GMK”. Acceptance = checklist cells on named targets
 | Materialize retain objects/scripts | `gm82_materialize_get_*` |
 | JNI bind prefers materialize objects | `gm82_jni_java_bridge.c` |
 | Host pipeline samples | `tools/run_host_pipeline.sh` → **ok=4 fail=0** |
+| REA sample reviewed | `docs/REA_RUNTIME_NOTES.md` — **no game-logic symbols in 120-fn sample** |
 
-## OPEN (device / richer assets — not mystery phases)
+## OPEN
 
 | ID | Gap | Unblocks |
 |----|-----|----------|
 | O1 | Device APK logcat for samples/cloud | L0–L3 on phone |
 | O2 | Complex GMK full event/script materialize | Non-black complex games |
-| O3 | Real sound PCM + OpenSL | Audible audio |
+| O3 | Real sound PCM + OpenSL | Audible audio (winmm analog) |
 | O4 | Hardware GLES FBO | Advanced surfaces |
 | O5 | FAIL-builtin batches from real logs | Remaining GML symbols |
-| O6 | REA/DLL | Only if user provides DLL |
+| O6 | REA Tier1+string map on **anvil.exe** | Only after expansion; current sample insufficient |
 
 ## Score rule
-`docs/ACCEPTANCE_SCORE_*.md` = PASS cells / TOTAL cells on listed games.
-Host ok=4 is not “95% all games”.
+Host ok=4 is not “95% all games”. Device PASS/TOTAL drives 95% checklist.
