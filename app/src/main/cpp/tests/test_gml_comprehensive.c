@@ -167,6 +167,11 @@ int main(void) {
     assert(depth_id >= 0.0);
     assert(gml_instance_destroy_id(moving_id) == 1.0);
 
+    assert(gm82_gml_eval_expr(&rt, inst, "draw_rect(0, 0, 2, 2, 0)", &res) == 1);
+    assert(res == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "draw_sprite_ext_fixed(0, 0, 1, 1, 1, 1, 0, 16777215)", &res) == 1);
+    assert(res == 1.0);
+
     /* Test precise bitmask frame collision */
     gm82_decoded_frame f1, f2;
     memset(&f1, 0, sizeof(f1));

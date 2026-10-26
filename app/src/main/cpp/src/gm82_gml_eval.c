@@ -1107,6 +1107,10 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_text_color") == 0) {
             gml_draw_text_color(args[0], nargs >= 2 ? args[1] : 0, (p->str_mask & 4) ? p->str_args[2] : "", nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0); *out = 1; return true;
         }
+        if (strcmp(id, "draw_text_1color") == 0) {
+            double c = nargs >= 4 ? args[3] : 0;
+            gml_draw_text_color(args[0], nargs >= 2 ? args[1] : 0, (p->str_mask & 4) ? p->str_args[2] : "", c, c, c, c); *out = 1; return true;
+        }
         if (strcmp(id, "draw_text_ext") == 0) {
             gml_draw_text_ext(args[0], nargs >= 2 ? args[1] : 0, (p->str_mask & 4) ? p->str_args[2] : "", nargs >= 4 ? args[3] : -1, nargs >= 5 ? args[4] : -1); *out = 1; return true;
         }
@@ -1144,6 +1148,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_rectangle") == 0) {
             gml_draw_rectangle(args[0], args[1], args[2], args[3], nargs >= 5 ? args[4] : 0); *out = 1; return true;
         }
+        if (strcmp(id, "draw_rect") == 0) {
+            gml_draw_rectangle(args[0], args[1], args[2], args[3], nargs >= 5 ? args[4] : 0); *out = 1; return true;
+        }
         if (strcmp(id, "draw_circle") == 0) {
             gml_draw_circle(args[0], args[1], args[2], nargs >= 4 ? args[3] : 0); *out = 1; return true;
         }
@@ -1151,6 +1158,12 @@ static bool parse_primary(gml_parser *p, double *out) {
             gml_draw_sprite(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); *out = 1; return true;
         }
         if (strcmp(id, "draw_sprite_ext") == 0) {
+            gml_draw_sprite_ext(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                nargs >= 5 ? args[4] : 1, nargs >= 6 ? args[5] : 1, nargs >= 7 ? args[6] : 0,
+                                nargs >= 8 ? args[7] : 0xFFFFFF, 1.0);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "draw_sprite_ext_fixed") == 0) {
             gml_draw_sprite_ext(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
                                 nargs >= 5 ? args[4] : 1, nargs >= 6 ? args[5] : 1, nargs >= 7 ? args[6] : 0,
                                 nargs >= 8 ? args[7] : 0xFFFFFF, 1.0);
@@ -1190,6 +1203,9 @@ static bool parse_primary(gml_parser *p, double *out) {
             gml_draw_set_blend_mode(arg); *out = 0; return true;
         }
         if (strcmp(id, "draw_background") == 0) {
+            *out = gml_draw_background(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "draw_background_pos") == 0) {
             *out = gml_draw_background(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "draw_background_ext") == 0) {
