@@ -59,14 +59,6 @@ double gml_instance_create(double x, double y, double object_index) {
     gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
     return inst ? (double)inst->id : -1;
 }
-double gml_instance_create_moving(double x, double y, double object_index, double hspeed, double vspeed) {
-    if (!g_rt) return -1;
-    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
-    if (!inst) return -1;
-    inst->hspeed = hspeed;
-    inst->vspeed = vspeed;
-    return (double)inst->id;
-}
 double gml_instance_create_depth_moving(double x, double y, double depth, double object_index, double hspeed, double vspeed) {
     if (!g_rt) return -1;
     gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
@@ -4350,4 +4342,69 @@ GM82_WEAK double gml_sound_stop_all(void) {
 void gm82_audio_host_mix(int16_t *out, size_t frames) {
     ensure_mixer();
     gm82_audio_mixer_mix_s16(&g_mixer, out, frames);
+}
+
+
+/* --- source/unpacked/gm82core clean-room merge --- */
+double gml_instance_create_moving(double x, double y, double object_index,
+                                  double speed, double direction,
+                                  double gravity, double gravdir) {
+    if (!g_rt) return -1.0;
+    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
+    if (!inst) return -1.0;
+    double rad = direction * 3.14159265358979323846 / 180.0;
+    inst->speed = speed;
+    inst->direction = direction;
+    inst->hspeed = cos(rad) * speed;
+    inst->vspeed = -sin(rad) * speed;
+    inst->gravity = gravity;
+    inst->gravity_direction = gravdir;
+    return (double)inst->id;
+}
+double gml_instance_farthest(double x, double y, double object_index) {
+    if (!g_rt) return -4.0;
+    int32_t oi = (int32_t)object_index;
+    double best_d = -1.0, best_id = -4.0;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        double dx = o->x - x, dy = o->y - y;
+        double d = dx * dx + dy * dy;
+        if (d > best_d) { best_d = d; best_id = (double)o->id; }
+    }
+    return best_id;
+}
+double gml_distance_to_center(double object_index) {
+    if (!g_self || !g_rt) return 0.0;
+    double fid = gml_instance_nearest(g_self->x, g_self->y, object_index);
+    if (fid < 0) return 100000000.0;
+    int32_t want = (int32_t)fid;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive || o->id != want) continue;
+        double dx = o->x - g_self->x, dy = o->y - g_self->y;
+        return sqrt(dx * dx + dy * dy);
+    }
+    return 100000000.0;
+}
+static char g_file_all_buf[65536];
+double gml_file_text_read_all(const char *path) {
+    g_file_all_buf[0] = 0;
+    if (!path || !path[0]) return 0.0;
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0.0;
+    size_t n = fread(g_file_all_buf, 1, sizeof(g_file_all_buf) - 1, f);
+    g_file_all_buf[n] = 0;
+    fclose(f);
+    return (double)n;
+}
+const char *gml_file_text_last_all(void) { return g_file_all_buf; }
+double gml_file_text_write_all(const char *path, const char *data) {
+    if (!path || !path[0]) return 0.0;
+    FILE *f = fopen(path, "wb");
+    if (!f) return 0.0;
+    if (data) fputs(data, f);
+    fclose(f);
+    return 1.0;
 }

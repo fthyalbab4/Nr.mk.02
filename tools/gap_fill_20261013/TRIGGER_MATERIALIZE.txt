@@ -1,1 +1,1 @@
-trigger EXEC PLAN 20261026
+trigger source merge core

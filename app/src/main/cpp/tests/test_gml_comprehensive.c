@@ -160,7 +160,7 @@ int main(void) {
     assert(gml_file_get_timestamp(file_fixture) >= 0.0);
     gml_file_delete(file_fixture);
 
-    double moving_id = gml_instance_create_moving(1, 2, 0, 3, 4);
+    double moving_id = gml_instance_create_moving(1, 2, 0, 5, 0, 0, 270);
     assert(moving_id >= 0.0);
     assert(gml_instance_exists(moving_id) == 1.0);
     double depth_id = gml_instance_create_depth_moving(3, 4, -20, 0, 5, 6);
