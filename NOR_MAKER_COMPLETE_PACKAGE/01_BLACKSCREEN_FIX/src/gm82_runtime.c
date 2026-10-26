@@ -221,6 +221,8 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->room_width = room->width;
     rt->room_height = room->height;
     rt->room_speed = room->speed > 0 ? room->speed : 30;
+    rt->step_accumulator = 0.0;
+    rt->step_room_speed = rt->room_speed;
     rt->view_enabled = 1;
     rt->view_x = 0; rt->view_y = 0;
     rt->view_w = room->width > 640 ? 320.0 : (double)room->width;
@@ -292,6 +294,29 @@ static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
     inst->vspeed = -sin(rad) * inst->speed;
+}
+
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !rt->running) return;
+    if (isnan(dt) || isinf(dt) || dt <= 0.0) return;
+
+    if (rt->step_room_speed != rt->room_speed) {
+        rt->step_accumulator = 0.0;
+        rt->step_room_speed = rt->room_speed;
+    }
+
+    double fixed_dt = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0 / 30.0);
+    rt->step_accumulator += dt;
+
+    int steps = 0;
+    while (rt->step_accumulator >= fixed_dt && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= fixed_dt;
+        steps++;
+    }
+    if (steps >= 4) {
+        rt->step_accumulator = 0.0;
+    }
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {

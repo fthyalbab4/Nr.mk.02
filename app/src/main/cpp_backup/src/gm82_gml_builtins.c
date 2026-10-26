@@ -4137,7 +4137,15 @@ static void ensure_mixer(void) {
     g_mixer_inited = 1;
 }
 
-double gml_sound_play(double sound_index) {
+#ifndef GM82_WEAK
+#if defined(__GNUC__) || defined(__clang__)
+#define GM82_WEAK __attribute__((weak))
+#else
+#define GM82_WEAK
+#endif
+#endif
+
+GM82_WEAK double gml_sound_play(double sound_index) {
     ensure_mixer();
     int id = (int)sound_index;
     if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
@@ -4145,7 +4153,7 @@ double gml_sound_play(double sound_index) {
     if (id >= 0 && id < 64) g_sound_channels[id] = ch;
     return 1;
 }
-double gml_sound_loop(double sound_index) {
+GM82_WEAK double gml_sound_loop(double sound_index) {
     ensure_mixer();
     int id = (int)sound_index;
     if (g_sound_playing_n < 64) g_sound_playing[g_sound_playing_n++] = id;
@@ -4153,7 +4161,7 @@ double gml_sound_loop(double sound_index) {
     if (id >= 0 && id < 64) g_sound_channels[id] = ch;
     return 1;
 }
-double gml_sound_isplaying(double sound_index) {
+GM82_WEAK double gml_sound_isplaying(double sound_index) {
     ensure_mixer();
     int id = (int)sound_index;
     if (id >= 0 && id < 64 && g_sound_channels[id] >= 0 &&
@@ -4163,7 +4171,7 @@ double gml_sound_isplaying(double sound_index) {
         if (g_sound_playing[i] == id) return 1.0;
     return 0.0;
 }
-double gml_sound_stop(double sound_index) {
+GM82_WEAK double gml_sound_stop(double sound_index) {
     ensure_mixer();
     int id = (int)sound_index;
     if (id >= 0 && id < 64 && g_sound_channels[id] >= 0) {
@@ -4180,7 +4188,7 @@ double gml_sound_stop(double sound_index) {
     g_sound_playing_n = w;
     return 1;
 }
-double gml_sound_stop_all(void) {
+GM82_WEAK double gml_sound_stop_all(void) {
     ensure_mixer();
     gm82_audio_mixer_stop_all(&g_mixer);
     g_sound_playing_n = 0;
