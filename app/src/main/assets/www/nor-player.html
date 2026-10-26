@@ -17,11 +17,12 @@
 body{background:#0d0d0f;color:#ccc;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
 #drop-zone{border:2px dashed #333;border-radius:8px;padding:40px 60px;text-align:center;cursor:pointer;transition:all .2s;user-select:none}
 #drop-zone:hover,#drop-zone.over{border-color:#4a9eff;background:rgba(74,158,255,.05)}
+#drop-zone:focus-visible{outline:2px solid #4a9eff;outline-offset:3px;border-color:#4a9eff;background:rgba(74,158,255,.05)}
 #drop-zone h1{font-size:1.4em;color:#4a9eff;margin-bottom:8px;letter-spacing:2px}
 #drop-zone p{color:#666;font-size:.75em;margin-top:4px}
 #drop-zone .hint{margin-top:16px;font-size:.7em;color:#444}
 #btn-open{margin-top:16px;padding:8px 20px;background:#1a1a2e;border:1px solid #4a9eff;color:#4a9eff;font-family:inherit;font-size:.75em;cursor:pointer;letter-spacing:1px;border-radius:3px}
-#btn-open:hover{background:#4a9eff;color:#000}
+#btn-open:hover,#btn-open:focus-visible{background:#4a9eff;color:#000;outline:2px solid #4a9eff;outline-offset:2px}
 #screen-wrap{display:none;flex-direction:column;align-items:center;gap:6px}
 #hud{width:100%;display:flex;justify-content:space-between;font-size:.65em;color:#666;padding:0 2px}
 #canvas-wrap{position:relative}
@@ -38,11 +39,11 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;borde
 </head>
 <body>
 
-<div id="drop-zone">
+<div id="drop-zone" tabindex="0" role="button" aria-label="Choose or drag and drop a NOR file here">
   <h1>⬡ NOR PLAYER</h1>
   <p>NOR Runtime v1.0 — Play .nor games without a browser engine</p>
   <div class="hint">Drag &amp; drop a <strong>.nor</strong> file here<br>or click to browse</div>
-  <button id="btn-open">📂 Open .nor File</button>
+  <button id="btn-open" tabindex="-1" aria-label="Open .nor File">📂 Open .nor File</button>
 </div>
 
 <div id="screen-wrap">
@@ -815,6 +816,12 @@ const NOR = {
       if (file) this._readFile(file);
     });
     dz.addEventListener('click', () => document.getElementById('file-input').click());
+    dz.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        document.getElementById('file-input').click();
+      }
+    });
     document.getElementById('btn-open').addEventListener('click', e => { e.stopPropagation(); document.getElementById('file-input').click(); });
     document.getElementById('file-input').addEventListener('change', e => {
       const file = e.target.files[0];
