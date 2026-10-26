@@ -34,6 +34,8 @@ static double g_draw_alpha = 1.0;
 
 static gm82_runtime *g_rt = NULL;
 static gm82_instance *g_self = NULL;
+static gm82_path_list *g_paths = NULL;
+static gm82_timeline_list *g_timelines = NULL;
 
 void gm82_gml_set_runtime(gm82_runtime *rt) { g_rt = rt; }
 gm82_runtime *gm82_gml_get_runtime(void) { return g_rt; }
@@ -538,6 +540,374 @@ double gml_room_find(const char *name) {
         if (strcmp(g_rt->rooms->items[i].name, name) == 0) return (double)i;
     }
     return -1.0;
+}
+
+double gml_sprite_find(const char *name) {
+    if (!g_rt || !g_rt->sprites || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_rt->sprites->count; i++) {
+        if (g_rt->sprites->frames && strcmp(g_rt->sprites->frames[i].name, name) == 0) return (double)i;
+    }
+    if (g_rt->sprite_groups) {
+        for (int i = 0; i < g_rt->sprite_groups->count; i++) {
+            if (strcmp(g_rt->sprite_groups->items[i].name, name) == 0) return (double)g_rt->sprite_groups->items[i].frame_start;
+        }
+    }
+    return -1.0;
+}
+
+double gml_sound_find(const char *name) {
+    (void)name;
+    return -1.0;
+}
+
+double gml_background_find(const char *name) {
+    if (!g_rt || !g_rt->backgrounds || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_rt->backgrounds->count; i++) {
+        if (g_rt->backgrounds->items && strcmp(g_rt->backgrounds->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
+
+double gml_font_find(const char *name) {
+    (void)name;
+    return -1.0;
+}
+
+double gml_path_find(const char *name) {
+    if (!g_paths || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_paths->count; i++) {
+        if (strcmp(g_paths->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
+
+double gml_timeline_find(const char *name) {
+    if (!g_timelines || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_timelines->count; i++) {
+        if (strcmp(g_timelines->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
+
+double gml_object_find(const char *name) {
+    if (!g_rt || !g_rt->objects || !name || !name[0]) return -1.0;
+    for (int i = 0; i < g_rt->objects->count; i++) {
+        if (g_rt->objects->items && strcmp(g_rt->objects->items[i].name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
+
+/* --- Perlin Noise Implementation --- */
+static int s_perlin_p[512] = {
+    151,160,137,91 ,90 ,15 ,131,13 ,201,95 ,96 ,53 ,194,233,7  ,225,140,36 ,103,
+    30 ,69 ,142,8  ,99 ,37 ,240,21 ,10 ,23 ,190,6  ,148,247,120,234,75 ,0  ,26 ,
+    197,62 ,94 ,252,219,203,117,35 ,11 ,32 ,57 ,177,33 ,88 ,237,149,56 ,87 ,174,
+    20 ,125,136,171,168,68 ,175,74 ,165,71 ,134,139,48 ,27 ,166,77 ,146,158,231,
+    83 ,111,229,122,60 ,211,133,230,220,105,92 ,41 ,55 ,46 ,245,40 ,244,102,143,
+    54 ,65 ,25 ,63 ,161,1  ,216,80 ,73 ,209,76 ,132,187,208,89 ,18 ,169,200,196,
+    135,130,116,188,159,86 ,164,100,109,198,173,186,3  ,64 ,52 ,217,226,250,124,
+    123,5  ,202,38 ,147,118,126,255,82 ,85 ,212,207,206,59 ,227,47 ,16 ,58 ,17 ,
+    182,189,28 ,42 ,223,183,170,213,119,248,152,2  ,44 ,154,163,70 ,221,153,101,
+    155,167,43 ,172,9  ,129,22 ,39 ,253,19 ,98 ,108,110,79 ,113,224,232,178,185,
+    112,104,218,246,97 ,228,251,34 ,242,193,238,210,144,12 ,191,179,162,241,81 ,
+    51 ,145,235,249,14 ,239,107,49 ,192,214,31 ,181,199,106,157,184,84 ,204,176,
+    115,121,50 ,45 ,127,4  ,150,254,138,236,205,93 ,222,114,67 ,29 ,24 ,72 ,243,
+    141,128,195,78 ,66 ,215,61 ,156,180,
+    151,160,137,91 ,90 ,15 ,131,13 ,201,95 ,96 ,53 ,194,233,7  ,225,140,36 ,103,
+    30 ,69 ,142,8  ,99 ,37 ,240,21 ,10 ,23 ,190,6  ,148,247,120,234,75 ,0  ,26 ,
+    197,62 ,94 ,252,219,203,117,35 ,11 ,32 ,57 ,177,33 ,88 ,237,149,56 ,87 ,174,
+    20 ,125,136,171,168,68 ,175,74 ,165,71 ,134,139,48 ,27 ,166,77 ,146,158,231,
+    83 ,111,229,122,60 ,211,133,230,220,105,92 ,41 ,55 ,46 ,245,40 ,244,102,143,
+    54 ,65 ,25 ,63 ,161,1  ,216,80 ,73 ,209,76 ,132,187,208,89 ,18 ,169,200,196,
+    135,130,116,188,159,86 ,164,100,109,198,173,186,3  ,64 ,52 ,217,226,250,124,
+    123,5  ,202,38 ,147,118,126,255,82 ,85 ,212,207,206,59 ,227,47 ,16 ,58 ,17 ,
+    182,189,28 ,42 ,223,183,170,213,119,248,152,2  ,44 ,154,163,70 ,221,153,101,
+    155,167,43 ,172,9  ,129,22 ,39 ,253,19 ,98 ,108,110,79 ,113,224,232,178,185,
+    112,104,218,246,97 ,228,251,34 ,242,193,238,210,144,12 ,191,179,162,241,81 ,
+    51 ,145,235,249,14 ,239,107,49 ,192,214,31 ,181,199,106,157,184,84 ,204,176,
+    115,121,50 ,45 ,127,4  ,150,254,138,236,205,93 ,222,114,67 ,29 ,24 ,72 ,243,
+    141,128,195,78 ,66 ,215,61 ,156,180
+};
+
+static double perlin_fade(double t) { return t*t*t*(t*(t*6-15)+10); }
+static double perlin_lerp(double t, double a, double b) { return a+t*(b-a); }
+static double perlin_grad(int hash, double x, double y, double z) {
+    int h = hash & 15;
+    double u = h < 8 ? x : y;
+    double v = h < 4 ? y : (h == 12 || h == 14 ? x : z);
+    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+}
+
+double gml_perlin_noise(double x, double y, double z) {
+    int X = (int)floor(x) & 255;
+    int Y = (int)floor(y) & 255;
+    int Z = (int)floor(z) & 255;
+    x -= floor(x);
+    y -= floor(y);
+    z -= floor(z);
+    double u = perlin_fade(x);
+    double v = perlin_fade(y);
+    double w = perlin_fade(z);
+    int A = s_perlin_p[X]+Y, AA = s_perlin_p[A]+Z, AB = s_perlin_p[A+1]+Z;
+    int B = s_perlin_p[X+1]+Y, BA = s_perlin_p[B]+Z, BB = s_perlin_p[B+1]+Z;
+    return perlin_lerp(w, perlin_lerp(v, perlin_lerp(u, perlin_grad(s_perlin_p[AA], x, y, z),
+                                                         perlin_grad(s_perlin_p[BA], x-1, y, z)),
+                                          perlin_lerp(u, perlin_grad(s_perlin_p[AB], x, y-1, z),
+                                                         perlin_grad(s_perlin_p[BB], x-1, y-1, z))),
+                          perlin_lerp(v, perlin_lerp(u, perlin_grad(s_perlin_p[AA+1], x, y, z-1),
+                                                         perlin_grad(s_perlin_p[BA+1], x-1, y, z-1)),
+                                          perlin_lerp(u, perlin_grad(s_perlin_p[AB+1], x, y-1, z-1),
+                                                         perlin_grad(s_perlin_p[BB+1], x-1, y-1, z-1))));
+}
+
+#include <time.h>
+static uint64_t s_hrt_start = 0;
+static uint64_t s_hrt_last = 0;
+
+static uint64_t get_time_us(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)(ts.tv_nsec / 1000);
+}
+
+double gml_hrt_now(void) {
+    if (s_hrt_start == 0) s_hrt_start = get_time_us();
+    return (double)(get_time_us() - s_hrt_start);
+}
+
+double gml_hrt_delta(void) {
+    uint64_t now = get_time_us();
+    if (s_hrt_last == 0) s_hrt_last = now;
+    double delta = (double)(now - s_hrt_last);
+    s_hrt_last = now;
+    return delta;
+}
+
+double gml_modwrap(double val, double minv, double maxv) {
+    double f = val - minv;
+    double w = maxv - minv;
+    if (w == 0) return minv;
+    return f - floor(f / w) * w + minv;
+}
+
+double gml_unlerp(double a, double b, double val) {
+    return (b == a) ? 0.0 : (val - a) / (b - a);
+}
+
+double gml_unclerp(double a, double b, double val) {
+    return gml_clamp(gml_unlerp(a, b, val), 0.0, 1.0);
+}
+
+double gml_esign(double x, double def) {
+    if (x > 0.0) return 1.0;
+    if (x < 0.0) return -1.0;
+    return def;
+}
+
+double gml_saturate(double val) {
+    return gml_clamp(val, 0.0, 1.0);
+}
+
+double gml_smoothstep(double minv, double maxv, double value) {
+    double t = gml_saturate((maxv == minv) ? 0.0 : (value - minv) / (maxv - minv));
+    return t * t * (3.0 - 2.0 * t);
+}
+
+double gml_lerproach(double val, double go, double lerpamt, double appamt) {
+    double l = val + (go - val) * lerpamt;
+    return gml_approach(l, go, appamt);
+}
+
+double gml_round_unbiased(double val) {
+    return round(val);
+}
+
+double gml_roundto(double val, double to) {
+    return (to == 0.0) ? val : round(val / to) * to;
+}
+
+double gml_floorto(double val, double to) {
+    return (to == 0.0) ? val : floor(val / to) * to;
+}
+
+double gml_ceilto(double val, double to) {
+    return (to == 0.0) ? val : ceil(val / to) * to;
+}
+
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias) {
+    double d = fmod(ang2 - ang1 + 540.0, 360.0) - 180.0;
+    if (d > 0) return ang1 + gml_clamp(d * bias, 0.0, step);
+    return ang1 + gml_clamp(d * bias, -step, 0.0);
+}
+
+double gml_lerp_angle(double from, double to, double amount) {
+    return from + (fmod(to - from + 540.0, 360.0) - 180.0) * amount;
+}
+
+double gml_range_collision(double a1, double a2, double b1, double b2) {
+    return ((fmax(a1, a2) > fmin(b1, b2)) && (fmax(b1, b2) > fmin(a1, a2))) ? 1.0 : 0.0;
+}
+
+double gml_lengthdir_zx(double len, double dir, double dirz) {
+    return len * gml_dcos(dirz) * gml_dcos(dir);
+}
+
+double gml_lengthdir_zy(double len, double dir, double dirz) {
+    return -len * gml_dcos(dirz) * gml_dsin(dir);
+}
+
+double gml_lengthdir_zz(double len, double dir, double dirz) {
+    (void)dir;
+    return -len * gml_dsin(dirz);
+}
+
+double gml_point_direction_pitch(double x1, double y1, double z1, double x2, double y2, double z2) {
+    return gml_point_direction(0.0, z1, gml_point_distance(x1, y1, x2, y2), z2);
+}
+
+double gml_pivot_pos_x(double px, double py, double dir) {
+    return gml_lengthdir_x(px, dir) + gml_lengthdir_x(py, dir - 90.0);
+}
+
+double gml_pivot_pos_y(double px, double py, double dir) {
+    return gml_lengthdir_y(px, dir) + gml_lengthdir_y(py, dir - 90.0);
+}
+
+double gml_in_range(double val, double vmin, double vmax) {
+    return (val >= vmin && val <= vmax) ? 1.0 : 0.0;
+}
+
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    if (dx == 0 && dy == 0) return 0.0;
+    double t = (dx * (px - x1) + dy * (py - y1)) / (dx * dx + dy * dy);
+    if (segment > 0.5) t = gml_clamp(t, 0.0, 1.0);
+    return t;
+}
+
+double gml_point_line_distance(double px, double py, double x1, double y1, double x2, double y2, double segment) {
+    double t = gml_point_line_lerp(px, py, x1, y1, x2, y2, segment);
+    double xs = x1 + t * (x2 - x1);
+    double ys = y1 + t * (y2 - y1);
+    return gml_point_distance(xs, ys, px, py);
+}
+
+double gml_dot_product_3d_normalized(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double d1 = sqrt(x1 * x1 + y1 * y1 + z1 * z1);
+    double d2 = sqrt(x2 * x2 + y2 * y2 + z2 * z2);
+    if (d1 * d2 == 0) return 1.0;
+    return (x1 * x2 + y1 * y2 + z1 * z2) / (d1 * d2);
+}
+
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    return gml_darccos(gml_dot_product_3d_normalized(x1, y1, z1, x2, y2, z2));
+}
+
+double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment) {
+    double ua = 0, ub, ud, ux, uy, vx, vy, wx, wy;
+    ux = x2 - x1;
+    uy = y2 - y1;
+    vx = x4 - x3;
+    vy = y4 - y3;
+    wx = x1 - x3;
+    wy = y1 - y3;
+    ud = vy * ux - vx * uy;
+    if (ud != 0) {
+        ua = (vx * wy - vy * wx) / ud;
+        if (segment >= 0.5) {
+            ub = (ux * wy - uy * wx) / ud;
+            if (ua < 0 || ua > 1 || ub < 0 || ub > 1) ua = 0;
+        }
+    }
+    return ua;
+}
+
+double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0) {
+    return (double)(
+        (b7 >= 0.5 ? 128 : 0) +
+        (b6 >= 0.5 ? 64 : 0) +
+        (b5 >= 0.5 ? 32 : 0) +
+        (b4 >= 0.5 ? 16 : 0) +
+        (b3 >= 0.5 ? 8 : 0) +
+        (b2 >= 0.5 ? 4 : 0) +
+        (b1 >= 0.5 ? 2 : 0) +
+        (b0 >= 0.5 ? 1 : 0)
+    );
+}
+
+double gml_unpack_bool(double pbool, double which) {
+    uint8_t b = (uint8_t)pbool;
+    uint8_t w = (uint8_t)which;
+    return (double)((b >> w) & 1);
+}
+
+static char *s_tokenstore = NULL;
+static char *s_tokenpos = NULL;
+static char s_tokensep[256] = {0};
+static size_t s_tokenseplen = 0;
+
+double gml_string_token_start(const char *str, const char *sep) {
+    if (!str || !sep || !sep[0]) return 0.0;
+    s_tokenseplen = strlen(sep);
+    if (s_tokenseplen > 255) s_tokenseplen = 255;
+    size_t len = strlen(str);
+    if (len < s_tokenseplen) return 0.0;
+    s_tokenstore = (char *)realloc(s_tokenstore, len + 1);
+    strcpy(s_tokenstore, str);
+    memset(s_tokensep, 0, 256);
+    strncpy(s_tokensep, sep, s_tokenseplen);
+    s_tokenpos = s_tokenstore;
+
+    int count = 0;
+    char *pos = s_tokenstore;
+    while ((pos = strstr(pos, s_tokensep)) && pos <= s_tokenstore + len - s_tokenseplen) {
+        count++;
+        pos += s_tokenseplen;
+    }
+    return (double)count;
+}
+
+double gml_string_token_real(void) {
+    if (!s_tokenpos || !*s_tokenpos) return 0.0;
+    char *pos = strstr(s_tokenpos, s_tokensep);
+    if (pos) {
+        *pos = '\0';
+        double val = atof(s_tokenpos);
+        s_tokenpos = pos + s_tokenseplen;
+        return val;
+    } else {
+        double val = atof(s_tokenpos);
+        s_tokenpos += strlen(s_tokenpos);
+        return val;
+    }
+}
+
+double gml_power_next(double x) {
+    if (x <= 0) return 0.0;
+    uint64_t v;
+    memcpy(&v, &x, sizeof(v));
+    v = (((v + 0x000fffffffffffffULL) & 0x7ff0000000000000ULL) &
+         ~(uint64_t)((int64_t)v >> 63));
+    double res;
+    memcpy(&res, &v, sizeof(res));
+    return res;
+}
+
+double gml_file_size(const char *filename) {
+    if (!filename || !filename[0]) return -1.0;
+    FILE *f = fopen(filename, "rb");
+    if (!f) return -1.0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fclose(f);
+    return (double)sz;
+}
+
+double gml_real_hex(const char *str) {
+    if (!str || !str[0]) return 0.0;
+    if (str[0] == '$') str++;
+    return (double)strtoull(str, NULL, 16);
 }
 double gml_abs(double v) { return fabs(v); }
 double gml_sign(double v) { return (v > 0) - (v < 0); }
@@ -1578,7 +1948,6 @@ double gml_instance_activate_object(double object_index) {
     return 1;
 }
 
-static gm82_path_list *g_paths = NULL;
 void gm82_path_bind(gm82_path_list *paths) { g_paths = paths; }
 
 double gml_path_start(double path_index, double speed, double end_action, double absolute) {
@@ -1633,7 +2002,6 @@ void gm82_path_step_instance(gm82_instance *inst) {
     }
 }
 
-static gm82_timeline_list *g_timelines = NULL;
 void gm82_timeline_bind(gm82_timeline_list *tls) { g_timelines = tls; }
 
 double gml_timeline_start(double timeline_index, double position, double step, double direction) {
@@ -3330,12 +3698,6 @@ double gml_dot_product_3d(double x1, double y1, double z1, double x2, double y2,
     return x1 * x2 + y1 * y2 + z1 * z2;
 }
 
-double gml_dot_product_3d_normalized(double x1, double y1, double z1, double x2, double y2, double z2) {
-    double l1 = sqrt(x1 * x1 + y1 * y1 + z1 * z1);
-    double l2 = sqrt(x2 * x2 + y2 * y2 + z2 * z2);
-    if (l1 <= 0.000001 || l2 <= 0.000001) return 0.0;
-    return (x1 * x2 + y1 * y2 + z1 * z2) / (l1 * l2);
-}
 
 double gml_color_inverse(double color) {
     uint32_t c = (uint32_t)color;
