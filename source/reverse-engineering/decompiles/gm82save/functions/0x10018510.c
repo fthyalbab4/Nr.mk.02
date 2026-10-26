@@ -1,0 +1,111 @@
+// rea decompile_all
+// name: FUN_10018510
+// address: 0x10018510
+// body: available
+// range: 0x10018510-0x10018749 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e763201e522a4b123fb330eede09834c44ddf2bb90702e50eea219801be95539
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; The Ghidra Program references PDB gm82save.pdb (GUID 5effa299-a1fc-4bd1-a82c-e5ab58741d37, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void __fastcall
+FUN_10018510(undefined4 *param_1,undefined4 *param_2,uint param_3,undefined1 (*param_4) [16],
+            int *param_5)
+
+{
+  int iVar1;
+  int *piVar2;
+  uint uVar3;
+  int *piVar4;
+  undefined4 *puVar5;
+  uint local_30;
+  undefined4 local_2c;
+  uint local_1c;
+  undefined4 *local_18;
+
+  uVar3 = param_3;
+  local_1c = (int)param_5 << 0x18;
+  piVar4 = (int *)*param_2;
+  iVar1 = piVar4[2];
+  if ((uint)(*piVar4 - iVar1) < 5) {
+    FUN_101364f0((undefined8 *)&local_30,piVar4,(int *)&local_1c,(int *)&DAT_00000004);
+    if ((char)local_30 == -1) goto LAB_1001854d;
+LAB_10018730:
+    *param_1 = 3;
+    param_1[2] = local_2c;
+    param_1[1] = local_30;
+  }
+  else {
+    *(uint *)(piVar4[1] + iVar1) = local_1c;
+    piVar4[2] = iVar1 + 4;
+LAB_1001854d:
+    piVar4 = (int *)*param_2;
+    iVar1 = piVar4[2];
+    if ((uint)(*piVar4 - iVar1) < 5) {
+      FUN_101364f0((undefined8 *)&local_30,piVar4,(int *)&param_3,(int *)&DAT_00000004);
+      if ((char)local_30 != -1) goto LAB_10018730;
+    }
+    else {
+      *(uint *)(piVar4[1] + iVar1) = uVar3;
+      piVar4[2] = iVar1 + 4;
+    }
+    piVar2 = param_5;
+    piVar4 = (int *)*param_2;
+    iVar1 = piVar4[2];
+    local_18 = param_2;
+    if (param_5 < (int *)(*piVar4 - iVar1)) {
+      memcpy((void *)(piVar4[1] + iVar1),param_4,(size_t)param_5);
+      piVar4[2] = iVar1 + (int)piVar2;
+    }
+    else {
+      FUN_101364f0((undefined8 *)&local_30,piVar4,(int *)param_4,param_5);
+      if ((char)local_30 != -1) goto LAB_10018730;
+    }
+    if (DAT_101633c0 == 0) {
+      FUN_1013c860(&local_30);
+      piVar4 = param_5;
+      puVar5 = local_18;
+      if ((local_30 & 2) != 0) goto LAB_100185b3;
+LAB_100185cb:
+      uVar3 = (*(uint *)("" + (param_3 & 0xff ^ 0xff) * 4) ^ 0xffffff) >> 8 ^
+              *(uint *)("" + (uint)(byte)(param_3._1_1_ ^
+                                         (byte)(*(uint *)("" + (param_3 & 0xff ^ 0xff) * 4) ^
+                                               0xffffff)) * 4);
+      uVar3 = uVar3 >> 8 ^ *(uint *)("" + (uint)(byte)(param_3._2_1_ ^ (byte)uVar3) * 4);
+      uVar3 = FUN_1009d850(~(uVar3 >> 8 ^
+                            *(uint *)("" + (uint)(byte)(param_3._3_1_ ^ (byte)uVar3) * 4)),
+                           (byte *)param_4,(uint)piVar4);
+    }
+    else {
+      piVar4 = param_5;
+      puVar5 = local_18;
+      if ((DAT_101633c0 & 2) == 0) goto LAB_100185cb;
+LAB_100185b3:
+      puVar5 = local_18;
+      piVar4 = param_5;
+      uVar3 = DAT_101633c0;
+      if (DAT_101633c0 == 0) {
+        FUN_1013c860(&local_30);
+        uVar3 = local_30;
+      }
+      if ((uVar3 & 0x400) == 0) goto LAB_100185cb;
+      uVar3 = FUN_1009d660(0,(undefined1 (*) [16])&param_3,4);
+      uVar3 = FUN_1009d660(uVar3,param_4,(uint)piVar4);
+    }
+    local_1c = uVar3 >> 0x18 | (uVar3 & 0xff0000) >> 8 | (uVar3 & 0xff00) << 8 | uVar3 << 0x18;
+    piVar4 = (int *)*puVar5;
+    iVar1 = piVar4[2];
+    if ((uint)(*piVar4 - iVar1) < 5) {
+      FUN_101364f0((undefined8 *)&local_30,piVar4,(int *)&local_1c,(int *)&DAT_00000004);
+      if ((char)local_30 != -1) goto LAB_10018730;
+    }
+    else {
+      *(uint *)(piVar4[1] + iVar1) = local_1c;
+      piVar4[2] = iVar1 + 4;
+    }
+    *param_1 = 0xffffffff;
+  }
+  return;
+}

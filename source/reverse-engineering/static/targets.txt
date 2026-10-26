@@ -1,0 +1,9 @@
+GameMaker.exe
+anvil.exe
+gm82hub.exe
+gm82mv.exe
+gm82room.exe
+gm82save.dll
+gm82venc.exe
+gm82vp.exe
+libeay32.dll

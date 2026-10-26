@@ -1,0 +1,3152 @@
+{
+  "version": 1,
+  "target_sha256": "f7a31f97f48a017a6260ec4ae6e90ec48b91b2b251e23855b024421d10665efa",
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile_digest": "e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9",
+  "layout": "address",
+  "layout_status": "address",
+  "limitations": [],
+  "functions": [
+    {
+      "address": "0x4024f0",
+      "name": "FUN_004024f0",
+      "status": "written",
+      "relative_path": "functions/0x4024f0.c",
+      "sha256": "088ad0776336741664e6621a81fae85bf2ae5626687e425492a510c55539af76",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4024f0",
+            "end": "0x4024fb"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4024fc",
+      "name": "FUN_004024fc",
+      "status": "written",
+      "relative_path": "functions/0x4024fc.c",
+      "sha256": "32657ba4af4c06446373293d7d6aa01ad541950af5aac96c10487fed41faaef7",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4024fc",
+            "end": "0x402507"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402508",
+      "name": "KERNEL32.DLL::CloseHandle",
+      "status": "written",
+      "relative_path": "functions/0x402508.c",
+      "sha256": "81e1fb8b4f5021f67f46f9d0f066fb562851935fef769f78646106ddc5350598",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402508",
+            "end": "0x40250d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402510",
+      "name": "KERNEL32.DLL::CreateFileW",
+      "status": "written",
+      "relative_path": "functions/0x402510.c",
+      "sha256": "801c51a80553bb0791c4942bf280bc8bf690639c31c7604d72eb82ec84ac60ee",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402510",
+            "end": "0x402515"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402518",
+      "name": "KERNEL32.DLL::InitializeCriticalSection",
+      "status": "written",
+      "relative_path": "functions/0x402518.c",
+      "sha256": "b24303c7fc25ba67fb7a05eacda8fae1b906075f3776b93b8b36ad9605edb79c",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402518",
+            "end": "0x40251d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402520",
+      "name": "KERNEL32.DLL::EnterCriticalSection",
+      "status": "written",
+      "relative_path": "functions/0x402520.c",
+      "sha256": "5b807687b4ebf0a558a1eeaa2fe7786086c8baebd4b6ef8e05b0f22c11a02c28",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402520",
+            "end": "0x402525"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402528",
+      "name": "KERNEL32.DLL::LeaveCriticalSection",
+      "status": "written",
+      "relative_path": "functions/0x402528.c",
+      "sha256": "a5388ff1069c08714f3d9e5f386758bbcbd45d3099c84cf44e616b5007b72eb8",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402528",
+            "end": "0x40252d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402538",
+      "name": "KERNEL32.DLL::GetFileType",
+      "status": "written",
+      "relative_path": "functions/0x402538.c",
+      "sha256": "6e91fd6ecd5024dfe6edddf82bdaeab547835b1e1d0d8d387e976f904bc176b7",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402538",
+            "end": "0x40253d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402540",
+      "name": "KERNEL32.DLL::GetFileSize",
+      "status": "written",
+      "relative_path": "functions/0x402540.c",
+      "sha256": "8d51711f7d9e846549c9f3fe4c32c79b9a582d8c33a323a1ad0ef889af3a17f8",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402540",
+            "end": "0x402545"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402548",
+      "name": "KERNEL32.DLL::GetStdHandle",
+      "status": "written",
+      "relative_path": "functions/0x402548.c",
+      "sha256": "2fc87e10462d48067be8004cb4557f53218682b059ac8a33e61e624f98c9dd9c",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402548",
+            "end": "0x40254d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402550",
+      "name": "KERNEL32.DLL::MoveFileW",
+      "status": "written",
+      "relative_path": "functions/0x402550.c",
+      "sha256": "1d0aa74990427d76139c550a4bf2a5bfc57ab62ff842b4a5a341cc13779b1e1d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402550",
+            "end": "0x402555"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402558",
+      "name": "KERNEL32.DLL::RaiseException",
+      "status": "written",
+      "relative_path": "functions/0x402558.c",
+      "sha256": "bde03d07fc30e21b7a065d2cbd779f1350b1a31b19e0300eeaaf2d91c7f553a2",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402558",
+            "end": "0x40255d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402560",
+      "name": "KERNEL32.DLL::ReadFile",
+      "status": "written",
+      "relative_path": "functions/0x402560.c",
+      "sha256": "9c6044152960f1ef803d770b912efa49eef6e58055a89daf44356be86250c97f",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402560",
+            "end": "0x402565"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402570",
+      "name": "KERNEL32.DLL::SetEndOfFile",
+      "status": "written",
+      "relative_path": "functions/0x402570.c",
+      "sha256": "143f9ef30fd298bdcb61ab23ed916718a05ab07253d032d21b9b49e348c5f253",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402570",
+            "end": "0x402575"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402578",
+      "name": "KERNEL32.DLL::SetFilePointer",
+      "status": "written",
+      "relative_path": "functions/0x402578.c",
+      "sha256": "560456ee9948f918d1ae8f995ea81f3d5821e83d00fdd1e1ba722800031eaa65",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402578",
+            "end": "0x40257d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402580",
+      "name": "KERNEL32.DLL::UnhandledExceptionFilter",
+      "status": "written",
+      "relative_path": "functions/0x402580.c",
+      "sha256": "d6971960e88f2c8ecfc422fdc3669ee5c2115efa072736b2705d02324aa733d2",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402580",
+            "end": "0x402585"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402588",
+      "name": "KERNEL32.DLL::WriteFile",
+      "status": "written",
+      "relative_path": "functions/0x402588.c",
+      "sha256": "671b69b682af898855bdb60ab31c99936006a0c140b3cbb86c2e06ab336d5bd2",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402588",
+            "end": "0x40258d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402590",
+      "name": "USER32.DLL::CharNextW",
+      "status": "written",
+      "relative_path": "functions/0x402590.c",
+      "sha256": "5dbe513ccfa48d54f5110a36d652c24aebe0a7dc2e68f98662f50453b347645c",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402590",
+            "end": "0x402595"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402598",
+      "name": "KERNEL32.DLL::CompareStringW",
+      "status": "written",
+      "relative_path": "functions/0x402598.c",
+      "sha256": "6bdd86aa6829e490c7e70776261f97ec27879a238d3f7efdc151754546e21d8e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402598",
+            "end": "0x40259d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025a0",
+      "name": "KERNEL32.DLL::CompareStringW",
+      "status": "written",
+      "relative_path": "functions/0x4025a0.c",
+      "sha256": "260fa0c3aabae6742ffb00dd7d97542e7bbea07840b333ed5d663ae2747e732e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025a0",
+            "end": "0x4025a5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025a8",
+      "name": "KERNEL32.DLL::CreateThread",
+      "status": "written",
+      "relative_path": "functions/0x4025a8.c",
+      "sha256": "1b3ab7f86021e3119826ae76e7fb19c13c8acbbff21e0d1a21964eaaff7e7026",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025a8",
+            "end": "0x4025ad"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025b0",
+      "name": "KERNEL32.DLL::ExitThread",
+      "status": "written",
+      "relative_path": "functions/0x4025b0.c",
+      "sha256": "fa44b3fc38ab36a154a5fa018b5df66e6c97edd548407ec011f461ffa997e56d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025b0",
+            "end": "0x4025b5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025b8",
+      "name": "KERNEL32.DLL::ExitProcess",
+      "status": "written",
+      "relative_path": "functions/0x4025b8.c",
+      "sha256": "4e1becc9a3c9719f922ed576f4769ed9b47d05382c553bfac68df9df18ac44f5",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025b8",
+            "end": "0x4025bd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025c0",
+      "name": "USER32.DLL::MessageBoxA",
+      "status": "written",
+      "relative_path": "functions/0x4025c0.c",
+      "sha256": "4ab576885edf4defc6e40322821b74283077f5e82c0289af51966c2876d4535f",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025c0",
+            "end": "0x4025c5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025c8",
+      "name": "KERNEL32.DLL::FindClose",
+      "status": "written",
+      "relative_path": "functions/0x4025c8.c",
+      "sha256": "5d5e8d773dc1732533b43bcff131ccd888649c3fdd6d3efc4d4dffa80141fc71",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025c8",
+            "end": "0x4025cd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025d0",
+      "name": "KERNEL32.DLL::FindFirstFileW",
+      "status": "written",
+      "relative_path": "functions/0x4025d0.c",
+      "sha256": "a668b2d2bf7c91c650ff63318670f28c2bbfae718b98d3d5d9013e5998d50e63",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025d0",
+            "end": "0x4025d5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025d8",
+      "name": "KERNEL32.DLL::FreeLibrary",
+      "status": "written",
+      "relative_path": "functions/0x4025d8.c",
+      "sha256": "96949962dd678ebe44a3a25e04002cf972e30cdbad6f104e03c579ab9e46a378",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025d8",
+            "end": "0x4025dd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025e0",
+      "name": "KERNEL32.DLL::GetCommandLineW",
+      "status": "written",
+      "relative_path": "functions/0x4025e0.c",
+      "sha256": "ce7b02a2c8e4809ba11eb87fb907841f33778ce01152a9976031ead2abdbfa0d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025e0",
+            "end": "0x4025e5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025e8",
+      "name": "KERNEL32.DLL::GetCurrentDirectoryW",
+      "status": "written",
+      "relative_path": "functions/0x4025e8.c",
+      "sha256": "022ce9c749210ba8842b57cae09b9406d668075ddcdbc8f7d0d5182f17f5ee68",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025e8",
+            "end": "0x4025ed"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025f0",
+      "name": "KERNEL32.DLL::GetLastError",
+      "status": "written",
+      "relative_path": "functions/0x4025f0.c",
+      "sha256": "259308eae8ddd3bc41b0fe71e4fbffc6d0a0a620454cb2e2a286cb577e1f8794",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025f0",
+            "end": "0x4025f5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4025f8",
+      "name": "KERNEL32.DLL::GetLocaleInfoW",
+      "status": "written",
+      "relative_path": "functions/0x4025f8.c",
+      "sha256": "26cc67c16666d2ec27705482467a337282eead92dad68572973340e052102b8d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4025f8",
+            "end": "0x4025fd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402600",
+      "name": "KERNEL32.DLL::GetUserDefaultUILanguage",
+      "status": "written",
+      "relative_path": "functions/0x402600.c",
+      "sha256": "ab1bcd777be338641b4b20bd78822ff837b33384f375478fd275d53d4ff5eb56",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402600",
+            "end": "0x402605"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402608",
+      "name": "KERNEL32.DLL::GetModuleFileNameW",
+      "status": "written",
+      "relative_path": "functions/0x402608.c",
+      "sha256": "82e90ee5bdf342796b39d664c46f37edc4ab8e8a0531e2196f42106bdbdc3f7d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402608",
+            "end": "0x40260d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402610",
+      "name": "KERNEL32.DLL::GetModuleHandleW",
+      "status": "written",
+      "relative_path": "functions/0x402610.c",
+      "sha256": "9b25637c891912f2823f6034216641ecbc01a721b649830f4e2218b9655e79d0",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402610",
+            "end": "0x402615"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402618",
+      "name": "KERNEL32.DLL::GetProcAddress",
+      "status": "written",
+      "relative_path": "functions/0x402618.c",
+      "sha256": "3b598ab6bab53e91c568149dbbc20caae81f7face258762169ee4bb58366adb7",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402618",
+            "end": "0x40261d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402620",
+      "name": "KERNEL32.DLL::GetStartupInfoA",
+      "status": "written",
+      "relative_path": "functions/0x402620.c",
+      "sha256": "22a02dc737599d9d4747f5ac8d389c9b2edf9489dcacd21454b02bb4babeb5be",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402620",
+            "end": "0x402625"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402628",
+      "name": "KERNEL32.DLL::GetSystemDefaultUILanguage",
+      "status": "written",
+      "relative_path": "functions/0x402628.c",
+      "sha256": "5eaca102d768d3486adae50f8e52736e8507dac9e6cc73d8ffc722335434f1bb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402628",
+            "end": "0x40262d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402630",
+      "name": "KERNEL32.DLL::IsValidLocale",
+      "status": "written",
+      "relative_path": "functions/0x402630.c",
+      "sha256": "6dd88f4226eb803dc8f48c5d8aa349b93f3fb5c2c06dced3e50b26ede20e6cfa",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402630",
+            "end": "0x402635"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402638",
+      "name": "KERNEL32.DLL::LoadLibraryExW",
+      "status": "written",
+      "relative_path": "functions/0x402638.c",
+      "sha256": "07142cddbf4d3a7305411eb6e13896acdcd20d514f9d7bb8e15dd78ce02969c1",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402638",
+            "end": "0x40263d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402640",
+      "name": "USER32.DLL::LoadStringW",
+      "status": "written",
+      "relative_path": "functions/0x402640.c",
+      "sha256": "c278bd6765401a5d2cce0f9459e5ab3933b65423ab555b7c6d30be43e84908ef",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402640",
+            "end": "0x402645"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402648",
+      "name": "KERNEL32.DLL::lstrcpynW",
+      "status": "written",
+      "relative_path": "functions/0x402648.c",
+      "sha256": "9778d3ebf324d72f91ac6ce8b2e79127480439d56185b56c14e1aace59d46c29",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402648",
+            "end": "0x40264d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402650",
+      "name": "KERNEL32.DLL::lstrlenA",
+      "status": "written",
+      "relative_path": "functions/0x402650.c",
+      "sha256": "bb42822c374689cfbdda02369de5b559888d914181a7fa160b064a66fc676f57",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402650",
+            "end": "0x402655"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402658",
+      "name": "KERNEL32.DLL::lstrlenW",
+      "status": "written",
+      "relative_path": "functions/0x402658.c",
+      "sha256": "e3141fd97b40645b8ac1337177b6ac2a5d3d0020650bfa67a196edb572c449ce",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402658",
+            "end": "0x40265d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402660",
+      "name": "KERNEL32.DLL::MultiByteToWideChar",
+      "status": "written",
+      "relative_path": "functions/0x402660.c",
+      "sha256": "0c5ae1b4d4431365b649aa87df66dbeaaa3c674585e82c8d4ef89a09482e6cb5",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402660",
+            "end": "0x402665"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402668",
+      "name": "ADVAPI32.DLL::RegCloseKey",
+      "status": "written",
+      "relative_path": "functions/0x402668.c",
+      "sha256": "044d4303aa88230b871a41a543b097d35f610e5a62a2aa1feac83ab356b03868",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402668",
+            "end": "0x40266d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402670",
+      "name": "ADVAPI32.DLL::RegOpenKeyExW",
+      "status": "written",
+      "relative_path": "functions/0x402670.c",
+      "sha256": "f44237ea9894c084b298dfdaf2f122f3abda1253b3ca4ec2d8b7d10742a6dfcf",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402670",
+            "end": "0x402675"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402678",
+      "name": "ADVAPI32.DLL::RegQueryValueExW",
+      "status": "written",
+      "relative_path": "functions/0x402678.c",
+      "sha256": "8aff41ed4e58cc6800d3be8c6efbde409145173bcba37463caa063fa43c82e82",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402678",
+            "end": "0x40267d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402680",
+      "name": "KERNEL32.DLL::SetCurrentDirectoryW",
+      "status": "written",
+      "relative_path": "functions/0x402680.c",
+      "sha256": "d7657ce0556c7729d354e732bd25e8e5f46fbf4e978d7aaee042100a282ec934",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402680",
+            "end": "0x402685"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402688",
+      "name": "KERNEL32.DLL::SetCurrentDirectoryW",
+      "status": "written",
+      "relative_path": "functions/0x402688.c",
+      "sha256": "ab26c2ca87667f174c9d7103f4b8590f37ff5ae75cea2f1ca00c6b45163ee135",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402688",
+            "end": "0x40268d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402690",
+      "name": "KERNEL32.DLL::WideCharToMultiByte",
+      "status": "written",
+      "relative_path": "functions/0x402690.c",
+      "sha256": "912bf9cf78abe1ce2c29338cbb9d64d492781ed69c2c057ff2c8131d2cfce5fb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402690",
+            "end": "0x402695"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402698",
+      "name": "KERNEL32.DLL::VirtualQuery",
+      "status": "written",
+      "relative_path": "functions/0x402698.c",
+      "sha256": "aefeaf7406c71f5d8e9be8936a7da6119573f484c76ffe3dc390e8724bafd71b",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402698",
+            "end": "0x40269d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026a0",
+      "name": "OLEAUT32.DLL::SysAllocStringLen",
+      "status": "written",
+      "relative_path": "functions/0x4026a0.c",
+      "sha256": "b1e008335ef24013c26e6d0e49b1baeb15559075c1b8aec5d6a2e5c8601955c8",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026a0",
+            "end": "0x4026a5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026a8",
+      "name": "OLEAUT32.DLL::SysReAllocStringLen",
+      "status": "written",
+      "relative_path": "functions/0x4026a8.c",
+      "sha256": "3a5bce418249f5dc8374891d4876ef4d50d3ec20206341817a978dfb386b5ca1",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026a8",
+            "end": "0x4026ad"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026b0",
+      "name": "OLEAUT32.DLL::SysFreeString",
+      "status": "written",
+      "relative_path": "functions/0x4026b0.c",
+      "sha256": "c16c659b4259c6087d4a1e2d8ed25e8ee4b667012d609aad4d100267893156e2",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026b0",
+            "end": "0x4026b5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026b8",
+      "name": "KERNEL32.DLL::GetCurrentThreadId",
+      "status": "written",
+      "relative_path": "functions/0x4026b8.c",
+      "sha256": "b63c2938574ace0477e3d7fff65240a59455df2d15436b549063d424085da72e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026b8",
+            "end": "0x4026bd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026c0",
+      "name": "KERNEL32.DLL::GetVersion",
+      "status": "written",
+      "relative_path": "functions/0x4026c0.c",
+      "sha256": "34267e78e1a8cd6880bc0df7fe8206cc737a21d6ef40c580f8c7055cea9b088e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026c0",
+            "end": "0x4026c5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026c8",
+      "name": "KERNEL32.DLL::QueryPerformanceCounter",
+      "status": "written",
+      "relative_path": "functions/0x4026c8.c",
+      "sha256": "f932b6d58b668a6d9c35b60b039ea2e6e84e8e24b7fe912a7c5312b7615a8c27",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026c8",
+            "end": "0x4026cd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026d0",
+      "name": "KERNEL32.DLL::GetTickCount",
+      "status": "written",
+      "relative_path": "functions/0x4026d0.c",
+      "sha256": "762879b802434d5574a308e8225f6a03d5b58539f1d3f1f2070264c8aadf5ebb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026d0",
+            "end": "0x4026d5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026d8",
+      "name": "KERNEL32.DLL::GetSystemInfo",
+      "status": "written",
+      "relative_path": "functions/0x4026d8.c",
+      "sha256": "2ab72092486eb226794f472a557934950c97218b840ee006816c60acd4f629cd",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026d8",
+            "end": "0x4026dd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4026e0",
+      "name": "FUN_004026e0",
+      "status": "written",
+      "relative_path": "functions/0x4026e0.c",
+      "sha256": "6081ccc787fef35ded717a4a63db0607344a7747d1f24596a9c5635cf4f410b4",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4026e0",
+            "end": "0x402708"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40270c",
+      "name": "KERNEL32.DLL::VirtualAlloc",
+      "status": "written",
+      "relative_path": "functions/0x40270c.c",
+      "sha256": "c0b1614b4e098f5c3216ce0a2a57473b36e0bff13a8980b800f5dd5191e7b65d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40270c",
+            "end": "0x402711"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402714",
+      "name": "KERNEL32.DLL::VirtualFree",
+      "status": "written",
+      "relative_path": "functions/0x402714.c",
+      "sha256": "bb2b123c6b85a1fe2ad0fb662563509a15ae8e0f452f914504e0aedf7c7824f8",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402714",
+            "end": "0x402719"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40271c",
+      "name": "KERNEL32.DLL::Sleep",
+      "status": "written",
+      "relative_path": "functions/0x40271c.c",
+      "sha256": "d509e35d9e2e745938ede873ecdd0cf5ee150969b5957db6819d43b73b20dee7",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40271c",
+            "end": "0x402721"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40286c",
+      "name": "FUN_0040286c",
+      "status": "written",
+      "relative_path": "functions/0x40286c.c",
+      "sha256": "40364c736e6ef09f856adee34db7312e3919edf8edbfd07102bc9989d2f837cb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40286c",
+            "end": "0x402870"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4029ac",
+      "name": "FUN_004029ac",
+      "status": "written",
+      "relative_path": "functions/0x4029ac.c",
+      "sha256": "edaaf2d4412d4bfbba9832a0c66281fbf04b38eb450318379ebe269e9e8495f0",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4029ac",
+            "end": "0x4029d8"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4029dc",
+      "name": "FUN_004029dc",
+      "status": "written",
+      "relative_path": "functions/0x4029dc.c",
+      "sha256": "6720b406184734ff6fe23ab2fb38af740ab55884b98e5ff5bcbb9bfab78ec7ef",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4029dc",
+            "end": "0x4029f6"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4029f8",
+      "name": "FUN_004029f8",
+      "status": "written",
+      "relative_path": "functions/0x4029f8.c",
+      "sha256": "61d54100025f2036a602722aa80d57d5244f631fbfb475af899bc2eacd22b4fd",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4029f8",
+            "end": "0x402a06"
+          },
+          {
+            "start": "0x402a08",
+            "end": "0x402a35"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402a38",
+      "name": "FUN_00402a38",
+      "status": "written",
+      "relative_path": "functions/0x402a38.c",
+      "sha256": "da04dddca2df217f4a8c7799015391707aa34767c27e54109936ed9d98a7fd82",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402a38",
+            "end": "0x402a69"
+          },
+          {
+            "start": "0x402a6c",
+            "end": "0x402a97"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402a98",
+      "name": "FUN_00402a98",
+      "status": "written",
+      "relative_path": "functions/0x402a98.c",
+      "sha256": "5f041812efae30577d6b6ab364244cf073c119df8b49b4a05134a2ebc5da34e1",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402a98",
+            "end": "0x402aa1"
+          },
+          {
+            "start": "0x402aa4",
+            "end": "0x402ad1"
+          },
+          {
+            "start": "0x402ad4",
+            "end": "0x402b01"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402b04",
+      "name": "FUN_00402b04",
+      "status": "written",
+      "relative_path": "functions/0x402b04.c",
+      "sha256": "310ef6efc4ae196f72197fb0b99cdfaf4272bfc48989728075c071ca52f0153e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402b04",
+            "end": "0x402b7a"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402b7c",
+      "name": "FUN_00402b7c",
+      "status": "written",
+      "relative_path": "functions/0x402b7c.c",
+      "sha256": "1b352b2bf7f1a009dc0bcd6395549c88d39c14b48220fbf36faa46783318915d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402b7c",
+            "end": "0x402bc2"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402bc4",
+      "name": "FUN_00402bc4",
+      "status": "written",
+      "relative_path": "functions/0x402bc4.c",
+      "sha256": "804eff7a767706a09700efac297d992a22ba44268bc10967e022977f99dbee86",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402bc4",
+            "end": "0x402c25"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402ccc",
+      "name": "FUN_00402ccc",
+      "status": "written",
+      "relative_path": "functions/0x402ccc.c",
+      "sha256": "5c5742b4adb18621b6ceed55a105ae859af593a8da8fb23b80ce350546d11edb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402ccc",
+            "end": "0x402e17"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x402e18",
+      "name": "FUN_00402e18",
+      "status": "written",
+      "relative_path": "functions/0x402e18.c",
+      "sha256": "7eb11e73a5222046cc51090979f5ff72f237b40019940eb7aa930963b7ed7e4e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402e18",
+            "end": "0x402e64"
+          },
+          {
+            "start": "0x402e68",
+            "end": "0x402e84"
+          },
+          {
+            "start": "0x402e88",
+            "end": "0x402e95"
+          },
+          {
+            "start": "0x402e98",
+            "end": "0x40303a"
+          },
+          {
+            "start": "0x40303c",
+            "end": "0x403074"
+          },
+          {
+            "start": "0x403078",
+            "end": "0x4030bd"
+          },
+          {
+            "start": "0x4030c0",
+            "end": "0x4030e6"
+          },
+          {
+            "start": "0x4030e8",
+            "end": "0x403174"
+          },
+          {
+            "start": "0x403178",
+            "end": "0x40319b"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40319c",
+      "name": "FUN_0040319c",
+      "status": "written",
+      "relative_path": "functions/0x40319c.c",
+      "sha256": "351e06a5ad222bdd0ae99911d2342edf21941ce6cb5eb947d6ba5d78ec96c10e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x402c28",
+            "end": "0x402cca"
+          },
+          {
+            "start": "0x40319c",
+            "end": "0x4031d2"
+          },
+          {
+            "start": "0x4031d4",
+            "end": "0x4031e9"
+          },
+          {
+            "start": "0x4031ec",
+            "end": "0x403254"
+          },
+          {
+            "start": "0x403258",
+            "end": "0x403290"
+          },
+          {
+            "start": "0x403294",
+            "end": "0x4032ea"
+          },
+          {
+            "start": "0x4032ec",
+            "end": "0x403302"
+          },
+          {
+            "start": "0x403304",
+            "end": "0x403350"
+          },
+          {
+            "start": "0x403354",
+            "end": "0x403381"
+          },
+          {
+            "start": "0x403384",
+            "end": "0x403393"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x403394",
+      "name": "FUN_00403394",
+      "status": "written",
+      "relative_path": "functions/0x403394.c",
+      "sha256": "2e9966aac34feb815df3e6426893ed6424c0a580c7ac07a62b55fb10de35d504",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x403394",
+            "end": "0x4033be"
+          },
+          {
+            "start": "0x4033c0",
+            "end": "0x4033e5"
+          },
+          {
+            "start": "0x4033e8",
+            "end": "0x40342a"
+          },
+          {
+            "start": "0x40342c",
+            "end": "0x403458"
+          },
+          {
+            "start": "0x40345c",
+            "end": "0x4034d2"
+          },
+          {
+            "start": "0x4034d4",
+            "end": "0x4034f2"
+          },
+          {
+            "start": "0x4034f4",
+            "end": "0x4035be"
+          },
+          {
+            "start": "0x4035c0",
+            "end": "0x403619"
+          },
+          {
+            "start": "0x40361c",
+            "end": "0x40364a"
+          },
+          {
+            "start": "0x40364d",
+            "end": "0x40369a"
+          },
+          {
+            "start": "0x40369c",
+            "end": "0x4036a9"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4036ac",
+      "name": "FUN_004036ac",
+      "status": "written",
+      "relative_path": "functions/0x4036ac.c",
+      "sha256": "80711405d4e4be518e4be99b74d42723804dd7b1f0009859cba851d95c03c870",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4036ac",
+            "end": "0x4036dd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4038e8",
+      "name": "FUN_004038e8",
+      "status": "written",
+      "relative_path": "functions/0x4038e8.c",
+      "sha256": "1ba9a19bab5b8f7371a8c1c2ec25b9bc70ddcfb25622eff44057c189e81de59b",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4038e8",
+            "end": "0x403962"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x403964",
+      "name": "FUN_00403964",
+      "status": "written",
+      "relative_path": "functions/0x403964.c",
+      "sha256": "fd92bff5bfaf239221bcb578aadf8a40fce50a4895641687d732adabd9a86955",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x403964",
+            "end": "0x4039e1"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x403a0c",
+      "name": "FUN_00403a0c",
+      "status": "written",
+      "relative_path": "functions/0x403a0c.c",
+      "sha256": "ce6af0e8bfca4ca9f2c5c10bd11eb264fd771e497ed988e73ce8a697f7f977a7",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x403a0c",
+            "end": "0x403a7d"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x403ac0",
+      "name": "FUN_00403ac0",
+      "status": "written",
+      "relative_path": "functions/0x403ac0.c",
+      "sha256": "bd4ebdda9c7e41eb1d6a2acb6f724e3ee31bd16a9054479115bfb3a336f2ce17",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x403ac0",
+            "end": "0x403b15"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4040bc",
+      "name": "FUN_004040bc",
+      "status": "written",
+      "relative_path": "functions/0x4040bc.c",
+      "sha256": "22bb3baa439a79240338f3ab4ea4eef72973fc7ceccb60d0d50a016b8420a440",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4040bc",
+            "end": "0x4040fd"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404100",
+      "name": "FUN_00404100",
+      "status": "written",
+      "relative_path": "functions/0x404100.c",
+      "sha256": "c39f53eff6e26e713f84d54d523707e58487a7504d74d8ba6c6f507130d54cf2",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404100",
+            "end": "0x404224"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40430c",
+      "name": "FUN_0040430c",
+      "status": "written",
+      "relative_path": "functions/0x40430c.c",
+      "sha256": "34e634aec779c5fb9f359301c853b27bea7864e52d7465d25fa45837926a81e4",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40430c",
+            "end": "0x404322"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x40431e to 0x404480 FUN_00404480 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404324",
+      "name": "FUN_00404324",
+      "status": "written",
+      "relative_path": "functions/0x404324.c",
+      "sha256": "065db37fbf00e83007c105315f954cb186ff2ab517e47c79d8b6e3b296100bf7",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404324",
+            "end": "0x40433e"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x404336 to 0x404480 FUN_00404480 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404340",
+      "name": "FUN_00404340",
+      "status": "written",
+      "relative_path": "functions/0x404340.c",
+      "sha256": "9a470b5f5aa3fc27459250a2dc2e440b4b4d68cee3db2a41614bb8325223d0e6",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404340",
+            "end": "0x404356"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x404352 to 0x404480 FUN_00404480 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404358",
+      "name": "FUN_00404358",
+      "status": "written",
+      "relative_path": "functions/0x404358.c",
+      "sha256": "803be2fd509a402dbb3c2d8631f6a6b0846226b9d7032ade02454cd75e287f7e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404358",
+            "end": "0x4043a4"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x404375 to 0x404480 FUN_00404480 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Ghidra Listing reports a terminal call at 0x40438b to 0x404480 FUN_00404480 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4043a8",
+      "name": "FUN_004043a8",
+      "status": "written",
+      "relative_path": "functions/0x4043a8.c",
+      "sha256": "08eda5b9943e0c597f30a0358af427820c549a673c76eb279ee278debe1e8bd1",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4043a8",
+            "end": "0x4043c7"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4043c8",
+      "name": "FUN_004043c8",
+      "status": "written",
+      "relative_path": "functions/0x4043c8.c",
+      "sha256": "9b6ba16cad27ee229fe6ed080fa89789ba9bf2850970caf4dd297fd61185152c",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4043c8",
+            "end": "0x4043e7"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4043e8",
+      "name": "FUN_004043e8",
+      "status": "written",
+      "relative_path": "functions/0x4043e8.c",
+      "sha256": "d1a295cf86f693dd4127fb5765d9c84330e18c54b76eb6b80d8c0bdb96bf2753",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4043e8",
+            "end": "0x404418"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40441c",
+      "name": "FUN_0040441c",
+      "status": "written",
+      "relative_path": "functions/0x40441c.c",
+      "sha256": "eefe1e799f2fc4b0886ff68df127dc49606f4f2b4d3d981c0262586d280a7c5e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40441c",
+            "end": "0x404427"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404428",
+      "name": "FUN_00404428",
+      "status": "written",
+      "relative_path": "functions/0x404428.c",
+      "sha256": "e282552bbd92e34a39ed7873fd4f2da290425567c90c40558db640ebf4478a51",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404428",
+            "end": "0x404433"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404434",
+      "name": "FUN_00404434",
+      "status": "written",
+      "relative_path": "functions/0x404434.c",
+      "sha256": "3f5f7f141345492b25fa87740e282f7772508600f04a2ffb02a4135a53c9c72a",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404434",
+            "end": "0x40447c"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404480",
+      "name": "FUN_00404480",
+      "status": "written",
+      "relative_path": "functions/0x404480.c",
+      "sha256": "ea7b05d1fb91fdec685aac8d057d2483721b4df07d0e93f47a2a9c0494fd07e3",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404480",
+            "end": "0x40448a"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x404486 to 0x404434 FUN_00404434 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40448c",
+      "name": "FUN_0040448c",
+      "status": "written",
+      "relative_path": "functions/0x40448c.c",
+      "sha256": "42407c063fbb751dfcd16fde39860e2b5fed12f05d749824477da254bd366eba",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40448c",
+            "end": "0x4044a7"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x4044a3 to 0x404480 FUN_00404480 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4044ac",
+      "name": "FUN_004044ac",
+      "status": "written",
+      "relative_path": "functions/0x4044ac.c",
+      "sha256": "7d0b70dcb94e840dc22d124b7ef40303af24157f5d00729307b87f72d68fd023",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4044ac",
+            "end": "0x4044bb"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4044bc",
+      "name": "FUN_004044bc",
+      "status": "written",
+      "relative_path": "functions/0x4044bc.c",
+      "sha256": "d73b27ff0debf8999f72339366cf55e18b37a60414121e901d8d74205cc93ae3",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4044bc",
+            "end": "0x4044c6"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4044c8",
+      "name": "FUN_004044c8",
+      "status": "written",
+      "relative_path": "functions/0x4044c8.c",
+      "sha256": "fb62caab285d2cef689792189247a2e4f0b5b26aaf7de3b1fdba7205bb48a8e5",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4044c8",
+            "end": "0x4044d8"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4044dc",
+      "name": "FUN_004044dc",
+      "status": "written",
+      "relative_path": "functions/0x4044dc.c",
+      "sha256": "c867a6f985eb3e9fccaa96c1d8148853265ce06b0deeeae38b2ae103eb0bda42",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4044dc",
+            "end": "0x4044f0"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4044f4",
+      "name": "FUN_004044f4",
+      "status": "written",
+      "relative_path": "functions/0x4044f4.c",
+      "sha256": "0ab06ffa3b60590586285acd3aaf8a397835b79b2d4c0570ec025ef2a18164b0",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4044f4",
+            "end": "0x404510"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404514",
+      "name": "FUN_00404514",
+      "status": "written",
+      "relative_path": "functions/0x404514.c",
+      "sha256": "68b738c21b0767a3a3357e5fd69cc428c7ba007aa4cf7048f697a7f8c5ca903d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404514",
+            "end": "0x404549"
+          },
+          {
+            "start": "0x404570",
+            "end": "0x404610"
+          }
+        ],
+        "non_contiguous": true
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404614",
+      "name": "FUN_00404614",
+      "status": "written",
+      "relative_path": "functions/0x404614.c",
+      "sha256": "3acf24e5d2c32f2577fd289d7da87c05e87409d3956cb531f32047cd8818c898",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404614",
+            "end": "0x4046cc"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4046d0",
+      "name": "FUN_004046d0",
+      "status": "written",
+      "relative_path": "functions/0x4046d0.c",
+      "sha256": "16e75638781bb32e0c17b60b7f6742abda3a139f7114408243e45b7dd0231ffb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4046d0",
+            "end": "0x404720"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing shows a Borland/Delphi-style SEH frame registration at 0x4046e2 (push 0x404721 followed by fs-segment stack chaining); handler 0x404721 lies outside this procedure's body, so callees, strings, and cross-references may omit the handler region.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404730",
+      "name": "FUN_00404730",
+      "status": "written",
+      "relative_path": "functions/0x404730.c",
+      "sha256": "f30e614ec7d50c3155cf96c4715bd3c778e6c06e2c2a77b6311d95425888c559",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404730",
+            "end": "0x40478f"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404790",
+      "name": "FUN_00404790",
+      "status": "written",
+      "relative_path": "functions/0x404790.c",
+      "sha256": "04b0700e0bb500b9ff69c66785f695edbd5e77d90d53aa1c680eae6e6c91d95d",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404790",
+            "end": "0x4047b4"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4047b8",
+      "name": "FUN_004047b8",
+      "status": "written",
+      "relative_path": "functions/0x4047b8.c",
+      "sha256": "defbf3cc76420bf9faa715e49efe54d2cec76c3a73f92a31dcdaa16c8ec52070",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4047b8",
+            "end": "0x4047d1"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4047d4",
+      "name": "FUN_004047d4",
+      "status": "written",
+      "relative_path": "functions/0x4047d4.c",
+      "sha256": "b120702ab95061cac16823f945535138352e046f4cf850fb11a063a5e164b384",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4047d4",
+            "end": "0x4047fa"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4047fc",
+      "name": "FUN_004047fc",
+      "status": "written",
+      "relative_path": "functions/0x4047fc.c",
+      "sha256": "216f0c596a3a7654e267971764dcbbe7b55b321f40dab472950848972a0a3d5a",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4047fc",
+            "end": "0x40480a"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x40480c",
+      "name": "FUN_0040480c",
+      "status": "written",
+      "relative_path": "functions/0x40480c.c",
+      "sha256": "65356adf516704dc2eaf5952402c50987af176a8f9bad7f82f55d163fe79b2bd",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x40480c",
+            "end": "0x404812"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404814",
+      "name": "FUN_00404814",
+      "status": "written",
+      "relative_path": "functions/0x404814.c",
+      "sha256": "ce5da8884de7e6f38a670be22188e7e88c79b7b6f6c6e4cb31bb8d5cde5789eb",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404814",
+            "end": "0x404840"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404844",
+      "name": "FUN_00404844",
+      "status": "written",
+      "relative_path": "functions/0x404844.c",
+      "sha256": "d8a14b3733d0d9176f594e6056a6d909962c1a6890ba04c2957b06319e742bc1",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404844",
+            "end": "0x404863"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404864",
+      "name": "FUN_00404864",
+      "status": "written",
+      "relative_path": "functions/0x404864.c",
+      "sha256": "89247d032fdd5454f4b0d5fd336a161f73af429bf00013a0c3c72a273020a766",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404864",
+            "end": "0x404870"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404874",
+      "name": "FUN_00404874",
+      "status": "written",
+      "relative_path": "functions/0x404874.c",
+      "sha256": "e1656b5adb3f6e108b56429198618e7e86a9c5bd134621f5a48f4cb88ff6452f",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404874",
+            "end": "0x404880"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404884",
+      "name": "FUN_00404884",
+      "status": "written",
+      "relative_path": "functions/0x404884.c",
+      "sha256": "351c96d778dc0b06aeede377f5a5390797ec31f3593d419a5766f604a7521d94",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404884",
+            "end": "0x404894"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404898",
+      "name": "FUN_00404898",
+      "status": "written",
+      "relative_path": "functions/0x404898.c",
+      "sha256": "25c8c544d77b09277388d9d2eb7a24d83bfe61eb97e3387254a702be9156788f",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404898",
+            "end": "0x4048a6"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4048a8",
+      "name": "FUN_004048a8",
+      "status": "written",
+      "relative_path": "functions/0x4048a8.c",
+      "sha256": "03de808b2c38f04e56cf942524926c441dad2eeb6b3c406bf575c2c248fe9139",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4048a8",
+            "end": "0x4048b4"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4048b8",
+      "name": "FUN_004048b8",
+      "status": "written",
+      "relative_path": "functions/0x4048b8.c",
+      "sha256": "52d0541fdfc78b40746fca406ac9307686792e2dd44d02bffd03600a56b2c4db",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4048b8",
+            "end": "0x4048c1"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4048c4",
+      "name": "FUN_004048c4",
+      "status": "written",
+      "relative_path": "functions/0x4048c4.c",
+      "sha256": "b13775cc88b50df19823103364db720fdad42565c9bc6958f84e5bf8ca1e230e",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4048c4",
+            "end": "0x4048e5"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x4048e8",
+      "name": "FUN_004048e8",
+      "status": "written",
+      "relative_path": "functions/0x4048e8.c",
+      "sha256": "bcc3a936148c2a02247975b583d11c270e45e1342984031826f1fc651cd918e9",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x4048e8",
+            "end": "0x404900"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Ghidra Listing reports a terminal call at 0x4048fc to 0x407218 FUN_00407218 (external=false, thunk=false, hasNoReturn=false); fallthrough is excluded by Ghidra's flow model. The reason for the terminal flow is not established by this observation.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    },
+    {
+      "address": "0x404904",
+      "name": "FUN_00404904",
+      "status": "written",
+      "relative_path": "functions/0x404904.c",
+      "sha256": "34dba7c781d797e4afdc435e6a3713df5b94a3d140ad7af185ca90291006cfc9",
+      "body": {
+        "available": true,
+        "ranges": [
+          {
+            "start": "0x404904",
+            "end": "0x40495c"
+          }
+        ],
+        "non_contiguous": false
+      },
+      "limitations": [
+        "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+        "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+        "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+        "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+        "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+        "External functions and functions without an analyzable body return null; other decompiler failures remain explicit."
+      ]
+    }
+  ]
+}
