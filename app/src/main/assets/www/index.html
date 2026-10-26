@@ -97513,8 +97513,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
   }, [toastMessage]);
 
   const sendKey = (key, type) => {
-    const iwin = iframeRef.current?.contentWindow;
-    if (!iwin) return;
+    /* MARIO_FIX: parent may host Input */
+    const iwin = (iframeRef.current && iframeRef.current.contentWindow) ? iframeRef.current.contentWindow : null;
     const isDown = type === "keydown";
     let code = typeof key === "string" ? key : "";
     let keyCode = typeof key === "number" ? key : 0;
@@ -97557,7 +97557,31 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       }
     }
 
-    if (typeof iwin.syncKeyboardToPlayers === "function") {
+    /* MARIO_FIX: sync parent + iframe Input */
+    try {
+      const _tgts = [];
+      if (typeof window !== "undefined") _tgts.push(window);
+      if (iwin) _tgts.push(iwin);
+      for (const w of _tgts) {
+        if (!w) continue;
+        try {
+          if (typeof w.syncKeyboardToPlayers === "function") {
+            w.syncKeyboardToPlayers(keyCode || code || key, isDown);
+            if (code) w.syncKeyboardToPlayers(code, isDown);
+          }
+          if (w.Input && typeof w.Input.syncKey === "function") {
+            w.Input.syncKey(keyCode || code || key, isDown);
+            if (code) w.Input.syncKey(code, isDown);
+            if (keyCode) w.Input.syncKey(keyCode, isDown);
+          }
+          if (w.P1_Input && typeof w.P1_Input.syncKey === "function") {
+            w.P1_Input.syncKey(keyCode || code || key, isDown);
+            if (code) w.P1_Input.syncKey(code, isDown);
+          }
+        } catch (_e) {}
+      }
+    } catch (_e2) {}
+    if (iwin && typeof iwin.syncKeyboardToPlayers === "function") {
       try {
         iwin.syncKeyboardToPlayers(keyCode || code || key, isDown);
         if (code && code !== key) iwin.syncKeyboardToPlayers(code, isDown);
@@ -97604,8 +97628,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = true; });
       return next;
     });
-    const primaryKey = arr.length > 0 ? arr[0] : null;
-    if (primaryKey !== null) sendKey(primaryKey, "keydown");
+    arr.forEach(function(k){ try { sendKey(k, "keydown"); } catch(e){} });
   };
 
   const handleBtnUp = (e, keyOrKeys) => {
@@ -97617,8 +97640,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = false; });
       return next;
     });
-    const primaryKey = arr.length > 0 ? arr[0] : null;
-    if (primaryKey !== null) sendKey(primaryKey, "keyup");
+    arr.forEach(function(k){ try { sendKey(k, "keyup"); } catch(e){} });
   };
 
   const activeButtons = ((detectedControls && Array.isArray(detectedControls.buttons) && detectedControls.buttons.length > 0)
