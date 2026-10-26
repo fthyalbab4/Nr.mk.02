@@ -1,1 +1,1 @@
-trigger jni parts full
+trigger REA motion builtins apply
