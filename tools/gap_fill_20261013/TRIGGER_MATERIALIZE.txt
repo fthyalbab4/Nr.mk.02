@@ -1,1 +1,1 @@
-trigger embedded batch_all apply
+trigger b64 payloads
