@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'tools/gap_fill_20261013/**'
+      - '.github/workflows/auto-materialize.yml'
   workflow_dispatch:
 jobs:
   materialize:
@@ -26,9 +27,10 @@ jobs:
           python3 tools/gap_fill_20261013/APPLY_CODE_REMAINING.py || true
           python3 tools/gap_fill_20261013/APPLY_JNI_MATERIALIZE_BIND.py || true
           python3 tools/gap_fill_20261013/APPLY_DND_IF_ELSE.py || true
+          python3 tools/gap_fill_20261013/APPLY_REA_MOTION_BUILTINS.py || true
           python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py || true
       - run: bash tools/run_host_pipeline.sh || echo soft
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-materialize including jni bind"
+          commit_message: "chore: auto-materialize REA motion builtins"
           file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
