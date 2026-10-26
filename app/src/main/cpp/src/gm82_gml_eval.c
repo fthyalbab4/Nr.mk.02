@@ -1048,6 +1048,37 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = 0; return true;
         }
 
+        
+        if (strcmp(id, "instance_create_moving") == 0) {
+            double xarg = nargs >= 1 ? args[0] : 0;
+            double yarg = nargs >= 2 ? args[1] : 0;
+            double oarg = nargs >= 3 ? args[2] : 0;
+            double sp = nargs >= 4 ? args[3] : 0;
+            double dir = nargs >= 5 ? args[4] : 0;
+            double gr = nargs >= 6 ? args[5] : 0;
+            double gd = nargs >= 7 ? args[6] : 270;
+            *out = gml_instance_create_moving(xarg, yarg, oarg, sp, dir, gr, gd); return true;
+        }
+        if (strcmp(id, "instance_farthest") == 0) {
+            double xarg = nargs >= 1 ? args[0] : 0;
+            double yarg = nargs >= 2 ? args[1] : 0;
+            double oarg = nargs >= 3 ? args[2] : -1;
+            *out = gml_instance_farthest(xarg, yarg, oarg); return true;
+        }
+        if (strcmp(id, "distance_to_center") == 0) {
+            *out = gml_distance_to_center(arg); return true;
+        }
+        if (strcmp(id, "file_text_read_all") == 0) {
+            const char *path = (p->str_mask & 1) ? p->str_args[0] : "";
+            *out = gml_file_text_read_all(path);
+            return true;
+        }
+        if (strcmp(id, "file_text_write_all") == 0) {
+            const char *path = (p->str_mask & 1) ? p->str_args[0] : "";
+            const char *data = (p->str_mask & 2) ? p->str_args[1] : "";
+            *out = gml_file_text_write_all(path, data); return true;
+        }
+
         if (strcmp(id, "instance_create") == 0) {
             double xarg = arg;
             double yarg = (nargs >= 2) ? args[1] : 0;

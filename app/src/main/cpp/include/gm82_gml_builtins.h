@@ -34,6 +34,14 @@ gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
 double gml_instance_create(double x, double y, double object_index);
+double gml_instance_create_moving(double x, double y, double object_index,
+                                  double speed, double direction,
+                                  double gravity, double gravdir);
+double gml_instance_farthest(double x, double y, double object_index);
+double gml_distance_to_center(double object_index);
+double gml_file_text_read_all(const char *path);
+const char *gml_file_text_last_all(void);
+double gml_file_text_write_all(const char *path, const char *data);
 void   gml_instance_destroy(void); /* destroys self */
 double gml_instance_number(double object_index); /* -1 = all */
 double gml_instance_exists(double id_or_object);
