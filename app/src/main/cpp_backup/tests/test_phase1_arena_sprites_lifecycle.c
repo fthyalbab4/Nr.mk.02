@@ -133,7 +133,9 @@ static void test_create_once_and_deferred_destroy(void) {
 
     gm82_runtime_bind_assets(&rt, &objects, NULL, NULL, &rooms, NULL);
     gm82_instance *persistent = gm82_runtime_instance_create(&rt, 0, 10.0, 20.0);
-    assert(persistent != NULL && persistent->x == 11.0);
+    assert(persistent != NULL);
+    gm82_events_fire_create_single(&rt, persistent);
+    assert(persistent->x == 11.0);
     persistent->persistent = 1;
 
     rt.step_accumulator = 0.005;
