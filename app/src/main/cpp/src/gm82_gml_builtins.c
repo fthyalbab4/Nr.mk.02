@@ -4522,11 +4522,13 @@ double gml_angle_normalize(double ang) {
     return ang;
 }
 double gml_arcsin(double x) {
-    if (x < -1) x = -1; if (x > 1) x = 1;
+    if (x < -1) x = -1;
+    if (x > 1) x = 1;
     return asin(x) * 180.0 / 3.14159265358979323846;
 }
 double gml_arccos(double x) {
-    if (x < -1) x = -1; if (x > 1) x = 1;
+    if (x < -1) x = -1;
+    if (x > 1) x = 1;
     return acos(x) * 180.0 / 3.14159265358979323846;
 }
 double gml_is_equal(double a, double b) {
