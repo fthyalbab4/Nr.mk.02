@@ -38,6 +38,17 @@ static void test_pixel_conversions(void) {
     /* Green pixel check */
     assert(dst_rgba[4] == 0 && dst_rgba[5] > 240 && dst_rgba[6] == 0 && dst_rgba[7] == 255);
 
+    /* BGRA8888 conversion test */
+    uint8_t bgra_in[4] = { 255, 0, 0, 255 }; /* Blue in BGRA */
+    uint8_t rgba_out[4];
+    gm82_pixel_convert_to_rgba32(bgra_in, rgba_out, 1, 1, GM82_FORMAT_BGRA8888);
+    assert(rgba_out[0] == 0 && rgba_out[1] == 0 && rgba_out[2] == 255 && rgba_out[3] == 255);
+
+    /* ARGB4444 conversion test */
+    uint16_t argb4444[1] = { 0xF00F }; /* Alpha=15, Red=0, Green=0, Blue=15 */
+    gm82_pixel_convert_to_rgba32((const uint8_t*)argb4444, rgba_out, 1, 1, GM82_FORMAT_ARGB4444);
+    assert(rgba_out[0] == 0 && rgba_out[1] == 0 && rgba_out[2] == 255 && rgba_out[3] == 255);
+
     printf("[PASS] Pixel Format Conversions OK\n");
 }
 
