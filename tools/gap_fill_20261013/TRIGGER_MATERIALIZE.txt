@@ -1,1 +1,1 @@
-trigger stub promote
+trigger java export save

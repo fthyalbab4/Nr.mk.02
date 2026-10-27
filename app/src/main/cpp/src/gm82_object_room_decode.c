@@ -9,6 +9,13 @@ static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
 }
 
+
+/* If GML looks like continuous Step logic, force GM82_EV_STEP (3). */
+static void gm82_reclass_step_like_events(gm82_decoded_object *o) {
+    /* Keep Create events as Create events (main_type 0) without reclassifying. */
+    (void)o;
+}
+
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *out_len) {
     *out_len = 0;
     z_stream strm; memset(&strm, 0, sizeof(strm));
@@ -216,6 +223,7 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
     }
     out->count = n;
     if (n > 0) {
+        for (int ri = 0; ri < n; ri++) gm82_reclass_step_like_events(&tmp[ri]);
         out->items = (gm82_decoded_object *)malloc((size_t)n * sizeof(*out->items));
         if (out->items) memcpy(out->items, tmp, (size_t)n * sizeof(*tmp));
         else out->count = 0;

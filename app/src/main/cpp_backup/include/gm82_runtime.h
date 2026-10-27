@@ -58,6 +58,7 @@ typedef struct {
     int32_t visible;
     int32_t persistent;
     int32_t alive;
+    int32_t create_fired;
     int32_t alarms[12];
     int32_t path_index;
     double  path_position;
