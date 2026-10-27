@@ -74,6 +74,9 @@ void gm82_input_set_mouse(gm82_input_state *in, int x, int y) {
 
 void gm82_input_set_mouse_f(gm82_input_state *in, double x, double y) {
     if (!in) return;
+    if (!isfinite(x) || !isfinite(y) ||
+        x < (double)INT_MIN || x > (double)INT_MAX ||
+        y < (double)INT_MIN || y > (double)INT_MAX) return;
     in->mouse_x_f = x;
     in->mouse_y_f = y;
     in->mouse_x = (int)x;
@@ -100,9 +103,16 @@ void gm82_input_pad_button(gm82_input_state *in, int pad, int btn, int down) {
     }
 }
 
+static int input_key_to_index(double key, int *out) {
+    if (!out || !isfinite(key) || key < 0.0 || key >= (double)GM82_KEY_MAX)
+        return 0;
+    *out = (int)key;
+    return 1;
+}
+
 double gml_keyboard_check(double key) {
-    int k = (int)key;
-    if (!g_input) return 0;
+    int k;
+    if (!g_input || !input_key_to_index(key, &k)) return 0;
     if (k == 0) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->down[i]) return 0.0;
