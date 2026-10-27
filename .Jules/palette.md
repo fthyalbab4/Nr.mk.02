@@ -41,3 +41,7 @@
 ## 2026-10-26 - Drag-and-Drop Container Keyboard Accessibility & Focus Parity
 **Learning:** File drop zones acting as click-and-drag file upload triggers often omit `tabindex="0"`, `role="button"`, `:focus-visible` outlines, and keyboard keydown listeners (`Enter`/`Space`), making file selection completely inaccessible to keyboard-only and screen reader users. Furthermore, internal trigger buttons inside the container must carry `tabindex="-1"` to prevent redundant focus stops.
 **Action:** Provide `tabindex="0"`, `role="button"`, explicit `:focus-visible` styling, and `Enter`/`Space` keydown handlers on interactive drop containers while eliminating duplicate focus stops on nested child buttons.
+
+## 2026-10-27 - Icon-Only Toolbar Button ARIA Fallback & Children Parity
+**Learning:** Icon-only toolbar buttons that rely solely on `title` attributes lack screen reader announcements when rendered without text children (`!children`). However, setting `aria-label` unconditionally when visible text children are present creates redundant screen reader announcements.
+**Action:** Conditionally attach `aria-label = props.title` on retro button wrappers specifically when `!buttonProps["aria-label"] && props.title && !children`.
