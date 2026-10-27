@@ -629,4 +629,19 @@ double gml_directory_previous(const char *path);
 double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
+
+double gml_window_has_focus(void);
+double gml_url_open(const char *url);
+double gml_file_text_writelf(const char *path, const char *line);
+double gml_ds_map_set(double id, double key, double val);
+double gml_instance_create_depth(double x, double y, double depth, double object_index);
+double gml_string_starts_with_ext(const char *s, const char *pre);
+double gml_string_ends_with_ext(const char *s, const char *suf);
+double gml_move_wrap2(double hor, double vert);
+double gml_object_find(const char *name);
+double gml_background_find(const char *name);
+double gml_sound_find(const char *name);
+double gml_font_find(const char *name);
+double gml_path_find_name(const char *name);
+double gml_timeline_find_name(const char *name);
 #endif
