@@ -37,3 +37,7 @@
 ## 2026-10-20 - Card Action Button Tab Stop Elimination
 **Learning:** In interactive grid cards that already serve as primary focus targets (`tabindex="0"` with `Enter`/`Space` listeners), embedded action buttons without `tabindex="-1"` create redundant double tab stops for keyboard users, doubling navigation effort.
 **Action:** Set `tabindex="-1"` on embedded card buttons when the parent container card handles keyboard activation, ensuring a streamlined single tab stop per grid card.
+
+## 2026-10-26 - Drag-and-Drop Container Keyboard Accessibility & Focus Parity
+**Learning:** File drop zones acting as click-and-drag file upload triggers often omit `tabindex="0"`, `role="button"`, `:focus-visible` outlines, and keyboard keydown listeners (`Enter`/`Space`), making file selection completely inaccessible to keyboard-only and screen reader users. Furthermore, internal trigger buttons inside the container must carry `tabindex="-1"` to prevent redundant focus stops.
+**Action:** Provide `tabindex="0"`, `role="button"`, explicit `:focus-visible` styling, and `Enter`/`Space` keydown handlers on interactive drop containers while eliminating duplicate focus stops on nested child buttons.
