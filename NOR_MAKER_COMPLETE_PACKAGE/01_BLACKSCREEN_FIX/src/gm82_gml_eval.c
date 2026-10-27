@@ -647,11 +647,22 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "color_reverse") == 0) {
             *out = gml_color_reverse(arg); return true;
         }
+        if (strcmp(id, "color_to_html") == 0) {
+            static char html_buf[16];
+            gml_color_to_html(arg, html_buf, sizeof(html_buf));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", html_buf);
+            p->str_mask |= 1;
+            gm82_gml_set_last_string(html_buf);
+            *out = 1.0; return true;
+        }
         if (strcmp(id, "ds_grid_multiply") == 0) {
             *out = gml_ds_grid_multiply(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 1); return true;
         }
         if (strcmp(id, "ds_grid_add") == 0) {
             *out = gml_ds_grid_add(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0); return true;
+        }
+        if (strcmp(id, "ds_grid_value_sum") == 0) {
+            *out = gml_ds_grid_value_sum(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0); return true;
         }
         if (strcmp(id, "ds_grid_copy") == 0) {
             *out = gml_ds_grid_copy(arg, nargs >= 2 ? args[1] : 0); return true;
@@ -1131,17 +1142,17 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_instance_create_depth(args[0], args[1], args[2], args[3]);
             return true;
         }
-        if (strcmp(id, "string_starts_with") == 0) {
+        if (strcmp(id, "string_starts_with") == 0 || strcmp(id, "string_starts_with_ext") == 0) {
             *out = gml_string_starts_with_ext((p->str_mask & 1) ? p->str_args[0] : "",
                                               (p->str_mask & 2) ? p->str_args[1] : "");
             return true;
         }
-        if (strcmp(id, "string_ends_with") == 0) {
+        if (strcmp(id, "string_ends_with") == 0 || strcmp(id, "string_ends_with_ext") == 0) {
             *out = gml_string_ends_with_ext((p->str_mask & 1) ? p->str_args[0] : "",
                                             (p->str_mask & 2) ? p->str_args[1] : "");
             return true;
         }
-        if (strcmp(id, "move_wrap") == 0) {
+        if (strcmp(id, "move_wrap") == 0 || strcmp(id, "move_wrap2") == 0) {
             *out = gml_move_wrap2(arg, nargs >= 2 ? args[1] : 0);
             return true;
         }
@@ -1568,6 +1579,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "sound_stop") == 0) {
             *out = gml_sound_stop(arg); return true;
         }
+        if (strcmp(id, "sound_stop_all") == 0) {
+            *out = gml_sound_stop_all(); return true;
+        }
         if (strcmp(id, "sound_isplaying") == 0) {
             *out = gml_sound_isplaying(arg); return true;
         }
@@ -1981,6 +1995,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_clear") == 0) {
             *out = gml_draw_clear(arg); return true;
         }
+        if (strcmp(id, "draw_clear_alpha") == 0) {
+            *out = gml_draw_clear_alpha(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
         if (strcmp(id, "array_length_1d") == 0) {
             *out = gml_array_length_1d(arg); return true;
         }
@@ -2185,6 +2202,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "file_delete") == 0) {
             *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
+        if (strcmp(id, "file_rename") == 0) {
+            *out = gml_file_rename((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
+        }
+        if (strcmp(id, "directory_rename") == 0) {
+            *out = gml_directory_rename((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : ""); return true;
+        }
         if (strcmp(id, "file_create") == 0) {
             *out = gml_file_create((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
@@ -2354,6 +2377,8 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "is_string") == 0) { *out = gml_is_string(arg); return true; }
         if (strcmp(id, "string_format") == 0) { char buf[128] = {0}; gml_string_format(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, buf, sizeof(buf)); snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", buf); p->str_mask |= 1; gm82_gml_set_last_string(buf); *out = 0; return true; }
         if (strcmp(id, "window_get_caption") == 0) { (void)gml_window_get_caption(); *out = 0; return true; }
+        if (strcmp(id, "window_has_focus") == 0) { *out = gml_window_has_focus(); return true; }
+        if (strcmp(id, "url_open") == 0) { *out = gml_url_open((p->str_mask & 1) ? p->str_args[0] : ""); return true; }
 
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);
         return false;

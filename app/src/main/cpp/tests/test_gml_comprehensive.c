@@ -252,7 +252,29 @@ int main(void) {
     gm82_gml_eval_stmt(&rt, inst, "draw_line(0, 0, 10, 10);");
     gm82_gml_eval_stmt(&rt, inst, "draw_rectangle(5, 5, 20, 20, 1);");
     gm82_gml_eval_stmt(&rt, inst, "draw_circle(15, 15, 5, 0);");
+    gm82_gml_eval_expr(&rt, inst, "draw_clear_alpha(255, 0.5)", &res);
+    assert(res == 1.0);
     gm82_draw_set_target(NULL, 0, 0);
+
+    /* Test newly dispatched GML functions */
+    gm82_gml_eval_expr(&rt, inst, "string_starts_with_ext(\"hello world\", \"hello\")", &res);
+    assert(res == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "string_ends_with_ext(\"hello world\", \"world\")", &res);
+    assert(res == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "sound_stop_all()", &res);
+    assert(res == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "color_to_html(255)", &res);
+    assert(res == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "window_has_focus()", &res);
+    assert(res == 0.0);
+    gm82_gml_eval_expr(&rt, inst, "url_open(\"https://example.com\")", &res);
+    assert(res == 0.0);
+
+    double g3 = gml_ds_grid_create(4, 4);
+    gml_ds_grid_clear(g3, 5.0);
+    gm82_gml_eval_expr(&rt, inst, "ds_grid_value_sum(0, 0, 0, 1, 1)", &res);
+    assert(res == 20.0);
+    gml_ds_grid_destroy(g3);
 
     puts("GML_COMPREHENSIVE_VM_TEST_PASS");
     return 0;
