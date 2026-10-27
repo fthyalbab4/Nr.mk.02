@@ -2,7 +2,6 @@
 #include "gm82_input.h"
 #include <string.h>
 #include <math.h>
-#include <limits.h>
 
 static gm82_input_state *g_input = NULL;
 static char g_keyboard_string[256];
@@ -129,26 +128,28 @@ double gml_keyboard_check(double key) {
 }
 
 double gml_keyboard_check_pressed(double key) {
-    int k;
-    if (!g_input || !input_key_to_index(key, &k)) return 0;
+    if (!g_input || isnan(key) || isinf(key)) return 0.0;
+    int k = (int)key;
     if (k == 0) return 0.0;
     if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->pressed[i]) return 1.0;
         return 0.0;
     }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0.0;
     return g_input->pressed[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_released(double key) {
-    int k;
-    if (!g_input || !input_key_to_index(key, &k)) return 0;
+    if (!g_input || isnan(key) || isinf(key)) return 0.0;
+    int k = (int)key;
     if (k == 0) return 0.0;
     if (k == 1) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->released[i]) return 1.0;
         return 0.0;
     }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0.0;
     return g_input->released[k] ? 1.0 : 0.0;
 }
 
