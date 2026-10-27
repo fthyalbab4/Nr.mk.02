@@ -2985,8 +2985,43 @@ double gml_file_delete(const char *path) {
     if (!path) return 0;
     return remove(path) == 0 ? 1.0 : 0.0;
 }
+static void ensure_parent_dirs(const char *path) {
+    if (!path) return;
+    char tmp[512];
+    snprintf(tmp, sizeof(tmp), "%s", path);
+    char *p = tmp;
+    while ((p = strchr(p, '/')) != NULL) {
+        *p = '\0';
+        if (tmp[0] != '\0') {
+#ifdef _WIN32
+            mkdir(tmp);
+#else
+            mkdir(tmp, 0755);
+#endif
+        }
+        *p = '/';
+        p++;
+    }
+}
+
 double gml_file_create(const char *path) {
     if (!path || !path[0]) return 0;
+    const char *last_slash = strrchr(path, '/');
+    if (!last_slash) last_slash = strrchr(path, '\\');
+    if (last_slash) {
+        char dir[256];
+        size_t len = (size_t)(last_slash - path);
+        if (len < sizeof(dir)) {
+            strncpy(dir, path, len);
+            dir[len] = '\0';
+#ifdef _WIN32
+            mkdir(dir);
+#else
+            mkdir(dir, 0755);
+#endif
+        }
+    }
+    ensure_parent_dirs(path);
     FILE *f = fopen(path, "wb");
     if (!f) return 0;
     fclose(f);
