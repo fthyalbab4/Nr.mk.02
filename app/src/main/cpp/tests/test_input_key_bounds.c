@@ -31,6 +31,14 @@ int main(void) {
     for (size_t i = 0; i < sizeof(invalid_keys) / sizeof(invalid_keys[0]); ++i)
         assert_invalid_key(invalid_keys[i]);
 
+    gm82_input_set_mouse(&input, 12, 34);
+    gm82_input_set_mouse_f(&input, NAN, 1.0);
+    assert(input.mouse_x == 12 && input.mouse_y == 34);
+    assert(input.mouse_x_f == 12.0 && input.mouse_y_f == 34.0);
+    gm82_input_set_mouse_f(&input, 1.0, DBL_MAX);
+    assert(input.mouse_x == 12 && input.mouse_y == 34);
+    assert(input.mouse_x_f == 12.0 && input.mouse_y_f == 34.0);
+
     /* Preserve the existing GM82 pseudo-key contract. */
     assert(gml_keyboard_check(0.0) == 1.0);
     assert(gml_keyboard_check(1.0) == 0.0);

@@ -1,0 +1,127 @@
+{
+  "keywords": {
+    "room_instance_suspect": [
+      "room",
+      "instance",
+      "object",
+      "collision",
+      "place_meeting",
+      "instance_create",
+      "instance_destroy",
+      "with"
+    ],
+    "graphics": [
+      "draw",
+      "sprite",
+      "surface",
+      "texture",
+      "bitmap",
+      "gdi",
+      "direct3d",
+      "d3d",
+      "opengl",
+      "alpha",
+      "blend"
+    ],
+    "audio": [
+      "sound",
+      "audio",
+      "wave",
+      "midi",
+      "music",
+      "winmm",
+      "directsound",
+      "buffer"
+    ],
+    "file_io": [
+      "createfile",
+      "readfile",
+      "writefile",
+      "file",
+      "stream",
+      "archive",
+      "zip",
+      "ini",
+      "path"
+    ],
+    "win32_glue": [
+      "window",
+      "message",
+      "cursor",
+      "menu",
+      "dialog",
+      "clipboard",
+      "registry",
+      "shell",
+      "user32",
+      "kernel32",
+      "advapi"
+    ],
+    "allocator_runtime": [
+      "malloc",
+      "calloc",
+      "realloc",
+      "free",
+      "heap",
+      "criticalsection",
+      "lock",
+      "unlock",
+      "new",
+      "delete"
+    ],
+    "gml_runtime": [
+      "gml",
+      "script",
+      "argument",
+      "variable",
+      "global",
+      "execute",
+      "eval",
+      "expression",
+      "token"
+    ]
+  },
+  "import_families": {
+    "graphics": [
+      "d3d",
+      "ddraw",
+      "gdi",
+      "gdiplus",
+      "opengl",
+      "msimg"
+    ],
+    "audio": [
+      "winmm",
+      "dsound",
+      "mmsystem"
+    ],
+    "network": [
+      "wininet",
+      "wsock",
+      "ws2_32",
+      "iphlpapi"
+    ],
+    "file_io": [
+      "kernel32",
+      "shlwapi",
+      "shell32",
+      "advapi"
+    ],
+    "ui": [
+      "user32",
+      "comctl32",
+      "comdlg32",
+      "oleaut32",
+      "ole32"
+    ],
+    "crypto": [
+      "crypt32",
+      "libeay",
+      "ssleay"
+    ]
+  },
+  "limitations": [
+    "Lexical evidence is suggestive, not semantic proof.",
+    "PE section and full call graph are unresolved without retaining a provider snapshot."
+  ]
+}

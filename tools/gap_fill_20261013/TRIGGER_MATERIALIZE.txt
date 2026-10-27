@@ -1,1 +1,1 @@
-trigger jni parts full
+trigger java export save

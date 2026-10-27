@@ -1,0 +1,48 @@
+// rea decompile_all
+// name: FUN_0057ba60
+// address: 0x57ba60
+// body: available
+// range: 0x57ba60-0x57bae3 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_0057ba60(int param_1,int param_2)
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  undefined4 *puVar4;
+  undefined4 *puVar5;
+  byte bVar6;
+
+  bVar6 = 0;
+  if ((param_2 != 0) && (iVar3 = *(int *)(param_2 + 8), iVar3 != 0)) {
+    iVar1 = FUN_00409c34(*(undefined4 *)(param_1 + 4));
+    if (iVar1 < iVar3 + *(int *)(param_1 + 8)) {
+      FUN_00409dfc(param_1 + 4,&DAT_0057a0b8,1,*(int *)(param_2 + 8) + *(int *)(param_1 + 8));
+    }
+    iVar3 = *(int *)(param_2 + 8);
+    if (-1 < iVar3 + -1) {
+      iVar1 = 0;
+      do {
+        puVar4 = (undefined4 *)(*(int *)(param_2 + 4) + iVar1 * 0x18);
+        puVar5 = (undefined4 *)(*(int *)(param_1 + 4) + (*(int *)(param_1 + 8) + iVar1) * 0x18);
+        for (iVar2 = 6; iVar2 != 0; iVar2 = iVar2 + -1) {
+          *puVar5 = *puVar4;
+          puVar4 = puVar4 + (uint)bVar6 * -2 + 1;
+          puVar5 = puVar5 + (uint)bVar6 * -2 + 1;
+        }
+        iVar1 = iVar1 + 1;
+        iVar3 = iVar3 + -1;
+      } while (iVar3 != 0);
+    }
+    *(int *)(param_1 + 8) = *(int *)(param_1 + 8) + *(int *)(param_2 + 8);
+    FUN_0057af28(param_1);
+  }
+  return;
+}

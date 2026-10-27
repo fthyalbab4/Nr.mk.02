@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'tools/gap_fill_20261013/**'
+      - '.github/workflows/auto-materialize.yml'
   workflow_dispatch:
 jobs:
   materialize:
@@ -12,23 +13,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Materialize + APPLY
+      - name: APPLY
         run: |
-          python3 tools/gap_fill_20261013/ASSEMBLE_ACTIONS_PARTS.py || true
-          python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE1_RUNTIME.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE2_RUNTIME_INPUT.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE3_GML_STRINGS.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE4_DND.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE5_SURFACES.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE6_WITH_AUDIO.py || true
-          python3 tools/gap_fill_20261013/APPLY_PHASE789.py || true
-          python3 tools/gap_fill_20261013/APPLY_CODE_REMAINING.py || true
-          python3 tools/gap_fill_20261013/APPLY_JNI_MATERIALIZE_BIND.py || true
-          python3 tools/gap_fill_20261013/APPLY_DND_IF_ELSE.py || true
-          python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py || true
-      - run: bash tools/run_host_pipeline.sh || echo soft
+          python3 tools/gap_fill_20261013/APPLY_EXPORT_SCROLL_AND_SAVE.py || true
+          python3 tools/gap_fill_20261013/APPLY_JAVA_EXPORT_SAVE.py || true
+          python3 tools/gap_fill_20261013/APPLY_LANDSCAPE_NES_UI.py || true
+          python3 tools/gap_fill_20261013/APPLY_MARIO_SENDKEY_FIX.py || true
+          python3 tools/gap_fill_20261013/APPLY_MARIO_STEP_RECLASS.py || true
+          python3 tools/gap_fill_20261013/APPLY_MARIO_TOUCH_CONTROLS.py || true
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-materialize including jni bind"
-          file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
+          commit_message: "chore: auto-materialize export scroll/save + java bridge"
+          file_pattern: "app/src/main/assets/www/** app/src/main/java/**"

@@ -1,0 +1,61 @@
+// rea decompile_all
+// name: FUN_004c3de4
+// address: 0x4c3de4
+// body: available
+// range: 0x4c3de4-0x4c3ebd inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+/* WARNING: Type propagation algorithm not settling */
+
+void FUN_004c3de4(int *param_1,int param_2,int param_3,int param_4,int param_5)
+
+{
+  char cVar1;
+  BOOL BVar2;
+  undefined4 *puVar3;
+  byte bVar4;
+  LONG aLStackY_181c [1517];
+  LONG local_40;
+  WINDOWPLACEMENT local_30;
+
+  bVar4 = 0;
+  if ((((param_2 == param_1[0x10]) && (param_3 == param_1[0x11])) && (param_5 == param_1[0x12])) &&
+     (param_4 == param_1[0x13])) {
+    return;
+  }
+  cVar1 = FUN_004c4988(param_1);
+  if ((cVar1 == '\0') || (BVar2 = IsIconic((HWND)param_1[0x96]), BVar2 != 0)) {
+    param_1[0x10] = param_2;
+    param_1[0x11] = param_3;
+    param_1[0x12] = param_5;
+    param_1[0x13] = param_4;
+    cVar1 = FUN_004c4988(param_1);
+    if (cVar1 != '\0') {
+      local_30.length = 0x2c;
+      GetWindowPlacement((HWND)param_1[0x96],&local_30);
+      FUN_004baee8(param_1,&stack0xffffffc0);
+      local_30.rcNormalPosition.left = local_40;
+      puVar3 = (undefined4 *)((int)&local_30 + (uint)bVar4 * -8 + (uint)bVar4 * -8 + 0x24);
+      *(undefined4 *)((int)&local_30 + (uint)bVar4 * -8 + 0x20) =
+           *(undefined4 *)((int)&stack0xffffffc4 + (uint)bVar4 * 0xfffffffe * 4);
+      *puVar3 = *(undefined4 *)(&stack0xffffffc8 + (uint)bVar4 * -8 + (uint)bVar4 * -8);
+      puVar3[(uint)bVar4 * -2 + 1] =
+           *(undefined4 *)
+            ((int)(&stack0xffffffc8 + (uint)bVar4 * -8 + (uint)bVar4 * -8) +
+            ((uint)bVar4 * -2 + 1) * 4);
+      SetWindowPlacement((HWND)param_1[0x96],&local_30);
+    }
+  }
+  else {
+    SetWindowPos((HWND)param_1[0x96],(HWND)0x0,param_2,param_3,param_5,param_4,0x14);
+  }
+  FUN_004baaac(param_1);
+  FUN_004be8c4(param_1);
+  (**(code **)(*param_1 + 0x68))();
+  return;
+}

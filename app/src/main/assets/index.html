@@ -30476,7 +30476,7 @@ const createEngineHTML = (projectData) => {
         #loading { position:absolute; color:#4ade80; font-family:monospace; font-weight:bold; font-size:12px; text-align:center; z-index: 100; letter-spacing:1px; }
         #canvas3d { position:absolute; top:0; left:0; width:100%; height:100%; display:none; z-index: 1; }
     </style>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+    <script defer src="./vendor/three.r128.min.js"><\/script>
 </head>
 <body>
     <div id="loading">LOADING NOR ENGINE...</div><script>setTimeout(function(){var l=document.getElementById('loading');if(l)l.style.display='none';},1800);<\/script>
@@ -32399,6 +32399,7 @@ const createEngineHTML = (projectData) => {
     window.place_free = (x, y, self) => {
         const me = self || window._currentInstance;
         if (!me) return true;
+        if (me.grounded && y > me.y && (y - me.y) <= 2.5) return false;
         const mw = me.w || 16;
         const mh = me.h || 16;
         const margin = 2; // Margin ensures ground below does not obstruct horizontal movement
@@ -130120,6 +130121,117 @@ ${result.warnings.slice(0, 3).join("\n")}` : "";
     ]);
     setState(AppState.COMPLETED);
   };
+  // Synchronize the native runtime from semantic room data first, preserving the
+  // exact GM82 instance records; use the legacy tile map only as a fallback.
+  const syncNativeRoomFromGameData = (room, eventCodeMap, nativeObjects) => {
+    const nativeBridge = window.NorNative;
+    if (!nativeBridge || !room || typeof nativeBridge.setRoom !== "function") return false;
+    try {
+      const objectList = Array.isArray(nativeObjects) ? nativeObjects : [];
+      const spriteList = Array.isArray(sprites) ? sprites : [];
+      const backgrounds = Array.isArray(backgroundAssets) ? backgroundAssets : [];
+      const sounds = Array.isArray(soundAssets) ? soundAssets : [];
+      const fonts = Array.isArray(fontAssets) ? fontAssets : [];
+      const nativeId = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? n : fallback; };
+      const sourceOf = (value) => {
+        if (typeof value === "string") return value;
+        if (Array.isArray(value)) return value.map((a) => typeof a === "string" ? a : (a && (a.code || a.source || a.gml || ""))).filter(Boolean).join("\n");
+        return value && typeof value === "object" ? String(value.code || value.source || value.gml || "") : "";
+      };
+      if (typeof nativeBridge.clearScripts === "function") nativeBridge.clearScripts();
+      if (typeof nativeBridge.clearEvents === "function") nativeBridge.clearEvents();
+      if (typeof nativeBridge.clearInstances === "function") nativeBridge.clearInstances();
+      if (typeof nativeBridge.clearResourceRegistry === "function") nativeBridge.clearResourceRegistry();
+      if (typeof nativeBridge.registerResource === "function") {
+        const register = (kind, resource, index, width, height, frames) => {
+          if (!resource) return;
+          const id = nativeId(resource.id, index);
+          nativeBridge.registerResource(kind, id, String(resource.name || resource.id || `${kind}_${index}`), Math.max(1, Number(width) || 1), Math.max(1, Number(height) || 1), Math.max(1, Number(frames) || 1));
+        };
+        spriteList.forEach((r, i) => register(1, r, i, r.frameWidth || r.width, r.frameHeight || r.height, r.frames || r.subimages));
+        backgrounds.forEach((r, i) => register(2, r, i, r.width, r.height, 1));
+        sounds.forEach((r, i) => register(3, r, i, 1, 1, 1));
+        fonts.forEach((r, i) => register(4, r, i, 1, 1, 1));
+      }
+      const objectIds = new Map();
+      objectList.forEach((obj, i) => {
+        objectIds.set(String(obj && obj.id), i); objectIds.set(String(obj && obj.name), i);
+        if (typeof nativeBridge.registerObject === "function") nativeBridge.registerObject(i, String((obj && (obj.name || obj.id)) || `object_${i}`));
+      });
+      if (typeof nativeBridge.registerScript === "function") (Array.isArray(scripts) ? scripts : []).forEach((script, i) => {
+        const name = String((script && (script.name || script.id)) || `script_${i}`);
+        const code = sourceOf(script && (script.code ?? script.source ?? script.gml));
+        if (code) nativeBridge.registerScript(name, code);
+      });
+      const snapX = Math.max(1, Number(room.settings && room.settings.snapX) || 16);
+      const snapY = Math.max(1, Number(room.settings && room.settings.snapY) || 16);
+      const roomWidth = Math.max(1, Number(room.width ?? room.w) || 1);
+      const roomHeight = Math.max(1, Number(room.height ?? room.h) || 1);
+      nativeBridge.setRoom(nativeId(room.id, 0), roomWidth * snapX, roomHeight * snapY, true);
+      const eventMain = (name) => {
+        name = String(name || "").replace(/^ev_/, "");
+        if (name === "create") return [0, -1];
+        if (name === "step" || name === "step_begin" || name === "step_end") return [3, name === "step_begin" ? 1 : name === "step_end" ? 2 : 0];
+        if (name === "draw") return [8, -1];
+        if (name === "destroy") return [1, -1];
+        const keyCode = (key) => {
+          const k = String(key || "");
+          if (k === "ArrowLeft") return 37; if (k === "ArrowUp") return 38;
+          if (k === "ArrowRight") return 39; if (k === "ArrowDown") return 40;
+          if (k === "Space") return 32; if (k === "Enter") return 13;
+          if (/^Digit[0-9]$/.test(k)) return 48 + Number(k.substring(5));
+          if (/^Key[A-Z]$/.test(k)) return k.charCodeAt(3);
+          if (/^[0-9]$/.test(k)) return 48 + Number(k);
+          if (/^[A-Za-z]$/.test(k)) return k.toUpperCase().charCodeAt(0);
+          return -1;
+        };
+        if (name.indexOf("keyboard_") === 0) return [5, keyCode(name.substring(9))];
+        if (name.indexOf("keypress_") === 0) return [9, keyCode(name.substring(9))];
+        if (name.indexOf("keyrelease_") === 0) return [10, keyCode(name.substring(11))];
+        const mouseCode = { mouse_left: 0, mouse_middle: 1, mouse_right: 2,
+          mouse_left_pressed: 4, mouse_middle_pressed: 5, mouse_right_pressed: 6,
+          mouse_left_released: 7, mouse_middle_released: 8, mouse_right_released: 9,
+          mouse_global_left: 50, mouse_global_middle: 51, mouse_global_right: 52 };
+        if (Object.prototype.hasOwnProperty.call(mouseCode, name)) return [6, mouseCode[name]];
+        if (name === "room_start") return [4, -1];
+        if (name === "room_end") return [5, -1];
+        if (name.indexOf("alarm_") === 0) return [2, nativeId(name.substring(6), 0)];
+        if (name.indexOf("collision_") === 0) {
+          const target = name.substring(10);
+          return [4, objectIds.has(String(target)) ? objectIds.get(String(target)) : nativeId(target, -1)];
+        }
+        return [-1, -1];
+      };
+      objectList.forEach((obj, i) => {
+        const events = (eventCodeMap && eventCodeMap[obj.id]) || {};
+        Object.keys(events).forEach((name) => {
+          const pair = eventMain(name), code = sourceOf(events[name]);
+          if (pair[0] >= 0 && code && typeof nativeBridge.registerEvent === "function") nativeBridge.registerEvent(i, pair[0], pair[1], code);
+        });
+      });
+      const exact = Array.isArray(room.instances) ? room.instances : [];
+      const resolveObject = (ref) => objectList.findIndex((obj) => obj && (String(obj.id) === String(ref) || String(obj.name) === String(ref) || String(obj.legacyId) === String(ref)));
+      const add = (objIndex, x, y, vx, vy) => {
+        const obj = objectList[objIndex]; if (!obj || typeof nativeBridge.addInstance !== "function") return;
+        const sprite = spriteList.find((r) => String(r && r.id) === String(obj.spriteId) || String(r && r.name) === String(obj.spriteId));
+        const sid = sprite ? nativeId(sprite.id, spriteList.indexOf(sprite)) : -1;
+        nativeBridge.addInstance(objIndex, sid, Number((sprite && (sprite.frameWidth || sprite.width)) || 16), Number((sprite && (sprite.frameHeight || sprite.height)) || 16), Number((sprite && (sprite.frames || sprite.subimages)) || 1), Number(x) || 0, Number(y) || 0, Number(vx) || 0, Number(vy) || 0);
+      };
+      if (exact.length) exact.forEach((record) => {
+        const ref = record && (record.obj ?? record.objId ?? record.objectId ?? record.object ?? record.objName);
+        const index = resolveObject(ref); if (index >= 0) add(index, record.x, record.y, record.hspeed, record.vspeed);
+      });
+      else if (Array.isArray(room.map)) room.map.forEach((cell, index) => {
+        const objectIndex = Number(cell) >= 2 ? Number(cell) - 2 : -1;
+        if (objectIndex >= 0) add(objectIndex, (index % roomWidth) * snapX, Math.floor(index / roomWidth) * snapY, 0, 0);
+      });
+      return true;
+    } catch (error) {
+      console.warn("NOR native semantic room sync failed", error);
+      return false;
+    }
+  };
+
   const handleUpdateGame = () => {
     if (!gameData) return;
     if (gameData.metadata.story === "Legacy (Play Only)") return;
@@ -130145,92 +130257,10 @@ ${result.warnings.slice(0, 3).join("\n")}` : "";
             }
             eventCodeMap[obj.id] = objEvents;
           });
-          const nativeBridge = window.NorNative;
-          if (nativeBridge && typeof nativeBridge.setRoom === "function" && nextRooms.length > 0) {
+          if (nextRooms.length > 0) {
             const nativeRoom = nextRooms.find((r2) => r2.id === activeRoomId) || nextRooms[0];
             const nativeObjects = gameObjects.map((obj, index) => ({ ...obj, __nativeId: index }));
-            if (typeof nativeBridge.clearScripts === "function") nativeBridge.clearScripts();
-            if (typeof nativeBridge.clearEvents === "function") nativeBridge.clearEvents();
-            if (typeof nativeBridge.clearInstances === "function") nativeBridge.clearInstances();
-            if (typeof nativeBridge.clearResourceRegistry === "function") nativeBridge.clearResourceRegistry();
-            if (typeof nativeBridge.registerResource === "function") {
-              const registerNativeResource = (kind, resource, fallbackId, width, height, frames) => {
-                if (!resource) return;
-                const resourceId = Number(resource.id ?? fallbackId);
-                const resourceName = String(resource.name || resource.id || `${kind}_${fallbackId}`);
-                nativeBridge.registerResource(kind, Number.isFinite(resourceId) ? resourceId : fallbackId, resourceName, Math.max(1, Number(width) || 1), Math.max(1, Number(height) || 1), Math.max(1, Number(frames) || 1));
-              };
-              (Array.isArray(sprites) ? sprites : []).forEach((sprite, index) => registerNativeResource(1, sprite, index, sprite.frameWidth || sprite.width, sprite.frameHeight || sprite.height, sprite.frames || sprite.subimages));
-              (Array.isArray(backgroundAssets) ? backgroundAssets : []).forEach((background, index) => registerNativeResource(2, background, index, background.width, background.height, 1));
-              (Array.isArray(soundAssets) ? soundAssets : []).forEach((sound, index) => registerNativeResource(3, sound, index, 1, 1, 1));
-              (Array.isArray(fontAssets) ? fontAssets : []).forEach((font, index) => registerNativeResource(4, font, index, 1, 1, 1));
-            }
-            if (typeof nativeBridge.registerObject === "function") {
-              nativeObjects.forEach((obj) => {
-                const objectName = String((obj == null ? void 0 : obj.name) || (obj == null ? void 0 : obj.id) || "").trim();
-                if (objectName) nativeBridge.registerObject(obj.__nativeId, objectName);
-                if (typeof nativeBridge.configureObject === "function") {
-                  const parsed = obj && obj.parsed && typeof obj.parsed === "object" ? obj.parsed : obj || {};
-                  const parentValue = parsed.parentId ?? parsed.parentObjectId ?? obj.parentId ?? obj.parentObjectId ?? -1;
-                  const parentObject = nativeObjects.find((candidate) => candidate.id === parentValue || candidate.name === parentValue || candidate.id === `obj_${parentValue}` || candidate.name === `obj_${parentValue}`);
-                  const maskValue = parsed.maskId ?? parsed.maskSpriteId ?? obj.maskId ?? obj.maskSpriteId ?? -1;
-                  const maskSprite = sprites.find((candidate) => candidate.id === maskValue || candidate.name === maskValue);
-                  const toNativeId = (value, fallback = -1) => {
-                    const numeric = Number(value);
-                    return Number.isFinite(numeric) ? numeric : fallback;
-                  };
-                  nativeBridge.configureObject(
-                    obj.__nativeId,
-                    parsed.solid === true || parsed.solid === 1 || obj.solid === true,
-                    parsed.visible !== false && parsed.visible !== 0 && obj.visible !== false,
-                    parsed.persistent === true || parsed.persistent === 1 || obj.persistent === true,
-                    toNativeId(parsed.depth ?? obj.depth, 0),
-                    parentObject ? parentObject.__nativeId : toNativeId(parentValue, -1),
-                    maskSprite ? toNativeId(maskSprite.id, -1) : toNativeId(maskValue, -1)
-                  );
-                }
-              });
-            }
-            if (typeof nativeBridge.registerScript === "function") {
-              (Array.isArray(scripts) ? scripts : []).forEach((script) => {
-                const scriptName = String((script == null ? void 0 : script.name) || (script == null ? void 0 : script.id) || "").trim();
-                const scriptSource = typeof (script == null ? void 0 : script.code) === "string" ? script.code : typeof (script == null ? void 0 : script.source) === "string" ? script.source : "";
-                if (scriptName && scriptSource) nativeBridge.registerScript(scriptName, scriptSource);
-              });
-            }
-            nativeBridge.setRoom(0, Math.max(1, nativeRoom.width * 16), Math.max(1, nativeRoom.height * 16), true);
-            nativeObjects.forEach((obj) => {
-              const events = eventCodeMap[obj.id] || {};
-              Object.keys(events).forEach((eventName) => {
-                let mainType = -1;
-                let subType = -1;
-                if (eventName === "create") mainType = 0;
-                else if (eventName === "step") {
-                  mainType = 3;
-                  subType = 0;
-                } else if (eventName === "draw") mainType = 8;
-                else if (eventName.indexOf("collision_") === 0) {
-                  mainType = 4;
-                  const targetName = eventName.substring("collision_".length);
-                  const target = nativeObjects.find((candidate) => candidate.name === targetName || candidate.id === targetName);
-                  subType = target ? target.__nativeId : -1;
-                }
-                if (mainType >= 0 && typeof nativeBridge.registerEvent === "function") {
-                  nativeBridge.registerEvent(obj.__nativeId, mainType, subType, events[eventName]);
-                }
-              });
-            });
-            const roomMap = Array.isArray(nativeRoom.map) ? nativeRoom.map : [];
-            roomMap.forEach((cell, cellIndex) => {
-              const mapId = Number(cell);
-              const objectIndex = mapId >= 2 ? mapId - 2 : -1;
-              const obj = nativeObjects[objectIndex];
-              if (!obj || typeof nativeBridge.addInstance !== "function") return;
-              const sprite = sprites.find((candidate) => candidate.id === obj.spriteId);
-              const spriteIndex = sprite ? sprites.indexOf(sprite) : objectIndex;
-              const nativeSpriteId = sprite && Number.isFinite(Number(sprite.id)) ? Number(sprite.id) : spriteIndex;
-              nativeBridge.addInstance(obj.__nativeId, nativeSpriteId, Number((sprite == null ? void 0 : sprite.frameWidth) || 16), Number((sprite == null ? void 0 : sprite.frameHeight) || 16), Number((sprite == null ? void 0 : sprite.frames) || 1), cellIndex % nativeRoom.width * 16, Math.floor(cellIndex / nativeRoom.width) * 16, 0, 0);
-            });
+            syncNativeRoomFromGameData(nativeRoom, eventCodeMap, nativeObjects);
           }
           const fullHTML = createEngineHTML({
             assets: { sprites, backgrounds: backgroundAssets, sounds: soundAssets, fonts: fontAssets },
@@ -154632,6 +154662,21 @@ button, input, textarea, select {
       let lastErr = null;
 
       const readBuffer = async (src) => {
+        // Android WebView loads this page from file://, so cross-origin fetch/XHR
+        // can be blocked by CORS. Let the native bridge download HTTPS sources.
+        if (/^https:\/\//i.test(src) && window.NorNative && typeof window.NorNative.downloadCloudGmkBase64 === "function") {
+          try {
+            const encoded = window.NorNative.downloadCloudGmkBase64(src);
+            if (encoded) {
+              const binary = atob(encoded);
+              const bytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+              if (bytes.byteLength > 100) return bytes.buffer;
+            }
+          } catch (nativeError) {
+            console.warn("Native cloud download failed; trying WebView fallback", nativeError);
+          }
+        }
         try {
           const resp = await fetch(src);
           if (resp.ok) {
@@ -154651,7 +154696,9 @@ button, input, textarea, select {
                 reject(new Error("Status " + xhr.status));
               }
             };
-            xhr.onerror = (e) => reject(e);
+            xhr.onerror = () => reject(new Error("تعذر الاتصال بمصدر اللعبة السحابي"));
+            xhr.ontimeout = () => reject(new Error("انتهت مهلة الاتصال بمصدر اللعبة السحابي"));
+            xhr.timeout = 60000;
             xhr.send();
           } catch (err) {
             reject(err);
@@ -154688,7 +154735,8 @@ button, input, textarea, select {
     } catch (error) {
       console.error("Cloud game load failed:", error);
       statusDiv.style.display = "none";
-      alert("تعذر استدعاء اللعبة من السحابة:\n" + (error.message || error));
+      const message = error && error.message ? error.message : "تعذر الاتصال بمصدر اللعبة السحابي";
+      alert("تعذر استدعاء اللعبة من السحابة:\n" + message);
     } finally {
       isCloudLoading = false;
       if (targetBtn) {

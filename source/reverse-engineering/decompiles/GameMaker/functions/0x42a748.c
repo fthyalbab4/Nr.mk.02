@@ -1,0 +1,47 @@
+// rea decompile_all
+// name: FUN_0042a748
+// address: 0x42a748
+// body: available
+// range: 0x42a748-0x42a7d9 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_0042a748(ushort *param_1,undefined4 param_2,int param_3)
+
+{
+  double dVar1;
+  float10 in_ST0;
+  float10 in_ST1;
+  undefined8 local_1c;
+
+  FUN_00426ef0(param_1);
+  local_1c = (double)in_ST0;
+  FUN_00426ef0(param_2);
+  dVar1 = (double)in_ST1;
+  if (param_3 == 0) {
+    local_1c = local_1c + dVar1;
+  }
+  else if (param_3 == 1) {
+    local_1c = local_1c - dVar1;
+  }
+  else if (param_3 == 2) {
+    local_1c = local_1c * dVar1;
+  }
+  else if (param_3 == 3) {
+    local_1c = local_1c / dVar1;
+  }
+  else {
+    FUN_00424220();
+  }
+  if ((*param_1 & 0xbfe8) != 0) {
+    FUN_00424940(param_1);
+  }
+  *(undefined4 *)(param_1 + 4) = (undefined4)local_1c;
+  *(undefined4 *)(param_1 + 6) = local_1c._4_4_;
+  *param_1 = 5;
+  return;
+}

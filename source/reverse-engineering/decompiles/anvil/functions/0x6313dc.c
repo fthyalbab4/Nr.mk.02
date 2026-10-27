@@ -1,0 +1,152 @@
+// rea decompile_all
+// name: FUN_006313dc
+// address: 0x6313dc
+// body: available
+// range: 0x6313dc-0x631f31 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_006313dc(void)
+
+{
+  FUN_0058917c(L"action_path_old",&LAB_0062cddc,3,0);
+  FUN_0058917c(L"action_set_sprite",FUN_0062cde4,2,0);
+  FUN_0058917c(L"action_draw_font",&LAB_0062cddc,1,0);
+  FUN_0058917c(L"action_draw_font_old",&LAB_0062cddc,6,0);
+  FUN_0058917c(L"action_fill_color",&LAB_0062cddc,1,0);
+  FUN_0058917c(L"action_line_color",&LAB_0062cddc,1,0);
+  FUN_0058917c(L"action_highscore",&LAB_0062cddc,0,0);
+  FUN_0058917c(L"action_move",&LAB_0062ce34,2,0);
+  FUN_0058917c(L"action_set_motion",&LAB_0062cffc,2,0);
+  FUN_0058917c(L"action_set_hspeed",&LAB_0062d048,1,0);
+  FUN_0058917c(L"action_set_vspeed",FUN_0062d080,1,0);
+  FUN_0058917c(L"action_set_gravity",FUN_0062d0b8,2,0);
+  FUN_0058917c(L"action_set_friction",FUN_0062d114,1,0);
+  FUN_0058917c(L"action_move_point",&LAB_0062d150,3,0);
+  FUN_0058917c(L"action_move_to",&LAB_0062d1ac,2,0);
+  FUN_0058917c(L"action_move_start",FUN_0062d1f4,0,0);
+  FUN_0058917c(L"action_move_random",FUN_0062d20c,2,0);
+  FUN_0058917c(L"action_snap",FUN_0062d370,2,0);
+  FUN_0058917c(L"action_wrap",FUN_0062d390,1,0);
+  FUN_0058917c(L"action_reverse_xdir",&LAB_0062d400,0,0);
+  FUN_0058917c(L"action_reverse_ydir",FUN_0062d41c,0,0);
+  FUN_0058917c(L"action_move_contact",FUN_0062d438,3,0);
+  FUN_0058917c(L"action_bounce",&LAB_0062d470,2,0);
+  FUN_0058917c(L"action_path",&LAB_0062d4b4,4,0);
+  FUN_0058917c(L"action_path_end",&LAB_0062d504,0,0);
+  FUN_0058917c(L"action_path_position",&LAB_0062d528,1,0);
+  FUN_0058917c(L"action_path_speed",FUN_0062d560,1,0);
+  FUN_0058917c(L"action_linear_step",FUN_0062d598,4,0);
+  FUN_0058917c(L"action_potential_step",&LAB_0062d624,4,0);
+  FUN_0058917c(L"action_kill_object",&LAB_0062dacc,0,0);
+  FUN_0058917c(L"action_create_object",&LAB_0062d6b0,3,0);
+  FUN_0058917c(L"action_create_object_motion",&LAB_0062d804,5,0);
+  FUN_0058917c(L"action_create_object_random",&LAB_0062d97c,6,0);
+  FUN_0058917c(L"action_change_object",FUN_0062da80,2,0);
+  FUN_0058917c(L"action_kill_position",&LAB_0062daf0,2,0);
+  FUN_0058917c(L"action_sprite_set",&LAB_0062db3c,3,0);
+  FUN_0058917c(L"action_sprite_transform",&LAB_0062db88,4,1);
+  FUN_0058917c(L"action_sprite_color",&LAB_0062dc30,2,1);
+  FUN_0058917c(L"action_sound",FUN_0062dc58,2,0);
+  FUN_0058917c(L"action_end_sound",&LAB_0062dd00,1,0);
+  FUN_0058917c(L"action_if_sound",&LAB_0062dd90,1,0);
+  FUN_0058917c(L"action_another_room",FUN_0062de28,2,0);
+  FUN_0058917c(L"action_current_room",FUN_0062de10,1,0);
+  FUN_0058917c(L"action_previous_room",&LAB_0062dde0,1,0);
+  FUN_0058917c(L"action_next_room",FUN_0062ddf8,1,0);
+  FUN_0058917c(L"action_if_previous_room",FUN_0062de4c,0,0);
+  FUN_0058917c(L"action_if_next_room",&LAB_0062de80,0,0);
+  FUN_0058917c(L"action_set_alarm",&LAB_0062deb4,2,0);
+  FUN_0058917c(L"action_sleep",FUN_0062df34,2,0);
+  FUN_0058917c(L"action_set_timeline",&LAB_0062df7c,2,0);
+  FUN_0058917c(L"action_timeline_set",&LAB_0062dfc0,4,0);
+  FUN_0058917c(L"action_timeline_start",&LAB_0062e030,0,0);
+  FUN_0058917c(L"action_timeline_pause",&LAB_0062e040,0,0);
+  FUN_0058917c(L"action_timeline_stop",&LAB_0062e050,0,0);
+  FUN_0058917c(L"action_set_timeline_position",FUN_0062e06c,1,0);
+  FUN_0058917c(L"action_set_timeline_speed",FUN_0062e0c4,1,0);
+  FUN_0058917c(L"action_message",&LAB_0062e100,1,0);
+  FUN_0058917c(L"action_show_info",&LAB_0062e184,0,0);
+  FUN_0058917c(L"action_show_video",&LAB_0062e198,3,1);
+  FUN_0058917c(L"action_splash_video",&LAB_0062e2a8,2,1);
+  FUN_0058917c(L"action_splash_text",&LAB_0062e384,1,1);
+  FUN_0058917c(L"action_splash_image",&LAB_0062e420,1,1);
+  FUN_0058917c(L"action_splash_web",&LAB_0062e4bc,2,1);
+  FUN_0058917c(L"action_splash_settings",&LAB_0062e674,5,1);
+  FUN_0058917c(L"action_end_game",FUN_0062e714,0,0);
+  FUN_0058917c(L"action_restart_game",FUN_0062e720,0,0);
+  FUN_0058917c(L"action_save_game",FUN_0062e72c,1,0);
+  FUN_0058917c(L"action_load_game",&LAB_0062e77c,1,0);
+  FUN_0058917c(L"action_replace_sprite",&LAB_0062e7a0,3,1);
+  FUN_0058917c(L"action_replace_sound",&LAB_0062e970,2,1);
+  FUN_0058917c(L"action_replace_background",&LAB_0062eac4,2,1);
+  FUN_0058917c(L"action_if_empty",&LAB_0062ec70,3,0);
+  FUN_0058917c(L"action_if_collision",FUN_0062ed18,3,0);
+  FUN_0058917c(L"action_if",FUN_0062edc4,1,0);
+  FUN_0058917c(L"action_if_number",FUN_0062eddc,3,0);
+  FUN_0058917c(L"action_if_object",&LAB_0062ee88,3,0);
+  FUN_0058917c(L"action_if_question",&LAB_0062ef14,1,0);
+  FUN_0058917c(L"action_if_dice",&LAB_0062efd4,1,0);
+  FUN_0058917c(L"action_if_mouse",&LAB_0062f038,1,0);
+  FUN_0058917c(L"action_if_aligned",&LAB_0062f110,2,0);
+  FUN_0058917c(L"action_execute_script",&LAB_0062f1c4,6,0);
+  FUN_0058917c(L"action_inherited",&LAB_0062f2f0,0,0);
+  FUN_0058917c(L"action_if_variable",&LAB_0062f348,3,0);
+  FUN_0058917c(L"action_draw_variable",&LAB_0062f4bc,3,0);
+  FUN_0058917c(L"action_set_score",&LAB_0062f5b0,1,0);
+  FUN_0058917c(L"action_if_score",FUN_0062f5e8,2,0);
+  FUN_0058917c(L"action_draw_score",&LAB_0062f684,3,0);
+  FUN_0058917c(L"action_highscore_show",FUN_0062f744,5,0);
+  FUN_0058917c(L"action_highscore_clear",&LAB_0062f838,0,0);
+  FUN_0058917c(L"action_set_life",FUN_0062f844,1,0);
+  FUN_0058917c(L"action_if_life",FUN_0062f8a4,2,0);
+  FUN_0058917c(L"action_draw_life",&LAB_0062f940,3,0);
+  FUN_0058917c(L"action_draw_life_images",FUN_0062fa00,3,0);
+  FUN_0058917c(L"action_set_health",&LAB_0062fb18,1,0);
+  FUN_0058917c(L"action_if_health",&LAB_0062fba0,2,0);
+  FUN_0058917c(L"action_draw_health",&LAB_0062fc3c,6,0);
+  FUN_0058917c(L"action_set_caption",&LAB_0062ff18,6,0);
+  FUN_0058917c(L"action_partsyst_create",FUN_0062ffa8,1,1);
+  FUN_0058917c(L"action_partsyst_destroy",&LAB_00630024,0,1);
+  FUN_0058917c(L"action_partsyst_clear",FUN_00630048,0,1);
+  FUN_0058917c(L"action_parttype_create_old",&DAT_00630064,6,1);
+  FUN_0058917c(L"action_parttype_create",FUN_00630108,6,1);
+  FUN_0058917c(L"action_parttype_color",&LAB_006301b0,6,1);
+  FUN_0058917c(L"action_parttype_life",&LAB_00630270,3,1);
+  FUN_0058917c(L"action_parttype_speed",&LAB_006302e8,6,1);
+  FUN_0058917c(L"action_parttype_gravity",FUN_00630384,3,1);
+  FUN_0058917c(L"action_parttype_secondary",&LAB_006303f0,5,1);
+  FUN_0058917c(L"action_partemit_create",&LAB_00630490,6,1);
+  FUN_0058917c(L"action_partemit_destroy",FUN_00630524,1,1);
+  FUN_0058917c(L"action_partemit_burst",&LAB_00630570,3,1);
+  FUN_0058917c(L"action_partemit_stream",&LAB_00630648,3,1);
+  FUN_0058917c(L"action_cd_play",&LAB_00630720,2,1);
+  FUN_0058917c(L"action_cd_stop",FUN_00630744,0,1);
+  FUN_0058917c(L"action_cd_pause",FUN_00630750,0,1);
+  FUN_0058917c(L"action_cd_resume",FUN_0063075c,0,1);
+  FUN_0058917c(L"action_cd_present",FUN_00630768,0,1);
+  FUN_0058917c(L"action_cd_playing",FUN_0063078c,0,1);
+  FUN_0058917c(L"action_set_cursor",FUN_006307b0,2,1);
+  FUN_0058917c(L"action_webpage",&LAB_00630800,1,1);
+  FUN_0058917c(L"action_draw_sprite",&LAB_00630930,4,0);
+  FUN_0058917c(L"action_draw_background",&LAB_00630aa0,4,0);
+  FUN_0058917c(L"action_draw_text",&LAB_00630c60,3,0);
+  FUN_0058917c(L"action_draw_text_transformed",&LAB_00630d0c,6,1);
+  FUN_0058917c(L"action_draw_rectangle",&LAB_00630de8,5,0);
+  FUN_0058917c(L"action_draw_gradient_hor",&LAB_00630e7c,6,1);
+  FUN_0058917c(L"action_draw_gradient_vert",&LAB_00630f54,6,1);
+  FUN_0058917c(L"action_draw_ellipse",FUN_0063102c,5,0);
+  FUN_0058917c(L"action_draw_ellipse_gradient",&LAB_006310c0,6,1);
+  FUN_0058917c(L"action_draw_line",FUN_00631160,4,0);
+  FUN_0058917c(L"action_draw_arrow",FUN_006311d0,5,0);
+  FUN_0058917c(L"action_color",FUN_0063124c,1,0);
+  FUN_0058917c(L"action_font",FUN_00631264,2,0);
+  FUN_0058917c(L"action_fullscreen",&LAB_0063128c,1,0);
+  FUN_0058917c(L"action_snapshot",&LAB_006312dc,1,1);
+  FUN_0058917c(L"action_effect",&LAB_0063132c,6,1);
+  return;
+}
