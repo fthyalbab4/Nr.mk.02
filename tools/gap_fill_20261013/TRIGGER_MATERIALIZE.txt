@@ -1,1 +1,1 @@
-trigger runner-only landscape scope
+trigger export scroll save
