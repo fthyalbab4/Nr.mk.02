@@ -52,6 +52,29 @@ void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
         rt->step_accumulator = fixed * 4.0;
 }
 
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !rt->running) return;
+    if (!isfinite(dt) || dt <= 0.0) return;
+
+    int target_fps = rt->room_speed > 0 ? rt->room_speed : 30;
+    if (rt->step_room_speed != target_fps) {
+        rt->step_accumulator = 0.0;
+        rt->step_room_speed = target_fps;
+    }
+    double step_dt = 1.0 / (double)target_fps;
+
+    rt->step_accumulator += dt;
+    int steps = 0;
+    while (rt->step_accumulator >= step_dt && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= step_dt;
+        steps++;
+    }
+    if (steps == 4 && rt->step_accumulator >= step_dt) {
+        rt->step_accumulator = 0.0;
+    }
+}
+
 
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
     if (!rt || !out_ptrs) return 0;
@@ -179,6 +202,7 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
             }
         }
     }
+    gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
@@ -294,6 +318,8 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
+    rt->running = 1;
+    rt->frame = 0;
     rt->room_loading = 0;
     rt->running = 1;
     rt->frame = 0;
@@ -316,8 +342,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             for (int oi = 0; oi < rt->objects->count; oi++) {
                 const char *n = rt->objects->items[oi].name;
                 if (!n) continue;
-                if (strstr(n, "link") || strstr(n, "fantasma") || strstr(n, "player") ||
-                    strstr(n, "mario") || strstr(n, "Player")) {
+                if (strcmp(n, "obj_player") == 0 || strcmp(n, "obj_mario") == 0 || strcmp(n, "obj_link") == 0) {
                     double sx = rt->room_width > 80 ? rt->room_width * 0.35 : 64;
                     double sy = rt->room_height > 80 ? rt->room_height * 0.35 : 64;
                     gm82_runtime_instance_create(rt, oi, sx, sy);
