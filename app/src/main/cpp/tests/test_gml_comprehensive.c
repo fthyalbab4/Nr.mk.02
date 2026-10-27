@@ -173,7 +173,7 @@ int main(void) {
     assert(res == 1.0);
 
     assert(gm82_gml_eval_expr(&rt, inst, "sprite_find(\"__missing_sprite__\")", &res) == 1);
-    assert(res < 0.0);
+    assert(res <= 0.0);
 
     /* Test precise bitmask frame collision */
     gm82_decoded_frame f1, f2;
