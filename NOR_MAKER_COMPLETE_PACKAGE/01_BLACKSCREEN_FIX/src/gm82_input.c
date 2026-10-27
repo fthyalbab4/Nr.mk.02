@@ -111,6 +111,8 @@ static int input_key_to_index(double key, int *out) {
 }
 
 double gml_keyboard_check(double key) {
+    if (!g_input || isnan(key) || isinf(key) || key < 0 || key >= GM82_KEY_MAX) return 0.0;
+    int k = (int)key;
     int k;
     if (!g_input || !input_key_to_index(key, &k)) return 0;
     if (k == 0) {
@@ -123,11 +125,12 @@ double gml_keyboard_check(double key) {
             if (g_input->down[i]) return 1.0;
         return 0.0;
     }
-    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->down[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_pressed(double key) {
+    if (!g_input || isnan(key) || isinf(key) || key <= 0 || key >= GM82_KEY_MAX) return 0.0;
+    int k = (int)key;
     if (!g_input || isnan(key) || isinf(key)) return 0.0;
     int k = (int)key;
     if (!g_input) return 0;
@@ -143,6 +146,8 @@ double gml_keyboard_check_pressed(double key) {
 }
 
 double gml_keyboard_check_released(double key) {
+    if (!g_input || isnan(key) || isinf(key) || key <= 0 || key >= GM82_KEY_MAX) return 0.0;
+    int k = (int)key;
     if (!g_input || isnan(key) || isinf(key)) return 0.0;
     int k = (int)key;
     if (!g_input) return 0;
