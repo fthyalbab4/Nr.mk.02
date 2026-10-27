@@ -27,6 +27,7 @@ typedef struct {
     int32_t visible;
     int32_t depth;
     int32_t persistent;
+    int32_t parent_index; /* -1 if none */
     int32_t event_count;
     gm82_decoded_event events[GM82_OBJ_EVENT_MAX];
 } gm82_decoded_object;

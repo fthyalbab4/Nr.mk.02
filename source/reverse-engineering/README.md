@@ -9,8 +9,9 @@ The analysis covers the eight PE files in `game maker/portable`: `GameMaker.exe`
 ## Contents
 
 - `static/`: SHA-256 inventory, PE imports/resources/exports evidence, and REA decompile manifests.
-- `decompiles/<binary>/functions/`: up to 120 Ghidra pseudocode files per binary, named by virtual address.
-- `decompiles/<binary>/decompile-index.json`: REA function index for the export.
+- `decompiles/<binary>/functions/`: full address-based Ghidra pseudocode set for every analyzed function (not original source).
+- `decompiles/<binary>/decompile-index.json`: full REA function index; `full-index/` adds normalized fields and provenance.
+- `maps/`: conservative classified maps with keyword evidence; `docs/REA_FULL_DECOMPILE_STATUS.md` and `docs/REA_RUNTIME_NOTES.md` explain coverage and clean-room implementation rules.
 
 ## Results summary
 
@@ -36,3 +37,7 @@ The analysis covers the eight PE files in `game maker/portable`: `GameMaker.exe`
 ## Source correlation
 
 Open source components that can be correlated directly are retained in `source/unpacked/`, especially `gm82save`, `gm82core`, `gm82room`, `gm82mv`, `gm82hub`, `gm82audio`, and related extensions. The main `GameMaker.exe` implementation itself is not present as source in the collected public archives.
+
+## Full-pass counts
+
+The cap was removed using REA resume exports. `GameMaker.exe`: 10,454 selected / 9,656 new pseudocode writes plus 120 retained; 678 externals; 0 failures. The other main PE tools each have 8,934 selected / 8,175 new writes plus 120 retained; `gm82save.dll` has 1,196 selected / 925 new writes plus 120 retained. Counts are evidence of analysis coverage, not a claim of source recovery or NorMaker parity.

@@ -61,6 +61,37 @@ static int cell_at(gm82_mp_grid *g, int cx, int cy) {
     return g->cells[cy * GM82_MP_GRID_CELLS + cx];
 }
 
+
+void gm82_mp_grid_clear_cell(gm82_mp_grid_world *w, int id, int cx, int cy) {
+    if (!w || id < 0 || id >= GM82_MP_GRID_MAX || !w->grids[id].used) return;
+    gm82_mp_grid *g = &w->grids[id];
+    if (cx < 0 || cy < 0 || cx >= g->w || cy >= g->h) return;
+    g->cells[cy * GM82_MP_GRID_CELLS + cx] = 0;
+}
+
+void gm82_mp_grid_clear_rectangle(gm82_mp_grid_world *w, int id, int x1, int y1, int x2, int y2) {
+    if (!w || id < 0 || id >= GM82_MP_GRID_MAX || !w->grids[id].used) return;
+    gm82_mp_grid *g = &w->grids[id];
+    if (x1 > x2) { int t = x1; x1 = x2; x2 = t; }
+    if (y1 > y2) { int t = y1; y1 = y2; y2 = t; }
+    for (int cy = y1; cy <= y2; cy++)
+        for (int cx = x1; cx <= x2; cx++)
+            if (cx >= 0 && cy >= 0 && cx < g->w && cy < g->h)
+                g->cells[cy * GM82_MP_GRID_CELLS + cx] = 0;
+}
+
+void gm82_mp_grid_add_rectangle(gm82_mp_grid_world *w, int id, int x1, int y1, int x2, int y2, int solid) {
+    if (!w || id < 0 || id >= GM82_MP_GRID_MAX || !w->grids[id].used) return;
+    gm82_mp_grid *g = &w->grids[id];
+    if (x1 > x2) { int t = x1; x1 = x2; x2 = t; }
+    if (y1 > y2) { int t = y1; y1 = y2; y2 = t; }
+    uint8_t v = solid ? 1 : 0;
+    for (int cy = y1; cy <= y2; cy++)
+        for (int cx = x1; cx <= x2; cx++)
+            if (cx >= 0 && cy >= 0 && cx < g->w && cy < g->h)
+                g->cells[cy * GM82_MP_GRID_CELLS + cx] = v;
+}
+
 int gm82_mp_grid_path(gm82_mp_grid_world *w, int id,
                       double xstart, double ystart, double xgoal, double ygoal,
                       double *ox, double *oy, int max_pts, int allowdiag) {

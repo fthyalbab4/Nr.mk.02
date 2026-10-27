@@ -1,0 +1,99 @@
+// rea decompile_all
+// name: FUN_00656824
+// address: 0x656824
+// body: available
+// range: 0x656824-0x656f27 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_00656824(void)
+
+{
+  FUN_0058917c(&PTR_DAT_00656f34,FUN_00655990,0,1);
+  FUN_0058917c(&PTR_DAT_00656f64,&LAB_006559b4,1,1);
+  FUN_0058917c(&PTR_DAT_00656f94,FUN_006559cc,1,1);
+  FUN_0058917c(&PTR_DAT_00656fc4,FUN_006559fc,1,1);
+  FUN_0058917c(&PTR_DAT_00656ff0,FUN_00655a14,2,1);
+  FUN_0058917c(&PTR_DAT_0065701c,FUN_00655a38,5,1);
+  FUN_0058917c(&PTR_DAT_0065704c,&LAB_00655a94,5,1);
+  FUN_0058917c(&PTR_DAT_00657078,&LAB_00655ac8,3,1);
+  FUN_0058917c(&PTR_DAT_006570a4,&LAB_00655af0,3,1);
+  FUN_0058917c(&PTR_DAT_006570d0,&LAB_00655b20,3,1);
+  FUN_0058917c(&PTR_DAT_006570fc,&LAB_00655b50,3,1);
+  FUN_0058917c(&PTR_DAT_00657128,&LAB_00655b80,5,1);
+  FUN_0058917c(&PTR_DAT_00657154,&LAB_00655bb4,5,1);
+  FUN_0058917c(&PTR_DAT_00657188,&LAB_00655be8,6,1);
+  FUN_0058917c(&PTR_DAT_006571c0,&LAB_00655c34,3,1);
+  FUN_0058917c(&PTR_DAT_006571f0,&LAB_00655c5c,3,1);
+  FUN_0058917c(&PTR_DAT_00657224,&LAB_00655c8c,7,1);
+  FUN_0058917c(&PTR_DAT_00657258,FUN_00655ce4,7,1);
+  FUN_0058917c(&PTR_DAT_0065728c,FUN_00655d3c,2,1);
+  FUN_0058917c(&PTR_DAT_006572bc,FUN_00655d60,3,1);
+  FUN_0058917c(&PTR_DAT_006572ec,&LAB_00655d90,4,1);
+  FUN_0058917c(&PTR_DAT_0065731c,&LAB_00655d90,4,1);
+  FUN_0058917c(&PTR_DAT_00657348,&LAB_00655dc8,2,1);
+  FUN_0058917c(&PTR_DAT_00657378,FUN_00655de8,3,1);
+  FUN_0058917c(&PTR_DAT_006573a8,&LAB_00655e10,4,1);
+  FUN_0058917c(&PTR_DAT_006573d8,&LAB_00655e10,4,1);
+  FUN_0058917c(&PTR_DAT_00657404,FUN_00655e3c,2,1);
+  FUN_0058917c(&PTR_DAT_00657430,&LAB_00655e6c,0,1);
+  FUN_0058917c(&PTR_DAT_00657464,&LAB_00655e90,1,1);
+  FUN_0058917c(&PTR_DAT_00657498,FUN_00655ea8,1,1);
+  FUN_0058917c(&PTR_DAT_006574cc,FUN_00655ed8,1,1);
+  FUN_0058917c(&PTR_DAT_006574fc,FUN_00655ef0,2,1);
+  FUN_0058917c(&PTR_DAT_00657538,&LAB_00655f20,2,1);
+  FUN_0058917c(&PTR_DAT_00657568,FUN_00655f40,3,1);
+  FUN_0058917c(&PTR_DAT_006575a0,&LAB_00655f68,2,1);
+  FUN_0058917c(&PTR_DAT_006575e8,&LAB_00655f98,2,1);
+  FUN_0058917c(&PTR_DAT_0065762c,&LAB_00655fc8,1,1);
+  FUN_0058917c(&PTR_DAT_00657660,FUN_00655fe0,1,1);
+  FUN_0058917c(&PTR_DAT_00657694,FUN_00655ff8,5,1);
+  FUN_0058917c(&PTR_DAT_006576cc,&LAB_00656034,6,1);
+  FUN_0058917c(&PTR_DAT_00657710,&LAB_0065607c,1,1);
+  FUN_0058917c(&PTR_DAT_00657748,FUN_00656094,1,1);
+  FUN_0058917c(&PTR_DAT_00657780,FUN_006560c0,1,1);
+  FUN_0058917c(&PTR_DAT_006577b4,FUN_006560ec,2,1);
+  FUN_0058917c(&PTR_DAT_006577ec,FUN_00656110,1,1);
+  FUN_0058917c(&PTR_DAT_0065782c,FUN_00656128,2,1);
+  FUN_0058917c(&PTR_DAT_00657860,FUN_00656164,2,1);
+  FUN_0058917c(&PTR_DAT_00657894,FUN_00656188,8,1);
+  FUN_0058917c(&PTR_DAT_006578c8,&LAB_006561e4,4,1);
+  FUN_0058917c(&PTR_DAT_006578fc,&LAB_0065621c,4,1);
+  FUN_0058917c(&PTR_DAT_00657930,&LAB_00656254,1,1);
+  FUN_0058917c(&PTR_DAT_00657968,FUN_00656280,2,1);
+  FUN_0058917c(&PTR_DAT_006579a4,FUN_006562a4,1,1);
+  FUN_0058917c(&PTR_DAT_006579e8,FUN_006562bc,2,1);
+  FUN_0058917c(&PTR_DAT_00657a20,FUN_006562f8,2,1);
+  FUN_0058917c(&PTR_DAT_00657a58,FUN_0065631c,4,1);
+  FUN_0058917c(&PTR_DAT_00657a94,FUN_0065634c,6,1);
+  FUN_0058917c(&PTR_DAT_00657acc,&LAB_006563a0,1,1);
+  FUN_0058917c(&PTR_DAT_00657b04,FUN_006563cc,2,1);
+  FUN_0058917c(&PTR_DAT_00657b40,FUN_006563f0,1,1);
+  FUN_0058917c(&PTR_DAT_00657b84,FUN_00656408,2,1);
+  FUN_0058917c(&PTR_DAT_00657bbc,FUN_00656444,2,1);
+  FUN_0058917c(&PTR_DAT_00657bf4,FUN_00656468,7,1);
+  FUN_0058917c(&PTR_DAT_00657c2c,&LAB_006564b8,1,1);
+  FUN_0058917c(&PTR_DAT_00657c64,FUN_006564e4,2,1);
+  FUN_0058917c(&PTR_DAT_00657ca0,FUN_00656508,1,1);
+  FUN_0058917c(&PTR_DAT_00657ce4,FUN_00656520,2,1);
+  FUN_0058917c(&PTR_DAT_00657d1c,FUN_0065655c,2,1);
+  FUN_0058917c(&PTR_DAT_00657d54,FUN_00656580,6,1);
+  FUN_0058917c(&PTR_DAT_00657d8c,&LAB_006565c4,3,1);
+  FUN_0058917c(&PTR_DAT_00657dc0,&LAB_006565f4,3,1);
+  FUN_0058917c(L"part_changer_create",&LAB_00656620,1,1);
+  FUN_0058917c(L"part_changer_destroy",FUN_0065664c,2,1);
+  FUN_0058917c(L"part_changer_destroy_all",FUN_00656670,1,1);
+  FUN_0058917c(L"part_changer_exists",FUN_00656688,2,1);
+  FUN_0058917c(L"part_changer_clear",FUN_006566c4,2,1);
+  FUN_0058917c(L"part_changer_region",FUN_006566e8,7,1);
+  FUN_0058917c(L"part_changer_kind",&LAB_00656738,3,1);
+  FUN_0058917c(L"part_changer_types",&LAB_00656768,4,1);
+  FUN_0058917c(L"effect_create_below",&LAB_006567a0,5,1);
+  FUN_0058917c(L"effect_create_above",FUN_006567dc,5,1);
+  FUN_0058917c(L"effect_clear",FUN_00656818,0,1);
+  return;
+}

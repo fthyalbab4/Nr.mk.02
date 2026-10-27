@@ -490,6 +490,43 @@ public class MainActivity extends Activity {
         }
     }
 
+
+    private String saveExportBytes(byte[] data, String requestedName, String mime) {
+        if (data == null) return "";
+        String name = requestedName == null ? "export.bin" : new File(requestedName).getName();
+        name = name.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (mime == null || mime.length() == 0) mime = "application/octet-stream";
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/NORMaker");
+                values.put(MediaStore.MediaColumns.IS_PENDING, 1);
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri == null) throw new IllegalStateException("insert failed");
+                try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                    if (out == null) throw new IllegalStateException("stream null");
+                    out.write(data);
+                }
+                values.clear();
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                getContentResolver().update(uri, values, null, null);
+                return uri.toString();
+            }
+            File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (dir == null) dir = getFilesDir();
+            File folder = new File(dir, "NORMaker");
+            if (!folder.exists() && !folder.mkdirs()) folder = dir;
+            File file = new File(folder, name);
+            try (FileOutputStream out = new FileOutputStream(file)) { out.write(data); }
+            return file.getAbsolutePath();
+        } catch (Exception e) {
+            Log.e(TAG, "export bytes failed", e);
+            return "";
+        }
+    }
+
     private String saveNorJson(String json, String requestedName) {
         if (json == null) return "";
         String name = requestedName == null ? "project.nor.json" : new File(requestedName).getName();
@@ -634,6 +671,17 @@ public class MainActivity extends Activity {
         @JavascriptInterface public String exportNorJsonToApp(String json, String filename) {
             return saveNorJson(json, filename);
         }
+        @JavascriptInterface public String saveExportBase64(String base64, String filename, String mime) {
+            try {
+                if (base64 == null || base64.length() == 0) return "";
+                byte[] data = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+                return saveExportBytes(data, filename, mime);
+            } catch (Exception e) {
+                Log.e(TAG, "saveExportBase64 failed", e);
+                return "";
+            }
+        }
+
         @JavascriptInterface public boolean exportNorJson(String json, String outputPath) {
             return nativeExportNorJson(json, outputPath);
         }

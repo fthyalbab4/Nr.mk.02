@@ -53,6 +53,26 @@ void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
     if (steps == 4 && rt->step_accumulator >= step_dt) {
         rt->step_accumulator = 0.0;
     }
+    memset(rt, 0, sizeof(*rt));
+}
+
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !rt->running || !isfinite(dt) || dt <= 0.0) return;
+    int speed = rt->room_speed > 0 ? rt->room_speed : 30;
+    if (rt->step_room_speed != speed) {
+        rt->step_room_speed = speed;
+        rt->step_accumulator = 0.0;
+    }
+    rt->step_accumulator += dt;
+    double fixed = 1.0 / (double)speed;
+    int updates = 0;
+    while (rt->step_accumulator + 1e-12 >= fixed && updates < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= fixed;
+        updates++;
+    }
+    if (updates == 4 && rt->step_accumulator > fixed * 4.0)
+        rt->step_accumulator = fixed * 4.0;
 }
 
 
@@ -115,6 +135,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         const gm82_decoded_object *o = &rt->objects->items[object_index];
         inst->sprite_index = o->sprite_index;
         inst->solid = o->solid;
+        inst->persistent = o->persistent ? 1 : inst->persistent;
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
         /* Name heuristics when GMK solid bit is wrong/zero */
@@ -168,7 +189,8 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
-    gm82_events_fire_create_single(rt, inst);
+    if (!rt->room_loading)
+        gm82_events_fire_create_single(rt, inst);
     return inst;
 }
 
@@ -264,6 +286,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->view_follow_object = 0;
 
     int w = 0;
+    rt->room_loading = 1;
     for (int i = 0; i < rt->instance_count; i++) {
         if (rt->instances[i].alive && rt->instances[i].persistent) {
             if (w != i) rt->instances[w] = rt->instances[i];
@@ -281,6 +304,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
+    rt->room_loading = 0;
     rt->running = 1;
     rt->frame = 0;
     {
@@ -297,6 +321,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             }
         }
         if (!has_player && rt->objects) {
+            int spawned_fallback = 0;
             for (int oi = 0; oi < rt->objects->count; oi++) {
                 const char *n = rt->objects->items[oi].name;
                 if (!n) continue;
@@ -304,9 +329,12 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
                     double sx = rt->room_width > 80 ? rt->room_width * 0.35 : 64;
                     double sy = rt->room_height > 80 ? rt->room_height * 0.35 : 64;
                     gm82_runtime_instance_create(rt, oi, sx, sy);
+                    spawned_fallback = 1;
                     rt->view_follow_object = oi; break;
                 }
             }
+            if (spawned_fallback)
+                gm82_events_fire_create_all(rt);
         }
     }
     s_room_transition_depth--;
@@ -485,6 +513,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
                                 continue;
                         }
                         gm82_events_fire_collision(rt, inst, other);
+                        if (other->alive)
+                            gm82_events_fire_collision(rt, other, inst);
                         if (other->solid) {
                             double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
                             double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);

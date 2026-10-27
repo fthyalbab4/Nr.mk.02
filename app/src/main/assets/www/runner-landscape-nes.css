@@ -1,0 +1,120 @@
+/*
+ * NOR Maker — NES landscape chrome
+ * SCOPED TO .nm-nes-runner ONLY (Game Runner overlay).
+ * Must NOT alter IDE / Studio / main app shell.
+ */
+
+/* Root shell — only when class is present on runner container */
+.nm-nes-runner {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  background: #000 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.nm-nes-runner .nm-nes-screen-wrap {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: #000 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.nm-nes-runner .nm-nes-ab {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2.5px solid #3aa0e8;
+  background: radial-gradient(circle at 35% 30%, #1a2838 0%, #0a1018 70%);
+  color: #5ec8ff;
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 0 16px rgba(60, 180, 255, 0.35);
+}
+.nm-nes-runner .nm-nes-ab.b {
+  width: 56px;
+  height: 56px;
+  font-size: 16px;
+}
+
+/* Controls stay inside runner stacking context (absolute, not global fixed) */
+.nm-nes-runner {
+  position: relative !important;
+}
+.nm-nes-runner .nm-nes-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  overflow: visible;
+  pointer-events: none;
+  background: transparent !important;
+  z-index: 50;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.nm-nes-runner .nm-nes-controls > * {
+  pointer-events: auto;
+}
+/* Left D-Pad — relative to runner only */
+.nm-nes-runner .nm-nes-controls > div:first-child {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+}
+/* Right A/B cluster — relative to runner only */
+.nm-nes-runner .nm-nes-controls > div:last-child {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.nm-nes-runner .nm-nes-screen-wrap iframe,
+.nm-nes-runner .nm-nes-screen-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
+}
+
+@media (orientation: portrait) {
+  .nm-nes-runner {
+    flex-direction: column !important;
+  }
+  .nm-nes-runner .nm-nes-controls {
+    position: relative;
+    height: auto;
+  }
+  .nm-nes-runner .nm-nes-controls > div:first-child,
+  .nm-nes-runner .nm-nes-controls > div:last-child {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: none;
+  }
+}
