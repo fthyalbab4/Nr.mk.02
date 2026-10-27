@@ -1,6 +1,6 @@
 # Daily Periodic Audit Report — NOR Maker GM82 Engine
 
-**Date:** 2026-10-26
+**Date:** 2026-10-27
 **Audit Conducted By:** Jules (Automated Periodic Engine Verifier)
 **Reference Specification:** GM82 Project (https://github.com/GM82Project) & `REPORTING_RULES.md`
 
@@ -11,7 +11,7 @@
 | Scope / Domain | Status / Percentage Range | Measurement Basis |
 | :--- | :--- | :--- |
 | **Host Verified Pipeline** | **92% - 96%** | Native C host test suites (`daily_audit_runner.py`, `run_engine_suite.py`, `run_full_verification.py`, `make test`) — 100% pass rate across 4 sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`). |
-| **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compile for 4 ABIs; `gradle assembleDebug` builds cleanly. Physical hardware playtesting remains unverified without physical device logcat. |
+| **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compile for 4 ABIs; `./gradlew assembleDebug` builds cleanly. Physical hardware playtesting remains unverified without physical device logcat. |
 | **GM82 Extension API Parity** | **85% - 90%** | Math, 3D geometry, Perlin noise, HRT timer, string tokens, color reverse, ds_grid disk operations, approach, angle_difference implemented in clean-room native C. |
 
 > **Strict Compliance Note:** No 100% total completion or "Windows parity" is claimed, strictly adhering to `REPORTING_RULES.md`. Full device playtesting requires physical Android hardware logcat verification.

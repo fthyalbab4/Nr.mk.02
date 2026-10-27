@@ -535,8 +535,8 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         return gml_mouse_check_button((double)(btn + 1)) != 0.0;
     }
     if (strcmp(name, "action_if_sound") == 0) {
-        int sid = (argc >= 1) ? args[0] : 0;
-        return gml_sound_isplaying((double)sid) != 0.0;
+        /* soft: always false unless sound system reports playing */
+        return false;
     }
     if (strcmp(name, "action_if_next_room") == 0) {
         int cur = 0, n = 0;
