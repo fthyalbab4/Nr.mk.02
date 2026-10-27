@@ -166,6 +166,8 @@ static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
 
 void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !inst->alive) return;
+    if (inst->create_fired) return;
+    inst->create_fired = 1;
     gm82_gml_set_runtime(rt);
     const char *gcode = find_gml(g_gml_create, g_gml_create_n, rt, inst->object_index);
     if (gcode) {
@@ -249,6 +251,8 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
     for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
         const gm82_decoded_event *ev = &obj->events[e];
         if (ev->main_type != GM82_EV_COLLISION) continue;
+        if (other && ev->event_numb >= 0 && ev->event_numb != other->object_index)
+            continue;
         if (ev->action_name0[0])
             gm82_action_execute_named(rt, inst, ev->action_name0);
         if (ev->code_snippet && ev->code_snippet[0]) {
@@ -268,8 +272,7 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
                 if (cs && strstr(cs, "instance_destroy")) { is_pick = 1; break; }
             }
             if (is_pick && !other->solid) {
-                gm82_events_fire_destroy(rt, other);
-                other->alive = 0;
+                gm82_runtime_instance_destroy(rt, other);
             }
         }
     }
