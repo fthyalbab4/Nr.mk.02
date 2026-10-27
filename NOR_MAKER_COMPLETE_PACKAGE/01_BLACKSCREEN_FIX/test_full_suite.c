@@ -221,6 +221,26 @@ void test_advanced_gml_and_physics_suite(void) {
     assert(gm82_gml_eval_expr(&rt, inst, "math_min(10, 20) + math_max(5, 15)", &val));
     assert(val == 25.0);
 
+    /* GM 8.2 math & instance functions */
+    assert(gml_modwrap(370.0, 0.0, 360.0) == 10.0);
+    assert(gml_esign(5.0, 0.0) == 1.0);
+    assert(gml_esign(-5.0, 0.0) == -1.0);
+    assert(gml_esign(0.0, 42.0) == 42.0);
+    assert(gml_round_unbiased(2.5) == 3.0);
+    assert(gml_point_line_distance(0.0, 5.0, 0.0, 0.0, 10.0, 0.0, 1.0) == 5.0);
+    assert(gml_pivot_pos_x(10.0, 0.0, 0.0) == 10.0);
+    assert(gml_pivot_pos_y(10.0, 0.0, 0.0) == 0.0);
+
+    gm82_gml_set_runtime(&rt);
+    gm82_gml_set_self(inst);
+    inst->x = 0.0; inst->y = 0.0;
+    gm82_instance *target_inst = gm82_runtime_instance_create(&rt, 2, 100.0, 0.0);
+    assert(target_inst != NULL);
+    assert(gml_direction_to_object(2.0) == 0.0);
+
+    gml_move_towards_fixed(100.0, 0.0, 10.0);
+    assert(inst->speed == 10.0);
+
     /* 2. Test deg/rad conversions */
     assert(gm82_gml_eval_expr(&rt, inst, "rad_to_deg(deg_to_rad(180))", &val));
     assert(val >= 179.9 && val <= 180.1);

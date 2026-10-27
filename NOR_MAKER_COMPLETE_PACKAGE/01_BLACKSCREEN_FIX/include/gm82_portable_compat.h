@@ -18,7 +18,6 @@ const char *gm82_portable_token_next(void);
 void gm82_portable_token_reset(void);
 
 /* Pure math helpers claimed in NM GAPS as present — thin ports */
-double gml_modwrap(double val, double maxv);
 double gml_smoothstep(double edge0, double edge1, double x);
 double gml_lerproach(double a, double b, double t);
 
