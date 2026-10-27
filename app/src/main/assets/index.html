@@ -30477,6 +30477,7 @@ const createEngineHTML = (projectData) => {
         #canvas3d { position:absolute; top:0; left:0; width:100%; height:100%; display:none; z-index: 1; }
     </style>
     <script defer src="./vendor/three.r128.min.js"><\/script>
+<link rel="stylesheet" href="runner-landscape-nes.css" />
 </head>
 <body>
     <div id="loading">LOADING NOR ENGINE...</div><script>setTimeout(function(){var l=document.getElementById('loading');if(l)l.style.display='none';},1800);<\/script>
@@ -91024,7 +91025,7 @@ const MenuItem = ({ label, shortcut, icon, onClick, disabled, setOpenMenu }) => 
 const MenuDropdown = ({ children, align = "left", style = {} }) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
   "div",
   {
-    className: `fixed top-[22px] mt-[1px] bg-white border border-gray-500 shadow-[2px_2px_4px_rgba(0,0,0,0.4)] min-w-[200px] py-0.5 z-[9999]`,
+    className: `fixed top-[22px] mt-[1px] bg-white border border-gray-500 shadow-[2px_2px_4px_rgba(0,0,0,0.4)] min-w-[200px] max-h-[min(70vh,520px)] overflow-y-auto overscroll-contain py-0.5 z-[9999] touch-pan-y`,
     style: {
       ...style,
       ...align === "right" ? { right: "4px" } : {}
@@ -97612,8 +97613,8 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
   }, [toastMessage]);
 
   const sendKey = (key, type) => {
-    const iwin = iframeRef.current?.contentWindow;
-    if (!iwin) return;
+    /* MARIO_FIX: parent may host Input */
+    const iwin = (iframeRef.current && iframeRef.current.contentWindow) ? iframeRef.current.contentWindow : null;
     const isDown = type === "keydown";
     let code = typeof key === "string" ? key : "";
     let keyCode = typeof key === "number" ? key : 0;
@@ -97656,7 +97657,31 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       }
     }
 
-    if (typeof iwin.syncKeyboardToPlayers === "function") {
+    /* MARIO_FIX: sync parent + iframe Input */
+    try {
+      const _tgts = [];
+      if (typeof window !== "undefined") _tgts.push(window);
+      if (iwin) _tgts.push(iwin);
+      for (const w of _tgts) {
+        if (!w) continue;
+        try {
+          if (typeof w.syncKeyboardToPlayers === "function") {
+            w.syncKeyboardToPlayers(keyCode || code || key, isDown);
+            if (code) w.syncKeyboardToPlayers(code, isDown);
+          }
+          if (w.Input && typeof w.Input.syncKey === "function") {
+            w.Input.syncKey(keyCode || code || key, isDown);
+            if (code) w.Input.syncKey(code, isDown);
+            if (keyCode) w.Input.syncKey(keyCode, isDown);
+          }
+          if (w.P1_Input && typeof w.P1_Input.syncKey === "function") {
+            w.P1_Input.syncKey(keyCode || code || key, isDown);
+            if (code) w.P1_Input.syncKey(code, isDown);
+          }
+        } catch (_e) {}
+      }
+    } catch (_e2) {}
+    if (iwin && typeof iwin.syncKeyboardToPlayers === "function") {
       try {
         iwin.syncKeyboardToPlayers(keyCode || code || key, isDown);
         if (code && code !== key) iwin.syncKeyboardToPlayers(code, isDown);
@@ -97703,8 +97728,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = true; });
       return next;
     });
-    const primaryKey = arr.length > 0 ? arr[0] : null;
-    if (primaryKey !== null) sendKey(primaryKey, "keydown");
+    arr.forEach(function(k){ try { sendKey(k, "keydown"); } catch(e){} });
   };
 
   const handleBtnUp = (e, keyOrKeys) => {
@@ -97716,8 +97740,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       arr.forEach(k => { next[String(k)] = false; });
       return next;
     });
-    const primaryKey = arr.length > 0 ? arr[0] : null;
-    if (primaryKey !== null) sendKey(primaryKey, "keyup");
+    arr.forEach(function(k){ try { sendKey(k, "keyup"); } catch(e){} });
   };
 
   const activeButtons = ((detectedControls && Array.isArray(detectedControls.buttons) && detectedControls.buttons.length > 0)
@@ -97739,7 +97762,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
     ref: containerRef,
-    className: "flex flex-col w-full h-full bg-[#0d0f14] text-white select-none overflow-hidden touch-none justify-between",
+    className: "nm-nes-runner flex flex-row w-full h-full bg-black text-white select-none overflow-hidden touch-none",
     style: { touchAction: "none" },
     children: [
       /* TOP STATUS & NAVIGATION BAR */
@@ -97803,12 +97826,12 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
       /* MAIN CONSOLE CHASSIS (Fills entire screen dynamically) */
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
-        className: `flex-1 flex flex-col items-center justify-between w-full max-w-[480px] mx-auto p-2 sm:p-3 ${currentTheme.bodyBg} border-x-4 border-b-4 ${currentTheme.bodyBorder} shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden select-none`,
+        className: `flex-1 flex flex-col items-center justify-between w-full max-w-none w-full h-full p-0 nm-nes-chassis ${currentTheme.bodyBg} border-x-4 border-b-4 ${currentTheme.bodyBorder} shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden select-none`,
         style: { borderBottomRightRadius: "36px", borderBottomLeftRadius: "24px" },
         children: [
           /* SCREEN BEZEL & DISPLAY UNIT (Takes remaining vertical space!) */
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
-            className: `w-full flex-1 min-h-[180px] max-h-[58vh] rounded-2xl border-4 ${currentTheme.bezelBorder} ${currentTheme.bezelBg} p-2 flex flex-col items-center justify-between shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] relative overflow-hidden`,
+            className: `w-full flex-1 min-h-[180px] max-h-none nm-nes-screen-wrap rounded-none border-0 ${currentTheme.bezelBorder} ${currentTheme.bezelBg} p-2 flex flex-col items-center justify-between shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] relative overflow-hidden`,
             style: { borderBottomRightRadius: "28px" },
             children: [
               /* Top Bezel Header */
@@ -97889,7 +97912,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
           /* CONTROLS DECK (PERMANENTLY PINNED AT BOTTOM - ALWAYS 100% VISIBLE!) */
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
-            className: "w-full shrink-0 flex items-center justify-between gap-1 pt-2 pb-1 select-none touch-none",
+            className: "nm-nes-controls w-full shrink-0 flex items-center justify-between gap-3 px-2 py-2 select-none touch-none bg-[#0a0a0c]",
             style: { touchAction: "none" },
             dir: "ltr",
             children: [
@@ -130746,14 +130769,47 @@ ${result.warnings.slice(0, 3).join("\n")}` : "";
         setState(AppState.COMPLETED);
       }
       if (blob) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
         let ext = format === "j2me" ? "jar" : format === "gbc" ? "gbc" : format === "apk" ? "apk" : format === "esp32" ? "zip" : format;
         if (format === "win") {
           ext = blob.type === "application/zip" ? "zip" : "exe";
         }
-        a.download = `${name}.${ext}`;
-        a.click();
+        const filename = `${name}.${ext}`;
+        const mime = blob.type || "application/octet-stream";
+        let savedNative = false;
+        try {
+          const native = window.NorNative;
+          if (native && typeof native.saveExportBase64 === "function") {
+            const buf = await blob.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            let bin = "";
+            const chunk = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunk) {
+              bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+            }
+            const b64 = btoa(bin);
+            const path = native.saveExportBase64(b64, filename, mime);
+            if (path) {
+              savedNative = true;
+              window.alert("تم التصدير وحفظ الملف:\n" + path);
+            }
+          }
+        } catch (nativeErr) {
+          console.warn("native export save failed", nativeErr);
+        }
+        if (!savedNative) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try { URL.revokeObjectURL(a.href); } catch (_) {}
+            try { a.remove(); } catch (_) {}
+          }, 2500);
+        }
+      } else if (format !== "apk") {
+        window.alert("التصدير لم يُنتج ملفًا. تأكد من وجود مشروع مفتوح وأن الصيغة مدعومة.");
       }
     } catch (e) {
       window.alert("Export failed: " + e);

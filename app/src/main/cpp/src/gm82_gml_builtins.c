@@ -380,6 +380,14 @@ void gml_draw_sprite(double sprite, double x, double y) {
     }
 }
 
+void gml_draw_self(void) {
+    if (!g_self) return;
+    gml_draw_sprite_ext((double)g_self->sprite_index, (double)g_self->image_index,
+                        g_self->x, g_self->y,
+                        g_self->image_xscale, g_self->image_yscale,
+                        g_self->image_angle, 0xFFFFFF, g_self->image_alpha);
+}
+
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha) {
     if (!g_draw_buf || !g_rt || !g_rt->sprites) return;

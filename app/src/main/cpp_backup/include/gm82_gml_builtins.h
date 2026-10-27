@@ -89,6 +89,7 @@ double gml_object_get_solid(double object_index);
 double gml_get_timer(void);
 double gml_delta_time(void);
 void gm82_gml_set_frame_time(double seconds);
+void gml_draw_self(void);
 void gml_draw_sprite(double sprite, double x, double y);
 void gml_draw_set_color(double color);
 void gml_draw_set_alpha(double alpha);
