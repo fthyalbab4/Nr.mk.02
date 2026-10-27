@@ -97762,7 +97762,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
     ref: containerRef,
-    className: "nm-nes-runner flex flex-row w-full h-full bg-black text-white select-none overflow-hidden touch-none",
+    className: "flex flex-col w-full h-full bg-[#0d0f14] text-white select-none overflow-hidden touch-none justify-between",
     style: { touchAction: "none" },
     children: [
       /* TOP STATUS & NAVIGATION BAR */
@@ -97826,12 +97826,12 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
       /* MAIN CONSOLE CHASSIS (Fills entire screen dynamically) */
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
-        className: `flex-1 flex flex-col items-center justify-between w-full max-w-none w-full h-full p-0 nm-nes-chassis ${currentTheme.bodyBg} border-x-4 border-b-4 ${currentTheme.bodyBorder} shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden select-none`,
+        className: `flex-1 flex flex-col items-center justify-between w-full max-w-[480px] mx-auto p-2 sm:p-3 ${currentTheme.bodyBg} border-x-4 border-b-4 ${currentTheme.bodyBorder} shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden select-none`,
         style: { borderBottomRightRadius: "36px", borderBottomLeftRadius: "24px" },
         children: [
           /* SCREEN BEZEL & DISPLAY UNIT (Takes remaining vertical space!) */
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
-            className: `w-full flex-1 min-h-[180px] max-h-none nm-nes-screen-wrap rounded-none border-0 ${currentTheme.bezelBorder} ${currentTheme.bezelBg} p-2 flex flex-col items-center justify-between shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] relative overflow-hidden`,
+            className: `w-full flex-1 min-h-[180px] max-h-[58vh] rounded-2xl border-4 ${currentTheme.bezelBorder} ${currentTheme.bezelBg} p-2 flex flex-col items-center justify-between shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] relative overflow-hidden`,
             style: { borderBottomRightRadius: "28px" },
             children: [
               /* Top Bezel Header */
@@ -97912,7 +97912,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
           /* CONTROLS DECK (PERMANENTLY PINNED AT BOTTOM - ALWAYS 100% VISIBLE!) */
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", {
-            className: "nm-nes-controls w-full shrink-0 flex items-center justify-between gap-3 px-2 py-2 select-none touch-none bg-[#0a0a0c]",
+            className: "w-full shrink-0 flex items-center justify-between gap-1 pt-2 pb-1 select-none touch-none",
             style: { touchAction: "none" },
             dir: "ltr",
             children: [

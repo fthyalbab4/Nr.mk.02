@@ -1,7 +1,4 @@
-/* SAFE: no layout !important that collapses the game surface.
- * Previous NES landscape overrides forced height:100% on iframe/canvas
- * and zeroed the play area on many Android WebViews (black screen).
- */
+/* SAFE: no layout !important that collapses the game surface. */
 .nm-nes-runner .nm-nes-ab-accent {
   box-shadow: 0 0 12px rgba(60, 180, 255, 0.35);
 }
