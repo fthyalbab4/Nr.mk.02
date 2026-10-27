@@ -1,1 +1,1 @@
-trigger mario step reclass
+trigger landscape nes ui
