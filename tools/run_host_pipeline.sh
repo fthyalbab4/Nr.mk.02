@@ -129,7 +129,7 @@ gcc -O2 -Werror=implicit-function-declaration -I"$INC" -I"$CPP" -o "$ROOT/build_
   "$SRC/gm82_particles.c" "$SRC/gm82_mp_grid.c" \
   "$SRC/gm82_sound_runtime.c" "$SRC/gm82_soft_render.c" \
   "$SRC/gm82_sprite_decode.c" "$SRC/gm82_background_decode.c" \
-  "$SRC/gm82_object_room_decode.c" "$SRC/gm82_sound_decode.c" -lz -lm
+  "$SRC/gm82_object_room_decode.c" "$SRC/gm82_materialize.c" "$SRC/gm82_project_ir.c" "$SRC/gm82_sound_decode.c" -lz -lm
 
 OUT="$ROOT/build_host/pipeline_results.txt"
 : > "$OUT"
