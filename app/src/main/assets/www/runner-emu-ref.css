@@ -1,16 +1,16 @@
 /**
- * NOR Maker — Emulator reference skin (user-approved screenshot)
- * Landscape only. Portrait = original handheld.
- * Black-screen guard: min-height on game surface, no height:100% iframe collapse.
+ * NOR Maker — exact NES landscape scene
+ * Portrait intentionally keeps the existing handheld layout.
+ * Landscape is a separate composition: black stage, 256:224 game screen,
+ * cyan outlined D-pad on the left, SELECT/START above it, and two round
+ * action buttons on the right.
  */
 
 .nm-export-scroll-menu {
   scrollbar-width: auto;
   scrollbar-color: #6b7280 #e5e7eb;
 }
-.nm-export-scroll-menu::-webkit-scrollbar {
-  width: 14px;
-}
+.nm-export-scroll-menu::-webkit-scrollbar { width: 14px; }
 .nm-export-scroll-menu::-webkit-scrollbar-track {
   background: #e5e7eb;
   border-left: 1px solid #9ca3af;
@@ -20,125 +20,265 @@
   border: 2px solid #e5e7eb;
   border-radius: 2px;
 }
-.nm-export-scroll-menu::-webkit-scrollbar-thumb:hover {
-  background: #374151;
-}
+.nm-export-scroll-menu::-webkit-scrollbar-thumb:hover { background: #374151; }
 
 @media (orientation: landscape) {
   .nm-emu-ref {
-    background: #000 !important;
     position: relative !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+    background: #000 !important;
+    color: #fff !important;
+    font-family: monospace !important;
+  }
+
+  /* Keep only compact utility controls as the screenshot's top-right menu. */
+  .nm-emu-ref > div:first-child {
+    position: absolute !important;
+    inset: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    z-index: 90 !important;
+    pointer-events: none !important;
+  }
+  .nm-emu-ref > div:first-child > div:first-child { display: none !important; }
+  .nm-emu-ref > div:first-child > div:last-child {
+    position: absolute !important;
+    top: 8px !important;
+    right: 18px !important;
+    display: flex !important;
+    gap: 6px !important;
+    pointer-events: auto !important;
+  }
+  .nm-emu-ref > div:first-child > div:last-child > button {
+    display: none !important;
+    width: 38px !important;
+    height: 48px !important;
+    padding: 0 !important;
+    border: 1px solid #1b3650 !important;
+    border-radius: 0 0 0 18px !important;
+    background: rgba(0,0,0,.72) !important;
+    color: #2eb8ef !important;
+    font-size: 0 !important;
+    box-shadow: 0 0 8px rgba(0,174,255,.18) !important;
+  }
+  /* orientation and fullscreen remain available without recreating the old frame */
+  .nm-emu-ref > div:first-child > div:last-child > button:nth-child(3),
+  .nm-emu-ref > div:first-child > div:last-child > button:nth-child(4) { display: block !important; }
+  .nm-emu-ref > div:first-child > div:last-child > button:nth-child(3)::after {
+    content: "⋮";
+    font-size: 34px;
+    line-height: 42px;
+    font-weight: 900;
+  }
+  .nm-emu-ref > div:first-child > div:last-child > button:nth-child(4)::after {
+    content: "⛶";
+    font-size: 22px;
+    line-height: 42px;
+    font-weight: 900;
   }
 
   .nm-emu-ref .nm-emu-chassis {
-    position: relative !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
     min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: none !important;
+    border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     background: #000 !important;
+    overflow: hidden !important;
   }
 
+  /* NES 256:224 aspect ratio: the game is the entire center composition. */
   .nm-emu-ref .nm-emu-screen {
     position: absolute !important;
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
-    width: min(66vw, 133.33vh) !important;
-    height: min(100vh, 49.5vw) !important;
+    width: min(52vw, 114.285714vh) !important;
+    height: min(100vh, 45.5vw) !important;
     max-width: none !important;
     max-height: none !important;
     min-height: 0 !important;
     flex: none !important;
-    border-radius: 0 !important;
-    border: none !important;
-    padding: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
     background: #000 !important;
     z-index: 10 !important;
   }
-
-  .nm-emu-ref .nm-emu-screen > div:first-child {
-    display: none !important;
-  }
+  .nm-emu-ref .nm-emu-screen > div:first-child,
+  .nm-emu-ref .nm-emu-screen > div:last-child { display: none !important; }
   .nm-emu-ref .nm-emu-screen > div:nth-child(2) {
+    display: block !important;
     width: 100% !important;
     height: 100% !important;
     min-height: 0 !important;
-    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
     border-radius: 0 !important;
+    background: #000 !important;
+    overflow: hidden !important;
   }
   .nm-emu-ref .nm-emu-screen iframe {
+    display: block !important;
     width: 100% !important;
     height: 100% !important;
-    display: block !important;
+    min-height: 0 !important;
     border: 0 !important;
+    border-radius: 0 !important;
   }
 
   .nm-emu-ref .nm-emu-controls {
     position: absolute !important;
-    left: 0 !important;
-    right: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    height: auto !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
     background: transparent !important;
     pointer-events: none !important;
-    z-index: 50 !important;
+    z-index: 60 !important;
   }
-  .nm-emu-ref .nm-emu-controls > * {
-    pointer-events: auto !important;
-  }
+  .nm-emu-ref .nm-emu-controls > * { pointer-events: auto !important; }
 
+  /* Left D-pad: oversized transparent black plates with cyan edge treatment. */
   .nm-emu-ref .nm-emu-controls > div:first-child {
     position: absolute !important;
-    left: 10px !important;
-    top: 52% !important;
+    left: 3.8vw !important;
+    top: 51% !important;
+    width: 230px !important;
+    height: 230px !important;
     transform: translateY(-50%) !important;
-    z-index: 60 !important;
+    z-index: 70 !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:first-child > div:first-child { display: none !important; }
+  .nm-emu-ref .nm-emu-controls > div:first-child > div:nth-child(2) {
+    width: 210px !important;
+    height: 210px !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:first-child button {
+    background: rgba(0,0,0,.48) !important;
+    border: 1px solid rgba(67,190,242,.42) !important;
+    border-radius: 0 !important;
+    box-shadow: inset 0 0 18px rgba(15,130,190,.08), 0 0 3px rgba(20,170,230,.2) !important;
+    color: #27b9ef !important;
+    text-shadow: 0 0 8px #1ca9e0 !important;
+    font-size: 56px !important;
+    line-height: 1 !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:first-child button span { color: #36c5f5 !important; }
+  .nm-emu-ref .nm-emu-controls > div:first-child > div:nth-child(2) > div:nth-child(3) {
+    width: 76px !important;
+    height: 76px !important;
+    border: 2px solid #36bce9 !important;
+    border-radius: 50% !important;
+    background: #050a0f !important;
+    box-shadow: 0 0 10px rgba(20,170,230,.3) !important;
   }
 
-  .nm-emu-ref .nm-emu-controls > div:last-child {
+  /* SELECT / START are placed above the pad exactly like the reference scene. */
+  .nm-emu-ref .nm-emu-controls > div:nth-child(2) {
     position: absolute !important;
-    right: 12px !important;
-    top: 52% !important;
-    transform: translateY(-50%) !important;
-    z-index: 60 !important;
+    left: 4.1vw !important;
+    top: 8px !important;
+    width: 260px !important;
+    height: 120px !important;
+    display: block !important;
+    padding: 0 !important;
+    z-index: 75 !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(2) > div:first-child {
+    display: flex !important;
+    gap: 10px !important;
+    transform: none !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(2) > div:first-child > div {
+    transform: none !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 14px !important;
   }
-
-  .nm-emu-ref .nm-emu-controls > div:last-child button {
-    width: 58px !important;
-    height: 58px !important;
-    min-width: 58px !important;
-    border-radius: 50% !important;
-    border: 2.5px solid #3aa0e8 !important;
-    background: radial-gradient(circle at 35% 30%, #1a2838 0%, #0a1018 75%) !important;
-    color: #5ec8ff !important;
-    box-shadow: 0 0 14px rgba(60, 180, 255, 0.4) !important;
+  .nm-emu-ref .nm-emu-controls > div:nth-child(2) > div:first-child button {
+    width: 166px !important;
+    height: 52px !important;
+    background: rgba(0,0,0,.8) !important;
+    border: 1px solid #153149 !important;
+    clip-path: polygon(0 0, 94% 0, 100% 50%, 94% 100%, 0 100%, 7% 50%) !important;
+    color: #2cc3f5 !important;
+    box-shadow: 0 0 7px rgba(24,150,220,.22) !important;
+    font-size: 19px !important;
     font-weight: 800 !important;
+    letter-spacing: 1px !important;
   }
-}
+  .nm-emu-ref .nm-emu-controls > div:nth-child(2) > div:first-child span {
+    display: block !important;
+    margin-top: -42px !important;
+    color: #38c7f4 !important;
+    font-size: 18px !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(2) > div:last-child { display: none !important; }
 
-.nm-emu-ref:fullscreen {
-  width: 100vw !important;
-  height: 100vh !important;
-  background: #000 !important;
+  /* Right action pad: exactly two cyan outlined round controls. */
+  .nm-emu-ref .nm-emu-controls > div:nth-child(3) {
+    position: absolute !important;
+    right: 4vw !important;
+    top: 50% !important;
+    width: 190px !important;
+    height: 300px !important;
+    transform: translateY(-50%) !important;
+    z-index: 70 !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(3) > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 18px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(3) > div > div:nth-child(n+3) { display: none !important; }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(3) button {
+    width: 116px !important;
+    height: 116px !important;
+    min-width: 116px !important;
+    border-radius: 50% !important;
+    border: 3px solid #16aeea !important;
+    background: radial-gradient(circle at 42% 35%, #162331 0%, #05080c 72%) !important;
+    color: #28c2f7 !important;
+    box-shadow: 0 0 16px rgba(22,174,234,.55), inset 0 0 14px rgba(22,174,234,.16) !important;
+    font-size: 19px !important;
+    font-weight: 900 !important;
+    text-shadow: 0 0 7px #16aeea !important;
+  }
+  .nm-emu-ref .nm-emu-controls > div:nth-child(3) button span:first-child { font-size: 22px !important; }
+
+  .nm-emu-ref:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #000 !important;
+  }
 }
 
 @media (orientation: portrait) {
-  .nm-emu-ref .nm-emu-controls {
-    position: relative !important;
-  }
+  .nm-emu-ref .nm-emu-controls { position: relative; }
 }
