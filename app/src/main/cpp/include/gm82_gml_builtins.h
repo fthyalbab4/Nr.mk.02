@@ -573,6 +573,14 @@ double gml_sound_find(const char *name);
 double gml_font_find(const char *name);
 double gml_path_find_name(const char *name);
 double gml_timeline_find_name(const char *name);
+double gml_place_snapped(double x, double y, double hsnap, double vsnap);
+double gml_move_contact(double dir, double maxdist);
+double gml_move_bounce(double advanced);
+double gml_mp_grid_clear_cell(double id, double cx, double cy);
+double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2);
+double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid);
+double gml_mp_grid_add_instances(double id, double object_index, double precise);
+double gml_mp_grid_draw(double id);
 
 #ifdef __cplusplus
 }
