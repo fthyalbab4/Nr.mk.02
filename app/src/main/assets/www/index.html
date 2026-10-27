@@ -91009,7 +91009,9 @@ const MenuItem = ({ label, shortcut, icon, onClick, disabled, setOpenMenu }) => 
   "div",
   {
     className: `flex items-center px-4 py-2 md:py-1 cursor-pointer gap-3 text-[11px] font-ui transition-none border border-transparent ${disabled ? "text-gray-400 shadow-none" : "hover:bg-win-select hover:text-white hover:border-transparent text-black"}`,
-    onPointerDown: (e) => {
+    // Use click rather than pointerdown: a touch drag used to trigger an
+    // export as soon as the finger entered a menu item, before scrolling.
+    onClick: (e) => {
       if (!disabled && onClick) {
         e.stopPropagation();
         onClick();
@@ -91026,9 +91028,11 @@ const MenuItem = ({ label, shortcut, icon, onClick, disabled, setOpenMenu }) => 
 const MenuDropdown = ({ children, align = "left", style = {} }) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
   "div",
   {
-    className: `fixed top-[22px] mt-[1px] bg-white border border-gray-500 shadow-[2px_2px_4px_rgba(0,0,0,0.4)] min-w-[200px] max-h-[min(70vh,520px)] overflow-y-auto overscroll-contain py-0.5 z-[9999] touch-pan-y`,
+    className: `fixed top-[22px] mt-[1px] bg-white border border-gray-500 shadow-[2px_2px_4px_rgba(0,0,0,0.4)] min-w-[200px] max-h-[calc(100dvh-30px)] overflow-y-scroll overscroll-contain py-0.5 z-[9999] touch-pan-y`,
     style: {
       ...style,
+      scrollbarGutter: "stable",
+      WebkitOverflowScrolling: "touch",
       ...align === "right" ? { right: "4px" } : {}
     },
     onClick: (e) => e.stopPropagation(),

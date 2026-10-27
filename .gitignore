@@ -14,6 +14,7 @@ coverage/
 Nor-maker-7-main/
 extracted_NorMaker-0_1/
 .gradle/
+local.properties
 .cxx/
 app/.cxx/
 .externalNativeBuild/
