@@ -4432,10 +4432,74 @@ double gml_file_text_write_all(const char *path, const char *data) {
 }
 
 /* --- source/unpacked/gm82core batch2: math/strings helpers (clean-room) --- */
+double gml_modwrap(double val, double minv, double maxv) {
+    double f = val - minv;
+    double w = maxv - minv;
+    if (w <= 0.0) return minv;
+    return f - floor(f / w) * w + minv;
+}
+
+double gml_direction_to_object(double object_index) {
+    if (!g_rt || !g_self) return -1.0;
+    int32_t oi = (int32_t)object_index;
+    double best = 1e300;
+    int found = 0;
+    double bx = 0, by = 0;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive || o == g_self) continue;
+        if (oi < 100000 && oi >= 0 && o->object_index != oi) continue;
+        if (oi >= 100000 && o->id != oi) continue;
+        double dx = o->x - g_self->x, dy = o->y - g_self->y;
+        double d = dx * dx + dy * dy;
+        if (!found || d < best) {
+            best = d; bx = o->x; by = o->y; found = 1;
+        }
+    }
+    if (!found) return -1.0;
+    return gml_point_direction(g_self->x, g_self->y, bx, by);
+}
+
+double gml_move_towards_fixed(double tx, double ty, double sp) {
+    if (!g_self) return 0.0;
+    double dist = gml_point_distance(g_self->x, g_self->y, tx, ty);
+    double use_sp = (sp < dist) ? sp : dist;
+    gml_move_towards_point(tx, ty, use_sp);
+    return use_sp;
+}
+
 double gml_esign(double val, double defv) {
     if (val > 0) return 1.0;
     if (val < 0) return -1.0;
     return defv;
+}
+
+double gml_round_unbiased(double val) {
+    return floor(val + 0.5);
+}
+
+double gml_point_line_distance(double px, double py, double x1, double y1, double x2, double y2, double segment) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    if (dx == 0.0 && dy == 0.0) {
+        return gml_point_distance(px, py, x1, y1);
+    }
+    double t = (dx * (px - x1) + dy * (py - y1)) / (dx * dx + dy * dy);
+    if (segment > 0.5) {
+        if (t < 0.0) t = 0.0;
+        if (t > 1.0) t = 1.0;
+    }
+    double xs = x1 + t * dx;
+    double ys = y1 + t * dy;
+    return gml_point_distance(px, py, xs, ys);
+}
+
+double gml_pivot_pos_x(double px, double py, double dir) {
+    return gml_lengthdir_x(px, dir) + gml_lengthdir_x(py, dir - 90.0);
+}
+
+double gml_pivot_pos_y(double px, double py, double dir) {
+    return gml_lengthdir_y(px, dir) + gml_lengthdir_y(py, dir - 90.0);
 }
 double gml_invlerp(double a, double b, double v) {
     if (b == a) return 0.0;
@@ -4665,14 +4729,14 @@ double gml_sound_find(const char *name) { (void)name; return -1.0; }
 double gml_font_find(const char *name) { (void)name; return -1.0; }
 
 double gml_path_find_name(const char *name) {
-    if (!name) return -1.0;
+    if (!g_paths || !name) return -1.0;
     for (int i = 0; i < g_paths->count; i++)
         if (strcmp(g_paths->items[i].name, name) == 0) return (double)i;
     return -1.0;
 }
 
 double gml_timeline_find_name(const char *name) {
-    if (!name) return -1.0;
+    if (!g_timelines || !name) return -1.0;
     for (int i = 0; i < g_timelines->count; i++)
         if (strcmp(g_timelines->items[i].name, name) == 0) return (double)i;
     return -1.0;

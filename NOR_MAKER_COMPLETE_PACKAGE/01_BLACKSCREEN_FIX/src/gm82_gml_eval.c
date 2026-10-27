@@ -536,7 +536,19 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_angle_difference(arg, nargs >= 2 ? args[1] : 0); return true;
         }
         if (strcmp(id, "modwrap") == 0) {
-            *out = gml_modwrap(arg, nargs >= 2 ? args[1] : 1.0); return true;
+            *out = gml_modwrap(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 1.0); return true;
+        }
+        if (strcmp(id, "round_unbiased") == 0) {
+            *out = gml_round_unbiased(arg); return true;
+        }
+        if (strcmp(id, "point_line_distance") == 0) {
+            *out = gml_point_line_distance(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 1); return true;
+        }
+        if (strcmp(id, "pivot_pos_x") == 0) {
+            *out = gml_pivot_pos_x(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "pivot_pos_y") == 0) {
+            *out = gml_pivot_pos_y(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "smoothstep") == 0) {
             *out = gml_smoothstep(arg, nargs >= 2 ? args[1] : 1.0, nargs >= 3 ? args[2] : 0.0); return true;
@@ -1100,6 +1112,22 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
 
                 if (gm82_gm82core_try_stub(id, out)) return true;
+
+        if (strcmp(id, "window_has_focus") == 0) { *out = gml_window_has_focus(); return true; }
+        if (strcmp(id, "url_open") == 0) { *out = gml_url_open((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "file_text_writelf") == 0) { *out = gml_file_text_writelf((p->str_mask&1)?p->str_args[0]:"", (p->str_mask&2)?p->str_args[1]:""); return true; }
+        if (strcmp(id, "ds_map_set") == 0) { *out = gml_ds_map_set(arg, nargs>=2?args[1]:0, nargs>=3?args[2]:0); return true; }
+        if (strcmp(id, "instance_create_depth") == 0) { *out = gml_instance_create_depth(args[0], args[1], args[2], args[3]); return true; }
+        if (strcmp(id, "string_starts_with") == 0) { *out = gml_string_starts_with_ext((p->str_mask&1)?p->str_args[0]:"", (p->str_mask&2)?p->str_args[1]:""); return true; }
+        if (strcmp(id, "string_ends_with") == 0) { *out = gml_string_ends_with_ext((p->str_mask&1)?p->str_args[0]:"", (p->str_mask&2)?p->str_args[1]:""); return true; }
+        if (strcmp(id, "move_wrap") == 0) { *out = gml_move_wrap2(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "object_find") == 0) { *out = gml_object_find((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "background_find") == 0) { *out = gml_background_find((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "sound_find") == 0) { *out = gml_sound_find((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "font_find") == 0) { *out = gml_font_find((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "path_find") == 0) { *out = gml_path_find_name((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "timeline_find") == 0) { *out = gml_timeline_find_name((p->str_mask&1)?p->str_args[0]:""); return true; }
+
         if (strcmp(id, "color_blend") == 0) { *out = gml_color_blend(arg, nargs>=2?args[1]:0, nargs>=3?args[2]:0.5); return true; }
         if (strcmp(id, "color_get_luminance") == 0) { *out = gml_color_get_luminance(arg); return true; }
         if (strcmp(id, "gauss_range") == 0) { *out = gml_gauss_range(arg, nargs>=2?args[1]:1); return true; }
@@ -1300,7 +1328,8 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_draw_background_tiled(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "sprite_find") == 0) {
-            *out = gml_sprite_find((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+            const char *sp_name = (p->str_mask & 1) ? p->str_args[0] : "";
+            *out = gml_sprite_find(sp_name ? sp_name : ""); return true;
         }
         if (p->rt && p->rt->scripts) {
             int sidx = gm82_script_find(p->rt->scripts, id);

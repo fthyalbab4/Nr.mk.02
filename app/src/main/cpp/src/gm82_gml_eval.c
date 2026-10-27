@@ -536,7 +536,19 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_angle_difference(arg, nargs >= 2 ? args[1] : 0); return true;
         }
         if (strcmp(id, "modwrap") == 0) {
-            *out = gml_modwrap(arg, nargs >= 2 ? args[1] : 1.0); return true;
+            *out = gml_modwrap(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 1.0); return true;
+        }
+        if (strcmp(id, "round_unbiased") == 0) {
+            *out = gml_round_unbiased(arg); return true;
+        }
+        if (strcmp(id, "point_line_distance") == 0) {
+            *out = gml_point_line_distance(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 1); return true;
+        }
+        if (strcmp(id, "pivot_pos_x") == 0) {
+            *out = gml_pivot_pos_x(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "pivot_pos_y") == 0) {
+            *out = gml_pivot_pos_y(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "smoothstep") == 0) {
             *out = gml_smoothstep(arg, nargs >= 2 ? args[1] : 1.0, nargs >= 3 ? args[2] : 0.0); return true;

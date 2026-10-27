@@ -60,13 +60,6 @@ void gm82_portable_token_reset(void) {
     token_buffer[0] = 0;
 }
 
-double gml_modwrap(double val, double maxv) {
-    if (maxv == 0.0) return 0.0;
-    double r = fmod(val, maxv);
-    if (r < 0.0) r += maxv;
-    return r;
-}
-
 double gml_smoothstep(double edge0, double edge1, double x) {
     if (edge0 == edge1) return (x >= edge1) ? 1.0 : 0.0;
     double t = (x - edge0) / (edge1 - edge0);
