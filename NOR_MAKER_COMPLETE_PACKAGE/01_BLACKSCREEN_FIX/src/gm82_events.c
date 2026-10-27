@@ -165,6 +165,8 @@ static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
 }
 
 void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst) {
+    if (!rt || !inst || !inst->alive) return;
+    if (inst->create_fired) return;
     if (!rt || !inst || !inst->alive || inst->create_fired) return;
     inst->create_fired = 1;
     gm82_gml_set_runtime(rt);
