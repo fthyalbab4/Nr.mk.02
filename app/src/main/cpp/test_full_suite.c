@@ -223,6 +223,14 @@ void test_advanced_gml_and_physics_suite(void) {
 
     /* GM 8.2 math & instance functions */
     assert(gml_modwrap(370.0, 0.0, 360.0) == 10.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "modwrap(370, 360)", &val));
+    assert(val == 10.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "modwrap(-10, 0, 360)", &val));
+    assert(val == 350.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "string_starts_with(\"foobar\", \"foo\")", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "string_ends_with(\"foobar\", \"bar\")", &val));
+    assert(val == 1.0);
     assert(gml_esign(5.0, 0.0) == 1.0);
     assert(gml_esign(-5.0, 0.0) == -1.0);
     assert(gml_esign(0.0, 42.0) == 42.0);

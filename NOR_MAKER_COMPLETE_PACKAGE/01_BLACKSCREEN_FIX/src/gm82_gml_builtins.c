@@ -4441,6 +4441,8 @@ double gml_modwrap(double val, double minv, double maxv) {
 
 double gml_direction_to_object(double object_index) {
     if (!g_rt || !g_self) return -1.0;
+    if (!isfinite(object_index) || object_index < (double)INT32_MIN ||
+        object_index > (double)INT32_MAX) return -1.0;
     int32_t oi = (int32_t)object_index;
     double best = 1e300;
     int found = 0;
@@ -4642,8 +4644,8 @@ double gml_string_ord_at(const char *s,double idx){ if(!s) return 0; int i=(int)
 double gml_string_hexdigits(const char *s){ static char out[2048]; size_t j=0; if(!s){out[0]=0;gm82_gml_set_last_string(out);return 0;} for(size_t i=0;s[i]&&j+1<sizeof(out);i++){ char c=s[i]; if((c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F')) out[j++]=c;} out[j]=0; gm82_gml_set_last_string(out); return (double)j; }
 double gml_string_number(const char *s){ static char out[256]; size_t j=0; if(!s){out[0]=0;gm82_gml_set_last_string(out);return 0;} for(size_t i=0;s[i]&&j+1<sizeof(out);i++) if((s[i]>='0'&&s[i]<='9')||s[i]=='.'||s[i]=='-') out[j++]=s[i]; out[j]=0; gm82_gml_set_last_string(out); return atof(out); }
 double gml_string_copy_end(const char *s,double count){ static char out[2048]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} size_t n=strlen(s); int c=(int)count; if(c<0)c=0; if((size_t)c>n)c=(int)n; memcpy(out,s+n-c,(size_t)c); out[c]=0; gm82_gml_set_last_string(out); return (double)c; }
-double gml_string_delete_end(const char *s,double count){ static char out[2048]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} size_t n=strlen(s); int c=(int)count; if(c<0)c=0; if((size_t)c>n)c=(int)n; size_t keep=n-(size_t)c; memcpy(out,s,keep); out[keep]=0; gm82_gml_set_last_string(out); return (double)keep; }
-double gml_string_truncate(const char *s,double maxn){ static char out[2048]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} size_t n=strlen(s); size_t m=(size_t)maxn; if(m>sizeof(out)-1)m=sizeof(out)-1; if(m>n)m=n; memcpy(out,s,m); out[m]=0; gm82_gml_set_last_string(out); return (double)m; }
+double gml_string_delete_end(const char *s,double count){ static char out[2048]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} size_t n=strlen(s); size_t c=0; if(isfinite(count)&&count>0.0)c=count>=(double)n?n:(size_t)count; size_t keep=n-c; memcpy(out,s,keep); out[keep]=0; gm82_gml_set_last_string(out); return (double)keep; }
+double gml_string_truncate(const char *s,double maxn){ static char out[2048]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} size_t n=strlen(s); size_t m=0; if(isfinite(maxn)&&maxn>0.0)m=maxn>=(double)(sizeof(out)-1)?sizeof(out)-1:(size_t)maxn; if(m>n)m=n; memcpy(out,s,m); out[m]=0; gm82_gml_set_last_string(out); return (double)m; }
 double gml_string_magnitude(double n){ static char out[64]; if(n==0){strcpy(out,"0");gm82_gml_set_last_string(out);return 1;} snprintf(out,sizeof(out),"%.0f",fabs(n)); gm82_gml_set_last_string(out); return (double)strlen(out); }
 double gml_str_cat(const char *a,const char *b){ static char out[4096]; snprintf(out,sizeof(out),"%s%s",a?a:"",b?b:""); gm82_gml_set_last_string(out); return (double)strlen(out); }
 double gml_str_sep(const char *a,const char *sep,const char *b){ static char out[4096]; snprintf(out,sizeof(out),"%s%s%s",a?a:"",sep?sep:"",b?b:""); gm82_gml_set_last_string(out); return (double)strlen(out); }
@@ -4655,11 +4657,12 @@ double gml_date_get_timestamp(void){ return (double)time(NULL); }
 
 /* APIs promoted by gm82_gml_eval.c. Keep real host implementations here so
  * every test executable links the same built-in surface. */
-double gml_window_has_focus(void) { return 1.0; }
+double gml_window_has_focus(void) { return 0.0; }
 
 double gml_url_open(const char *url) {
-    /* Android owns URL launching; the host core only validates the request. */
-    return (url && url[0]) ? 1.0 : 0.0;
+    /* No host URL-launch adapter is wired yet; do not report a false success. */
+    (void)url;
+    return 0.0;
 }
 
 double gml_file_text_writelf(const char *path, const char *line) {
@@ -4678,7 +4681,10 @@ double gml_ds_map_set(double id, double key, double value) {
 
 double gml_instance_create_depth(double x, double y, double depth,
                                  double object_index) {
-    if (!g_rt) return -1.0;
+    if (!g_rt || !isfinite(x) || !isfinite(y) || !isfinite(depth) ||
+        !isfinite(object_index) || depth < (double)INT32_MIN ||
+        depth > (double)INT32_MAX || object_index < (double)INT32_MIN ||
+        object_index > (double)INT32_MAX) return -1.0;
     gm82_instance *inst = gm82_runtime_instance_create(
         g_rt, (int32_t)object_index, x, y);
     if (!inst) return -1.0;
