@@ -339,6 +339,7 @@ public class MainActivity extends Activity {
     private void showStudio() {
         nativePlayerVisible = false;
         loopHandler.removeCallbacks(nativeFrameLoop);
+        releaseNativeKeys();
         nativeGameView.setVisibility(View.GONE);
         returnToStudioButton.setVisibility(View.GONE);
         nativePlayButton.setVisibility(View.VISIBLE);
@@ -353,11 +354,17 @@ public class MainActivity extends Activity {
         int action = event.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
             synchronized (nativeLock) { nativeRuntimeMouse((int)x, (int)y, 0, action == MotionEvent.ACTION_DOWN); }
-            setNativeKey(VK_LEFT, x < w / 3.0f);
-            setNativeKey(VK_RIGHT, x > w * 2.0f / 3.0f);
-            setNativeKey(VK_UP, y < h / 2.0f);
-            setNativeKey(VK_DOWN, y >= h / 2.0f && x >= w / 3.0f && x <= w * 2.0f / 3.0f);
-            setNativeKey(VK_SPACE, y < h / 2.0f);
+            // Keep the playfield free of accidental key presses.  The old
+            // mapping treated every touch in the upper half as UP+SPACE,
+            // which made tapping the game or dragging the mouse trigger a
+            // permanent jump.  Controls are now confined to a bottom strip:
+            // left quarter = left, next quarter = right, right quarter = jump.
+            boolean inPad = y >= h * 0.58f;
+            setNativeKey(VK_LEFT, inPad && x < w * 0.25f);
+            setNativeKey(VK_RIGHT, inPad && x >= w * 0.25f && x < w * 0.50f);
+            setNativeKey(VK_UP, false);
+            setNativeKey(VK_DOWN, false);
+            setNativeKey(VK_SPACE, inPad && x >= w * 0.70f);
             return true;
         }
         if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
@@ -378,6 +385,22 @@ public class MainActivity extends Activity {
         else if (vk == VK_SPACE) { was = holdSpace; holdSpace = down; }
         else was = !down;
         if (was != down) synchronized (nativeLock) { nativeRuntimeKey(vk, down); }
+    }
+    /** Release every held key when focus or the activity changes state. */
+    private void releaseNativeKeys() {
+        holdLeft = holdRight = holdUp = holdDown = holdSpace = false;
+        try {
+            synchronized (nativeLock) {
+                nativeRuntimeKey(VK_LEFT, false);
+                nativeRuntimeKey(VK_RIGHT, false);
+                nativeRuntimeKey(VK_UP, false);
+                nativeRuntimeKey(VK_DOWN, false);
+                nativeRuntimeKey(VK_SPACE, false);
+                nativeRuntimeKey(VK_ENTER, false);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Unable to release native input", t);
+        }
     }
 
     private static int androidToVk(int keyCode) {
@@ -410,11 +433,7 @@ public class MainActivity extends Activity {
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (!hasFocus && nativePlayerVisible) {
-            synchronized (nativeLock) {
-                nativeRuntimeKey(VK_LEFT, false); nativeRuntimeKey(VK_RIGHT, false);
-                nativeRuntimeKey(VK_UP, false); nativeRuntimeKey(VK_DOWN, false);
-                nativeRuntimeKey(VK_SPACE, false); nativeRuntimeKey(VK_ENTER, false);
-            }
+            releaseNativeKeys();
         }
     }
 
@@ -804,6 +823,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onPause() {
         loopHandler.removeCallbacks(nativeFrameLoop);
+        releaseNativeKeys();
         if (webView != null) webView.onPause();
         super.onPause();
     }
@@ -816,6 +836,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onDestroy() {
         loopHandler.removeCallbacks(nativeFrameLoop);
+        releaseNativeKeys();
         if (pendingFileCallback != null) { pendingFileCallback.onReceiveValue(null); pendingFileCallback = null; }
         if (webView != null) {
             webView.removeJavascriptInterface("NorNative");
