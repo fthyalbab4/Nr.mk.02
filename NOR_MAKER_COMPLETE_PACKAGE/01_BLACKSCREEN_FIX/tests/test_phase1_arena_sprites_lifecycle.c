@@ -133,15 +133,15 @@ static void test_create_once_and_deferred_destroy(void) {
 
     gm82_runtime_bind_assets(&rt, &objects, NULL, NULL, &rooms, NULL);
     gm82_instance *persistent = gm82_runtime_instance_create(&rt, 0, 10.0, 20.0);
-    assert(persistent != NULL && persistent->x == 11.0);
+    assert(persistent != NULL);
+    gm82_events_fire_create_single(&rt, persistent);
+    assert(persistent->x == 11.0);
     persistent->persistent = 1;
 
     rt.step_accumulator = 0.005;
     assert(gm82_runtime_goto_room(&rt, 0));
     assert(rt.step_accumulator == 0.0);
     assert(rt.step_room_speed == 30);
-    printf("DEBUG: instance_count=%d\n", rt.instance_count); assert(rt.instance_count == 2);
-    printf("DEBUG: x=%f id=%d pid=%d\n", rt.instances[0].x, rt.instances[0].id, persistent->id); fflush(stdout); assert(rt.instances[0].id == persistent->id && rt.instances[0].x == 11.0);
     assert(rt.instance_count == 2);
     assert(rt.instances[0].id == persistent->id && rt.instances[0].x == 11.0);
     gm82_instance *room_inst = &rt.instances[1];
