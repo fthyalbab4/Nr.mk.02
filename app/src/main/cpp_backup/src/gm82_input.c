@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_input.h"
+#include <math.h>
 #include <string.h>
 
 static gm82_input_state *g_input = NULL;
@@ -73,6 +74,7 @@ void gm82_input_set_mouse(gm82_input_state *in, int x, int y) {
 
 void gm82_input_set_mouse_f(gm82_input_state *in, double x, double y) {
     if (!in) return;
+    if (!isfinite(x) || !isfinite(y) || fabs(x) > 1e6 || fabs(y) > 1e6) return;
     in->mouse_x_f = x;
     in->mouse_y_f = y;
     in->mouse_x = (int)x;

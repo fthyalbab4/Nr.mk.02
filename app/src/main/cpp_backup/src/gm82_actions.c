@@ -1,12 +1,14 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_gml_eval.h"
 #include "gm82_sound_runtime.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 #include <zlib.h>
+#include <time.h>
 
 #define GM82_ACTION_MAX_ARGS 8
 
@@ -500,10 +502,16 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         return false;
     }
     if (strcmp(name, "action_if_variable") == 0) {
-        /* args: value, op, compare — uses score as proxy when no var table */
+        /* args: value, op, compare — evaluates GML expressions when strings supplied */
         double cur = (argc >= 1) ? (double)args[0] : 0.0;
         int op = (argc >= 2) ? args[1] : 0;
         double thr = (argc >= 3) ? (double)args[2] : 0.0;
+        if (str_argc >= 1 && str_args[0][0]) {
+            gm82_gml_eval_expr(rt, self, str_args[0], &cur);
+        }
+        if (str_argc >= 2 && str_args[1][0]) {
+            gm82_gml_eval_expr(rt, self, str_args[1], &thr);
+        }
         switch (op) {
             case 1: return cur < thr;
             case 2: return cur > thr;
@@ -513,14 +521,22 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
             default: return cur == thr;
         }
     }
+    if (strcmp(name, "action_if_aligned") == 0) {
+        double hs = (argc >= 1 && args[0] > 0) ? (double)args[0] : 16.0;
+        double vs = (argc >= 2 && args[1] > 0) ? (double)args[1] : 16.0;
+        return (fmod(self->x, hs) == 0.0 && fmod(self->y, vs) == 0.0);
+    }
+    if (strcmp(name, "action_if_question") == 0) {
+        return true; /* soft prompt assumption */
+    }
     if (strcmp(name, "action_if_mouse") == 0) {
         int btn = (argc >= 1) ? args[0] : 0;
         extern double gml_mouse_check_button(double button);
         return gml_mouse_check_button((double)(btn + 1)) != 0.0;
     }
     if (strcmp(name, "action_if_sound") == 0) {
-        /* soft: always false unless sound system reports playing */
-        return false;
+        int sid = (argc >= 1) ? args[0] : 0;
+        return gml_sound_isplaying((double)sid) != 0.0;
     }
     if (strcmp(name, "action_if_next_room") == 0) {
         int cur = 0, n = 0;
@@ -604,6 +620,37 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_load_game") == 0) {
         const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
         return gml_game_load(path) > 0;
+    }
+    if (strcmp(name, "action_execute_code") == 0 || strcmp(name, "action_code") == 0) {
+        if (str_argc >= 1 && str_args[0][0]) {
+            gm82_gml_eval_block(rt, self, str_args[0]);
+        }
+        return true;
+    }
+    if (strcmp(name, "action_execute_script") == 0 || strcmp(name, "action_script") == 0) {
+        if (argc >= 1) {
+            double scr = (double)args[0];
+            gml_script_execute(scr);
+        }
+        return true;
+    }
+    if (strcmp(name, "action_inherited") == 0) {
+        /* inherited event placeholder */
+        return true;
+    }
+    if (strcmp(name, "action_sleep") == 0) {
+        int ms = (argc >= 1) ? args[0] : 0;
+        if (ms > 0) {
+#ifdef _WIN32
+            Sleep(ms);
+#else
+            struct timespec ts;
+            ts.tv_sec = ms / 1000;
+            ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+            nanosleep(&ts, NULL);
+#endif
+        }
+        return true;
     }
     fprintf(stderr, "UNMAPPED_ACTION %s\n", name);
     return false;

@@ -9,10 +9,8 @@ static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
 }
 
-
-/* If GML looks like continuous Step logic, force GM82_EV_STEP (3). */
+/* Keep Create events as Create events (main_type 0) without reclassifying. */
 static void gm82_reclass_step_like_events(gm82_decoded_object *o) {
-    /* Keep Create events as Create events (main_type 0) without reclassifying. */
     (void)o;
 }
 
@@ -59,6 +57,7 @@ void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
     free(L->items);
     memset(L, 0, sizeof(*L));
 }
+
 void gm82_decoded_room_list_free(gm82_decoded_room_list *L) {
     if (!L) return;
     for (int i = 0; i < L->count; i++) {
@@ -96,8 +95,7 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         if (ver != 430 && ver != 400 && ver != 800) { free(d); continue; }
         if (ver == 800 && (strncmp(name, "spr", 3) == 0 || strncmp(name, "snd", 3) == 0 ||
                            strncmp(name, "bg", 2) == 0 || strncmp(name, "back", 4) == 0)) {
-            free(d); continue;
-        }
+            free(d); continue; }
         if (n >= 256) { free(d); break; }
         int32_t spr_i = rd_i32(d + off);
         int32_t solid_i = rd_i32(d + off + 4);
