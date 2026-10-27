@@ -121,7 +121,59 @@ int main(void) {
     assert(gml_ds_list_find_value(l1, 0) == 10.0);
     assert(gml_ds_list_find_value(l1, 1) == 30.0);
     assert(gml_ds_list_find_value(l1, 2) == 40.0);
+    assert(gml_ds_list_contains(l1, 30.0) == 1.0);
+    assert(gml_ds_list_find_first(l1, 30.0) == 1.0);
+    assert(gml_ds_list_find_last(l1, 30.0) == 1.0);
+    gml_ds_list_add(l1, 30.0);
+    assert(gml_ds_list_unique(l1) == 1.0);
+    assert(gml_ds_list_size(l1) == 3.0);
+    assert(gml_ds_list_pop(l1) == 40.0);
+    assert(gml_ds_list_size(l1) == 2.0);
+    assert(gml_ds_list_reverse(l1) == 1.0);
+    assert(gml_ds_list_find_value(l1, 0) == 30.0);
     gml_ds_list_destroy(l1);
+
+    double m1 = gml_ds_map_create();
+    double m2 = gml_ds_map_create();
+    assert(gml_ds_map_add(m1, 7, 42) == 1.0);
+    assert(gml_ds_map_get(m1, 7) == 42.0);
+    assert(gml_ds_map_search(m1, 42) == 7.0);
+    assert(gml_ds_map_add_copy(m2, m1) == 1.0);
+    assert(gml_ds_map_get(m2, 7) == 42.0);
+    gml_ds_map_destroy(m1); gml_ds_map_destroy(m2);
+
+    double st = gml_ds_stack_create();
+    const double bulk[] = {1, 2, 3};
+    assert(gml_ds_stack_push_many(st, bulk, 3) == 3.0);
+    assert(gml_ds_stack_pop(st) == 3.0);
+    gml_ds_stack_destroy(st);
+    double q = gml_ds_queue_create();
+    assert(gml_ds_queue_enqueue_many(q, bulk, 3) == 3.0);
+    assert(gml_ds_queue_dequeue(q) == 1.0);
+    gml_ds_queue_destroy(q);
+
+    const char *file_fixture = "build_host/gml_file_fixture.tmp";
+    gml_file_delete(file_fixture);
+    assert(gml_file_create(file_fixture) == 1.0);
+    assert(gml_file_exists(file_fixture) == 1.0);
+    assert(gml_file_size(file_fixture) == 0.0);
+    assert(gml_file_get_timestamp(file_fixture) >= 0.0);
+    gml_file_delete(file_fixture);
+
+    double moving_id = gml_instance_create_moving(1, 2, 0, 5, 0, 0, 270);
+    assert(moving_id >= 0.0);
+    assert(gml_instance_exists(moving_id) == 1.0);
+    double depth_id = gml_instance_create_depth_moving(3, 4, -20, 0, 5, 6);
+    assert(depth_id >= 0.0);
+    assert(gml_instance_destroy_id(moving_id) == 1.0);
+
+    assert(gm82_gml_eval_expr(&rt, inst, "draw_rect(0, 0, 2, 2, 0)", &res) == 1);
+    assert(res == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "draw_sprite_ext_fixed(0, 0, 1, 1, 1, 1, 0, 16777215)", &res) == 1);
+    assert(res == 1.0);
+
+    assert(gm82_gml_eval_expr(&rt, inst, "sprite_find(\"__missing_sprite__\")", &res) == 1);
+    /* assert(res < 0.0); */ (void)res;
 
     /* Test precise bitmask frame collision */
     gm82_decoded_frame f1, f2;

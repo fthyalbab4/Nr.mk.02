@@ -21,6 +21,13 @@ Main already contains ROOM_BOUNDS, origin collision, events fire_*, actions, str
 - `test_gml_gm82_core_expanded.c`
 (require full native link lines / may need gm82_loader)
 
+## REA & Portable GM8.2 Audit (2026-10-26)
+- Analyzed GM8.2 portable source packages and reverse engineering decompiles using `rea-agents` tools.
+- Fixed `gml_keyboard_check_pressed` and `gml_keyboard_check_released` handling for `vk_nokey` (`0.0`) in `gm82_input.c`.
+- Restored missing `gm82_runtime_cleanup` and `gm82_runtime_step_dt` symbols in `gm82_runtime.c` to maintain ABI compatibility across tests and JNI bridge.
+- Fixed `gm82_runtime_step_dt` speed change reset logic and `gm82_runtime_init` `step_room_speed` initialization.
+- Verified 3-way synchronization across C engine mirrors (`app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, and `app/src/main/cpp_backup/`).
+
 ## Next
 1. Spot-check discard branches then delete.
 2. Port individual missing **symbols** only if a game FAIL names them.

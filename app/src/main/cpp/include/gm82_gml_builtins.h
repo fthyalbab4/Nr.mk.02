@@ -34,7 +34,17 @@ gm82_instance *gm82_gml_get_self(void);
 
 /* ---- Instance ---- */
 double gml_instance_create(double x, double y, double object_index);
+double gml_instance_create_moving(double x, double y, double object_index,
+                                  double speed, double direction,
+                                  double gravity, double gravdir);
+double gml_instance_create_depth_moving(double x, double y, double depth, double object_index, double hspeed, double vspeed);
+double gml_instance_farthest(double x, double y, double object_index);
+double gml_distance_to_center(double object_index);
+double gml_file_text_read_all(const char *path);
+const char *gml_file_text_last_all(void);
+double gml_file_text_write_all(const char *path, const char *data);
 void   gml_instance_destroy(void); /* destroys self */
+double gml_instance_destroy_other(void);
 double gml_instance_number(double object_index); /* -1 = all */
 double gml_instance_exists(double id_or_object);
 double gml_variable_instance_exists(double instance_id, const char *name);
@@ -52,7 +62,6 @@ double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_string_digits(const char *src, char *dst, size_t max_len);
-void gml_string_letters(const char *src, char *dst, size_t max_len);
 
 /* ---- Collision (AABB via sprite size) ---- */
 double gml_place_meeting(double x, double y, double object_index);
@@ -129,6 +138,13 @@ double gml_ds_list_clear(double id);
 double gml_ds_list_delete(double id, double pos);
 double gml_ds_list_find_index(double id, double value);
 double gml_ds_list_empty(double id);
+double gml_ds_list_add_many(double id, const double *values, int count);
+double gml_ds_list_contains(double id, double value);
+double gml_ds_list_find_first(double id, double value);
+double gml_ds_list_find_last(double id, double value);
+double gml_ds_list_pop(double id);
+double gml_ds_list_reverse(double id);
+double gml_ds_list_unique(double id);
 
 /* ds_map (numeric keys only) */
 double gml_ds_map_create(void);
@@ -139,6 +155,9 @@ double gml_ds_map_exists(double id, double key);
 double gml_ds_map_size(double id);
 double gml_ds_map_clear(double id);
 double gml_ds_map_delete(double id, double key);
+double gml_ds_map_get(double id, double key);
+double gml_ds_map_search(double id, double value);
+double gml_ds_map_add_copy(double id, double source_id);
 
 /* ds_stack */
 double gml_ds_stack_create(void);
@@ -148,6 +167,7 @@ double gml_ds_stack_pop(double id);
 double gml_ds_stack_top(double id);
 double gml_ds_stack_size(double id);
 double gml_ds_stack_empty(double id);
+double gml_ds_stack_push_many(double id, const double *values, int count);
 
 /* ds_queue */
 double gml_ds_queue_create(void);
@@ -159,6 +179,7 @@ double gml_ds_queue_tail(double id);
 double gml_ds_queue_size(double id);
 double gml_ds_queue_empty(double id);
 double gml_ds_queue_clear(double id);
+double gml_ds_queue_enqueue_many(double id, const double *values, int count);
 
 /* ds_grid */
 double gml_ds_grid_create(double w, double h);
@@ -216,6 +237,9 @@ double gml_file_text_writeln(double id);
 double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
+double gml_file_create(const char *path);
+double gml_file_size(const char *path);
+double gml_file_get_timestamp(const char *path);
 
 double gml_date_current_datetime(void);
 double gml_date_get_year(double datetime);
@@ -433,6 +457,7 @@ double gml_array_length_1d(double array_id);
 double gml_array_length_2d(double array_id, double row);
 double gml_array_height_2d(double array_id);
 double gml_instance_position(double x, double y, double object_index);
+double gml_sprite_find(const char *name);
 double gml_instance_deactivate_object(double object_index);
 double gml_instance_activate_object(double object_index);
 void gml_draw_text_ext(double x, double y, const char *str, double sep, double w);
@@ -533,6 +558,22 @@ double gml_hypot(double x, double y);
 double gml_clamp_angle(double angle);
 double gml_lerp_angle(double a, double b, double t);
 
+/* Stub promote batch declarations */
+double gml_window_has_focus(void);
+double gml_url_open(const char *url);
+double gml_file_text_writelf(const char *path, const char *line);
+double gml_ds_map_set(double id, double key, double val);
+double gml_instance_create_depth(double x, double y, double depth, double object_index);
+double gml_string_starts_with_ext(const char *s, const char *pre);
+double gml_string_ends_with_ext(const char *s, const char *suf);
+double gml_move_wrap2(double hor, double vert);
+double gml_object_find(const char *name);
+double gml_background_find(const char *name);
+double gml_sound_find(const char *name);
+double gml_font_find(const char *name);
+double gml_path_find_name(const char *name);
+double gml_timeline_find_name(const char *name);
+
 #ifdef __cplusplus
 }
 #endif
@@ -547,4 +588,53 @@ double gml_randomize(void);
 double gml_random_set_seed(double seed);
 double gml_random_get_seed(void);
 
+/* batch2 */
+
+double gml_esign(double val, double defv);
+double gml_invlerp(double a, double b, double v);
+double gml_gauss(double mean, double deviation);
+double gml_angle_wrap(double ang);
+double gml_angle_normalize(double ang);
+double gml_arcsin(double x);
+double gml_arccos(double x);
+double gml_is_equal(double a, double b);
+double gml_random_color(void);
+double gml_object_is_child_of(double child, double parent);
+double gml_string_width(const char *s);
+double gml_string_height(const char *s);
+double gml_string_letters(const char *s);
+double gml_string_pad(double number, double digits);
+double gml_string_trim(const char *s);
+
+int gm82_gm82core_try_stub(const char *id, double *out);
+double gml_color_blend(double c1, double c2, double t);
+double gml_color_get_luminance(double c);
+double gml_gauss_range(double a, double b);
+double gml_envelerp(double a, double b, double t);
+double gml_make_color_hsv_standard(double h, double s, double v);
+double gml_merge_color_corrected(double c1, double c2, double t);
+double gml_irandom_fresh(double x);
+double gml_is_undefined(double v);
+double gml_outside_room(void);
+double gml_position_free(double x, double y);
+double gml_collision_check_fast(double obj, double dist);
+double gml_path_ease(double t, double kind);
+double gml_object_other_is_child_of(double parent);
+double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir);
+double gml_instance_some(double obj);
+double gml_filename_remove_ext(const char *s);
+double gml_string_ord_at(const char *s, double idx);
+double gml_string_hexdigits(const char *s);
+double gml_string_number(const char *s);
+double gml_string_copy_end(const char *s, double count);
+double gml_string_delete_end(const char *s, double count);
+double gml_string_truncate(const char *s, double maxn);
+double gml_string_magnitude(double n);
+double gml_str_cat(const char *a, const char *b);
+double gml_str_sep(const char *a, const char *sep, const char *b);
+double gml_string_better(double v);
+double gml_directory_previous(const char *path);
+double gml_pick(double x);
+double gml_unpick(double x);
+double gml_date_get_timestamp(void);
 #endif

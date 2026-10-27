@@ -1,20 +1,21 @@
-# GAPS_HONEST — Nr.mk.02 (2026-10-26, REA motion port)
+# GAPS_HONEST — Nr.mk.02 (2026-10-27)
 
-## CLOSED (host-proven or code-landed)
+## CLOSED / landed
 | Area | Evidence |
 |------|----------|
-| Host pipeline 4 samples | ok=4 fail=0 |
-| anvil register table motion/mp_grid names | REA `0x63a5a8` → `place_snapped`, aliases, mp_grid clear/add rect (APPLY_REA_MOTION) |
-| Prior runtime/DnD/string/materialize | existing modules |
+| Host pipeline 4 samples | ok=4 fail=0 (historical) |
+| gm82core name coverage | try_stub + batch-all |
+| O6 parent chain | parent_index + walk |
+| Stub shadow bug | room_find/sprite_find removed from stub table |
+| Stub promote | window_has_focus, file_text_writelf, ds_map_set, instance_create_depth, string_starts/ends_with, move_wrap, object_find, … on `86179058` |
 
-## OPEN
+## OPEN (cannot fully close without device)
 | ID | Gap |
 |----|-----|
-| O1 | Device APK logcat |
-| O2 | Complex GMK materialize depth |
-| O3 | Real PCM + OpenSL |
-| O4 | Hardware GLES FBO |
-| O5 | FAIL-driven builtins beyond register table |
-| O6 | Manual validate remaining room_instance_suspect addresses |
+| O1 | APK install + logcat on real phone |
+| O2 | Complex GMK edge materialize (needs FAIL) |
+| O3 | Real PCM / OpenSL path on device |
+| O4 | GLES FBO if soft fails on device |
+| O5 | Remaining pure stubs: code_*, ds_bag_*, heavy draw_*, registry_*, match_* |
 
-No 100% claims.
+No 100% claims. Code path ≠ device acceptance.

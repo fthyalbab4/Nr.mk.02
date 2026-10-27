@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_input.h"
 #include <string.h>
+#include <math.h>
 
 static gm82_input_state *g_input = NULL;
 static char g_keyboard_string[256];
@@ -73,6 +74,9 @@ void gm82_input_set_mouse(gm82_input_state *in, int x, int y) {
 
 void gm82_input_set_mouse_f(gm82_input_state *in, double x, double y) {
     if (!in) return;
+    if (!isfinite(x) || !isfinite(y) ||
+        x < (double)INT_MIN || x > (double)INT_MAX ||
+        y < (double)INT_MIN || y > (double)INT_MAX) return;
     in->mouse_x_f = x;
     in->mouse_y_f = y;
     in->mouse_x = (int)x;
@@ -99,9 +103,18 @@ void gm82_input_pad_button(gm82_input_state *in, int pad, int btn, int down) {
     }
 }
 
+static int input_key_to_index(double key, int *out) {
+    if (!out || !isfinite(key) || key < 0.0 || key >= (double)GM82_KEY_MAX)
+        return 0;
+    *out = (int)key;
+    return 1;
+}
+
 double gml_keyboard_check(double key) {
+    if (!g_input || isnan(key) || isinf(key) || key < 0 || key >= GM82_KEY_MAX) return 0.0;
     int k = (int)key;
-    if (!g_input) return 0;
+    int k;
+    if (!g_input || !input_key_to_index(key, &k)) return 0;
     if (k == 0) {
         for (int i = 0; i < GM82_KEY_MAX; i++)
             if (g_input->down[i]) return 0.0;
@@ -112,19 +125,40 @@ double gml_keyboard_check(double key) {
             if (g_input->down[i]) return 1.0;
         return 0.0;
     }
-    if (k < 0 || k >= GM82_KEY_MAX) return 0;
     return g_input->down[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_pressed(double key) {
+    if (!g_input || isnan(key) || isinf(key) || key <= 0 || key >= GM82_KEY_MAX) return 0.0;
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input || isnan(key) || isinf(key)) return 0.0;
+    int k = (int)key;
+    if (!g_input) return 0;
+    if (k == 0) return 0.0;
+    if (k == 1) {
+        for (int i = 0; i < GM82_KEY_MAX; i++)
+            if (g_input->pressed[i]) return 1.0;
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (k < 0 || k >= GM82_KEY_MAX) return 0.0;
     return g_input->pressed[k] ? 1.0 : 0.0;
 }
 
 double gml_keyboard_check_released(double key) {
+    if (!g_input || isnan(key) || isinf(key) || key <= 0 || key >= GM82_KEY_MAX) return 0.0;
     int k = (int)key;
-    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (!g_input || isnan(key) || isinf(key)) return 0.0;
+    int k = (int)key;
+    if (!g_input) return 0;
+    if (k == 0) return 0.0;
+    if (k == 1) {
+        for (int i = 0; i < GM82_KEY_MAX; i++)
+            if (g_input->released[i]) return 1.0;
+        return 0.0;
+    }
+    if (k < 0 || k >= GM82_KEY_MAX) return 0;
+    if (k < 0 || k >= GM82_KEY_MAX) return 0.0;
     return g_input->released[k] ? 1.0 : 0.0;
 }
 
