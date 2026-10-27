@@ -66,7 +66,7 @@ public class MainActivity extends Activity {
     private static final int VK_SPACE = 32;
     private static final int VK_ENTER = 13;
     private static final int MAX_GMK_BYTES = 128 * 1024 * 1024;
-    private static final long TARGET_FPS = 30;
+    private static final long TARGET_FPS = 90;
     private static final long FRAME_MS = 1000 / TARGET_FPS;
 
     private final Object nativeLock = new Object();
@@ -166,7 +166,10 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 Log.w(TAG, "native frame failed", t);
             }
-            loopHandler.postDelayed(this, FRAME_MS);
+            // Post with low frame latency (~11ms for 90 FPS target)
+            long elapsedMs = (System.nanoTime() - now) / 1_000_000;
+            long delay = Math.max(1, FRAME_MS - elapsedMs);
+            loopHandler.postDelayed(this, delay);
         }
     };
 
