@@ -492,6 +492,14 @@ double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2
 double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_min(double id, double x1, double y1, double x2, double y2);
 double gml_ds_grid_get_mean(double id, double x1, double y1, double x2, double y2);
+double gml_place_snapped(double x, double y, double hsnap, double vsnap);
+double gml_move_contact(double dir, double maxdist);
+double gml_move_bounce(double advanced);
+double gml_mp_grid_clear_cell(double id, double cx, double cy);
+double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2);
+double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid);
+double gml_mp_grid_add_instances(double id, double obj, double prec);
+double gml_mp_grid_draw(double id);
 double gml_place_meeting_precise(double x, double y, double object_index);
 double gml_angle_abs(double angle);
 double gml_angle_mean(double ang1, double ang2);
@@ -558,29 +566,21 @@ double gml_hypot(double x, double y);
 double gml_clamp_angle(double angle);
 double gml_lerp_angle(double a, double b, double t);
 
-/* Stub promote batch declarations */
+/* Explicit declarations for builtins dispatched by gm82_gml_eval.c. */
 double gml_window_has_focus(void);
 double gml_url_open(const char *url);
 double gml_file_text_writelf(const char *path, const char *line);
 double gml_ds_map_set(double id, double key, double val);
 double gml_instance_create_depth(double x, double y, double depth, double object_index);
-double gml_string_starts_with_ext(const char *s, const char *pre);
-double gml_string_ends_with_ext(const char *s, const char *suf);
-double gml_move_wrap2(double hor, double vert);
+double gml_string_starts_with_ext(const char *s, const char *prefix);
+double gml_string_ends_with_ext(const char *s, const char *suffix);
+double gml_move_wrap2(double horizontal, double vertical);
 double gml_object_find(const char *name);
 double gml_background_find(const char *name);
 double gml_sound_find(const char *name);
 double gml_font_find(const char *name);
 double gml_path_find_name(const char *name);
 double gml_timeline_find_name(const char *name);
-double gml_place_snapped(double x, double y, double hsnap, double vsnap);
-double gml_move_contact(double dir, double maxdist);
-double gml_move_bounce(double advanced);
-double gml_mp_grid_clear_cell(double id, double cx, double cy);
-double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2);
-double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid);
-double gml_mp_grid_add_instances(double id, double object_index, double precise);
-double gml_mp_grid_draw(double id);
 
 #ifdef __cplusplus
 }
@@ -645,19 +645,4 @@ double gml_directory_previous(const char *path);
 double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
-
-double gml_window_has_focus(void);
-double gml_url_open(const char *url);
-double gml_file_text_writelf(const char *path, const char *line);
-double gml_ds_map_set(double id, double key, double val);
-double gml_instance_create_depth(double x, double y, double depth, double object_index);
-double gml_string_starts_with_ext(const char *s, const char *pre);
-double gml_string_ends_with_ext(const char *s, const char *suf);
-double gml_move_wrap2(double hor, double vert);
-double gml_object_find(const char *name);
-double gml_background_find(const char *name);
-double gml_sound_find(const char *name);
-double gml_font_find(const char *name);
-double gml_path_find_name(const char *name);
-double gml_timeline_find_name(const char *name);
 #endif
