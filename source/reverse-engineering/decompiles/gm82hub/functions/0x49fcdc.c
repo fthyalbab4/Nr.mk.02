@@ -1,0 +1,118 @@
+// rea decompile_all
+// name: FUN_0049fcdc
+// address: 0x49fcdc
+// body: available
+// range: 0x49fcdc-0x49fd0e inclusive
+// range: 0x49fd3b-0x49fe60 inclusive
+// non_contiguous: true
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Ghidra Listing shows a Borland/Delphi-style SEH frame registration at 0x49fcf7 (push 0x49fe61 followed by fs-segment stack chaining); handler 0x49fe61 lies outside this procedure's body, so callees, strings, and cross-references may omit the handler region.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_0049fcdc(int param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4,
+                 undefined4 param_5,int param_6)
+
+{
+  undefined1 *puVar1;
+  undefined4 *in_FS_OFFSET;
+  undefined4 uStack_28;
+  undefined1 *puStack_24;
+  undefined1 *puStack_20;
+  char local_e;
+  char local_d [5];
+  undefined4 local_8;
+
+  puStack_20 = &stack0xfffffffc;
+  local_8 = 0;
+  puStack_24 = &LAB_0049fe61;
+  uStack_28 = *in_FS_OFFSET;
+  *in_FS_OFFSET = &uStack_28;
+  local_d[1] = '\0';
+  local_d[2] = '\0';
+  local_d[3] = '\0';
+  local_d[4] = '\0';
+  puVar1 = &stack0xfffffffc;
+  switch(param_3) {
+  case 0:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1);
+    puVar1 = puStack_20;
+    break;
+  case 1:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1);
+    puVar1 = puStack_20;
+    break;
+  case 2:
+    local_d[0] = '\x01';
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1,param_6,local_d);
+    puVar1 = puStack_20;
+    if (local_d[0] == '\0') {
+      local_d[1] = '\x01';
+      local_d[2] = '\0';
+      local_d[3] = '\0';
+      local_d[4] = '\0';
+    }
+    break;
+  case 3:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00408350(&local_8,param_5);
+    FUN_00406268(param_1,local_8);
+    puVar1 = puStack_20;
+    break;
+  case 4:
+    local_e = '\0';
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1,param_6,&local_e);
+    puVar1 = puStack_20;
+    if (local_e != '\0') {
+      local_d[1] = '\x01';
+      local_d[2] = '\0';
+      local_d[3] = '\0';
+      local_d[4] = '\0';
+    }
+    break;
+  case 5:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1);
+    puVar1 = puStack_20;
+    break;
+  case 6:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1,param_6);
+    puVar1 = puStack_20;
+    break;
+  case 7:
+    *(undefined4 *)(param_1 + 0x68) = param_2;
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(*(undefined4 *)(param_1 + 0x38));
+    FUN_00406268(*(undefined4 *)(param_1 + 0x80));
+    FUN_0049f4e4(*(undefined4 *)(param_1 + 0x78));
+    FUN_00406268(param_1);
+    puVar1 = puStack_20;
+    break;
+  case 8:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1,param_6 == 1);
+    puVar1 = puStack_20;
+    break;
+  case 9:
+    puStack_20 = &stack0xfffffffc;
+    FUN_00406268(param_1);
+    puVar1 = puStack_20;
+    break;
+  case 10:
+    FUN_00406268(param_1,param_6 != 0);
+    puVar1 = puStack_20;
+  }
+  puStack_20 = puVar1;
+  puVar1 = puStack_20;
+  *in_FS_OFFSET = uStack_28;
+  puStack_20 = &LAB_0049fe68;
+  puStack_24 = (undefined1 *)0x49fe60;
+  thunk_FUN_004072d8(&local_8,uStack_28,puVar1);
+  return;
+}

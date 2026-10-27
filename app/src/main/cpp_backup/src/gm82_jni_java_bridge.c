@@ -13,6 +13,9 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
+#include "gm82_materialize.h"
+#include "gm82_gmk_reader.h"
+#include "gm82_script.h"
 #include "gm82_sound_runtime.h"
 #include <stdlib.h>
 #include <string.h>
@@ -71,7 +74,6 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
         gm82_native_init(640, 480);
     }
 
-    /* Reset previous decode lists */
     gm82_decoded_sprite_list_free(&g_bridge_sprites);
     gm82_decoded_background_list_free(&g_bridge_bgs);
     gm82_decoded_object_list_free(&g_bridge_objs);
@@ -92,7 +94,6 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
         gm82_gl_upload_backgrounds(&g_bridge_atlas, &g_bridge_bgs);
     }
 
-    /* Objects + rooms: required for goto_room / instances (was missing) */
     {
         FILE *f = fopen(path, "rb");
         if (f) {
@@ -104,6 +105,21 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
                 if (buf && fread(buf, 1, (size_t)sz, f) == (size_t)sz) {
                     gm82_decode_objects_from_gmk(buf, (size_t)sz, &g_bridge_objs);
                     gm82_decode_rooms_from_gmk(buf, (size_t)sz, &g_bridge_rooms);
+                    {
+                        gm82_gmk_load_result gr = gm82_gmk_load_from_memory(buf, (size_t)sz);
+                        if (gr.ok && gr.ir) {
+                            gm82_materialize_options opts = gm82_materialize_default_options();
+                            gm82_materialize_all(gr.ir, &opts);
+                            const gm82_decoded_object_list *mo = gm82_materialize_get_objects();
+                            if (mo && mo->count > g_bridge_objs.count) {
+                                fprintf(stderr, "GM82_BIND objects materialize=%d bridge=%d sprites_ir=%d rooms_ir=%d\n",
+                                        mo->count, g_bridge_objs.count, gr.ir->sprite_count, gr.ir->room_count);
+                            } else {
+                                fprintf(stderr, "GM82_BIND objects bridge=%d ir_sprites=%d\n",
+                                        g_bridge_objs.count, gr.ir ? gr.ir->sprite_count : -1);
+                            }
+                        }
+                    }
                 }
                 free(buf);
             }
@@ -111,8 +127,16 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
         }
     }
 
-    gm82_runtime_bind_assets(&g_bridge_rt, &g_bridge_objs, &g_bridge_sprites,
-                             &g_bridge_bgs, &g_bridge_rooms, NULL);
+    {
+        const gm82_decoded_object_list *objs = &g_bridge_objs;
+        const gm82_decoded_object_list *mo = gm82_materialize_get_objects();
+        if (mo && mo->count > 0) objs = mo;
+        const gm82_script_list *sc = gm82_materialize_get_scripts();
+        gm82_runtime_bind_assets(&g_bridge_rt, objs, &g_bridge_sprites,
+                                 &g_bridge_bgs, &g_bridge_rooms, NULL);
+        if (sc && sc->count > 0)
+            gm82_runtime_bind_scripts(&g_bridge_rt, sc);
+    }
     gm82_runtime_bind_sprite_groups(&g_bridge_rt, &g_bridge_sprite_groups);
 
     if (g_bridge_rooms.count > 0) {
@@ -211,12 +235,11 @@ void gm82_native_key_up(int vk) {
 }
 
 void gm82_native_touch(int x, int y, int action) {
-    (void)x; (void)y;
-    if (action == 0) {
-        gm82_native_key_down(32);
-    } else if (action == 1) {
-        gm82_native_key_up(32);
-    }
+    /* Mouse position only — virtual pad keys come from Java Gm82SurfaceView */
+    if (!g_bridge_initialized) return;
+    gm82_input_set_mouse(&g_bridge_input, x, y);
+    if (action == 0 || action == 5) gm82_input_mouse_down(&g_bridge_input, 0);
+    else if (action == 1 || action == 6 || action == 3) gm82_input_mouse_up(&g_bridge_input, 0);
 }
 
 int gm82_native_is_running(void) {

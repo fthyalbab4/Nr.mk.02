@@ -1,0 +1,50 @@
+// rea decompile_all
+// name: FUN_004481ec
+// address: 0x4481ec
+// body: available
+// range: 0x4481ec-0x448259 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Ghidra Listing shows a Borland/Delphi-style SEH frame registration at 0x448205 (push 0x44825a followed by fs-segment stack chaining); handler 0x44825a lies outside this procedure's body, so callees, strings, and cross-references may omit the handler region.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+void FUN_004481ec(undefined4 param_1,int param_2)
+
+{
+  undefined1 *puVar1;
+  undefined4 *in_FS_OFFSET;
+  undefined4 uStack_28;
+  undefined1 *puStack_24;
+  undefined1 *puStack_20;
+  undefined4 local_18;
+  undefined4 local_14;
+  undefined1 local_10;
+  int local_c;
+  undefined1 local_8;
+
+  puStack_20 = &stack0xfffffffc;
+  local_18 = 0;
+  puStack_24 = &LAB_0044825a;
+  uStack_28 = *in_FS_OFFSET;
+  *in_FS_OFFSET = &uStack_28;
+  puVar1 = &stack0xfffffffc;
+  if (param_2 != 0) {
+    FUN_0041b4f0(param_2,&local_18);
+    local_14 = local_18;
+    local_10 = 0x11;
+    local_8 = 0;
+    local_c = param_2;
+    FUN_0041c0bc(&PTR_LAB_00436d94,1,PTR_PTR_00781e10,1,&local_14);
+    FUN_00406618();
+    puVar1 = puStack_20;
+  }
+  puStack_20 = puVar1;
+  puVar1 = puStack_20;
+  *in_FS_OFFSET = uStack_28;
+  puStack_20 = &LAB_00448261;
+  puStack_24 = (undefined1 *)0x448259;
+  thunk_FUN_00406e5c(&local_18,uStack_28,puVar1);
+  return;
+}

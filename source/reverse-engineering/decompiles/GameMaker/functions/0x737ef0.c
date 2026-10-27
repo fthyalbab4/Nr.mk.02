@@ -1,0 +1,35 @@
+// rea decompile_all
+// name: FUN_00737ef0
+// address: 0x737ef0
+// body: available
+// range: 0x737ef0-0x737f45 inclusive
+// non_contiguous: false
+// provider: Ghidra 12.1.4 (ghidra)
+// analysis_profile: e1ad533d4cc0333c2136fe0894217de2d61feea098240326e78633f9e4ddcbf9
+// limitations: The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.; The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.; Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.; Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.; Ghidra Listing shows a Borland/Delphi-style SEH frame registration at 0x737efe (push 0x737f46 followed by fs-segment stack chaining); handler 0x737f46 lies outside this procedure's body, so callees, strings, and cross-references may omit the handler region.; Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.; External functions and functions without an analyzable body return null; other decompiler failures remain explicit.
+// pseudocode: provider-specific; not original source
+
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_00737ef0(void)
+
+{
+  undefined4 *in_FS_OFFSET;
+  undefined4 uStack_10;
+  undefined1 *puStack_c;
+  undefined1 *puStack_8;
+
+  puStack_8 = &stack0xfffffffc;
+  puStack_c = &LAB_00737f46;
+  uStack_10 = *in_FS_OFFSET;
+  *in_FS_OFFSET = &uStack_10;
+  _DAT_007a4a9c = _DAT_007a4a9c + 1;
+  if (_DAT_007a4a9c == 0) {
+    FUN_00742f60(DAT_00785c40);
+    FUN_00408df4(&PTR_u__URL__https___jcl_svn_sourceforg_0077f9fc,&DAT_007414dc);
+    FUN_00408e44(&PTR_u_Comments_0077fa14,&DAT_00401284,0xc);
+  }
+  *in_FS_OFFSET = uStack_10;
+  return;
+}
