@@ -16,11 +16,10 @@ jobs:
       - name: APPLY
         run: |
           python3 tools/gap_fill_20261013/APPLY_FIX_RUNNER_BLACK_SCREEN.py || true
+          python3 tools/gap_fill_20261013/APPLY_EMU_REF_SKIN.py || true
           python3 tools/gap_fill_20261013/APPLY_EXPORT_SCROLL_AND_SAVE.py || true
           python3 tools/gap_fill_20261013/APPLY_JAVA_EXPORT_SAVE.py || true
-          python3 tools/gap_fill_20261013/APPLY_MARIO_SENDKEY_FIX.py || true
-          python3 tools/gap_fill_20261013/APPLY_MARIO_STEP_RECLASS.py || true
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: materialize runner black-screen fix"
+          commit_message: "chore: materialize approved emu-ref skin"
           file_pattern: "app/src/main/assets/www/** app/src/main/java/**"

@@ -1,1 +1,1 @@
-trigger fix runner black screen
+trigger emu ref skin approved
