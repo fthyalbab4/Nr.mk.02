@@ -235,12 +235,11 @@ void gm82_native_key_up(int vk) {
 }
 
 void gm82_native_touch(int x, int y, int action) {
-    (void)x; (void)y;
-    if (action == 0) {
-        gm82_native_key_down(32);
-    } else if (action == 1) {
-        gm82_native_key_up(32);
-    }
+    /* Mouse position only — virtual pad keys come from Java Gm82SurfaceView */
+    if (!g_bridge_initialized) return;
+    gm82_input_set_mouse(&g_bridge_input, x, y);
+    if (action == 0 || action == 5) gm82_input_mouse_down(&g_bridge_input, 0);
+    else if (action == 1 || action == 6 || action == 3) gm82_input_mouse_up(&g_bridge_input, 0);
 }
 
 int gm82_native_is_running(void) {
