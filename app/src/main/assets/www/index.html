@@ -32319,6 +32319,104 @@ const createEngineHTML = (projectData) => {
         }
     };
 
+        // --- BUILT-IN PLATFORMER / MARIO COMBAT AND ENEMY INTERACTION ---
+    window.checkPlatformerCombat = (a, b) => {
+        if (!a || !b || a.dead || b.dead) return;
+        const isPlayer = (inst) => {
+            if (!inst || !inst.def) return false;
+            const n = String(inst.def.name || inst.def.id || '').toLowerCase();
+            return (n.includes('mario') && !n.includes('pierde') && !n.includes('dead')) ||
+                   n.includes('player') || n.includes('hero') || n.includes('character') ||
+                   inst.def.role === 'player';
+        };
+        const isEnemy = (inst) => {
+            if (!inst || !inst.def) return false;
+            const n = String(inst.def.name || inst.def.id || '').toLowerCase();
+            return n.includes('enemigo') || n.includes('enemy') || n.includes('goomba') ||
+                   n.includes('koopa') || n.includes('monster') || inst.def.role === 'enemy';
+        };
+
+        let p = null, e = null;
+        if (isPlayer(a) && isEnemy(b)) { p = a; e = b; }
+        else if (isPlayer(b) && isEnemy(a)) { p = b; e = a; }
+        if (!p || !e || p.dead || e.dead) return;
+
+        // Stomp condition: Player is falling or player bottom is near enemy top (within upper 45% of enemy)
+        const playerBottom = p.y + p.h;
+        const enemyTop = e.y;
+        const isStomp = (p.dy > 0 || p.vspeed > 0 || playerBottom <= enemyTop + (e.h * 0.45));
+
+        if (isStomp) {
+            // Stomp sound
+            if (typeof window.sound_play === 'function') {
+                const hitSnd = (window.GAME_DATA.assets.sounds || []).find(s => /stomp|hit|kill|moneda|snd_moneda/i.test(s.name || s.id));
+                if (hitSnd) window.sound_play(hitSnd.id);
+            }
+            // Mario bounces up into the air
+            p.vspeed = -5.5;
+            p.dy = -5.5;
+            p.grounded = false;
+            p.inAir = true;
+            p.y = e.y - p.h - 2;
+
+            // Enemy defeated: check if death sprite exists (like dead_1 in Mario Bros GMK)
+            const deadSpr = (window.GAME_DATA.assets.sprites || []).find(s => /dead|muerto|defeat/i.test(s.name || s.id));
+            if (deadSpr && !e._isDying) {
+                e._isDying = true;
+                e.currentSpriteId = deadSpr.id;
+                e.sprite_index = deadSpr.id;
+                e.dx = 0; e.dy = 0; e.hspeed = 0; e.vspeed = 0; e.speed = 0;
+                e.solid = false;
+                setTimeout(() => { e.dead = true; }, 350);
+            } else {
+                e.dead = true;
+            }
+        } else {
+            // Player touched enemy from side or underneath
+            if (p.invincible && p.invincible > 0) return;
+
+            const pName = String(p.def.name || p.def.id || '').toLowerCase();
+            // If big mario: shrink back to minimario with temporary invincibility
+            if (pName.includes('obj_mario') && !pName.includes('mini')) {
+                const miniDef = window.GAME_DATA.objects.find(o => {
+                    const on = String(o.name || o.id || '').toLowerCase();
+                    return on.includes('minimario') && !on.includes('pierde') && !on.includes('trans');
+                });
+                if (miniDef) {
+                    p.def = miniDef;
+                    p.currentSpriteId = miniDef.spriteId;
+                    p.sprite_index = miniDef.spriteId;
+                    p.resolveSize();
+                    p.invincible = 90;
+                    if (typeof window.sound_play === 'function') {
+                        const transSnd = (window.GAME_DATA.assets.sounds || []).find(s => /trans|shrink|pipe/i.test(s.name || s.id));
+                        if (transSnd) window.sound_play(transSnd.id);
+                    }
+                    return;
+                }
+            }
+
+            // Small Mario dies: transform into obj_minimario_pierde (or obj_mario_pierde)
+            const pierdeDef = window.GAME_DATA.objects.find(o => {
+                const on = String(o.name || o.id || '').toLowerCase();
+                return (pName.includes('minimario') ? on.includes('minimario_pierde') : on.includes('mario_pierde')) ||
+                       on.includes('pierde') || on.includes('lose') || on.includes('die');
+            });
+
+            if (pierdeDef) {
+                p.def = pierdeDef;
+                p.currentSpriteId = pierdeDef.spriteId;
+                p.sprite_index = pierdeDef.spriteId;
+                p.resolveSize();
+                p.solid = false;
+                p.triggerEvent('create');
+            } else {
+                p.dead = true;
+                if (window.restartRoom) window.restartRoom();
+            }
+        }
+    };
+
     window.instance_change = (objName, perfCreate) => {
         const me = window._currentInstance;
         if (!me) return;

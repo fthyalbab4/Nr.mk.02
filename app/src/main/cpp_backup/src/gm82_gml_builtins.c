@@ -7,7 +7,6 @@
 #include <fnmatch.h>
 #include <sys/stat.h>
 #include "gm82_gml_builtins.h"
-#include "gm82_materialize.h"
 #include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_path.h"
@@ -1847,7 +1846,7 @@ static const unsigned char FONT8[96][8] = {
     /* 87 W */ {0x63,0x63,0x63,0x6B,0x7F,0x77,0x63,0x00},
     /* 88 X */ {0x66,0x66,0x3C,0x18,0x3C,0x66,0x66,0x00},
     /* 89 Y */ {0x66,0x66,0x66,0x3C,0x18,0x18,0x18,0x00},
-    /* 90 Z */ {0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00}
+    /* 90 Z */ {0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00},
 };
 
 static void draw_glyph(int x, int y, char ch) {
@@ -2985,68 +2984,22 @@ double gml_file_delete(const char *path) {
     if (!path) return 0;
     return remove(path) == 0 ? 1.0 : 0.0;
 }
-static void gm82_mkdir_p(const char *dir) {
-    if (!dir || !dir[0]) return;
-    char tmp[512];
-    snprintf(tmp, sizeof(tmp), "%s", dir);
-    size_t len = strlen(tmp);
-    if (len == 0) return;
-    if (tmp[len - 1] == '/') tmp[len - 1] = '\0';
-    for (char *p = tmp + 1; *p; p++) {
-        if (*p == '/') {
-            *p = '\0';
-static void ensure_parent_dirs(const char *path) {
+static void ensure_parent_dir(const char *path) {
     if (!path) return;
-    char tmp[512];
-    snprintf(tmp, sizeof(tmp), "%s", path);
-    char *p = tmp;
-    while ((p = strchr(p, '/')) != NULL) {
+    char tmp[256];
+    strncpy(tmp, path, sizeof(tmp)-1);
+    tmp[sizeof(tmp)-1] = '\0';
+    char *p = strrchr(tmp, '/');
+    if (!p) p = strrchr(tmp, '\\');
+    if (p) {
         *p = '\0';
-        if (tmp[0] != '\0') {
-#ifdef _WIN32
-            mkdir(tmp);
-#else
-            mkdir(tmp, 0755);
-#endif
-            *p = '/';
-        }
-    }
-#ifdef _WIN32
-    mkdir(tmp);
-#else
-    mkdir(tmp, 0755);
-#endif
-        }
-        *p = '/';
-        p++;
+        mkdir(tmp, 0755);
     }
 }
 
 double gml_file_create(const char *path) {
     if (!path || !path[0]) return 0;
-    char tmp[512];
-    snprintf(tmp, sizeof(tmp), "%s", path);
-    char *p = strrchr(tmp, '/');
-    if (p) {
-        *p = '\0';
-        gm82_mkdir_p(tmp);
-    }
-    const char *last_slash = strrchr(path, '/');
-    if (!last_slash) last_slash = strrchr(path, '\\');
-    if (last_slash) {
-        char dir[256];
-        size_t len = (size_t)(last_slash - path);
-        if (len < sizeof(dir)) {
-            strncpy(dir, path, len);
-            dir[len] = '\0';
-#ifdef _WIN32
-            mkdir(dir);
-#else
-            mkdir(dir, 0755);
-#endif
-        }
-    }
-    ensure_parent_dirs(path);
+    ensure_parent_dir(path);
     FILE *f = fopen(path, "wb");
     if (!f) return 0;
     fclose(f);
@@ -4523,21 +4476,6 @@ double gml_random_color(void) {
 }
 double gml_object_is_child_of(double child, double parent) {
     return ((int32_t)child == (int32_t)parent) ? 1.0 : 0.0;
-    /* walk parent chain using materialize object table (additive O6) */
-    int32_t c = (int32_t)child;
-    int32_t p = (int32_t)parent;
-    if (c == p) return 1.0;
-    const gm82_decoded_object_list *L = gm82_materialize_get_objects();
-    if (!L || !L->items || L->count <= 0) return 0.0;
-    int32_t cur = c;
-    for (int depth = 0; depth < 32; depth++) {
-        if (cur < 0 || cur >= L->count) return 0.0;
-        int32_t par = L->items[cur].parent_index;
-        if (par == p) return 1.0;
-        if (par < 0 || par == cur) return 0.0;
-        cur = par;
-    }
-    return 0.0;
 }
 double gml_string_width(const char *s) {
     if (!s) return 0;
@@ -4631,7 +4569,6 @@ double gml_position_free(double x,double y){ return gml_place_free(x,y); }
 double gml_collision_check_fast(double obj, double dist){ gm82_instance *s=gm82_gml_get_self(); if(!s) return 0; if(gml_instance_nearest(s->x,s->y,obj)<0) return 0; return (gml_distance_to_object(obj)<=dist)?1.0:0.0; }
 double gml_path_ease(double t,double kind){ (void)kind; t=gm82_clampf(t,0,1); return t*t*(3-2*t); }
 double gml_object_other_is_child_of(double parent){ gm82_instance *o=gm82_gml_get_other(); if(!o) return 0; return ((int32_t)o->object_index==(int32_t)parent)?1.0:0.0; }
-double gml_object_other_is_child_of(double parent){ gm82_instance *o=gm82_gml_get_other(); if(!o) return 0; return gml_object_is_child_of((double)o->object_index, parent); }
 double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir){ return gml_instance_create_moving(x,y,obj,sp,dir,grav,gdir); }
 double gml_instance_some(double obj){ gm82_runtime *rt=gm82_gml_get_runtime(); if(!rt) return -4; int32_t oi=(int32_t)obj; int n=0; for(int i=0;i<rt->instance_count;i++) if(rt->instances[i].alive&&(oi<0||rt->instances[i].object_index==oi)) n++; if(n<=0) return -4; int picki=rand()%n,c=0; for(int i=0;i<rt->instance_count;i++){ if(!rt->instances[i].alive) continue; if(oi>=0&&rt->instances[i].object_index!=oi) continue; if(c==picki) return (double)rt->instances[i].id; c++; } return -4; }
 double gml_filename_remove_ext(const char *s){ static char out[512]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} strncpy(out,s,sizeof(out)-1); out[sizeof(out)-1]=0; char *dot=strrchr(out,'.'); if(dot)*dot=0; gm82_gml_set_last_string(out); return (double)strlen(out); }
@@ -4652,7 +4589,6 @@ double gml_date_get_timestamp(void){ return (double)time(NULL); }
 static const char *GM82CORE_STUBS[] = {
   "animation_pingpong", "animation_stop", "array_from_string", "background_find", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_self_as", "draw_self_blend", "draw_self_ext", "draw_self_floored", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_all", "ds_list_any", "ds_list_concat", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "file_text_writelf", "font_add_file", "font_add_winui", "font_find", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "instance_place_list", "instance_position_list", "instances_place", "instances_position", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_contact_solid_hv", "move_towards_gravity", "move_towards_jump", "object_find", "path_find", "path_get_approximate_pos", "path_get_height", "path_get_width", "place_meetings", "position_meetings", "registry_read_dword", "registry_read_sz", "registry_write_dword", "sound_find", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "timeline_find", "url_open", "window_has_focus", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
-  "animation_pingpong", "animation_stop", "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_self_as", "draw_self_blend", "draw_self_ext", "draw_self_floored", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_all", "ds_list_any", "ds_list_concat", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "instance_place_list", "instance_position_list", "instances_place", "instances_position", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_contact_solid_hv", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "place_meetings", "position_meetings", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path",};
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {
     if (!id || !out) return 0;
@@ -4660,67 +4596,3 @@ int gm82_gm82core_try_stub(const char *id, double *out) {
         if (strcmp(id, GM82CORE_STUBS[i]) == 0) { *out = 0.0; return 1; }
     return 0;
 }
-
-
-/* --- stub promote batch (additive) --- */
-double gml_window_has_focus(void) { return 1.0; }
-double gml_url_open(const char *url) { (void)url; return 0.0; }
-double gml_file_text_writelf(const char *path, const char *line) {
-    if (!path) return 0;
-    FILE *f = fopen(path, "a");
-    if (!f) return 0;
-    if (line) fputs(line, f);
-    fputc('\n', f);
-    fclose(f);
-    return 1.0;
-}
-double gml_ds_map_set(double id, double key, double val) {
-    return gml_ds_map_add(id, key, val);
-}
-double gml_instance_create_depth(double x, double y, double depth, double object_index) {
-    double iid = gml_instance_create(x, y, object_index);
-    gm82_runtime *rt = gm82_gml_get_runtime();
-    if (!rt || iid < 0) return iid;
-    for (int i = 0; i < rt->instance_count; i++) {
-        if (rt->instances[i].alive && (double)rt->instances[i].id == iid) {
-            rt->instances[i].depth = (int32_t)depth;
-            break;
-        }
-    }
-    return iid;
-}
-double gml_string_starts_with_ext(const char *s, const char *pre) {
-    if (!s || !pre) return 0;
-    size_t n = strlen(pre);
-    return strncmp(s, pre, n) == 0 ? 1.0 : 0.0;
-}
-double gml_string_ends_with_ext(const char *s, const char *suf) {
-    if (!s || !suf) return 0;
-    size_t n = strlen(s), m = strlen(suf);
-    if (m > n) return 0;
-    return strcmp(s + n - m, suf) == 0 ? 1.0 : 0.0;
-}
-double gml_move_wrap2(double hor, double vert) {
-    gm82_runtime *rt = gm82_gml_get_runtime();
-    gm82_instance *s = gm82_gml_get_self();
-    if (!rt || !s) return 0;
-    double w = 640, h = 480;
-    if (hor) { if (s->x < 0) s->x += w; if (s->x >= w) s->x -= w; }
-    if (vert) { if (s->y < 0) s->y += h; if (s->y >= h) s->y -= h; }
-    return 1.0;
-}
-static double gm82_find_object_by_name(const char *name) {
-    if (!name) return -1;
-    const gm82_decoded_object_list *L = gm82_materialize_get_objects();
-    if (!L || !L->items) return -1;
-    for (int i = 0; i < L->count; i++) {
-        if (strcmp(L->items[i].name, name) == 0) return (double)i;
-    }
-    return -1;
-}
-double gml_object_find(const char *name) { return gm82_find_object_by_name(name); }
-double gml_background_find(const char *name) { (void)name; return -1; }
-double gml_sound_find(const char *name) { (void)name; return -1; }
-double gml_font_find(const char *name) { (void)name; return -1; }
-double gml_path_find_name(const char *name) { (void)name; return -1; }
-double gml_timeline_find_name(const char *name) { (void)name; return -1; }
