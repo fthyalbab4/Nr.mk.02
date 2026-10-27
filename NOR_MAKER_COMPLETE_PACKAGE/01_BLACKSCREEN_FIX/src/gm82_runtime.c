@@ -103,6 +103,10 @@ void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
         rt->step_accumulator = fixed * 4.0;
 }
 
+void gm82_runtime_cleanup(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_arena_free(&rt->room_arena);
+}
 
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
     if (!rt || !out_ptrs) return 0;
@@ -177,6 +181,23 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     }
 }
 
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || isnan(dt) || isinf(dt) || dt <= 0.0) return;
+    int target_speed = (rt->room_speed > 0) ? rt->room_speed : 30;
+    if (rt->step_room_speed != target_speed) {
+        rt->step_room_speed = target_speed;
+        rt->step_accumulator = 0.0;
+    }
+    rt->step_accumulator += dt;
+    double frame_time = 1.0 / (double)target_speed;
+    int steps = 0;
+    while (rt->step_accumulator >= frame_time && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= frame_time;
+        steps++;
+    }
+}
+
 void gm82_runtime_compact_instances(gm82_runtime *rt) {
     if (!rt) return;
     int write_idx = 0;
@@ -218,6 +239,8 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
     if (!rt->room_loading) {
+        gm82_events_fire_create_single(rt, inst);
+    }
         gm82_events_fire_create_single(rt, inst);
     }
     if (!rt->room_loading && rt->objects && object_index >= 0 && object_index < rt->objects->count) {
@@ -339,6 +362,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         }
     }
     rt->instance_count = w;
+    int persistent_count = w;
 
     int room_start_idx = rt->instance_count;
     rt->room_loading = 1;
@@ -359,9 +383,13 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->room_loading = 0;
     rt->running = 1;
     rt->frame = 0;
+
+    for (int i = persistent_count; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive) {
     for (int i = room_start_idx; i < rt->instance_count; i++) {
         if (rt->instances[i].alive)
             gm82_events_fire_create_single(rt, &rt->instances[i]);
+        }
     }
     {
         int has_player = 0;
