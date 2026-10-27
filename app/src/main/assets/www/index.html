@@ -91028,9 +91028,12 @@ const MenuItem = ({ label, shortcut, icon, onClick, disabled, setOpenMenu }) => 
 const MenuDropdown = ({ children, align = "left", style = {} }) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
   "div",
   {
-    className: `fixed top-[22px] mt-[1px] bg-white border border-gray-500 shadow-[2px_2px_4px_rgba(0,0,0,0.4)] min-w-[200px] max-h-[calc(100dvh-30px)] overflow-y-scroll overscroll-contain py-0.5 z-[9999] touch-pan-y`,
+    className: `nm-export-scroll-menu fixed top-[22px] mt-[1px] bg-white border border-gray-500 shadow-[2px_2px_4px_rgba(0,0,0,0.4)] min-w-[200px] max-h-[calc(100dvh-30px)] overflow-y-scroll overscroll-contain py-0.5 z-[9999] touch-pan-y`,
     style: {
       ...style,
+      maxHeight: "calc(100dvh - 30px)",
+      overflowY: "scroll",
+      overscrollBehavior: "contain",
       scrollbarGutter: "stable",
       WebkitOverflowScrolling: "touch",
       ...align === "right" ? { right: "4px" } : {}
@@ -97515,6 +97518,49 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
   const [toastMessage, setToastMessage] = reactExports.useState(null);
   const [scanlinesEnabled, setScanlinesEnabled] = reactExports.useState(false);
   const [consoleTheme, setConsoleTheme] = reactExports.useState("dmg");
+  const [isLandscapeMode, setIsLandscapeMode] = reactExports.useState(false);
+  const [isGameFullscreen, setIsGameFullscreen] = reactExports.useState(false);
+  const lastOrientationTap = reactExports.useRef(0);
+
+  const toggleGameFullscreen = reactExports.useCallback(async () => {
+    const root = containerRef.current;
+    try {
+      if (!document.fullscreenElement) {
+        if (root && root.requestFullscreen) await root.requestFullscreen();
+        setIsGameFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsGameFullscreen(false);
+      }
+    } catch (_) {
+      // Android WebView may reject fullscreen; keep the in-app layout usable.
+      setIsGameFullscreen(!!document.fullscreenElement);
+    }
+  }, []);
+
+  const toggleLandscape = reactExports.useCallback(async () => {
+    const now = Date.now();
+    const doubleTap = now - lastOrientationTap.current < 420;
+    lastOrientationTap.current = now;
+    const next = doubleTap ? !isLandscapeMode : true;
+    setIsLandscapeMode(next);
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock(next ? "landscape" : "portrait");
+      }
+      if (!next && screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    } catch (_) {
+      // Orientation lock is optional and depends on Android/WebView policy.
+    }
+    if (next && !document.fullscreenElement) await toggleGameFullscreen();
+    if (!next && document.fullscreenElement) await toggleGameFullscreen();
+  }, [isLandscapeMode, toggleGameFullscreen]);
+
+  reactExports.useEffect(() => {
+    const onFullscreen = () => setIsGameFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFullscreen);
+    return () => document.removeEventListener("fullscreenchange", onFullscreen);
+  }, []);
 
   const themes = {
     dmg: {
@@ -97755,7 +97801,14 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
         { id: "btn-shoot", label: "B / FIRE", labelAr: "إطلاق", sublabel: "إطلاق 🔥", role: "shoot", color: "#ef4444", keys: ["KeyK", 75, "k", "K", "Control", 17, "KeyX", 88, "x", "X"] },
         { id: "btn-grenade", label: "C / BOMB", labelAr: "قنبلة", sublabel: "قنبلة 💣", role: "grenade", color: "#f59e0b", keys: ["Shift", 16, "KeyC", 67, "c", "C"] },
         { id: "btn-knife", label: "D / MELEE", labelAr: "سكين", sublabel: "سكين 🗡️", role: "knife", color: "#8b5cf6", keys: ["KeyJ", 74, "j", "J", "KeyV", 86, "v", "V"] }
-      ]);
+      ]).map((btn) => {
+        // GM8 Mario projects commonly use vk_up, vk_space, or Z interchangeably.
+        // Always retain all three aliases even when runtime control detection returns a partial map.
+        if (btn.role === "jump" || /jump|قفز|space/i.test(`${btn.id || ""} ${btn.label || ""} ${btn.labelAr || ""}`)) {
+          return { ...btn, role: "jump", keys: Array.from(new Set([...(btn.keys || []), "Space", 32, "space", "vk_space", "ArrowUp", 38, "up", "vk_up", "KeyZ", 90, "z", "Z", " "])) };
+        }
+        return btn;
+      });
 
   const gameTitleDisplay = (detectedControls && detectedControls.gameName) || title || "NOR BOY";
 
@@ -97801,6 +97854,22 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                 title: "تبديل تأثير شاشة CRT",
                 className: `px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all focus-visible:ring-2 focus-visible:ring-emerald-400 ${scanlinesEnabled ? "bg-emerald-500/20 border-emerald-500 text-emerald-300" : "bg-gray-800 border-gray-600 text-gray-400"}`,
                 children: "CRT"
+              }),
+              /* Landscape / orientation toggle: double tap returns to normal portrait. */
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
+                onClick: toggleLandscape,
+                "aria-label": "تبديل الوضع الأفقي",
+                title: "تبديل Landscape (اضغط مرتين للعودة)",
+                className: `px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all ${isLandscapeMode ? "bg-cyan-500/25 border-cyan-400 text-cyan-200" : "bg-gray-800 border-gray-600 text-gray-200"}`,
+                children: isLandscapeMode ? "↩ عادي" : "↔ أفقي"
+              }),
+              /* Fullscreen toggle: double tap on the landscape control also exits it. */
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", {
+                onClick: toggleGameFullscreen,
+                "aria-label": "ملء شاشة اللعبة",
+                title: "ملء الشاشة / الوضع العادي",
+                className: `px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all ${isGameFullscreen ? "bg-cyan-500/25 border-cyan-400 text-cyan-200" : "bg-gray-800 border-gray-600 text-gray-200"}`,
+                children: isGameFullscreen ? "⛶ خروج" : "⛶ ملء"
               }),
               /* Restart Game */
               /* @__PURE__ */ jsxRuntimeExports.jsx("button", {

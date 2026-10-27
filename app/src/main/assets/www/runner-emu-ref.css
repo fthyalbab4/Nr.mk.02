@@ -4,12 +4,34 @@
  * Black-screen guard: min-height on game surface, no height:100% iframe collapse.
  */
 
+.nm-export-scroll-menu {
+  scrollbar-width: auto;
+  scrollbar-color: #6b7280 #e5e7eb;
+}
+.nm-export-scroll-menu::-webkit-scrollbar {
+  width: 14px;
+}
+.nm-export-scroll-menu::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-left: 1px solid #9ca3af;
+}
+.nm-export-scroll-menu::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border: 2px solid #e5e7eb;
+  border-radius: 2px;
+}
+.nm-export-scroll-menu::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
 @media (orientation: landscape) {
   .nm-emu-ref {
     background: #000 !important;
+    position: relative !important;
   }
 
   .nm-emu-ref .nm-emu-chassis {
+    position: relative !important;
     max-width: 100% !important;
     width: 100% !important;
     height: 100% !important;
@@ -23,19 +45,40 @@
   }
 
   .nm-emu-ref .nm-emu-screen {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(66vw, 133.33vh) !important;
+    height: min(100vh, 49.5vw) !important;
+    max-width: none !important;
     max-height: none !important;
-    min-height: 55vh !important;
-    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    flex: none !important;
     border-radius: 0 !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
     background: #000 !important;
+    z-index: 10 !important;
   }
 
   .nm-emu-ref .nm-emu-screen > div:first-child {
     display: none !important;
+  }
+  .nm-emu-ref .nm-emu-screen > div:nth-child(2) {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  .nm-emu-ref .nm-emu-screen iframe {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    border: 0 !important;
   }
 
   .nm-emu-ref .nm-emu-controls {
@@ -86,6 +129,12 @@
     box-shadow: 0 0 14px rgba(60, 180, 255, 0.4) !important;
     font-weight: 800 !important;
   }
+}
+
+.nm-emu-ref:fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #000 !important;
 }
 
 @media (orientation: portrait) {
