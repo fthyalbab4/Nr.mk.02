@@ -87,6 +87,19 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "point_distance(0, 0, 3, 4)", &val));
     assert(fabs(val - 5.0) < 1e-6);
 
+    assert(fabs(gml_hypot(3, 4) - 5.0) < 1e-6);
+    assert(fabs(gml_clamp_angle(370.0) - 10.0) < 1e-6);
+    assert(fabs(gml_lerp_angle(350.0, 10.0, 0.5) - 0.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "hypot(3, 4)", &val));
+    assert(fabs(val - 5.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "clamp_angle(730)", &val));
+    assert(fabs(val - 10.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "lerp_angle(350, 10, 0.5)", &val));
+    assert(fabs(val - 0.0) < 1e-6);
+
     puts("test_math_builtins_and_eval PASS");
 }
 
