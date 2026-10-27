@@ -32399,6 +32399,7 @@ const createEngineHTML = (projectData) => {
     window.place_free = (x, y, self) => {
         const me = self || window._currentInstance;
         if (!me) return true;
+        if (me.grounded && y > me.y && (y - me.y) <= 2.5) return false;
         const mw = me.w || 16;
         const mh = me.h || 16;
         const margin = 2; // Margin ensures ground below does not obstruct horizontal movement
