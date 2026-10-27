@@ -131,6 +131,7 @@ double gml_keyboard_check(double key) {
 double gml_keyboard_check_pressed(double key) {
     if (!g_input || isnan(key) || isinf(key) || key <= 0 || key >= GM82_KEY_MAX) return 0.0;
     int k = (int)key;
+    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
     if (!g_input || isnan(key) || isinf(key)) return 0.0;
     int k = (int)key;
     if (k == 0) return 0.0;
@@ -149,6 +150,7 @@ double gml_keyboard_check_released(double key) {
     int k = (int)key;
     if (!g_input || isnan(key) || isinf(key)) return 0.0;
     int k = (int)key;
+    if (!g_input || k < 0 || k >= GM82_KEY_MAX) return 0;
     if (!g_input) return 0;
     if (k == 0) return 0.0;
     if (k == 1) {

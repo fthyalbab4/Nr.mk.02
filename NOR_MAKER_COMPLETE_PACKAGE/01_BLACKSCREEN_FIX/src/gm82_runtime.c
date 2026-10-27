@@ -14,6 +14,11 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+void gm82_runtime_cleanup(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_arena_free(&rt->room_arena);
+}
+
 void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     rt->next_id = 100001;
@@ -238,6 +243,8 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
     apply_object_defaults(rt, inst, object_index);
+    if (!rt->room_loading)
+        gm82_events_fire_create_single(rt, inst);
     if (!rt->room_loading) {
         gm82_events_fire_create_single(rt, inst);
     }
@@ -364,6 +371,7 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     rt->instance_count = w;
     int persistent_count = w;
 
+    int room_instance_start = rt->instance_count;
     int room_start_idx = rt->instance_count;
     rt->room_loading = 1;
     for (int i = 0; i < room->instance_count; i++) {
@@ -375,8 +383,13 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
     }
+    rt->room_loading = 0;
+    int room_instance_end = rt->instance_count;
     rt->running = 1;
     rt->frame = 0;
+    for (int i = room_instance_start; i < room_instance_end; i++) {
+        if (rt->instances[i].alive)
+            gm82_events_fire_create_single(rt, &rt->instances[i]);
     rt->step_accumulator = 0.0;
     rt->step_room_speed = rt->room_speed;
     gm82_events_fire_create_all(rt);
@@ -435,6 +448,29 @@ static void update_speed_from_dir(gm82_instance *inst) {
     double rad = inst->direction * M_PI / 180.0;
     inst->hspeed = cos(rad) * inst->speed;
     inst->vspeed = -sin(rad) * inst->speed;
+}
+
+void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
+    if (!rt || !rt->running) return;
+    if (isnan(dt) || isinf(dt) || dt <= 0.0) return;
+
+    if (rt->step_room_speed != rt->room_speed) {
+        rt->step_accumulator = 0.0;
+        rt->step_room_speed = rt->room_speed;
+    }
+
+    double fixed_dt = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0 / 30.0);
+    rt->step_accumulator += dt;
+
+    int steps = 0;
+    while (rt->step_accumulator >= fixed_dt && steps < 4) {
+        gm82_runtime_step(rt);
+        rt->step_accumulator -= fixed_dt;
+        steps++;
+    }
+    if (steps >= 4) {
+        rt->step_accumulator = 0.0;
+    }
 }
 
 void gm82_runtime_step(gm82_runtime *rt) {
