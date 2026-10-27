@@ -3048,6 +3048,18 @@ double gml_file_create(const char *path) {
     }
     ensure_parent_dirs(path);
     FILE *f = fopen(path, "wb");
+    if (!f) {
+        char tmp[256];
+        strncpy(tmp, path, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = '\0';
+        char *slash = strrchr(tmp, '/');
+        if (!slash) slash = strrchr(tmp, '\\');
+        if (slash) {
+            *slash = '\0';
+            mkdir(tmp, 0755);
+            f = fopen(path, "wb");
+        }
+    }
     if (!f) return 0;
     fclose(f);
     return 1;

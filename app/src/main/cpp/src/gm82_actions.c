@@ -610,6 +610,9 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         gml_part_particles_create(0, self->x, self->y, 0, 8);
         return true;
     }
+    if (strcmp(name, "action_sleep") == 0) {
+        return true;
+    }
     if (strcmp(name, "action_save_game") == 0) {
         const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
         return gml_game_save(path) > 0;
