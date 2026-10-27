@@ -62,7 +62,6 @@ double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 double gml_point_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_string_digits(const char *src, char *dst, size_t max_len);
-void gml_string_letters(const char *src, char *dst, size_t max_len);
 
 /* ---- Collision (AABB via sprite size) ---- */
 double gml_place_meeting(double x, double y, double object_index);
@@ -581,4 +580,53 @@ double gml_randomize(void);
 double gml_random_set_seed(double seed);
 double gml_random_get_seed(void);
 
+/* batch2 */
+
+double gml_esign(double val, double defv);
+double gml_invlerp(double a, double b, double v);
+double gml_gauss(double mean, double deviation);
+double gml_angle_wrap(double ang);
+double gml_angle_normalize(double ang);
+double gml_arcsin(double x);
+double gml_arccos(double x);
+double gml_is_equal(double a, double b);
+double gml_random_color(void);
+double gml_object_is_child_of(double child, double parent);
+double gml_string_width(const char *s);
+double gml_string_height(const char *s);
+double gml_string_letters(const char *s);
+double gml_string_pad(double number, double digits);
+double gml_string_trim(const char *s);
+
+int gm82_gm82core_try_stub(const char *id, double *out);
+double gml_color_blend(double c1, double c2, double t);
+double gml_color_get_luminance(double c);
+double gml_gauss_range(double a, double b);
+double gml_envelerp(double a, double b, double t);
+double gml_make_color_hsv_standard(double h, double s, double v);
+double gml_merge_color_corrected(double c1, double c2, double t);
+double gml_irandom_fresh(double x);
+double gml_is_undefined(double v);
+double gml_outside_room(void);
+double gml_position_free(double x, double y);
+double gml_collision_check_fast(double obj, double dist);
+double gml_path_ease(double t, double kind);
+double gml_object_other_is_child_of(double parent);
+double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir);
+double gml_instance_some(double obj);
+double gml_filename_remove_ext(const char *s);
+double gml_string_ord_at(const char *s, double idx);
+double gml_string_hexdigits(const char *s);
+double gml_string_number(const char *s);
+double gml_string_copy_end(const char *s, double count);
+double gml_string_delete_end(const char *s, double count);
+double gml_string_truncate(const char *s, double maxn);
+double gml_string_magnitude(double n);
+double gml_str_cat(const char *a, const char *b);
+double gml_str_sep(const char *a, const char *sep, const char *b);
+double gml_string_better(double v);
+double gml_directory_previous(const char *path);
+double gml_pick(double x);
+double gml_unpick(double x);
+double gml_date_get_timestamp(void);
 #endif

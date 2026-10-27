@@ -307,8 +307,7 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
         for (int32_t ri = 0; ri < ir->room_count; ri++)
             inst += ir->rooms[ri].instance_count;
         fprintf(stderr,
-            "GM82_MATERIALIZE_STATS sprites=%d bgs=%d rooms=%d objects=%d scripts=%d instances=%d complete=%d
-",
+            "GM82_MATERIALIZE_STATS sprites=%d bgs=%d rooms=%d objects=%d scripts=%d instances=%d complete=%d\n",
             ir->sprite_count, ir->background_count, ir->room_count, oc, sc, inst,
             ir->complete ? 1 : 0);
     }
