@@ -1,12 +1,12 @@
 # Daily Periodic Audit Report — NOR Maker GM82 Engine
 
-**Date:** 2026-10-27
+**Date:** 2026-10-28
 **Audit Conducted By:** Jules (Automated Periodic Engine Verifier)
-**Reference Specification:** GM82 Project (https://github.com/GM82Project) & `REPORTING_RULES.md`
+**Reference Repositories:** `source/` (28 GM82 source archives) & `REPORTING_RULES.md`
 
 ---
 
-## Executive Summary & Honest Parity Metric
+## Executive Summary & Honest Parity Metrics
 
 | Scope / Domain | Status / Percentage Range | Measurement Basis |
 | :--- | :--- | :--- |
@@ -14,7 +14,7 @@
 | **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compile for 4 ABIs; `gradle assembleDebug` builds cleanly (BUILD SUCCESSFUL). Physical hardware playtesting remains unverified without physical device logcat. |
 | **GM82 Extension API Parity** | **85% - 90%** | Math, 3D geometry, Perlin noise, HRT timer, string tokens, color reverse, ds_grid disk operations, approach, angle_difference implemented in clean-room native C and verified against source archives in `source/`. |
 
-> **Strict Compliance Note:** No 100% total completion or "Windows parity" is claimed, strictly adhering to `REPORTING_RULES.md`. Full device playtesting requires physical Android hardware logcat verification.
+> **Strict Compliance Note:** In strict compliance with `REPORTING_RULES.md`, no claim of 100% completion or full Windows parity is made. Complete device playtesting requires physical Android hardware logcat verification.
 
 ---
 
@@ -22,17 +22,21 @@
 
 1. **Tri-Mirror Source and Header Synchronization:**
    - *Audit Target:* Synchronized `app/src/main/cpp/src/` & `include/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/` & `include/`, and `app/src/main/cpp_backup/src/` & `include/`.
-   - *Verification:* `diff -r -q -x "*.o" -x "*.so" -x "*.a"` confirmed **0 differences found** across all 3 C core locations. `gm82_gml_builtins_rea_motion.c` synchronized across all 3 mirrors.
+   - *Verification:* `diff -r -q -x "*.o" -x "*.so" -x "*.a"` confirmed **0 differences found** across all 3 C core locations.
 
-2. **Automated Verification Suites Execution:**
+2. **Source Mirror Analysis (`source/` & `source/unpacked/`):**
+   - *Audit Target:* 28 GM82 extension packages (`gm82core`, `gm82audio`, `gm82appsurf`, `gm82buf`, `gm82room`, `gm82path`, `DragonScript2`, etc.).
+   - *Findings:* Core GML, surface, path, buffer, particle, and motion builtins are fully implemented in native C. Windows-only PE/DLL components (`gm82nsis`, `gm82upx`, `gm82vpatch`, `gm82gex`) are out-of-scope for the native Android engine or stubs provided.
+
+3. **Automated Verification Suites Execution:**
    - *`daily_audit_runner.py`:* PASS (C Engine Suite, Python Verification, Host Pipeline 4/4, Makefile, JS Engine Verification).
    - *`run_full_verification.py`:* 17/17 PASS (100% success rate across all test assertions).
    - *`run_engine_suite.py`:* SUMMARY ok=4 fail=0 across all native test binaries.
    - *`run_host_pipeline.sh`:* ok=4 fail=0 across all sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`).
    - *`make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test`:* 100% PASS on C host suite.
 
-3. **Android Gradle Build Verification:**
-   - *`./gradlew assembleDebug`:* BUILD SUCCESSFUL (arm64-v8a, armeabi-v7a, x86, x86_64 in 1m 40s).
+4. **Android Gradle Build Verification:**
+   - *`./gradlew assembleDebug`:* BUILD SUCCESSFUL (arm64-v8a, armeabi-v7a, x86, x86_64).
 
 ---
 
@@ -63,10 +67,6 @@ $ python3 tools/daily_audit_runner.py
   C Core Package Makefile    : PASS
   JS Engine Verification     : PASS
   OVERALL SYSTEM STATUS      : PASS
-
-# Android Debug APK Compilation
-$ ./gradlew assembleDebug
-  BUILD SUCCESSFUL in 1m 40s
 
 # Tri-Mirror Synchronization Audit
 $ diff -r -q -x "*.o" -x "*.so" -x "*.a" app/src/main/cpp/src NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src
