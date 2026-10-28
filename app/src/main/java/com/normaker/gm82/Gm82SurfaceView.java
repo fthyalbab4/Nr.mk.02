@@ -56,11 +56,17 @@ public class Gm82SurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
 
     private final int[] mAudioParams = new int[4];
     private final float[] mAudioFloats = new float[1];
+    private long lastFrameTimeNanos = 0;
 
     @Override
     public void onDrawFrame(GL10 gl) {
         if (Gm82Native.nativeIsRunning()) {
-            Gm82Native.nativeStep();
+            long now = System.nanoTime();
+            double dt = (lastFrameTimeNanos > 0) ? (now - lastFrameTimeNanos) / 1e9 : 1.0 / 60.0;
+            lastFrameTimeNanos = now;
+            // Clamp dt between 1ms and 100ms to ensure stability during pause/resume or lag spikes
+            double clampedDt = Math.min(Math.max(dt, 0.001), 0.1);
+            Gm82Native.nativeStepDt(clampedDt);
             Gm82Native.nativeDraw();
             pollAudioCommands();
         }
