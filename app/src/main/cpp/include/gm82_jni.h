@@ -40,6 +40,28 @@ int  gm82_native_room_width(void);
 int  gm82_native_room_height(void);
 int  gm82_native_room_speed(void);
 
+/* Diagnostics: copy up to max_count live instances so hosts (the PC shell, the
+ * editor preview and the test harness) can report real gameplay state such as
+ * player/enemy positions instead of only a rendered frame. Returns the count
+ * copied, or -1 when the engine is not initialised. */
+#include "gm82_runtime.h"
+int  gm82_native_instance_snapshot(gm82_instance *out, int max_count);
+int  gm82_native_frame_count(void);
+
+typedef struct {
+    int frame;
+    int current_room;
+    int room_count;
+    int instance_count;
+    int room_width;
+    int room_height;
+    int room_speed;
+    int running;
+} gm82_native_runtime_info_t;
+
+/* Snapshot of the runtime bookkeeping (current room, frame, live instance count). */
+int  gm82_native_runtime_info(gm82_native_runtime_info_t *out);
+
 #ifdef __cplusplus
 }
 #endif
