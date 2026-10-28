@@ -29,11 +29,11 @@ static void mkdir_p(const char *dir) {
     mkdir(tmp, 0755);
 }
 
+static void ensure_parent_dir(const char *path) __attribute__((unused));
 static void ensure_parent_dir(const char *path) {
     if (!path) return;
     char tmp[512];
-    strncpy(tmp, path, sizeof(tmp) - 1);
-    tmp[sizeof(tmp) - 1] = '\0';
+    snprintf(tmp, sizeof(tmp), "%s", path);
     char *slash = strrchr(tmp, '/');
     if (slash && slash != tmp) {
         *slash = '\0';

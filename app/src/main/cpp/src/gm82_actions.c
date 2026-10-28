@@ -72,10 +72,10 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
     if (str_args && str_argc > 0) {
         int n = str_argc > 4 ? 4 : str_argc;
         for (int i = 0; i < n; i++)
-            strncpy(a->str_args[i], str_args[i], sizeof(a->str_args[i]) - 1);
+            snprintf(a->str_args[i], sizeof(a->str_args[i]), "%.63s", str_args[i]);
         a->str_argc = n;
     }
-    if (name) strncpy(a->name, name, sizeof(a->name) - 1);
+    if (name) snprintf(a->name, sizeof(a->name), "%.63s", name);
 }
 
 int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *out) {
