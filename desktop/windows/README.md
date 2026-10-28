@@ -8,10 +8,55 @@ The first milestone provides a native Windows window, `.gmk`/`.gm81`/`.gm6` file
 
 ## Roadmap
 
-1. **Native host shell (this milestone):** Win32 window and file selection; input forwarding; bounded frame pacing; software framebuffer; x64 Windows executable. Keep Android unchanged.
-2. **Platform parity:** add a Windows audio device backend and route existing sound commands to it; test focus/pause/resume and display scaling; improve Unicode path handling.
-3. **Runtime parity:** expand PC smoke tests across bundled GMK samples; audit incomplete GMK resources/GML builtins and document the supported subset rather than silently claiming full GameMaker compatibility.
-4. **Release:** add reproducible Windows CI, package the EXE with its runtime dependencies, and publish versioned artifacts only after test and license review.
+1. **Native host shell (done):** engine-level Win32 host and file selection; input forwarding; bounded frame pacing; software framebuffer; headless verification mode. This is `NorMakerNativePC.exe` and it is a diagnostic/engine host, not the editor.
+2. **Nor Maker PC application (done):** `NorMakerStudio.exe` shows the real Nor Maker interface on Windows by serving the bundled editor UI and providing the same `window.NorNative` bridge the Android WebView injects — see "Nor Maker PC application" below.
+3. **Platform parity:** add a Windows audio device backend and route existing sound commands to it; test focus/pause/resume and display scaling; improve Unicode path handling.
+4. **Runtime parity:** expand PC smoke tests across bundled GMK samples; audit incomplete GMK resources/GML builtins and document the supported subset rather than silently claiming full GameMaker compatibility.
+5. **Release:** add reproducible Windows CI, package the EXE with its runtime dependencies, and publish versioned artifacts only after test and license review.
+
+## Nor Maker PC application (`NorMakerStudio.exe`)
+
+The Windows application is not a re-implementation of the editor. Nor Maker's UI is a single page (`app/src/main/assets/www/index.html`) and Android only hosts it in a WebView with a `NorNative` JavaScript bridge, so the PC build hosts the same page and answers the same bridge:
+
+- `NorMakerStudio.exe` starts a loopback HTTP server that serves the bundled `assets/www` tree, and injects `nor_pc_bridge.js` into the document head at serve time (the shipped `index.html` is not modified).
+- That bridge defines `window.NorNative` with the same method names the Android bridge exposes (`tick`/`step`, `loadGmk`, `loadGmkBase64`, `validateGmk`, `coreIdentity`, `downloadCloudGmkBase64`, …); each call is answered by the C engine over `/rpc`.
+- The document is opened in an Edge app-mode window when Edge is present, otherwise in the default browser, so the user sees the real Nor Maker interface (menus, Resource Explorer, room editor, object palette, 3D/isometric editors, NOOR libraries).
+- The shell adds an in-editor preview panel (“معاينة المحرك الأصلي (GM82 C)”) that renders the real C engine frames into the page, so a GMK loaded through the bridge is visible inside the editor instead of in a separate window.
+
+### Running it
+
+```sh
+NorMakerStudio.exe                 # serve + open the Nor Maker window
+NorMakerStudio.exe --browser       # serve + open the default browser
+NorMakerStudio.exe --serve=8765    # serve only; prints NORMAKER_URL
+NorMakerStudio.exe --bind-all      # also listen on all interfaces (testing)
+```
+
+The UI assets are looked up through `NORMAKER_WWW`, then `.\www` next to the EXE, then the repository layout (`..\..\app\src\main\assets\www`). To ship a folder, copy `app/src/main/assets/www` to `www` beside the EXE; the executable is self-contained otherwise.
+
+### Verified execution
+
+`tools/run_studio_verify.sh` runs the real EXE under Wine and drives the same HTTP interface the browser uses. Observed results:
+
+| Check | Result |
+| --- | --- |
+| `index.html` served | HTTP 200, 6,290,274 bytes, title `NOR Maker 8.2 - صانع الألعاب`, bridge injected |
+| assets served | `nor_pc_bridge.js` 8,459 bytes, `vendor/three.r128.min.js` 603,445 bytes |
+| bridge identity | `Nor Maker Studio PC / GM82 C core` |
+| load GMK by path | mario_bros.gmk → 1500×208 @ 30 |
+| 300 native frames | frame 1500×208, 311,159 non-black pixels |
+| frame delivery | `engine/frame.bmp` 936,054 bytes; `?maxw=384` 61,110 bytes |
+| GMK probe (bytes) | shooter.gmk → 224,588 bytes, formatKind 1, valid |
+| load by bytes | zelda.gmk → 1000×800 room loaded from base64 |
+| failure paths | missing project → error; unknown method → error; `/../index.html` → HTTP 400 |
+
+The interface itself was opened through its public URL in a real Chromium browser, and the bridge was driven from the page: `NorNative.loadGmkBase64(shooter.gmk)` loaded the project, the preview panel ran 1,235 native frames at 1000×800 and the canvas contained 710,497 non-black pixels across 27 colour buckets (see `docs/nor-studio-pc-ui.png`).
+
+### Limits
+
+- The window is an Edge/Chromium app-mode window, not an embedded WebView2 control. Embedding WebView2 (and shipping the loader) is the next step; the served page and bridge are already the same, so the switch does not change the UI or the bridge contract.
+- The editor's own “Run & Compile” still executes its JavaScript simulation. Wiring that button to the native engine preview is a follow-up; the native preview is already available through the bridge and its panel.
+- Wine is not Windows: real driver, audio and multi-monitor behaviour still needs a physical Windows machine, and the Edge window itself could not be launched under Wine (the HTTP shell and bridge were verified there instead).
 
 ## Current milestone limits
 
@@ -51,6 +96,15 @@ Cross-build parity: the same 300 frames of `mario_bros.gmk` rendered by the Wind
 
 `wine32` is not required for this target: the EXE is PE32+ x86-64 only.
 
+## Play test against a real game
+
+`docs/playtest-mario.md` records a measured run of `mario bros.gmk` (the same file
+as `samples/mario_bros.gmk`, also in the cloud catalog) through this engine:
+movement, gravity, jumping and camera scrolling work and are keyed to real
+keyboard input, while drag-and-drop action events (enemies, coins, room switches)
+are still missing. `docs/playtest-mario-progress.png` shows three frames of that
+run.
+
 ## Build on Windows (MinGW-w64 / CMake)
 
 Use a MinGW-w64 x64 toolchain and a static zlib development package discoverable by CMake. From the repository root:
@@ -77,4 +131,4 @@ The cross-build prefers static zlib and the EXE currently imports only standard 
 
 ## Checked-in Windows binary
 
-The current x64 preview build is included at [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe). Size: 1,036,476 bytes. SHA-256: `f5adf846c1875345506d8996cc76d65f5c2a0e2c7a465c444438114179a3fe4e`. It is built from `main` at `afeae4e5`, so it contains the current engine sources (including the builtin and bridge changes merged in #246, #249 and #250) together with the headless verification mode and the command-line project argument. Rebuild it after any engine change so the checked-in binary never drifts from the source it claims to represent.
+Two x64 builds are included: [`dist/NorMakerStudio.exe`](dist/NorMakerStudio.exe) (the Nor Maker application, 1,043,129 bytes, SHA-256 `4c5abfeb5ab07792965a6f0d4aeaa8447cbce175b79050c40eed4b33472acae5`) and [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe) (engine host and headless verifier, 1,038,269 bytes, SHA-256 `98e58f2e9b74a0449831ecd91f26bc17915597285af276961e729c2b9c12e4a7`). Both are built from the same engine sources as the Android app; rebuild them after any engine change so the checked-in binaries never drift. They contain the bridge and view fixes described below, the headless verification mode and the command-line project argument.
