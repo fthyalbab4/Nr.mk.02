@@ -216,9 +216,110 @@ static HMENU create_menu(void) {
     return bar;
 }
 
+/* ---------- headless verification mode (additive; GUI path unchanged) ---------- */
+
+static void attach_parent_console(void) {
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+    }
+}
+
+static int write_ppm(const char *path, const uint8_t *rgba, int width, int height) {
+    FILE *f = fopen(path, "wb");
+    if (!f) return 0;
+    fprintf(f, "P6\n%d %d\n255\n", width, height);
+    size_t pixels = (size_t)width * (size_t)height;
+    for (size_t i = 0; i < pixels; i++) {
+        uint8_t rgb[3];
+        rgb[0] = rgba[i * 4 + 0];
+        rgb[1] = rgba[i * 4 + 1];
+        rgb[2] = rgba[i * 4 + 2];
+        if (fwrite(rgb, 1, 3, f) != 3) { fclose(f); return 0; }
+    }
+    return fclose(f) == 0;
+}
+
+static int run_headless_verify(const char *project, int frames, const char *dump_path) {
+    char error[256] = {0};
+    if (frames < 1) frames = 1;
+    if (frames > 100000) frames = 100000;
+
+    if (!gm82_native_init(640, 480)) {
+        printf("verify: engine init failed\n");
+        return 3;
+    }
+    if (!gm82_native_load_game(project, error, (int)sizeof(error))) {
+        printf("verify: load failed: %s\n", error[0] ? error : "(no detail)");
+        gm82_native_shutdown();
+        return 4;
+    }
+
+    for (int i = 0; i < frames; i++) gm82_native_step();
+
+    int width = 0, height = 0;
+    const uint8_t *rgba = gm82_native_frame_rgba(&width, &height);
+    if (!rgba || width <= 0 || height <= 0) {
+        printf("verify: no framebuffer produced\n");
+        gm82_native_shutdown();
+        return 5;
+    }
+
+    size_t pixels = (size_t)width * (size_t)height;
+    size_t opaque = 0, non_black = 0;
+    uint32_t hash = 2166136261u;
+    for (size_t i = 0; i < pixels; i++) {
+        uint8_t r = rgba[i * 4 + 0], g = rgba[i * 4 + 1], b = rgba[i * 4 + 2], a = rgba[i * 4 + 3];
+        if (a != 0) opaque++;
+        if (r || g || b) non_black++;
+        hash = (hash ^ r) * 16777619u;
+        hash = (hash ^ g) * 16777619u;
+        hash = (hash ^ b) * 16777619u;
+        hash = (hash ^ a) * 16777619u;
+    }
+
+    int dumped = 0;
+    if (dump_path && dump_path[0]) dumped = write_ppm(dump_path, rgba, width, height);
+
+    printf("verify: project=%s\n", project);
+    printf("verify: room_speed=%d frames=%d\n", gm82_native_room_speed(), frames);
+    printf("verify: frame=%dx%d pixels=%zu opaque=%zu non_black=%zu\n",
+           width, height, pixels, opaque, non_black);
+    printf("verify: framebuffer_hash=%08x\n", hash);
+    printf("verify: dump=%s\n", dumped ? dump_path : "(none)");
+    if (gm82_native_is_running()) printf("verify: engine_running=1\n");
+
+    gm82_native_shutdown();
+    return (dumped || !(dump_path && dump_path[0])) && non_black > 0 ? 0 : 6;
+}
+
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous, LPSTR command_line, int show) {
     (void)previous;
     (void)command_line;
+    char project_path[MAX_PATH] = {0};
+    char dump_path[MAX_PATH] = {0};
+    int verify_frames = 0;
+
+    int argc = 0;
+    LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    for (int i = 1; argv && i < argc; i++) {
+        if (wcscmp(argv[i], L"--open") == 0 && i + 1 < argc) {
+            WideCharToMultiByte(CP_ACP, 0, argv[++i], -1, project_path, MAX_PATH, NULL, NULL);
+        } else if (wcscmp(argv[i], L"--verify-frames") == 0 && i + 1 < argc) {
+            verify_frames = _wtoi(argv[++i]);
+        } else if (wcscmp(argv[i], L"--dump-frame") == 0 && i + 1 < argc) {
+            WideCharToMultiByte(CP_ACP, 0, argv[++i], -1, dump_path, MAX_PATH, NULL, NULL);
+        } else if (argv[i][0] != L'-' && project_path[0] == 0) {
+            WideCharToMultiByte(CP_ACP, 0, argv[i], -1, project_path, MAX_PATH, NULL, NULL);
+        }
+    }
+    if (argv) LocalFree(argv);
+
+    if (verify_frames > 0 && project_path[0]) {
+        attach_parent_console();
+        return run_headless_verify(project_path, verify_frames, dump_path[0] ? dump_path : NULL);
+    }
+
     WNDCLASSEXA wc;
     ZeroMemory(&wc, sizeof(wc));
     wc.cbSize = sizeof(wc);
@@ -239,6 +340,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous, LPSTR command_line, i
     if (!hwnd) return 2;
     ShowWindow(hwnd, show);
     UpdateWindow(hwnd);
+
+    if (project_path[0]) load_project(hwnd, project_path);
 
     MSG msg;
     while (GetMessageA(&msg, NULL, 0, 0) > 0) {
