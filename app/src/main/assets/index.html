@@ -101827,8 +101827,10 @@ const ToolButton = ({ active, onClick, title, children, disabled }) => /* @__PUR
     onClick,
     title,
     disabled,
+    "aria-label": title,
+    "aria-pressed": active !== void 0 ? (active ? "true" : "false") : void 0,
     className: `
-            w-7 h-7 flex items-center justify-center rounded-[2px] border transition-colors relative
+            w-7 h-7 flex items-center justify-center rounded-[2px] border transition-colors relative focus:outline-none focus-visible:ring-1 focus-visible:ring-black focus-visible:ring-offset-1
             ${disabled ? "opacity-50 cursor-not-allowed bg-gray-200" : ""}
             ${active ? "bg-win-select text-white border-win-darkshadow shadow-win-in" : "bg-win-face text-win-text border-transparent hover:border-win-highlight hover:shadow-win-out active:border-win-darkshadow active:shadow-win-in"}
         `,
