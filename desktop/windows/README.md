@@ -44,3 +44,7 @@ cmake --build build-pc-win64 --parallel
 ```
 
 The cross-build prefers static zlib and the EXE currently imports only standard Windows system DLLs. It is a separate executable target; it does not alter the Android Gradle/NDK build.
+
+## Checked-in Windows binary
+
+The current x64 preview build is included at [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe). SHA-256: `6747fb6b0ed77fe57e25b5636e30231bcf4b4ebc3ce8fa8ca6775b0231661828`.
