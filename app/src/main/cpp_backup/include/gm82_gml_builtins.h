@@ -502,6 +502,7 @@ double gml_approach_angle(double ang1, double ang2, double step);
 double gml_box_distance(double length, double dir);
 double gml_circle_in_circle(double ax, double ay, double radiusa, double bx, double by, double radiusb);
 double gml_clerp2(double fromA, double fromB, double toA, double toB, double value);
+double gml_lerp2(double fromA, double fromB, double toA, double toB, double value);
 double gml_cosine(double a, double b, double amount);
 double gml_dsecant(double angle);
 double gml_dot_product_normalized(double x1, double y1, double x2, double y2);
