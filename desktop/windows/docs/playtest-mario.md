@@ -6,6 +6,11 @@ the in-app cloud catalog (`cdn.jsdelivr.net/gh/floowsnaake/GMK8_Examples`), 92,0
 bytes, SHA-256 `6532a5c5…a2951426`. It is the same file as the bundled
 `samples/mario_bros.gmk`, so the sample and the cloud entry behave identically.
 
+The game was fetched from the cloud catalog exactly as the app does it: the shell
+downloads the URL through WinHTTP (TLS + redirects), returns it as base64, and the
+bridge stages it to a temp file and loads it. The downloaded bytes hash to the same
+SHA-256 as the catalog file, so the download path is byte-exact.
+
 Harness: `nor_play_test.c` (loads the GMK, drives `gm82_native_*`, injects keys,
 samples frames and live instances). Runs under ASan + UBSan; no sanitizer reports
 during a 900-frame run.
