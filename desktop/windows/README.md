@@ -37,17 +37,17 @@ NorMakerNativePC.exe --open C:\path\game.gmk --verify-frames 300 --dump-frame C:
 
 Without `--verify-frames` the normal window, menu, drag-and-drop and keyboard path is used; a bare path argument (or `--open`) also loads a project in the GUI.
 
-Observed results (Wine 9.0, Xvfb 1280x800x24, 2026-10-28):
+Observed results (Wine 9.0, Xvfb 1280x800x24, 2026-10-28, binary built from `main` at `afeae4e5`):
 
 | Sample | Resources materialized | Room | Frames | Non-black pixels | Frame hash | Exit |
 | --- | --- | --- | --- | --- | --- | --- |
 | mario_bros.gmk | 24 sprites, 24 bgs, 2 rooms, 21 objects, 8 scripts, 301 instances | 1500x208 | 300 | 311,168 / 312,000 | `732c55bd` | 0 |
-| plataformas.gmk | 6 sprites, 6 bgs, 4 rooms, 7 objects, 14 scripts, 270 instances | 640x480 | 120 | 302,301 / 307,200 | `0a89c0f2` | 0 |
-| shooter.gmk | 12 sprites, 1 bg, 2 rooms, 12 objects, 472 instances | 1000x800 | 120 | 710,833 / 800,000 | `5261603f` | 0 |
-| zelda.gmk | 13 sprites, 13 bgs, 3 rooms, 11 objects, 16 scripts, 372 instances | 240x160 | 120 | 38,400 / 38,400 | `5f7ed915` | 0 |
+| plataformas.gmk | 6 sprites, 6 bgs, 4 rooms, 7 objects, 14 scripts, 270 instances | 640x480 | 300 | 302,301 / 307,200 | `0a89c0f2` | 0 |
+| shooter.gmk | 12 sprites, 1 bg, 2 rooms, 12 objects, 472 instances | 1000x800 | 300 | 710,604 / 800,000 | `fb83c27f` | 0 |
+| zelda.gmk | 13 sprites, 13 bgs, 3 rooms, 11 objects, 16 scripts, 372 instances | 240x160 | 300 | 38,400 / 38,400 | `5f7ed915` | 0 |
 | does_not_exist.gmk | - | - | - | - | - | 4 (`Unable to open project file`) |
 
-Cross-build parity: the same 300 frames of `mario_bros.gmk` rendered by the Windows EXE under Wine and by a native Linux build of the identical engine sources produce byte-identical framebuffers (PPM SHA-256 `f9c80d65...d74ee3`, both hash `732c55bd`). The windowed path was also smoke-tested: the Win32 window, menu bar and GDI presentation render real game content (see `docs/wine-gui-smoke.png`, `docs/wine-frame-shooter.png`, `docs/wine-frame-plataformas.png`).
+Cross-build parity: the same 300 frames of `mario_bros.gmk` rendered by the Windows EXE under Wine and by a native Linux build of the identical engine sources produce byte-identical framebuffers (PPM SHA-256 `f9c80d65...d74ee3`, both hash `732c55bd`), re-confirmed after rebuilding from current `main`. The windowed path was also smoke-tested: the Win32 window, menu bar and GDI presentation render real game content (see `docs/wine-gui-smoke.png`, `docs/wine-frame-shooter.png`, `docs/wine-frame-plataformas.png`).
 
 `wine32` is not required for this target: the EXE is PE32+ x86-64 only.
 
@@ -77,4 +77,4 @@ The cross-build prefers static zlib and the EXE currently imports only standard 
 
 ## Checked-in Windows binary
 
-The current x64 preview build is included at [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe). Size: 1,035,882 bytes. SHA-256: `ced4c7de83a1b51a76127692b84a30f6e6c4aa376f32fbaaee51943c51d1b667`. This build adds the headless verification mode and the command-line project argument on top of the previously published preview binary.
+The current x64 preview build is included at [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe). Size: 1,036,476 bytes. SHA-256: `f5adf846c1875345506d8996cc76d65f5c2a0e2c7a465c444438114179a3fe4e`. It is built from `main` at `afeae4e5`, so it contains the current engine sources (including the builtin and bridge changes merged in #246, #249 and #250) together with the headless verification mode and the command-line project argument. Rebuild it after any engine change so the checked-in binary never drifts from the source it claims to represent.
