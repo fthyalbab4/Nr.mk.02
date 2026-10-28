@@ -18,6 +18,14 @@ static void test_string_expansions(void) {
     gml_string_replace_all("foo bar foo baz foo", "foo", "qux", buf, sizeof(buf));
     assert(strcmp(buf, "qux bar qux baz qux") == 0);
 
+    assert(gml_string_starts_with_ext("GameMaker82", "Game") == 1.0);
+    assert(gml_string_starts_with_ext("GameMaker82", "Maker") == 0.0);
+    assert(gml_string_ends_with_ext("GameMaker82", "82") == 1.0);
+    assert(gml_string_ends_with_ext("GameMaker82", "Maker") == 0.0);
+
+    gml_filename_remove_ext("sample_level.gmk");
+    assert(strcmp(gm82_gml_last_string(), "sample_level") == 0);
+
     puts("test_string_expansions PASS");
 }
 
@@ -58,6 +66,15 @@ static void test_math_builtins_and_eval(void) {
     assert(fabs(gml_dot_product(2, 3, 4, 5) - 23.0) < 1e-6);
     assert(gml_math_min(10, 20) == 10);
     assert(gml_math_max(10, 20) == 20);
+
+    double lum = gml_color_get_luminance(0xffffff);
+    assert(fabs(lum - 255.0) < 1e-3);
+
+    double env = gml_envelerp(0.0, 100.0, 0.5);
+    assert(env >= 0.0 && env <= 100.0);
+
+    double gr = gml_gauss_range(10.0, 20.0);
+    assert(gr >= 10.0 && gr <= 20.0);
 
     double val = 0;
     assert(gm82_gml_eval_expr(&rt, NULL, "frac(3.25)", &val));
