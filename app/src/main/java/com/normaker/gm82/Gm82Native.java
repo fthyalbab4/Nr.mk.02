@@ -18,6 +18,7 @@ public class Gm82Native {
     public static native boolean nativeLoadGame(String absolutePath);
     public static native void nativeResize(int width, int height);
     public static native void nativeStep();
+    public static native void nativeStepDt(double dt);
     public static native void nativeDraw();
     public static native void nativeKeyDown(int vk);
     public static native void nativeKeyUp(int vk);

@@ -166,6 +166,11 @@ void gm82_native_step(void) {
     gm82_runtime_step(&g_bridge_rt);
 }
 
+void gm82_native_step_dt(double dt) {
+    if (!g_bridge_initialized || !g_bridge_rt.running) return;
+    gm82_runtime_step_dt(&g_bridge_rt, dt);
+}
+
 void gm82_native_tick(void) {
     gm82_native_step();
 }
@@ -301,6 +306,12 @@ JNIEXPORT void JNICALL
 Java_com_normaker_gm82_Gm82Native_nativeStep(JNIEnv *env, jclass cls) {
     (void)env; (void)cls;
     gm82_native_step();
+}
+
+JNIEXPORT void JNICALL
+Java_com_normaker_gm82_Gm82Native_nativeStepDt(JNIEnv *env, jclass cls, jdouble dt) {
+    (void)env; (void)cls;
+    gm82_native_step_dt((double)dt);
 }
 
 JNIEXPORT void JNICALL
