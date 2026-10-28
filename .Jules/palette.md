@@ -41,3 +41,7 @@
 ## 2026-10-26 - Drag-and-Drop Container Keyboard Accessibility & Focus Parity
 **Learning:** File drop zones acting as click-and-drag file upload triggers often omit `tabindex="0"`, `role="button"`, `:focus-visible` outlines, and keyboard keydown listeners (`Enter`/`Space`), making file selection completely inaccessible to keyboard-only and screen reader users. Furthermore, internal trigger buttons inside the container must carry `tabindex="-1"` to prevent redundant focus stops.
 **Action:** Provide `tabindex="0"`, `role="button"`, explicit `:focus-visible` styling, and `Enter`/`Space` keydown handlers on interactive drop containers while eliminating duplicate focus stops on nested child buttons.
+
+## 2026-10-28 - Editor Toolbar Button ARIA State & Keyboard Focus Ring Parity
+**Learning:** In editor toolbars (such as image, room, or tile editors), icon-only tool buttons using title attributes omit `aria-label`, active state `aria-pressed`, and `focus-visible` rings, rendering tool names and toggle statuses unannounced to screen readers and invisible during keyboard tabbing.
+**Action:** Always bind `aria-label={title}`, `aria-pressed={active !== undefined ? (active ? "true" : "false") : undefined}`, and `focus-visible:ring-1` to reusable icon tool button components.
