@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-28
 **Audit Conducted By:** Jules (Automated Periodic Engine Verifier)
-**Reference Repositories:** `source/` (28 GM82 source archives) & `REPORTING_RULES.md`
+**Reference Repositories:** `source/` (28 GM82 source archives & https://github.com/GM82Project reference) & `REPORTING_RULES.md`
 
 ---
 
@@ -11,7 +11,7 @@
 | Scope / Domain | Status / Percentage Range | Measurement Basis |
 | :--- | :--- | :--- |
 | **Host Verified Pipeline** | **92% - 96%** | Native C host test suites (`daily_audit_runner.py`, `run_engine_suite.py`, `run_full_verification.py`, `make test`) — 100% pass rate across 4 sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`). |
-| **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compile for 4 ABIs; `gradle assembleDebug` builds cleanly (BUILD SUCCESSFUL). Physical hardware playtesting remains unverified without physical device logcat. |
+| **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compiled for 4 ABIs; `gradle assembleDebug` builds cleanly (BUILD SUCCESSFUL). Physical hardware playtesting remains unverified without physical device logcat. |
 | **GM82 Extension API Parity** | **85% - 90%** | Math, 3D geometry, Perlin noise, HRT timer, string tokens, color reverse, ds_grid disk operations, approach, angle_difference implemented in clean-room native C and verified against source archives in `source/`. |
 
 > **Strict Compliance Note:** In strict compliance with `REPORTING_RULES.md`, no claim of 100% completion or full Windows parity is made. Complete device playtesting requires physical Android hardware logcat verification.
@@ -51,7 +51,7 @@
 | **Collision Engine & Bitmasks** | Existing | `gm82_mask.c` | 1-bit per-pixel bitmask collisions & line raycasting |
 | **Particle System & MP Grid** | Existing | `gm82_particles.c`, `gm82_mp_grid.c` | Particle emitters/types and A* pathfinding grid active |
 | **Audio Engine (OpenSL ES / Mixer)** | Existing | `gm82_opensles.c`, `gm82_audio_mixer.c` | Multi-channel audio mixer and Android OpenSL ES bridge |
-| **Android NDK & Gradle Build** | Existing | `build.gradle`, `app/src/main/cpp/CMakeLists.txt` | `gradle assembleDebug` produces valid APK |
+| **Android NDK & Gradle Build** | Existing | `build.gradle`, `app/src/main/cpp/CMakeLists.txt` | `./gradlew assembleDebug` produces valid APK |
 | **Physical Hardware Verification** | Missing / Blocked | Hardware logcat | Needs physical device testing |
 
 ---
@@ -67,6 +67,10 @@ $ python3 tools/daily_audit_runner.py
   C Core Package Makefile    : PASS
   JS Engine Verification     : PASS
   OVERALL SYSTEM STATUS      : PASS
+
+# Android APK Compilation
+$ ./gradlew assembleDebug
+  BUILD SUCCESSFUL in 1s (41 actionable tasks)
 
 # Tri-Mirror Synchronization Audit
 $ diff -r -q -x "*.o" -x "*.so" -x "*.a" app/src/main/cpp/src NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src

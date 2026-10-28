@@ -97,6 +97,8 @@ void gml_draw_reset(void);
 void gml_draw_set_rgba(double r, double g, double b, double a);
 double gml_instance_destroy_id(double inst_id);
 double gml_instance_nearest_notme(double x, double y, double object_index);
+const char *gm82_gml_last_string(void);
+double gml_string_starts_with(const char *str, const char *substr);
 double gml_string_ends_with(const char *str, const char *substr);
 double gml_draw_get_alpha(void);
 double gml_draw_get_color(void);
