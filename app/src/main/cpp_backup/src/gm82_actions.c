@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include "gm82_int_read.h"
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_gml_eval.h"
@@ -9,11 +10,14 @@
 #include <math.h>
 #include <zlib.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #define GM82_ACTION_MAX_ARGS 8
 
 static int32_t rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
+    return gm82_read_i32le(p);
 }
 
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
@@ -71,11 +75,15 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
     }
     if (str_args && str_argc > 0) {
         int n = str_argc > 4 ? 4 : str_argc;
-        for (int i = 0; i < n; i++)
-            strncpy(a->str_args[i], str_args[i], sizeof(a->str_args[i]) - 1);
+        for (int i = 0; i < n; i++) {
+            memcpy(a->str_args[i], str_args[i], 63);
+            a->str_args[i][63] = '\0';
+        }
         a->str_argc = n;
     }
-    if (name) strncpy(a->name, name, sizeof(a->name) - 1);
+    if (name) {
+        snprintf(a->name, sizeof(a->name), "%.63s", name);
+    }
 }
 
 int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *out) {
@@ -608,9 +616,6 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     }
     if (strcmp(name, "action_effect") == 0) {
         gml_part_particles_create(0, self->x, self->y, 0, 8);
-        return true;
-    }
-    if (strcmp(name, "action_sleep") == 0) {
         return true;
     }
     if (strcmp(name, "action_save_game") == 0) {

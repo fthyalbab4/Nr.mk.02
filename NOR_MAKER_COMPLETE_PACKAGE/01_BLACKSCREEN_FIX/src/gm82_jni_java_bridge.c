@@ -37,6 +37,9 @@ static gm82_input_state g_bridge_input;
 static bool g_bridge_initialized = false;
 static int g_bridge_surface_w = 640;
 static int g_bridge_surface_h = 480;
+static uint8_t *g_bridge_frame_rgba = NULL;
+static size_t g_bridge_frame_capacity = 0;
+#define GM82_NATIVE_MAX_FRAME_PIXELS ((size_t)16777216u)
 
 bool gm82_native_init(int surface_width, int surface_height) {
     g_bridge_surface_w = surface_width > 0 ? surface_width : 640;
@@ -48,6 +51,8 @@ bool gm82_native_init(int surface_width, int surface_height) {
         gm82_decoded_background_list_init(&g_bridge_bgs);
         gm82_decoded_object_list_init(&g_bridge_objs);
         gm82_decoded_room_list_init(&g_bridge_rooms);
+        gm82_input_init(&g_bridge_input);
+        gm82_input_bind_global(&g_bridge_input);
         g_bridge_initialized = true;
     }
     return true;
@@ -55,13 +60,17 @@ bool gm82_native_init(int surface_width, int surface_height) {
 
 void gm82_native_shutdown(void) {
     if (!g_bridge_initialized) return;
+    free(g_bridge_frame_rgba);
+    g_bridge_frame_rgba = NULL;
+    g_bridge_frame_capacity = 0;
     gm82_gl_atlas_free(&g_bridge_atlas);
     gm82_decoded_sprite_list_free(&g_bridge_sprites);
     gm82_decoded_background_list_free(&g_bridge_bgs);
     gm82_decoded_object_list_free(&g_bridge_objs);
     gm82_decoded_room_list_free(&g_bridge_rooms);
     gm82_sprite_group_list_free(&g_bridge_sprite_groups);
-    gm82_runtime_init(&g_bridge_rt);
+    gm82_runtime_cleanup(&g_bridge_rt);
+    memset(&g_bridge_rt, 0, sizeof(g_bridge_rt));
     g_bridge_initialized = false;
 }
 
@@ -70,67 +79,75 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
         if (err && err_len > 0) snprintf(err, (size_t)err_len, "null path");
         return false;
     }
-    if (!g_bridge_initialized) {
-        gm82_native_init(640, 480);
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        if (err && err_len > 0) snprintf(err, (size_t)err_len, "Unable to open project file");
+        return false;
+    }
+    if (fseek(f, 0, SEEK_END) != 0) {
+        fclose(f);
+        if (err && err_len > 0) snprintf(err, (size_t)err_len, "Unable to seek project file");
+        return false;
+    }
+    long file_size = ftell(f);
+    if (file_size <= 16 || file_size > 80L * 1024L * 1024L || fseek(f, 0, SEEK_SET) != 0) {
+        fclose(f);
+        if (err && err_len > 0) snprintf(err, (size_t)err_len, "Unsupported project file size");
+        return false;
+    }
+    uint8_t *data = (uint8_t *)malloc((size_t)file_size);
+    if (!data || fread(data, 1, (size_t)file_size, f) != (size_t)file_size) {
+        free(data);
+        fclose(f);
+        if (err && err_len > 0) snprintf(err, (size_t)err_len, "Unable to read project file");
+        return false;
+    }
+    fclose(f);
+
+    gm82_gmk_load_result gr = gm82_gmk_load_from_memory(data, (size_t)file_size);
+    if (!gr.ok || !gr.ir) {
+        if (err && err_len > 0)
+            snprintf(err, (size_t)err_len, "%s", gr.error[0] ? gr.error : "Invalid GMK project");
+        if (gr.ir) gm82_project_ir_free(gr.ir);
+        free(data);
+        return false;
     }
 
-    gm82_decoded_sprite_list_free(&g_bridge_sprites);
-    gm82_decoded_background_list_free(&g_bridge_bgs);
-    gm82_decoded_object_list_free(&g_bridge_objs);
-    gm82_decoded_room_list_free(&g_bridge_rooms);
-    gm82_sprite_group_list_free(&g_bridge_sprite_groups);
-    gm82_decoded_sprite_list_init(&g_bridge_sprites);
-    gm82_decoded_background_list_init(&g_bridge_bgs);
-    gm82_decoded_object_list_init(&g_bridge_objs);
-    gm82_decoded_room_list_init(&g_bridge_rooms);
+    int surface_w = g_bridge_surface_w > 0 ? g_bridge_surface_w : 640;
+    int surface_h = g_bridge_surface_h > 0 ? g_bridge_surface_h : 480;
+    if (g_bridge_initialized) gm82_native_shutdown();
+    gm82_native_init(surface_w, surface_h);
 
-    gm82_decode_sprites_from_file(path, &g_bridge_sprites);
+    gm82_decode_sprites_from_gmk(data, (size_t)file_size, &g_bridge_sprites);
     if (g_bridge_sprites.count > 0) {
         gm82_sprite_groups_build(&g_bridge_sprites, &g_bridge_sprite_groups);
         gm82_gl_upload_sprites(&g_bridge_atlas, &g_bridge_sprites);
     }
-    gm82_decode_backgrounds_from_file(path, &g_bridge_bgs);
+    gm82_decode_backgrounds_from_gmk(data, (size_t)file_size, &g_bridge_bgs);
     if (g_bridge_bgs.count > 0) {
         gm82_gl_upload_backgrounds(&g_bridge_atlas, &g_bridge_bgs);
     }
+    gm82_decode_objects_from_gmk(data, (size_t)file_size, &g_bridge_objs);
+    gm82_decode_rooms_from_gmk(data, (size_t)file_size, &g_bridge_rooms);
 
-    {
-        FILE *f = fopen(path, "rb");
-        if (f) {
-            fseek(f, 0, SEEK_END);
-            long sz = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            if (sz > 16 && sz < 80 * 1024 * 1024) {
-                uint8_t *buf = (uint8_t *)malloc((size_t)sz);
-                if (buf && fread(buf, 1, (size_t)sz, f) == (size_t)sz) {
-                    gm82_decode_objects_from_gmk(buf, (size_t)sz, &g_bridge_objs);
-                    gm82_decode_rooms_from_gmk(buf, (size_t)sz, &g_bridge_rooms);
-                    {
-                        gm82_gmk_load_result gr = gm82_gmk_load_from_memory(buf, (size_t)sz);
-                        if (gr.ok && gr.ir) {
-                            gm82_materialize_options opts = gm82_materialize_default_options();
-                            gm82_materialize_all(gr.ir, &opts);
-                            const gm82_decoded_object_list *mo = gm82_materialize_get_objects();
-                            if (mo && mo->count > g_bridge_objs.count) {
-                                fprintf(stderr, "GM82_BIND objects materialize=%d bridge=%d sprites_ir=%d rooms_ir=%d\n",
-                                        mo->count, g_bridge_objs.count, gr.ir->sprite_count, gr.ir->room_count);
-                            } else {
-                                fprintf(stderr, "GM82_BIND objects bridge=%d ir_sprites=%d\n",
-                                        g_bridge_objs.count, gr.ir ? gr.ir->sprite_count : -1);
-                            }
-                        }
-                    }
-                }
-                free(buf);
-            }
-            fclose(f);
-        }
+    gm82_materialize_options opts = gm82_materialize_default_options();
+    gm82_materialize_all(gr.ir, &opts);
+    const gm82_decoded_object_list *materialized_objects = gm82_materialize_get_objects();
+    if (materialized_objects && materialized_objects->count > g_bridge_objs.count) {
+        fprintf(stderr, "GM82_BIND objects materialize=%d bridge=%d sprites_ir=%d rooms_ir=%d\n",
+                materialized_objects->count, g_bridge_objs.count,
+                gr.ir->sprite_count, gr.ir->room_count);
+    } else {
+        fprintf(stderr, "GM82_BIND objects bridge=%d ir_sprites=%d\n",
+                g_bridge_objs.count, gr.ir->sprite_count);
     }
+    gm82_project_ir_free(gr.ir);
+    free(data);
 
     {
         const gm82_decoded_object_list *objs = &g_bridge_objs;
-        const gm82_decoded_object_list *mo = gm82_materialize_get_objects();
-        if (mo && mo->count > 0) objs = mo;
+        if (materialized_objects && materialized_objects->count > 0)
+            objs = materialized_objects;
         const gm82_script_list *sc = gm82_materialize_get_scripts();
         gm82_runtime_bind_assets(&g_bridge_rt, objs, &g_bridge_sprites,
                                  &g_bridge_bgs, &g_bridge_rooms, NULL);
@@ -180,9 +197,25 @@ int gm82_native_frame_ready(void) {
 }
 
 const uint8_t *gm82_native_frame_rgba(int *w, int *h) {
-    if (w) *w = g_bridge_rt.room_width > 0 ? g_bridge_rt.room_width : 640;
-    if (h) *h = g_bridge_rt.room_height > 0 ? g_bridge_rt.room_height : 480;
-    return NULL;
+    int width = g_bridge_rt.room_width > 0 ? g_bridge_rt.room_width : 640;
+    int height = g_bridge_rt.room_height > 0 ? g_bridge_rt.room_height : 480;
+    if (w) *w = width;
+    if (h) *h = height;
+    if (!g_bridge_initialized || !g_bridge_rt.running || width <= 0 || height <= 0)
+        return NULL;
+    if ((size_t)width > SIZE_MAX / (size_t)height) return NULL;
+    size_t pixels = (size_t)width * (size_t)height;
+    if (pixels > GM82_NATIVE_MAX_FRAME_PIXELS || pixels > SIZE_MAX / 4u) return NULL;
+    size_t needed = pixels * 4u;
+    if (needed > g_bridge_frame_capacity) {
+        uint8_t *frame = (uint8_t *)realloc(g_bridge_frame_rgba, needed);
+        if (!frame) return NULL;
+        g_bridge_frame_rgba = frame;
+        g_bridge_frame_capacity = needed;
+    }
+    if (!gm82_runtime_draw(&g_bridge_rt, g_bridge_frame_rgba, width, height))
+        return NULL;
+    return g_bridge_frame_rgba;
 }
 
 void gm82_native_draw(void) {
@@ -257,6 +290,11 @@ int gm82_native_room_width(void) {
 
 int gm82_native_room_height(void) {
     return g_bridge_initialized ? g_bridge_rt.room_height : 480;
+}
+
+int gm82_native_room_speed(void) {
+    return g_bridge_initialized && g_bridge_rt.room_speed > 0
+        ? g_bridge_rt.room_speed : 30;
 }
 
 #ifdef GM82_HAVE_JNI

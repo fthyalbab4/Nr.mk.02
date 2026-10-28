@@ -38,7 +38,7 @@ static void mkdir_p(const char *dir) {
     GM82_MKDIR(tmp);
 }
 
-static void ensure_parent_dir(const char *path) {
+static void __attribute__((unused)) ensure_parent_dir(const char *path) {
     if (!path) return;
     char tmp[512];
     strncpy(tmp, path, sizeof(tmp) - 1);
