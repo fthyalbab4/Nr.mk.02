@@ -20,3 +20,11 @@
 - Synchronized C Engine Core files across `app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, and `app/src/main/cpp_backup/`.
 - Cleaned up compiler warnings (`-Wall` 0 warnings): fixed unused static helper declarations in `gm82_gmk_reader.c` and `gm82_gmk_resource_walk.c`, formatting in `gm82_gml_eval.c`, buffer sizing in `gm82_text_reader.c`, and header copying in `gm82_native_bridge.c`.
 - Re-verified all test suites: `test_full_suite` (0 warnings), `run_full_verification.py` (16/16 PASS), `run_engine_suite.py` (10/10 PASS), `test_all_games_inlined.js` (100% PASS), and `test_100_percent.js` (100% PASS).
+
+## 2026-10-27 — GML core builtins expansion & tri-tree mirror alignment
+- Implemented C engine GML built-ins: `gml_draw_clear_alpha` (clear drawing surface with RGBA color and alpha) and `gml_ds_grid_value_sum` (ds_grid region sum).
+- Expanded GML VM strcmp evaluation dispatch in `gm82_gml_eval.c` for 11 functions: `draw_clear_alpha`, `ds_grid_value_sum`, `move_wrap2`, `sound_stop_all`, `string_starts_with_ext`, `string_ends_with_ext`, `color_to_html`, `file_rename`, `directory_rename`, `url_open`, and `window_has_focus`.
+- Header prototype synchronization in `gm82_gml_builtins.h` eliminating all implicit declaration compiler warnings.
+- Comprehensive unit test assertions in `test_gml_comprehensive.c` for all new GML functions.
+- 3-way synchronization across `app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, and `app/src/main/cpp_backup/` verified via `mirror_checker.py`.
+- Verified 100% pass across all 6 test targets: Native Engine Suite (18 tests), Python Verification (17 tests), Host Pipeline (4/4 games), C Package Makefile, JS Runner (39 scripts/78 actions), and Android APK Debug build (`./gradlew assembleDebug` SUCCESS for 4 ABIs).

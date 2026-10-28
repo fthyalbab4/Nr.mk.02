@@ -359,6 +359,19 @@ double gml_draw_clear(double color) {
     }
     return 1;
 }
+
+double gml_draw_clear_alpha(double color, double alpha) {
+    if (!g_draw_buf || g_draw_w <= 0 || g_draw_h <= 0) return 0;
+    uint32_t c = (uint32_t)color;
+    uint8_t r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+    double a_clamped = alpha < 0.0 ? 0.0 : (alpha > 1.0 ? 1.0 : alpha);
+    uint8_t a = (uint8_t)(a_clamped * 255.0);
+    size_t n = (size_t)g_draw_w * (size_t)g_draw_h;
+    for (size_t i = 0; i < n; i++) {
+        g_draw_buf[i*4]=r; g_draw_buf[i*4+1]=g; g_draw_buf[i*4+2]=b; g_draw_buf[i*4+3]=a;
+    }
+    return 1;
+}
 void gml_draw_sprite(double sprite, double x, double y) {
     if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
     int si = (int)sprite;
@@ -3569,6 +3582,10 @@ double gml_ds_grid_get_sum(double id, double x1, double y1, double x2, double y2
         }
     }
     return sum;
+}
+
+double gml_ds_grid_value_sum(double id, double x1, double y1, double x2, double y2) {
+    return gml_ds_grid_get_sum(id, x1, y1, x2, y2);
 }
 
 double gml_ds_grid_get_max(double id, double x1, double y1, double x2, double y2) {

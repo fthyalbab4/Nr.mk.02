@@ -239,6 +239,8 @@ double gml_file_text_read_real(double id);
 double gml_file_exists(const char *path);
 double gml_file_delete(const char *path);
 double gml_file_create(const char *path);
+double gml_file_rename(const char *oldname, const char *newname);
+double gml_directory_rename(const char *oldname, const char *newname);
 double gml_file_size(const char *path);
 double gml_file_get_timestamp(const char *path);
 
@@ -508,6 +510,7 @@ double gml_dot_product_normal(double x1, double y1, double x2, double y2);
 double gml_dot_product_3d_normal(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_color_inverse(double color);
 double gml_color_reverse(double color);
+double gml_color_to_html(double color, char *out, size_t out_sz);
 double gml_ds_grid_multiply(double id, double x, double y, double val);
 double gml_ds_grid_add(double id, double x, double y, double val);
 double gml_ds_grid_copy(double id, double source_id);
