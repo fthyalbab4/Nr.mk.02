@@ -18,6 +18,7 @@ The first milestone provides a native Windows window, `.gmk`/`.gm81`/`.gm6` file
 
 The Windows application is not a re-implementation of the editor. Nor Maker's UI is a single page (`app/src/main/assets/www/index.html`) and Android only hosts it in a WebView with a `NorNative` JavaScript bridge, so the PC build hosts the same page and answers the same bridge:
 
+- Cloud imports (`https://cdn.jsdelivr.net/...`) are fetched through WinHTTP, so TLS and CDN redirects work and the catalog downloads byte-exact files.
 - `NorMakerStudio.exe` starts a loopback HTTP server that serves the bundled `assets/www` tree, and injects `nor_pc_bridge.js` into the document head at serve time (the shipped `index.html` is not modified).
 - That bridge defines `window.NorNative` with the same method names the Android bridge exposes (`tick`/`step`, `loadGmk`, `loadGmkBase64`, `validateGmk`, `coreIdentity`, `downloadCloudGmkBase64`, …); each call is answered by the C engine over `/rpc`.
 - The document is opened in an Edge app-mode window when Edge is present, otherwise in the default browser, so the user sees the real Nor Maker interface (menus, Resource Explorer, room editor, object palette, 3D/isometric editors, NOOR libraries).

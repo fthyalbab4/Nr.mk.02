@@ -63,6 +63,7 @@ target_include_directories(nor_maker_studio PRIVATE
 target_link_libraries(nor_maker_studio PRIVATE
     ZLIB::ZLIB
     ws2_32
+    winhttp
     shell32
     gdi32
     user32

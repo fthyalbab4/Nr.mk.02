@@ -24,6 +24,7 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #include <shellapi.h>
+#include <winhttp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -262,6 +263,61 @@ static int temp_gmk_path(char *out, size_t out_size) {
     return 1;
 }
 
+/* GET a URL through WinHTTP (TLS + redirects). Returns 1 and a malloc'd body. */
+static int http_get_bytes(const char *url, uint8_t **out, size_t *out_len) {
+    *out = NULL; *out_len = 0;
+    if (!url || !url[0]) return 0;
+    wchar_t wurl[2048];
+    if (!MultiByteToWideChar(CP_UTF8, 0, url, -1, wurl, 2048)) return 0;
+
+    URL_COMPONENTS uc;
+    memset(&uc, 0, sizeof(uc));
+    uc.dwStructSize = sizeof(uc);
+    wchar_t host[256] = {0}, path[1536] = {0};
+    uc.lpszHostName = host; uc.dwHostNameLength = 256;
+    uc.lpszUrlPath = path; uc.dwUrlPathLength = 1536;
+    if (!WinHttpCrackUrl(wurl, 0, 0, &uc)) return 0;
+
+    HINTERNET session = WinHttpOpen(L"NorMakerStudio/0.1", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+                                    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    if (!session) return 0;
+    DWORD redirects = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+    WinHttpSetOption(session, WINHTTP_OPTION_REDIRECT_POLICY, &redirects, sizeof(redirects));
+    int ok = 0;
+    HINTERNET conn = WinHttpConnect(session, host, uc.nPort, 0);
+    if (conn) {
+        DWORD flags = uc.nScheme == INTERNET_SCHEME_HTTPS ? WINHTTP_FLAG_SECURE : 0;
+        HINTERNET req = WinHttpOpenRequest(conn, L"GET", path, NULL, WINHTTP_NO_REFERER,
+                                          WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+        if (req) {
+            if (WinHttpSendRequest(req, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                                   WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+                WinHttpReceiveResponse(req, NULL)) {
+                size_t cap = 1u << 20, len = 0;
+                uint8_t *buf = (uint8_t *)malloc(cap);
+                DWORD avail = 0, got = 0;
+                while (buf && WinHttpQueryDataAvailable(req, &avail) && avail > 0) {
+                    if (len + avail > cap) {
+                        size_t ncap = cap * 2;
+                        while (ncap < len + avail) ncap *= 2;
+                        uint8_t *nb = (uint8_t *)realloc(buf, ncap);
+                        if (!nb) break;
+                        buf = nb; cap = ncap;
+                    }
+                    if (!WinHttpReadData(req, buf + len, avail, &got) || got == 0) break;
+                    len += got;
+                }
+                if (buf && len > 0) { *out = buf; *out_len = len; ok = 1; }
+                else free(buf);
+            }
+            WinHttpCloseHandle(req);
+        }
+        WinHttpCloseHandle(conn);
+    }
+    WinHttpCloseHandle(session);
+    return ok;
+}
+
 static char *rpc_dispatch(rpc_request_t *req) {
     char *out = (char *)malloc(512);
     size_t out_size = 512;
@@ -440,72 +496,16 @@ static char *rpc_dispatch(rpc_request_t *req) {
                  (pr.status != GM82_GMK_PARSE_INVALID) ? "true" : "false");
         snprintf(out, out_size, "%s", msg);
     } else if (strcmp(m, "http.getBase64") == 0) {
-        /* minimal HTTP GET so the page's cloud catalog path has a real implementation */
-        char host[256], path[1024];
-        int port = 80;
-        const char *url = a0;
-        const char *p = strstr(url, "://");
-        p = p ? p + 3 : url;
-        const char *slash = strchr(p, '/');
-        size_t host_len = slash ? (size_t)(slash - p) : strlen(p);
-        if (host_len == 0 || host_len >= sizeof(host)) {
-            snprintf(out, out_size, "{\"ok\":false,\"error\":\"unsupported url\"}");
-            return out;
-        }
-        memcpy(host, p, host_len); host[host_len] = 0;
-        snprintf(path, sizeof(path), "%s", slash ? slash : "/");
-        char *colon = strchr(host, ':');
-        if (colon) { port = atoi(colon + 1); *colon = 0; }
-
-        struct hostent *he = gethostbyname(host);
-        if (!he) {
-            snprintf(out, out_size, "{\"ok\":false,\"error\":\"dns lookup failed\"}");
-            return out;
-        }
-        SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
-        struct sockaddr_in sa;
-        memset(&sa, 0, sizeof(sa));
-        sa.sin_family = AF_INET;
-        sa.sin_port = htons((u_short)port);
-        memcpy(&sa.sin_addr, he->h_addr, (size_t)he->h_length);
-        if (s == INVALID_SOCKET || connect(s, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
-            if (s != INVALID_SOCKET) closesocket(s);
-            snprintf(out, out_size, "{\"ok\":false,\"error\":\"connect failed\"}");
-            return out;
-        }
-        char req[1400];
-        int req_len = snprintf(req, sizeof(req),
-                               "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: NorMakerStudioPC\r\n\r\n", path, host);
-        send(s, req, req_len, 0);
-        size_t cap2 = 8u << 20;
-        uint8_t *body = (uint8_t *)malloc(cap2);
+        /* The cloud catalog is served over https and redirects through a CDN, so a
+           plain socket GET returns the redirect page instead of the game. WinHTTP
+           handles TLS and redirects and is part of Windows itself. */
+        uint8_t *body = NULL;
         size_t total = 0;
-        int header_done = 0;
-        size_t header_end = 0;
-        if (body) {
-            char buf[16384];
-            int got;
-            while ((got = recv(s, buf, sizeof(buf), 0)) > 0) {
-                if (total + (size_t)got > cap2) break;
-                memcpy(body + total, buf, (size_t)got);
-                total += (size_t)got;
-                if (!header_done) {
-                    for (size_t i = 0; i + 3 < total; i++) {
-                        if (body[i] == '\r' && body[i+1] == '\n' && body[i+2] == '\r' && body[i+3] == '\n') {
-                            header_done = 1; header_end = i + 4; break;
-                        }
-                    }
-                }
-            }
-        }
-        closesocket(s);
-        if (!body || !header_done) {
-            free(body);
-            snprintf(out, out_size, "{\"ok\":false,\"error\":\"no response\"}");
+        if (!http_get_bytes(a0, &body, &total)) {
+            snprintf(out, out_size, "{\"ok\":false,\"error\":\"download failed\"}");
             return out;
         }
-        size_t payload = total - header_end;
-        char *b64 = base64_encode(body + header_end, payload);
+        char *b64 = base64_encode(body, total);
         free(body);
         if (!b64) {
             snprintf(out, out_size, "{\"ok\":false,\"error\":\"encode failed\"}");
