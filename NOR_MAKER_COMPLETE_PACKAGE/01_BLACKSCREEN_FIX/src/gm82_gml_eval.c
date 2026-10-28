@@ -1644,6 +1644,10 @@ static bool parse_primary(gml_parser *p, double *out) {
             gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
             *out = 1; return true;
         }
+        if (strcmp(id, "show_message_ext") == 0) {
+            gml_show_debug_message((p->str_mask & 1) ? p->str_args[0] : "");
+            *out = 1; return true;
+        }
         if (strcmp(id, "show_question") == 0) { *out = 1; return true; }
         if (strcmp(id, "get_integer") == 0) { *out = nargs >= 2 ? args[1] : 0; return true; }
         if (strcmp(id, "get_string") == 0) { *out = 0; return true; }
