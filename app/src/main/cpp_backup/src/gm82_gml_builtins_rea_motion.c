@@ -38,6 +38,7 @@ GM82_WEAK double gml_move_bounce(double advanced) {
 }
 
 GM82_WEAK double gml_mp_grid_clear_cell(double id, double cx, double cy) {
+    (void)id; (void)cx; (void)cy;
     extern gm82_mp_grid_world *gm82_mp_grid_active(void);
     /* use bind world through existing path in builtins - weak fallback */
     return 0;

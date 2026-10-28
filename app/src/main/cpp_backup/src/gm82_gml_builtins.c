@@ -4447,6 +4447,13 @@ double gml_modwrap(double val, double minv, double maxv) {
     return f - floor(f / w) * w + minv;
 }
 
+double gml_lerp2(double fromA, double fromB, double toA, double toB, double value) {
+    double rangeFrom = fromB - fromA;
+    if (fabs(rangeFrom) < 1e-12) return toA;
+    double pos = (value - fromA) / rangeFrom;
+    return toA + pos * (toB - toA);
+}
+
 double gml_direction_to_object(double object_index) {
     if (!g_rt || !g_self) return -1.0;
     if (!isfinite(object_index) || object_index < (double)INT32_MIN ||
