@@ -1,6 +1,7 @@
 #include "gm82_runtime.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_gml_eval.h"
+#include "gm82_actions.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -120,11 +121,62 @@ static void test_math_builtins_and_eval(void) {
     puts("test_math_builtins_and_eval PASS");
 }
 
+static void test_dnd_action_conditionals(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_gml_set_runtime(&rt);
+
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 10.0);
+    assert(inst != NULL);
+
+    /* Test action_if_dice */
+    bool dice_res = gm82_action_execute_named(&rt, inst, "action_if_dice");
+    (void)dice_res; /* dice result is random (true or false) but must execute without crash */
+
+    /* Test action_if_empty */
+    gm82_action_ref act_empty;
+    memset(&act_empty, 0, sizeof(act_empty));
+    strncpy(act_empty.name, "action_if_empty", sizeof(act_empty.name) - 1);
+    act_empty.args[0] = 500;
+    act_empty.args[1] = 500;
+    act_empty.args[2] = -4;
+    act_empty.argc = 3;
+    assert(gm82_action_execute_ref(&rt, inst, &act_empty) == true);
+
+    /* Test action_if_collision */
+    gm82_action_ref act_coll;
+    memset(&act_coll, 0, sizeof(act_coll));
+    strncpy(act_coll.name, "action_if_collision", sizeof(act_coll.name) - 1);
+    act_coll.args[0] = 500;
+    act_coll.args[1] = 500;
+    act_coll.args[2] = -1;
+    act_coll.argc = 3;
+    assert(gm82_action_execute_ref(&rt, inst, &act_coll) == false);
+
+    /* Create target instance at 500,500 and verify collision now succeeds */
+    gm82_instance *target = gm82_runtime_instance_create(&rt, 1, 500.0, 500.0);
+    assert(target != NULL);
+    assert(gm82_action_execute_ref(&rt, inst, &act_coll) == true);
+
+    /* Test action_if_variable */
+    gm82_action_ref act_var;
+    memset(&act_var, 0, sizeof(act_var));
+    strncpy(act_var.name, "action_if_variable", sizeof(act_var.name) - 1);
+    act_var.args[0] = 10;
+    act_var.args[1] = 0; /* equal */
+    act_var.args[2] = 10;
+    act_var.argc = 3;
+    assert(gm82_action_execute_ref(&rt, inst, &act_var) == true);
+
+    puts("test_dnd_action_conditionals PASS");
+}
+
 int main(void) {
-    puts("=== Testing Phase 5 GML Expansion (Strings & Collision Shapes & Math) ===");
+    puts("=== Testing Phase 5 GML Expansion (Strings & Collision Shapes & Math & DnD) ===");
     test_string_expansions();
     test_collision_shapes();
     test_math_builtins_and_eval();
+    test_dnd_action_conditionals();
     puts("GML_PHASE5_TEST_PASS");
     return 0;
 }
