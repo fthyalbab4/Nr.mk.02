@@ -4457,6 +4457,15 @@ double gml_file_text_write_all(const char *path, const char *data) {
 }
 
 /* --- source/unpacked/gm82core batch2: math/strings helpers (clean-room) --- */
+double gml_move_contact_solid_hv(double hspd, double vspd) {
+    if (hspd != 0.0 || vspd != 0.0) {
+        double dir = gml_point_direction(0.0, 0.0, hspd, vspd);
+        double dist = ceil(gml_point_distance(0.0, 0.0, hspd, vspd));
+        return gml_move_contact_solid(dir, dist);
+    }
+    return 0.0;
+}
+
 double gml_modwrap(double val, double minv, double maxv) {
     double f = val - minv;
     double w = maxv - minv;

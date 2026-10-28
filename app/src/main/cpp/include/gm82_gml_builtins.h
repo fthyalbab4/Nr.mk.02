@@ -599,6 +599,7 @@ double gml_random_get_seed(void);
 
 /* batch2 */
 
+double gml_move_contact_solid_hv(double hspd, double vspd);
 double gml_modwrap(double val, double minv, double maxv);
 double gml_direction_to_object(double object_index);
 double gml_move_towards_fixed(double tx, double ty, double sp);
