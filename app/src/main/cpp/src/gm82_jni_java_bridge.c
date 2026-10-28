@@ -33,6 +33,7 @@ static gm82_gl_atlas g_bridge_atlas;
 static gm82_decoded_sprite_list g_bridge_sprites;
 static gm82_decoded_background_list g_bridge_bgs;
 static gm82_decoded_object_list g_bridge_objs;
+static gm82_decoded_object_list g_bridge_struct_objs;
 static gm82_decoded_room_list g_bridge_rooms;
 static gm82_sprite_group_list g_bridge_sprite_groups;
 static gm82_input_state g_bridge_input;
@@ -56,6 +57,7 @@ bool gm82_native_init(int surface_width, int surface_height) {
         gm82_decoded_sprite_list_init(&g_bridge_sprites);
         gm82_decoded_background_list_init(&g_bridge_bgs);
         gm82_decoded_object_list_init(&g_bridge_objs);
+        gm82_decoded_object_list_init(&g_bridge_struct_objs);
         gm82_decoded_room_list_init(&g_bridge_rooms);
         gm82_input_init(&g_bridge_input);
         gm82_input_bind_global(&g_bridge_input);
@@ -74,6 +76,7 @@ void gm82_native_shutdown(void) {
     gm82_decoded_sprite_list_free(&g_bridge_sprites);
     gm82_decoded_background_list_free(&g_bridge_bgs);
     gm82_decoded_object_list_free(&g_bridge_objs);
+    gm82_decoded_object_list_free(&g_bridge_struct_objs);
     gm82_decoded_room_list_free(&g_bridge_rooms);
     gm82_sprite_group_list_free(&g_bridge_sprite_groups);
     if (g_bridge_actions_ready) {
@@ -159,7 +162,16 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
     /* Drag-and-drop events and GML code events both live in the raw file, so they
        are scanned from the bytes before the buffer is released. Without these two
        calls the runtime only sees object/room data and every event is dead. */
-    gm82_actions_scan_gmk(data, (size_t)file_size, &g_bridge_actions);
+    /* Structured walk first: it yields the real per-object event/action records,
+       including the GML blocks of "execute code" actions. The byte scanner is a
+       fallback only, because for most GMK8 files it returns one pseudo object. */
+    int structured_objs = gm82_objects_parse_gmk8(data, (size_t)file_size, &g_bridge_struct_objs);
+    int structured = gm82_actions_parse_gmk8(data, (size_t)file_size, &g_bridge_actions);
+    int used_structured = structured > 0;
+    if (!used_structured)
+        gm82_actions_scan_gmk(data, (size_t)file_size, &g_bridge_actions);
+    else
+        fprintf(stderr, "GM82_ACTIONS structured objects=%d\n", structured);
     /* The scanner is a byte-level heuristic: for many GMK8 files it returns a
        single pseudo-object with unrelated actions, and binding that makes every
        object fire actions it does not own (observed: whole rooms destroyed on the
@@ -174,6 +186,7 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
                 if (strcmp(an, scan_objs->items[o].name) == 0) { trustworthy = 1; break; }
             }
         }
+        if (used_structured) trustworthy = 1;
         if (!trustworthy) {
             fprintf(stderr, "GM82_ACTIONS ignored heuristic table (%d entries, no object match)\n",
                     g_bridge_actions.count);
@@ -184,17 +197,28 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
             fprintf(stderr, "GM82_ACTIONS bound %d object tables\n", g_bridge_actions.count);
         }
     }
-    gm82_events_autobind_gml_from_gmk(data, (size_t)file_size);
+    /* With a structured table the code actions are authoritative; running the
+       byte-scan autobind as well would execute the same GML twice. */
+    if (!used_structured)
+        gm82_events_autobind_gml_from_gmk(data, (size_t)file_size);
 
     gm82_project_ir_free(gr.ir);
     free(data);
 
     {
         const gm82_decoded_object_list *objs = &g_bridge_objs;
-        if (materialized_objects && materialized_objects->count > 0)
+        if (structured_objs > 0) {
+            /* Room instances index the project's object order; the decoded list is
+               authoritative, the heuristic one can invent or drop entries. */
+            objs = &g_bridge_struct_objs;
+            fprintf(stderr, "GM82_OBJECTS structured=%d\n", structured_objs);
+        } else if (materialized_objects && materialized_objects->count > 0) {
             objs = materialized_objects;
+        }
         const gm82_script_list *sc = gm82_materialize_get_scripts();
-        gm82_runtime_bind_assets(&g_bridge_rt, objs, &g_bridge_sprites,
+        for (int k = 0; k < objs->count; k++)
+        fprintf(stderr, "GM82_OBJECT_ORDER %d %s sprite=%d\n", k, objs->items[k].name, objs->items[k].sprite_index);
+    gm82_runtime_bind_assets(&g_bridge_rt, objs, &g_bridge_sprites,
                                  &g_bridge_bgs, &g_bridge_rooms, &g_bridge_actions);
         if (sc && sc->count > 0)
             gm82_runtime_bind_scripts(&g_bridge_rt, sc);
@@ -516,3 +540,10 @@ Java_com_normaker_gm82_Gm82Native_nativePollAudioCommand(JNIEnv *env, jclass cls
 }
 
 #endif /* GM82_HAVE_JNI */
+
+const char *gm82_native_object_name(int index) {
+    if (!g_bridge_initialized || !g_bridge_rt.objects) return NULL;
+    if (index < 0 || index >= g_bridge_rt.objects->count) return NULL;
+    const char *n = g_bridge_rt.objects->items[index].name;
+    return (n && n[0]) ? n : NULL;
+}
