@@ -19,7 +19,37 @@ The first milestone provides a native Windows window, `.gmk`/`.gm81`/`.gm6` file
 - This initial shell has no Windows audio backend yet; existing Android audio sources and behavior are untouched. Sound parity is milestone 2.
 - A Windows EXE is a native host for the current engine, not a guarantee that every GameMaker 8.2 game/API works.
 - GDI software presentation favors compatibility over GPU performance. The Android GLES renderer remains independent.
-- The sandbox cannot launch a Windows GUI, so verification is via cross-compilation and PE inspection plus the existing Linux host engine tests.
+- Verification is now executed, not just cross-compiled: the checked-in EXE runs under Wine on an offscreen X server and loads/renders the bundled samples (see "Verified execution under Wine" below). Wine is not Windows, so real-hardware driver, audio and multi-monitor behavior still need a physical Windows machine.
+
+## Verified execution under Wine
+
+`tools/run_wine_verify.sh` runs the shipped x64 EXE under Wine 9.0 with an Xvfb display and exercises the host's own command line:
+
+```sh
+desktop/windows/tools/run_wine_verify.sh          # all bundled samples, 300 frames each
+```
+
+The host accepts an optional project path and a headless verification mode:
+
+```sh
+NorMakerNativePC.exe --open C:\path\game.gmk --verify-frames 300 --dump-frame C:\out\frame.ppm
+```
+
+Without `--verify-frames` the normal window, menu, drag-and-drop and keyboard path is used; a bare path argument (or `--open`) also loads a project in the GUI.
+
+Observed results (Wine 9.0, Xvfb 1280x800x24, 2026-10-28):
+
+| Sample | Resources materialized | Room | Frames | Non-black pixels | Frame hash | Exit |
+| --- | --- | --- | --- | --- | --- | --- |
+| mario_bros.gmk | 24 sprites, 24 bgs, 2 rooms, 21 objects, 8 scripts, 301 instances | 1500x208 | 300 | 311,168 / 312,000 | `732c55bd` | 0 |
+| plataformas.gmk | 6 sprites, 6 bgs, 4 rooms, 7 objects, 14 scripts, 270 instances | 640x480 | 120 | 302,301 / 307,200 | `0a89c0f2` | 0 |
+| shooter.gmk | 12 sprites, 1 bg, 2 rooms, 12 objects, 472 instances | 1000x800 | 120 | 710,833 / 800,000 | `5261603f` | 0 |
+| zelda.gmk | 13 sprites, 13 bgs, 3 rooms, 11 objects, 16 scripts, 372 instances | 240x160 | 120 | 38,400 / 38,400 | `5f7ed915` | 0 |
+| does_not_exist.gmk | - | - | - | - | - | 4 (`Unable to open project file`) |
+
+Cross-build parity: the same 300 frames of `mario_bros.gmk` rendered by the Windows EXE under Wine and by a native Linux build of the identical engine sources produce byte-identical framebuffers (PPM SHA-256 `f9c80d65...d74ee3`, both hash `732c55bd`). The windowed path was also smoke-tested: the Win32 window, menu bar and GDI presentation render real game content (see `docs/wine-gui-smoke.png`, `docs/wine-frame-shooter.png`, `docs/wine-frame-plataformas.png`).
+
+`wine32` is not required for this target: the EXE is PE32+ x86-64 only.
 
 ## Build on Windows (MinGW-w64 / CMake)
 
@@ -47,4 +77,4 @@ The cross-build prefers static zlib and the EXE currently imports only standard 
 
 ## Checked-in Windows binary
 
-The current x64 preview build is included at [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe). SHA-256: `6747fb6b0ed77fe57e25b5636e30231bcf4b4ebc3ce8fa8ca6775b0231661828`.
+The current x64 preview build is included at [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe). Size: 1,035,882 bytes. SHA-256: `ced4c7de83a1b51a76127692b84a30f6e6c4aa376f32fbaaee51943c51d1b667`. This build adds the headless verification mode and the command-line project argument on top of the previously published preview binary.
