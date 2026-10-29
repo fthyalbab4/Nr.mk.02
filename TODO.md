@@ -1,17 +1,15 @@
 # TODO
 
-## Done (measured)
-- [x] Event order + Alarm + other + KeyPress/Release
-- [x] Outside/Boundary/AnimEnd + User
-- [x] Instance Creation Code field + runtime wire
-- [x] runtime_draw Pre/Draw/Post
-- [x] Destroy queue after End Step
+## Done
+- [x] Event system core + KeyPress/Release + Other subtypes
+- [x] Creation Code field + runtime + decoder extract
+- [x] runtime_draw phases
+- [x] Destroy queue timing
 
 ## Next
-- [ ] GMK room decoder: fill `creation_code` when present in file
+- [ ] Optional: always use bitmask when both sprites have masks
 - [ ] Expand Action Lists (DnD)
-- [ ] Precise mask collision path
-- [ ] Device playtest (mario) + logcat
-- [ ] with() edge-case tests
+- [ ] Device playtest mario + logcat
+- [ ] with() edge tests
 
 No checkbox without test or log.
