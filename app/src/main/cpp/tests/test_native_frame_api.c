@@ -6,6 +6,16 @@
 #include "gm82_jni.h"
 #include "gm82_int_read.h"
 
+static int resolve_path(const char *path, char *out, size_t out_sz) {
+    FILE *f = fopen(path, "rb");
+    if (f) { fclose(f); snprintf(out, out_sz, "%s", path); return 1; }
+    snprintf(out, out_sz, "../../%s", path);
+    f = fopen(out, "rb");
+    if (f) { fclose(f); return 1; }
+    snprintf(out, out_sz, "%s", path);
+    return 0;
+}
+
 int main(void) {
     const uint8_t encoded_minus_one[4] = {0xff, 0xff, 0xff, 0xff};
     const uint8_t encoded_int32_min[4] = {0x00, 0x00, 0x00, 0x80};
@@ -15,6 +25,8 @@ int main(void) {
     const char *sample = "app/src/main/assets/www/samples/mario_bros.gmk";
     if (access(sample, F_OK) != 0) sample = "../../app/src/main/assets/www/samples/mario_bros.gmk";
     char error[256] = {0};
+    char resolved[512];
+    assert(resolve_path(sample, resolved, sizeof(resolved)));
     assert(gm82_native_init(640, 480));
     assert(!gm82_native_load_game("missing-native-frame-test.gmk", error, (int)sizeof(error)));
     assert(gm82_native_load_game(resolved, error, (int)sizeof(error)));
