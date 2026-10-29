@@ -92060,6 +92060,13 @@ function gmlToJs(gml) {
   if (!gml || !gml.trim()) return "";
   let js = gml;
 
+  // Protect string literals and comments from regex transformations
+  const literals = [];
+  js = js.replace(/("([^"\\]|\\.)*"|'([^'\\]|\\.)*'|\/\/[^\n]*|\/\*[\s\S]*?\*\/)/g, (m) => {
+    literals.push(m);
+    return `__STR_LIT_PH_${literals.length - 1}__`;
+  });
+
   // Comments and basic keywords
   js = js.replace(/\bvar\s+/gi, "let ");
   js = js.replace(/\btrue\b/gi, "true").replace(/\bfalse\b/gi, "false");
@@ -92069,6 +92076,7 @@ function gmlToJs(gml) {
   js = js.replace(/\bbegin\b/gi, "{");
   js = js.replace(/\bend\b/gi, "}");
   js = js.replace(/\s+\bthen\b\s+/gi, " ");
+  js = js.replace(/([^{;\}\s])\s*\belse\b/g, "$1; else");
   js = js.replace(/([0-9\)\}\;])else([a-zA-Z_0-9\(\{])/g, "$1 else $2");
   js = js.replace(/([0-9\)\}\;])else\b/g, "$1 else");
   js = js.replace(/\belse([a-zA-Z_0-9\(\{])/g, "else $1");
@@ -92285,6 +92293,9 @@ function gmlToJs(gml) {
   // Process with and repeat blocks before builtins to prevent keyword pollution
   js = parseGMLBlocks(js);
   builtins.forEach(([re, rep]) => { js = js.replace(re, rep); });
+
+  // Restore protected string literals and comments
+  js = js.replace(/__STR_LIT_PH_(\d+)__/g, (_, idx) => literals[Number(idx)] || "");
   return js;
 }
 
