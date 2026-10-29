@@ -37,7 +37,8 @@
 
   /* ------------------------- native preview overlay ------------------------ */
 
-  var preview = { el: null, canvas: null, img: null, meta: null, running: false, raf: 0 };
+  var preview = { el: null, canvas: null, img: null, meta: null, running: false, raf: 0,
+    recorder: null, recordChunks: [], recordStream: null };
 
   function ensurePreview() {
     if (preview.el) { return preview; }
@@ -52,6 +53,12 @@
     var label = document.createElement('span');
     label.textContent = 'معاينة المحرك الأصلي (GM82 C)';
     label.style.cssText = 'flex:1;font-weight:600';
+    var record = document.createElement('button');
+    record.id = 'nor-pc-record';
+    record.textContent = '● تسجيل';
+    record.title = 'تسجيل شاشة اللعب فقط';
+    record.style.cssText = 'cursor:pointer;background:#7f1d1d;color:#fff;border:1px solid #ef4444;' +
+      'border-radius:6px;padding:2px 8px;white-space:nowrap';
     var toggle = document.createElement('button');
     toggle.id = 'nor-pc-toggle';
     toggle.textContent = 'إيقاف';
@@ -68,6 +75,7 @@
     cv.id = 'nor-pc-canvas';
     cv.style.cssText = 'display:block;background:#000;image-rendering:pixelated;max-width:384px';
     bar.appendChild(label);
+    bar.appendChild(record);
     bar.appendChild(toggle);
     bar.appendChild(close);
     box.appendChild(bar);
@@ -82,8 +90,57 @@
       toggle.textContent = preview.running ? 'إيقاف' : 'تشغيل';
       start();
     };
+    record.onclick = function () { toggleEngineRecording(record); };
     close.onclick = function () { hidePreview(); };
     return preview;
+  }
+
+  function toggleEngineRecording(button) {
+    if (preview.recorder && preview.recorder.state === 'recording') {
+      preview.recorder.stop();
+      button.textContent = '● تسجيل';
+      button.style.background = '#7f1d1d';
+      return;
+    }
+    if (!preview.canvas || !preview.canvas.captureStream || !window.MediaRecorder) {
+      stats.lastError = 'تسجيل Canvas غير مدعوم في هذا المتصفح';
+      return;
+    }
+    try {
+      var mime = '';
+      var choices = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+      for (var i = 0; i < choices.length; i++) {
+        if (MediaRecorder.isTypeSupported(choices[i])) { mime = choices[i]; break; }
+      }
+      if (!mime) throw new Error('لا يوجد ترميز فيديو WebM متاح');
+      preview.recordChunks = [];
+      preview.recordStream = preview.canvas.captureStream(30);
+      preview.recorder = new MediaRecorder(preview.recordStream, { mimeType: mime });
+      preview.recorder.ondataavailable = function (e) {
+        if (e.data && e.data.size) preview.recordChunks.push(e.data);
+      };
+      preview.recorder.onstop = function () {
+        var blob = new Blob(preview.recordChunks, { type: mime });
+        preview.recordChunks = [];
+        if (preview.recordStream) preview.recordStream.getTracks().forEach(function (t) { t.stop(); });
+        preview.recordStream = null;
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'NorMaker_Engine_' + new Date().toISOString().replace(/[:.]/g, '-') + '.webm';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+      };
+      preview.recorder.start(250);
+      button.textContent = '■ إيقاف';
+      button.style.background = '#991b1b';
+    } catch (e) {
+      stats.lastError = String(e && e.message ? e.message : e);
+      if (preview.recordStream) preview.recordStream.getTracks().forEach(function (t) { t.stop(); });
+      preview.recordStream = null;
+    }
   }
 
   function fitPreview() {

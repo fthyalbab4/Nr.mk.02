@@ -76,6 +76,8 @@ public class MainActivity extends Activity {
     private ImageView nativeGameView;
     private Button nativePlayButton;
     private Button returnToStudioButton;
+    private Button engineRecordButton;
+    private EngineVideoRecorder engineVideoRecorder;
     private Bitmap frameBitmap;
     private ValueCallback<Uri[]> pendingFileCallback;
     private volatile boolean nativeProjectLoaded = false;
@@ -162,6 +164,9 @@ public class MainActivity extends Activity {
                     drainNativeSoundCommands();
                     if (frameBitmap != null) nativeRuntimeRenderBitmap(frameBitmap);
                 }
+                // Encode only the engine framebuffer, not the Activity or toolbar.
+                if (frameBitmap != null && engineVideoRecorder != null && engineVideoRecorder.isRecording())
+                    engineVideoRecorder.writeFrame(frameBitmap);
                 if (nativeGameView != null && frameBitmap != null) nativeGameView.setImageBitmap(frameBitmap);
             } catch (Throwable t) {
                 Log.w(TAG, "native frame failed", t);
@@ -316,6 +321,16 @@ public class MainActivity extends Activity {
         backParams.setMargins(12, 12, 0, 0);
         root.addView(returnToStudioButton, backParams);
 
+        engineRecordButton = new Button(this);
+        engineRecordButton.setText("● تسجيل");
+        engineRecordButton.setVisibility(View.GONE);
+        engineRecordButton.setOnClickListener(v -> toggleEngineRecording());
+        FrameLayout.LayoutParams recordParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        recordParams.setMargins(0, 4, 0, 0);
+        root.addView(engineRecordButton, recordParams);
+
         setContentView(root);
         webView.loadUrl("file:///android_asset/www/index.html");
     }
@@ -331,20 +346,48 @@ public class MainActivity extends Activity {
         nativeGameView.setVisibility(View.VISIBLE);
         nativePlayButton.setVisibility(View.GONE);
         returnToStudioButton.setVisibility(View.VISIBLE);
+        engineRecordButton.setVisibility(View.VISIBLE);
         nativeGameView.requestFocus();
         loopHandler.removeCallbacks(nativeFrameLoop);
         loopHandler.post(nativeFrameLoop);
     }
 
     private void showStudio() {
+        stopEngineRecording(true);
         nativePlayerVisible = false;
         loopHandler.removeCallbacks(nativeFrameLoop);
         releaseNativeKeys();
         nativeGameView.setVisibility(View.GONE);
         returnToStudioButton.setVisibility(View.GONE);
+        engineRecordButton.setVisibility(View.GONE);
         nativePlayButton.setVisibility(View.VISIBLE);
         webView.setVisibility(View.VISIBLE);
         webView.requestFocus();
+    }
+
+    private void toggleEngineRecording() {
+        if (engineVideoRecorder == null) engineVideoRecorder = new EngineVideoRecorder(this);
+        if (engineVideoRecorder.isRecording()) {
+            Uri saved = engineVideoRecorder.stop();
+            engineRecordButton.setText("● تسجيل");
+            Toast.makeText(this, saved == null ? "تم إيقاف التسجيل" : "تم حفظ الفيديو في Movies/NorMaker", Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            String name = engineVideoRecorder.start(frameBitmap);
+            engineRecordButton.setText("■ إيقاف التسجيل");
+            Toast.makeText(this, "بدأ تسجيل شاشة اللعب فقط: " + name, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Could not start engine video recording", e);
+            Toast.makeText(this, "تعذر بدء التسجيل: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void stopEngineRecording(boolean notify) {
+        if (engineVideoRecorder == null || !engineVideoRecorder.isRecording()) return;
+        Uri saved = engineVideoRecorder.stop();
+        if (engineRecordButton != null) engineRecordButton.setText("● تسجيل");
+        if (notify) Toast.makeText(this, saved == null ? "تم إيقاف التسجيل" : "تم حفظ فيديو اللعب", Toast.LENGTH_SHORT).show();
     }
 
     private boolean handleNativeTouch(MotionEvent event) {
@@ -822,6 +865,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onPause() {
+        stopEngineRecording(false);
         loopHandler.removeCallbacks(nativeFrameLoop);
         releaseNativeKeys();
         if (webView != null) webView.onPause();
@@ -835,6 +879,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        stopEngineRecording(false);
         loopHandler.removeCallbacks(nativeFrameLoop);
         releaseNativeKeys();
         if (pendingFileCallback != null) { pendingFileCallback.onReceiveValue(null); pendingFileCallback = null; }
