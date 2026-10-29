@@ -1,26 +1,36 @@
-# AGENT_STATE — تقييم مهندسي شامل وخطة التوافق المتقدمة (Roadmap to 95%)
+# AGENT_STATE — تقييم مهندسي شامل وخطة التوافق المتقدمة
 
 ```
-overall_calculated_parity_percent: ~35-45% (بعد تنفيذ المراحل A و B و C و D)
+overall_calculated_parity_percent: ~35-45% (تقديري متحرك)
 realistic_host_mvp_percent: ~40%
-android_device_playable_percent: غير مُقاس (BLOCKED - لا يوجد هاتف مادي متصل)
+android_device_playable_percent: غير مُقاس (BLOCKED - لا يوجد هاتف مادي متصل دائمًا)
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
 ```
 
-## تفصيل التوافق الموزون والدقيق للطبقات (Engine Layer Breakdown)
+## اقرأ أولًا قبل أي عمل
 
-| الطبقة | الوزن | النسبة الحالية | المساهمة | التحسينات المنجزة |
-|------|-------|----------------|----------|-------------------|
-| **فك الموارد (Resource Decode)** | 15% | 45.0% | 6.75% | فك التشفير لكافة العينات الأساسية ووسوم GMK |
-| **محرك GML والنطاقات** | 30% | 37.0% | 11.10% | دعم `repeat`, `while`, `with`, `xprevious`, `yprevious`, `bbox_*`, `color_to_html`, `hex_to_color`, `point_in_circle`, `point_in_triangle`, `point_direction_3d` |
-| **حلقة الأحداث والفيزياء** | 25% | 45.0% | 11.25% | اصطدامات المنصات العلوية وحسابات القناع 1-bit (`gm82_mask.c`) |
-| **محرك الرسم والتصوير** | 15% | 30.0% | 4.50% | تجميع دفعات GLES Batching وسرعة الرسم برمجياً |
-| **المحرك الصوتي** | 5% | 25.0% | 1.25% | الخلاط الصوتي متعدد القنوات (Multi-channel PCM Audio Mixer) |
-| **واجهات JNI وأندرويد** | 10% | 25.0% | 2.50% | تصدير كامل واجهات JNI للمكتبات لـ 4 معماريات ABIs |
+1. **`FULL_GM_PARITY_PLAN.md`** ← الخطة الشاملة لأي وكيل
+2. **`EVENT_SYSTEM_PLAN.md`** ← ترتيب الأحداث + الفجوات
+3. `STATUS.md` + `TODO.md` + `GAPS_HONEST.md`
 
-**الإجمالي الموزون الحقيقي المحسوب: ~38.40%**
+## تفصيل التوافق الموزون (تقريبي)
+
+| الطبقة | الوزن | النسبة الحالية | ملاحظات |
+|------|-------|----------------|--------|
+| فك الموارد (Resource Decode) | 15% | ~45% | عينات أساسية |
+| محرك GML والنطاقات | 30% | ~37% | `with`/`other` ناقص |
+| حلقة الأحداث والفيزياء | 25% | ~45% | ترتيب الأحداث يحتاج توحيد |
+| محرك الرسم | 15% | ~30% | |
+| المحرك الصوتي | 5% | ~25% | |
+| واجهات JNI وأندرويد | 10% | ~25% | |
+
+**الإجمالي الموزون التقريبي: ~38%**
 
 `work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`  
 `fail_closed_guard: ENFORCED`
+
+---
+
+أي وكيل يكمل: حدّث النسب فقط بعد اختبار مقاس، وحدّث `TODO.md` و `FULL_GM_PARITY_PLAN.md`.
