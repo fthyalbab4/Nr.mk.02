@@ -28,3 +28,9 @@
 - Comprehensive unit test assertions in `test_gml_comprehensive.c` for all new GML functions.
 - 3-way synchronization across `app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, and `app/src/main/cpp_backup/` verified via `mirror_checker.py`.
 - Verified 100% pass across all 6 test targets: Native Engine Suite (18 tests), Python Verification (17 tests), Host Pipeline (4/4 games), C Package Makefile, JS Runner (39 scripts/78 actions), and Android APK Debug build (`./gradlew assembleDebug` SUCCESS for 4 ABIs).
+
+## 2026-10-29 — DnD collision conditionals refinement & 3-way C mirror sync
+- Upgraded DnD action conditionals (`action_if_collision`, `action_if_empty`, `action_if_object`) in `app/src/main/cpp/src/gm82_actions.c` to use built-in collision evaluation functions (`gml_place_meeting`, `gml_place_empty`, `gml_position_meeting`).
+- Synchronized all updated source and header files across 3 mirror trees (`app/src/main/cpp/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/`, `app/src/main/cpp_backup/`).
+- Verified 0 diffs remain across all 3 mirror locations.
+- Re-verified all 6 host verification targets with 100% pass rate: `run_full_verification.py` (17/17 PASS), `run_engine_suite.py` (SUMMARY ok=4 fail=0, all unit tests PASS), `run_host_pipeline.sh` (ok=4 fail=0), `make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test` (PASS), `node test_all_games_inlined.js && node test_100_percent.js` (39/39 scripts, 78/78 actions 100% PASS), and `./gradlew assembleDebug` (BUILD SUCCESSFUL).

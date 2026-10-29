@@ -21,6 +21,39 @@ typedef struct {
     int str_mask;
 } gml_parser;
 
+typedef struct { char name[64]; double value; } gml_global_var;
+static gml_global_var g_global_vars[128];
+static int g_global_var_count;
+static gm82_runtime *g_global_runtime;
+
+void gm82_gml_reset_globals(gm82_runtime *rt) {
+    memset(g_global_vars, 0, sizeof(g_global_vars));
+    g_global_var_count = 0;
+    g_global_runtime = rt;
+}
+
+static void ensure_global_runtime(gm82_runtime *rt) {
+    if (rt != g_global_runtime) gm82_gml_reset_globals(rt);
+}
+
+static bool global_get(const char *name, double *out) {
+    for (int i = 0; i < g_global_var_count; i++) {
+        if (strcmp(g_global_vars[i].name, name) == 0) { *out = g_global_vars[i].value; return true; }
+    }
+    *out = 0.0;
+    return true;
+}
+
+static bool global_set(const char *name, double value) {
+    for (int i = 0; i < g_global_var_count; i++) {
+        if (strcmp(g_global_vars[i].name, name) == 0) { g_global_vars[i].value = value; return true; }
+    }
+    if (g_global_var_count >= 128) return false;
+    snprintf(g_global_vars[g_global_var_count].name, sizeof(g_global_vars[0].name), "%s", name);
+    g_global_vars[g_global_var_count++].value = value;
+    return true;
+}
+
 static void skip_ws(gml_parser *p) {
     while (p->i < p->n && isspace((unsigned char)p->s[p->i])) p->i++;
 }
@@ -46,7 +79,7 @@ static bool parse_ident(gml_parser *p, char *buf, size_t buflen) {
     skip_ws(p);
     if (p->i >= p->n || !isalpha((unsigned char)p->s[p->i])) return false;
     size_t j = 0;
-    while (p->i < p->n && (isalnum((unsigned char)p->s[p->i]) || p->s[p->i]=='_')) {
+    while (p->i < p->n && (isalnum((unsigned char)p->s[p->i]) || p->s[p->i]=='_' || p->s[p->i]=='.')) {
         if (j + 1 < buflen) buf[j++] = p->s[p->i];
         p->i++;
     }
@@ -72,7 +105,7 @@ double gm82_gml_get_script_arg(int index) {
 static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
     if (strncmp(name, "global.", 7) == 0) {
-        return get_var(p, name + 7, out);
+        return global_get(name + 7, out);
     }
     if (strncmp(name, "self.", 5) == 0) {
         return get_var(p, name + 5, out);
@@ -297,7 +330,7 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
 static bool set_var(gml_parser *p, const char *name, double v) {
     gm82_instance *s = p->self;
     if (strncmp(name, "global.", 7) == 0) {
-        return set_var(p, name + 7, v);
+        return global_set(name + 7, v);
     }
     if (strncmp(name, "self.", 5) == 0) {
         return set_var(p, name + 5, v);
@@ -2449,6 +2482,10 @@ static bool parse_comparison(gml_parser *p, double *out) {
         else if (p->i + 1 < p->n && p->s[p->i] == '>' && p->s[p->i+1] == '=') { op = 4; p->i += 2; }
         else if (p->i + 1 < p->n && p->s[p->i] == '=' && p->s[p->i+1] == '=') { op = 5; p->i += 2; }
         else if (p->i + 1 < p->n && p->s[p->i] == '!' && p->s[p->i+1] == '=') { op = 6; p->i += 2; }
+        /* GameMaker 8 GML permits a single '=' for equality in expressions
+           (for example: if global.win=0), while statement assignment is parsed
+           separately by gm82_gml_eval_stmt. */
+        else if (peek(p) == '=') { op = 5; p->i++; }
         else if (peek(p) == '<') { op = 1; p->i++; }
         else if (peek(p) == '>') { op = 2; p->i++; }
         else break;
@@ -2488,6 +2525,7 @@ static bool parse_expr(gml_parser *p, double *out) {
 
 bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr, double *out) {
     if (!expr || !out) return false;
+    ensure_global_runtime(rt);
     gml_parser p = { expr, 0, strlen(expr), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
@@ -2496,6 +2534,7 @@ bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr,
 
 bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt) {
     if (!stmt) return false;
+    ensure_global_runtime(rt);
     gml_parser p = { stmt, 0, strlen(stmt), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);

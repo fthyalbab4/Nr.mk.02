@@ -13,8 +13,10 @@ Verification Results:
 - `tools/run_engine_suite.py`: **SUMMARY ok=4 fail=0**, all native test executables PASS
 - `run_host_pipeline.sh`: **SUMMARY ok=4 fail=0**
 - Native C core `make test`: All native test executables PASS
+- JS Engine Suite: **39/39 Scripts (100%), 78/78 Actions (100%) PASS**
 - Mirror Audit: **0 diff files across all 3 C core mirror trees** (`app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
 - Android APK Build: **`./gradlew assembleDebug` BUILD SUCCESSFUL**
+- Core Improvements: Upgraded DnD action conditionals (`action_if_collision`, `action_if_empty`, `action_if_object`) to built-in collision evaluation routines.
 
 ## Phase status
 | Phase | Status |

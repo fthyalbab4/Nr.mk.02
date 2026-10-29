@@ -44,7 +44,10 @@ static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
 
 void gm82_action_table_free(gm82_action_table *t) {
     if (!t) return;
-    for (int i = 0; i < t->count; i++) free(t->objects[i].items);
+    for (int i = 0; i < t->count; i++) {
+        for (int a = 0; a < t->objects[i].count; a++) free(t->objects[i].items[a].code);
+        free(t->objects[i].items);
+    }
     free(t->objects);
     memset(t, 0, sizeof(*t));
 }
@@ -473,41 +476,20 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_if_empty") == 0) {
         double x = (argc >= 1) ? (double)args[0] : self->x;
         double y = (argc >= 2) ? (double)args[1] : self->y;
-        int obj = (argc >= 3) ? args[2] : -4; /* all */
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || o == self) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
-            double dx = o->x - x, dy = o->y - y;
-            if (dx*dx + dy*dy < 16.0) return false; /* not empty */
-        }
-        return true;
+        int flag_solid = (argc >= 3) ? args[2] : 0;
+        return flag_solid ? (gml_place_free(x, y) != 0.0) : (gml_place_empty(x, y) != 0.0);
     }
     if (strcmp(name, "action_if_collision") == 0) {
         double x = (argc >= 1) ? (double)args[0] : self->x;
         double y = (argc >= 2) ? (double)args[1] : self->y;
         int obj = (argc >= 3) ? args[2] : -1;
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || o == self) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
-            double dx = o->x - x, dy = o->y - y;
-            if (dx*dx + dy*dy < 256.0) return true;
-        }
-        return false;
+        return gml_place_meeting(x, y, (double)obj) != 0.0;
     }
     if (strcmp(name, "action_if_object") == 0) {
         int obj = (argc >= 1) ? args[0] : -1;
         double x = (argc >= 2) ? (double)args[1] : self->x;
         double y = (argc >= 3) ? (double)args[2] : self->y;
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
-            double dx = o->x - x, dy = o->y - y;
-            if (dx*dx + dy*dy < 256.0) return true;
-        }
-        return false;
+        return gml_position_meeting(x, y, (double)obj) != 0.0;
     }
     if (strcmp(name, "action_if_variable") == 0) {
         /* args: value, op, compare — evaluates GML expressions when strings supplied */
@@ -668,6 +650,12 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
 
 bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action_ref *ar) {
     if (!rt || !self || !ar) return false;
+    if (ar->code && ar->code[0]) {
+        /* "Execute code" action: run the authored GML in this instance's scope. */
+        gm82_gml_set_self(self);
+        gm82_gml_eval_block(rt, self, ar->code);
+        return true;
+    }
     if (ar->name[0])
         return execute_named_args(rt, self, ar->name, ar->args, ar->argc, ar->str_args, ar->str_argc);
     if (ar->argc >= 2) {
@@ -707,7 +695,8 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
 
 /* Phase 4: nested if/else/block runner for event_type filter */
 static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
-                                    const gm82_action_table *table, int event_type) {
+                                    const gm82_action_table *table, int event_type,
+                                    int event_numb) {
     if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
@@ -724,6 +713,8 @@ static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
             if (event_type >= 0) {
                 if (!(ar->event_type == event_type || ar->event_type == -1)) continue;
             }
+            if (event_numb >= 0 && ar->event_type == event_type &&
+                ar->event_numb != event_numb) continue;
             const char *nm = ar->name;
             int is_if = (strncmp(nm, "action_if", 9) == 0);
             int is_else = (strcmp(nm, "action_else") == 0);
@@ -768,9 +759,32 @@ static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    gm82_actions_fire_event(rt, self, table, 3);
+    gm82_actions_fire_event(rt, self, table, 3, -1);
+}
+void gm82_actions_fire_alarm(gm82_runtime *rt, gm82_instance *self,
+                             const gm82_action_table *table, int alarm_index) {
+    gm82_actions_fire_event(rt, self, table, 2, alarm_index);
+}
+/* Collision events are per object pair: the event number is the index of the
+   other object, so only matching entries may run. */
+void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
+                                 gm82_instance *other, const gm82_action_table *table) {
+    if (!rt || !self || !self->alive || !table || !rt->objects) return;
+    if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
+    const char *oname = rt->objects->items[self->object_index].name;
+    for (int i = 0; i < table->count; i++) {
+        if (strcmp(table->objects[i].object_name, oname) != 0) continue;
+        for (int a = 0; a < table->objects[i].count; a++) {
+            if (!self->alive) return;
+            gm82_action_ref *ar = &table->objects[i].items[a];
+            if (ar->event_type != 4) continue;
+            if (other && ar->event_numb >= 0 && ar->event_numb != other->object_index) continue;
+            gm82_action_execute_ref(rt, self, ar);
+        }
+        return;
+    }
 }
 
 void gm82_actions_fire_draw(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    gm82_actions_fire_event(rt, self, table, 8);
+    gm82_actions_fire_event(rt, self, table, 8, -1);
 }
