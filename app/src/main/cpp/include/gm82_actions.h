@@ -15,12 +15,12 @@ extern "C" {
 typedef struct {
     int32_t event_type;
     int32_t event_numb;
-    char    name[64];
+    char    name[128];
     int32_t action_id;
     int32_t kind;
     int32_t args[GM82_ACTION_MAX_ARGS];
     int     argc;
-    char    str_args[4][64];
+    char    str_args[4][128];
     int     str_argc;
     /* Drag-and-drop "execute code" actions store their GML here; owned by the
        table and released in gm82_action_table_free(). */
@@ -33,7 +33,7 @@ typedef struct {
     gm82_action_ref *items;
     int count;
     int capacity;
-    char object_name[64];
+    char object_name[128];
 } gm82_object_actions;
 
 struct gm82_action_table {

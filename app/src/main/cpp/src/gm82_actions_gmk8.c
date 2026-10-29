@@ -148,7 +148,7 @@ static void gmk8_add_action(gm82_object_actions *oa, int etype, int enumb,
 /* Parses one inflated object record; returns 1 when the record is an object. */
 /* Shared header walk: returns 1 for an object record and fills the metadata. */
 typedef struct {
-    char name[64];
+    char name[128];
     int32_t sprite;
     int32_t solid;
     int32_t visible;
@@ -183,7 +183,7 @@ static int gmk8_parse_object(const uint8_t *blob, size_t len, gm82_object_action
     if (len < 32) return 0;
     gmk8_object_head head;
     if (!gmk8_read_head(blob, len, &head)) return 0;
-    char name[64];
+    char name[128];
     snprintf(name, sizeof(name), "%s", head.name);
     gmk8_rd r = { blob, len, head.after_header, 1 };
     uint32_t lists_minus_one = g8_u32(&r);
@@ -213,7 +213,7 @@ static int gmk8_parse_object(const uint8_t *blob, size_t len, gm82_object_action
                 int32_t is_cond = g8_i32(&r);
                 (void)g8_u32(&r);                 /* applies to something */
                 (void)g8_u32(&r);                 /* execution type */
-                char fname[96], fcode[96];
+                char fname[128], fcode[128];
                 if (!g8_str(&r, fname, sizeof(fname))) return 1;
                 if (!g8_str(&r, fcode, sizeof(fcode))) return 1;
                 (void)g8_u32(&r);                 /* param count */
