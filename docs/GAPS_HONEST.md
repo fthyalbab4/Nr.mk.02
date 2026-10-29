@@ -1,21 +1,23 @@
-# GAPS_HONEST — Nr.mk.02 (2026-10-27)
+# GAPS_HONEST — Nr.mk.02
 
-## CLOSED / landed
+## CLOSED / improved (2026-10-29 P0)
 | Area | Evidence |
 |------|----------|
-| Host pipeline 4 samples | ok=4 fail=0 (historical) |
-| gm82core name coverage | try_stub + batch-all |
-| O6 parent chain | parent_index + walk |
-| Stub shadow bug | room_find/sprite_find removed from stub table |
-| Stub promote | window_has_focus, file_text_writelf, ds_map_set, instance_create_depth, string_starts/ends_with, move_wrap, object_find, … on `86179058` |
+| Host pipeline 4 samples | ok=4 fail=0 |
+| `gm82_runtime_draw` Pre/Post-Draw | restored from cpp_backup into runtime |
+| Outside / Boundary in step | wired before End Step |
+| Room `creation_code` field | header + free + eval after Create on goto_room |
+| Behavior lookup | object_name_prefix |
+| Export scroll + native save | prior commits |
+| Mario Step reclass | prior commits |
 
-## OPEN (cannot fully close without device)
-| ID | Gap |
-|----|-----|
-| O1 | APK install + logcat on real phone |
-| O2 | Complex GMK edge materialize (needs FAIL) |
-| O3 | Real PCM / OpenSL path on device |
-| O4 | GLES FBO if soft fails on device |
-| O5 | Remaining pure stubs: code_*, ds_bag_*, heavy draw_*, registry_*, match_* |
+## OPEN (honest)
+| Area | Notes |
+|------|-------|
+| Binary GMK harvest of creation_code | field ready; decoder does not yet extract from GMK chunks |
+| Precise pixel masks | stub only; AABB active |
+| Android device playable verification | needs APK + device |
+| Full GML edge cases / action lists | partial |
+| Portable corpus comparison via RE | maps exist under source/reverse-engineering |
 
-No 100% claims. Code path ≠ device acceptance.
+**No 100% claim.**

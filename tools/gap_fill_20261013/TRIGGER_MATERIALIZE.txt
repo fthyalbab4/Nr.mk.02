@@ -1,1 +1,1 @@
-trigger parity p0 batch 2026-10-29
+trigger parity p0 apply runtime
