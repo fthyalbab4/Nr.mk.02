@@ -23,6 +23,13 @@ The Windows application is not a re-implementation of the editor. Nor Maker's UI
 - That bridge defines `window.NorNative` with the same method names the Android bridge exposes (`tick`/`step`, `loadGmk`, `loadGmkBase64`, `validateGmk`, `coreIdentity`, `downloadCloudGmkBase64`, …); each call is answered by the C engine over `/rpc`.
 - The document is opened in an Edge app-mode window when Edge is present, otherwise in the default browser, so the user sees the real Nor Maker interface (menus, Resource Explorer, room editor, object palette, 3D/isometric editors, NOOR libraries).
 - The shell adds an in-editor preview panel (“معاينة المحرك الأصلي (GM82 C)”) that renders the real C engine frames into the page, so a GMK loaded through the bridge is visible inside the editor instead of in a separate window.
+- The preview's top bar includes **● تسجيل / ■ إيقاف**. It records only the engine preview canvas (not the editor, controls, or desktop) with `canvas.captureStream()`/`MediaRecorder`, then downloads a `.webm` file. Recording is 30 FPS and works in Chromium/Edge when the browser supports WebM capture.
+
+### Engine-only video recording
+
+The Android native player also exposes a recording button in its top control strip. It encodes only the C engine's framebuffer bitmap (no Android buttons, editor UI, or system screen) as H.264/MP4 at up to 30 FPS and saves it under `Movies/NorMaker` through MediaStore on Android 10+; older Android versions use the app's external Movies directory. Leaving the game or backgrounding the app stops and finalizes the file.
+
+The two platform implementations intentionally record the engine output itself rather than recording the display: Windows captures the dedicated engine canvas as `.webm`; Android encodes the engine framebuffer as `.mp4`. Android packaging/build verification requires the Android SDK/NDK; the current cloud build environment does not have an Android SDK installed.
 
 ### Running it
 
@@ -132,4 +139,4 @@ The cross-build prefers static zlib and the EXE currently imports only standard 
 
 ## Checked-in Windows binary
 
-Two x64 builds are included: [`dist/NorMakerStudio.exe`](dist/NorMakerStudio.exe) (the Nor Maker application, 1,043,129 bytes, SHA-256 `4c5abfeb5ab07792965a6f0d4aeaa8447cbce175b79050c40eed4b33472acae5`) and [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe) (engine host and headless verifier, 1,038,269 bytes, SHA-256 `98e58f2e9b74a0449831ecd91f26bc17915597285af276961e729c2b9c12e4a7`). Both are built from the same engine sources as the Android app; rebuild them after any engine change so the checked-in binaries never drift. They contain the bridge and view fixes described below, the headless verification mode and the command-line project argument.
+Two x64 builds are included: [`dist/NorMakerStudio.exe`](dist/NorMakerStudio.exe) (the Nor Maker application, 1,055,869 bytes, SHA-256 `007e539d4a7b69adae1ea8a0ae3a706cee1bfeee9ad8adfd65823ccd3c52cd7d`) and [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe) (engine host and headless verifier, 1,046,185 bytes, SHA-256 `50fcc1453413cfd2ebf14f89a1271d73a561ad901dec0e4bbbb0142e3f1e96b8`). Both are built from the same engine sources as the Android app; rebuild them after any engine change so the checked-in binaries never drift. They contain the bridge and view fixes described below, the headless verification mode and the command-line project argument.
