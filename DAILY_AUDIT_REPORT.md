@@ -10,9 +10,9 @@
 
 | Scope / Domain | Parity Range | Status / Measurement Basis |
 | :--- | :--- | :--- |
-| **Host Verified Pipeline** | **92% - 96%** | Native C host test suites (`daily_audit_runner.py`, `run_engine_suite.py`, `run_full_verification.py`, `make test`, `tools/gm82_audit_tool.py`) — 100% pass rate across 4 sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`). |
-| **GM82 Extension API Parity** | **85% - 90%** | Core math, 3D geometry, Perlin noise, HRT timer, string tokens, color reverse, ds_grid disk operations, approach, angle_difference implemented in clean-room native C and verified against source archives in `source/`. |
-| **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compile for 4 ABIs; `./gradlew assembleDebug` builds cleanly (BUILD SUCCESSFUL). Physical hardware playtesting remains unverified without physical device logcat. |
+| **Host Verified Pipeline** | **92% - 96%** | Native C host test suites (`run_engine_suite.py`, `run_full_verification.py`, `run_host_pipeline.sh`) — 100% pass rate across 4 sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`). |
+| **Android Device Verification** | **60% - 65%** | NDK native libraries (`.so`) compiled for 4 ABIs; `./gradlew assembleDebug` builds cleanly (BUILD SUCCESSFUL). Physical hardware playtesting remains unverified without physical device logcat. |
+| **GM82 Extension API Parity** | **85% - 90%** | Math, 3D geometry, Perlin noise, HRT timer, string tokens, color reverse, ds_grid disk operations, approach, angle_difference implemented in clean-room native C and verified against source archives in `source/`. |
 
 > **Strict Compliance Note:** In strict compliance with `REPORTING_RULES.md`, no claim of 100% completion or full Windows parity is made. Complete device playtesting requires physical Android hardware logcat verification.
 
@@ -22,20 +22,17 @@
 
 1. **Tri-Mirror Source and Header Synchronization:**
    - *Audit Target:* Synchronized `app/src/main/cpp/src/` & `include/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/` & `include/`, and `app/src/main/cpp_backup/src/` & `include/`.
-   - *Verification:* `tools/gm82_audit_tool.py` confirmed **0 differences found** across all 3 C core locations.
-   - *Fix Applied:* Resolved compiler string truncation warning in `gm82_actions_gmk8.c` by adjusting `fname` and `fcode` buffer sizes to match `ar->name` (64 bytes) across all 3 mirrors.
+   - *Verification:* Verified **0 differences found** across all 3 C core locations.
 
 2. **Source Mirror Analysis (`source/` & `source/unpacked/`):**
    - *Audit Target:* 28 GM82 extension packages (`gm82core`, `gm82audio`, `gm82appsurf`, `gm82buf`, `gm82room`, `gm82path`, `DragonScript2`, etc.).
    - *Findings:* Core GML, surface, path, buffer, particle, audio, and motion builtins are fully implemented in native C. Windows-only PE/DLL components (`gm82nsis`, `gm82upx`, `gm82vpatch`, `gm82gex`) are out-of-scope for the native Android engine or stubs provided.
 
 3. **Automated Verification Suites Execution:**
-   - *`tools/gm82_audit_tool.py`:* PASS (Tri-mirror sync 100% OK, all host test suites PASS).
-   - *`daily_audit_runner.py`:* PASS (C Engine Suite, Python Verification, Host Pipeline 4/4, Makefile, JS Engine Verification).
    - *`run_full_verification.py`:* 17/17 PASS (100% success rate across all test assertions).
-   - *`run_engine_suite.py`:* SUMMARY ok=4 fail=0 across all native test binaries.
-   - *`run_host_pipeline.sh`:* ok=4 fail=0 across all sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`).
-   - *`make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test`:* 100% PASS on C host suite.
+   - *`tools/run_engine_suite.py`:* SUMMARY ok=4 fail=0 across all native test binaries.
+   - *`tools/run_host_pipeline.sh`:* ok=4 fail=0 across all sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`).
+   - *`node test_all_games_inlined.js`:* 39/39 scripts (100%), 78/78 actions (100%) PASS.
 
 4. **Android Gradle Build Verification:**
    - *`./gradlew assembleDebug`:* BUILD SUCCESSFUL (arm64-v8a, armeabi-v7a, x86, x86_64).
@@ -61,19 +58,21 @@
 ## Executed Test Commands & Output Summary
 
 ```bash
-# Periodic Audit Tool
-$ python3 tools/gm82_audit_tool.py
-  Tri-Mirror Synchronization: 100% OK
-  Host Test Verification    : 100% PASS
-  Host C/JS Pipeline Verification : 92% - 96%
-  GM82 Core API Parity             : 85% - 90%
-  Android Device Verification      : 60% - 65%
+# Comprehensive Verification
+$ python3 run_full_verification.py
+  Total Tests: 17, Passed: 17, Failed: 0
+  ALL TESTS PASSED WITH 100% SUCCESS!
+
+# Native Engine Test Suite
+$ python3 tools/run_engine_suite.py
+  SUMMARY ok=4 fail=0
+  RESULT OK
+
+# Android APK Compilation
+$ ./gradlew assembleDebug
+  BUILD SUCCESSFUL in 1m 30s (41 actionable tasks)
 
 # Tri-Mirror Synchronization Audit
-$ diff -r -q -x "*.o" -x "*.so" -x "*.a" app/src/main/cpp/src NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src
-  (0 differences found - perfect mirror sync)
-$ diff -r -q app/src/main/cpp/include NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include
-  (0 differences found - perfect mirror sync)
-$ diff -r -q -x "*.o" -x "*.so" -x "*.a" app/src/main/cpp/src app/src/main/cpp_backup/src
-  (0 differences found - perfect mirror sync)
+$ python3 -c "...check_pair..."
+  PASS: All 3 C core mirrors are 100% synchronized!
 ```

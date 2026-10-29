@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,15 +12,11 @@ int main(void) {
     assert(gm82_read_i32le(encoded_int32_min) == INT32_MIN);
 
     const char *sample = "app/src/main/assets/www/samples/mario_bros.gmk";
-    char resolved[512] = {0};
-    FILE *f = fopen(sample, "rb");
-    if (f) { fclose(f); snprintf(resolved, sizeof(resolved), "%s", sample); }
-    else { snprintf(resolved, sizeof(resolved), "../../%s", sample); }
-
+    if (access(sample, F_OK) != 0) sample = "../../app/src/main/assets/www/samples/mario_bros.gmk";
     char error[256] = {0};
     assert(gm82_native_init(640, 480));
     assert(!gm82_native_load_game("missing-native-frame-test.gmk", error, (int)sizeof(error)));
-    assert(gm82_native_load_game(resolved, error, (int)sizeof(error)));
+    assert(gm82_native_load_game(sample, error, (int)sizeof(error)));
     assert(gm82_native_is_running());
 
     int width = 0, height = 0;
@@ -33,7 +30,7 @@ int main(void) {
     gm82_native_key_up(39);
     frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
-    assert(gm82_native_load_game(resolved, error, (int)sizeof(error)));
+    assert(gm82_native_load_game(sample, error, (int)sizeof(error)));
     frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
     gm82_native_shutdown();
