@@ -21,6 +21,7 @@ TESTS = [
     ("test_nr01_compat_apis", "app/src/main/cpp/tests/test_nr01_compat_apis.c"),
     ("test_native_frame_api", "app/src/main/cpp/tests/test_native_frame_api.c"),
     ("test_gm82_text_project", "app/src/main/cpp/tests/test_gm82_text_project.c"),
+    ("test_gm82_text_runtime", "app/src/main/cpp/tests/test_gm82_text_runtime.c"),
     # Imported from the friend's Full Core package; compiled against the current modular core.
     ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
     ("test_friend_gml_exec", "app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c"),

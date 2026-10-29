@@ -57,6 +57,17 @@ backgrounds/<name>.png       + backgrounds/<name>.txt
 
 النتيجة المُتحقَّق منها على `gm82path.gm82` الحقيقي: **8 sprites و2 backgrounds** مفكوكة بنجاح، بصفر إخفاقات، و`bgBlack.png` فُكّت إلى 200×200 بكسل، وبيانات `sprite.txt` محترمة فعليًا (`sprButton` = 3 إطارات، bbox = 79×24).
 
+## المرحلة الخامسة: من IR إلى لعبة تعمل فعليًا
+
+الـruntime في Nor Maker لا يربط `gm82_project_ir` مباشرة، بل يربط هياكل GMK المفكوكة (`gm82_decoded_object_list`, `gm82_decoded_room_list`, ...). لذلك أُضيف جسر حقيقي:
+
+- `app/src/main/cpp/include/gm82_text_runtime_bridge.h` و`app/src/main/cpp/src/gm82_text_runtime_bridge.c`.
+- `gm82_text_build_runtime_bundle()` يحوّل الـIR إلى الحزم الأربع التي يربطها `gm82_runtime_bind_assets()`، مع الحفاظ على ترتيب `objects/index.yyd` لأن صفوف `instances.txt` و`layers.txt` سبق ربطها بهذا الترتيب نفسه.
+- أسماء الكائنات والخلفيات صارت محفوظة داخل الـIR (`object_names`, `background_names`) بدل أسماء اصطناعية مثل `object0`، وأُضيف تحريرها في `gm82_project_ir_free`.
+- البكسلات **مُستعارة** من الـIR وليست منسوخة، لذلك `gm82_text_runtime_bundle_free()` يحرّر الحاويات فقط ولا يحرّر `rgba` (التي يملكها الـIR).
+
+اختبار `test_gm82_text_runtime` يثبت المسار الكامل على `gm82path.gm82` الحقيقي: تحميل ← materialize ← بناء الحزمة ← `gm82_runtime_goto_room(0)` ← **60 خطوة** ← رسم إطار 320×240. النتيجة المُتحقَّق منها: الغرفة `room0` بأبعاد 320×80 وسرعة 50، وinstance واحد حيّ بمؤشر كائن صالح، والرسم ينتج إطارًا دون انهيار.
+
 ## حدود النقل الحالية
 
 ما زالت هناك فجوات مقصودة وليست مخفية:

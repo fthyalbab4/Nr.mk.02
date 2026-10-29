@@ -177,6 +177,12 @@ typedef struct gm82_project_ir {
     int32_t room_count;
     gm82_res_room *rooms;
     int32_t object_count;
+    /* Resource names in declaration order (index.yyd), owned by the IR.
+     * Needed because instances/tiles reference resources by name. */
+    int32_t object_name_count;
+    char  **object_names;
+    int32_t background_name_count;
+    char  **background_names;
     int32_t sound_count;
     int32_t script_count;
     gm82_project_settings settings;

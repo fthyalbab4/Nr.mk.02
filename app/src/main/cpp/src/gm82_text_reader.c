@@ -474,8 +474,12 @@ gm82_text_load_result gm82_text_load_project(const char *path) {
             }
         }
         if (room_names) { for (int i = 0; i < room_cnt; ++i) free(room_names[i]); free(room_names); }
-        if (object_names) { for (int i = 0; i < object_name_count; ++i) free(object_names[i]); free(object_names); }
-        if (background_names) { for (int i = 0; i < background_name_count; ++i) free(background_names[i]); free(background_names); }
+        /* Hand the name tables to the IR: instances/tiles already resolved to
+         * these indices, and the runtime bridge needs the same ordering. */
+        ir->object_names = object_names;
+        ir->object_name_count = object_name_count;
+        ir->background_names = background_names;
+        ir->background_name_count = background_name_count;
         load_settings_txt(path, &ir->settings);
         load_constants_txt(path, ir);
         load_datafiles(path, ir);

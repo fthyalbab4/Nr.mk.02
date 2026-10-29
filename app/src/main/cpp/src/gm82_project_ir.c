@@ -70,6 +70,10 @@ void gm82_project_ir_free(gm82_project_ir *ir) {
         free(ir->triggers[i].condition);
     }
     free(ir->triggers);
+    for (int32_t i = 0; ir->object_names && i < ir->object_name_count; i++) free(ir->object_names[i]);
+    free(ir->object_names);
+    for (int32_t i = 0; ir->background_names && i < ir->background_name_count; i++) free(ir->background_names[i]);
+    free(ir->background_names);
     free(ir->source_path);
     free(ir->source_data);
     free(ir->error_message);
