@@ -5,6 +5,8 @@
  * datafiles/index.yyd. */
 #include "gm82_text_reader.h"
 #include "gm82_project_ir.h"
+#include "gm82_text_materialize.h"
+#include "gm82_png.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -83,6 +85,67 @@ static void check_upx_datafiles(void) {
     printf("  gm82upx: datafiles=%d\n", 1);
 }
 
+/* The text path must reach the same "decoded pixels" state as the GMK path. */
+static void check_text_materialize(void) {
+    gm82_text_load_result r = gm82_text_load_project(GMPATH);
+    assert(r.ok);
+    gm82_project_ir *ir = r.ir;
+
+    gm82_text_materialize_result m = gm82_text_materialize_assets(ir);
+    assert(m.sprites_decoded > 0);
+    assert(m.sprites_failed == 0);
+    assert(m.backgrounds_decoded > 0);
+    assert(m.backgrounds_failed == 0);
+
+    /* At least one sprite must carry real RGBA pixels with the declared size. */
+    int with_pixels = 0;
+    for (int32_t i = 0; i < ir->sprite_count; ++i) {
+        gm82_res_sprite *s = &ir->sprites[i];
+        assert(s->status == GM82_RES_DECODED);
+        assert(s->name != NULL);
+        assert(s->width > 0 && s->height > 0);
+        assert(s->rgba != NULL);
+        assert(s->rgba_size == (size_t)s->width * (size_t)s->height * 4);
+        with_pixels++;
+    }
+    assert(with_pixels > 0);
+
+    for (int32_t i = 0; i < ir->background_count; ++i) {
+        gm82_res_background *b = &ir->backgrounds[i];
+        assert(b->status == GM82_RES_DECODED);
+        assert(b->rgba_size == (size_t)b->width * (size_t)b->height * 4);
+    }
+
+    /* sprite.txt metadata must be honoured, not defaulted. */
+    int meta_found = 0;
+    for (int32_t i = 0; i < ir->sprite_count; ++i) {
+        if (strcmp(ir->sprites[i].name, "sprButton") == 0) {
+            assert(ir->sprites[i].subimage_count == 3);
+            assert(ir->sprites[i].bbox_right == 79);
+            assert(ir->sprites[i].bbox_bottom == 24);
+            meta_found = 1;
+        }
+    }
+    assert(meta_found);
+
+    printf("  materialize: sprites=%d backgrounds=%d\n", m.sprites_decoded, m.backgrounds_decoded);
+    gm82_project_ir_free(ir);
+}
+
+/* A pure-decoder check so PNG regressions are reported separately. */
+static void check_png_decoder(void) {
+    gm82_png_image img = {0};
+    const char *p = "source/unpacked/gm82path-main/gm82path-main/gm82path.gm82/backgrounds/bgBlack.png";
+    if (!dir_exists(p)) return;
+    assert(gm82_png_decode_file(p, &img));
+    assert(img.width > 0 && img.height > 0);
+    assert(img.rgba_size == (size_t)img.width * (size_t)img.height * 4);
+    for (size_t i = 3; i < img.rgba_size; i += 4) assert(img.rgba[i] == 255);
+    printf("  png: bgBlack %dx%d\n", img.width, img.height);
+    gm82_png_image_free(&img);
+    assert(img.rgba == NULL);
+}
+
 int main(void) {
     if (!dir_exists("source/unpacked/gm82angle-main/gm82angle-main/anvil/settings/settings.txt")) {
         printf("SKIP gm82 text samples not present\n");
@@ -91,6 +154,8 @@ int main(void) {
     check_anvil();
     check_gm82path();
     check_upx_datafiles();
+    check_png_decoder();
+    check_text_materialize();
     printf("test_gm82_text_project PASS\n");
     return 0;
 }
