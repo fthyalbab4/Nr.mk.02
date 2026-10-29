@@ -82,8 +82,8 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
     if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count) return NULL;
     const char *name = rt->objects->items[object_index].name;
     if (!name || !name[0]) return NULL;
-    for (const gm82_behavior *b = g_behaviors; b->name; b++) {
-        if (strstr(name, b->name)) return b;
+    for (const gm82_behavior *b = g_behaviors; b && b->object_name_prefix; b++) {
+        if (strstr(name, b->object_name_prefix)) return b;
     }
     return NULL;
 }

@@ -73,6 +73,10 @@ void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
 void gm82_decoded_room_list_free(gm82_decoded_room_list *L) {
     if (!L) return;
     for (int i = 0; i < L->count; i++) {
+        if (L->items[i].instances) {
+            for (int k = 0; k < L->items[i].instance_count; k++)
+                free(L->items[i].instances[k].creation_code);
+        }
         free(L->items[i].instances);
         free(L->items[i].tiles);
     }
@@ -290,6 +294,7 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         r->width = width; r->height = height; r->speed = speed;
 
         gm82_decoded_instance ibuf[1024];
+        memset(ibuf, 0, sizeof(ibuf));
         int ic = 0;
         for (size_t j = off; j + 16 <= ol && ic < 1024; j += 4) {
             int32_t x = rd_i32(d + j);
