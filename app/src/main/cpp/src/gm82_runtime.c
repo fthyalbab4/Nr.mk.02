@@ -36,32 +36,26 @@ void gm82_runtime_cleanup(gm82_runtime *rt) {
 void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
     if (!rt || !rt->running) return;
     if (isnan(dt) || isinf(dt) || dt <= 0.0) return;
-
     if (rt->step_room_speed != rt->room_speed) {
         rt->step_accumulator = 0.0;
         rt->step_room_speed = rt->room_speed;
     }
-
     double fixed_dt = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0 / 30.0);
     rt->step_accumulator += dt;
-
     int steps = 0;
     while (rt->step_accumulator >= fixed_dt && steps < 4) {
         gm82_runtime_step(rt);
         rt->step_accumulator -= fixed_dt;
         steps++;
     }
-    if (steps >= 4) {
-        rt->step_accumulator = 0.0;
-    }
+    if (steps >= 4) rt->step_accumulator = 0.0;
 }
 
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
     if (!rt || !out_ptrs) return 0;
     int n = 0;
     for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++) {
-        if (rt->instances[i].alive)
-            out_ptrs[n++] = &rt->instances[i];
+        if (rt->instances[i].alive) out_ptrs[n++] = &rt->instances[i];
     }
     return n;
 }
@@ -125,9 +119,7 @@ void gm82_runtime_compact_instances(gm82_runtime *rt) {
     int write_idx = 0;
     for (int read_idx = 0; read_idx < rt->instance_count; read_idx++) {
         if (rt->instances[read_idx].alive) {
-            if (write_idx != read_idx) {
-                rt->instances[write_idx] = rt->instances[read_idx];
-            }
+            if (write_idx != read_idx) rt->instances[write_idx] = rt->instances[read_idx];
             write_idx++;
         }
     }
@@ -143,15 +135,11 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     gm82_instance *inst = &rt->instances[rt->instance_count++];
     memset(inst, 0, sizeof(*inst));
     inst->id = rt->next_id++;
-    inst->x = x;
-    inst->y = y;
-    inst->xstart = x;
-    inst->ystart = y;
+    inst->x = x; inst->y = y;
+    inst->xstart = x; inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
-    inst->image_xscale = 1.0;
-    inst->image_yscale = 1.0;
-    inst->image_angle = 0.0;
-    inst->image_alpha = 1.0;
+    inst->image_xscale = 1.0; inst->image_yscale = 1.0;
+    inst->image_angle = 0.0; inst->image_alpha = 1.0;
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
@@ -169,14 +157,12 @@ void gm82_runtime_flush_destroy_queue(gm82_runtime *rt) {
         for (int i = 0; i < rt->instance_count; i++) {
             gm82_instance *inst = &rt->instances[i];
             if (!inst->alive || inst->id != id) continue;
-            if (rt->objects && inst->object_index >= 0 &&
-                inst->object_index < rt->objects->count) {
+            if (rt->objects && inst->object_index >= 0 && inst->object_index < rt->objects->count) {
                 const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
                 for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
                     const gm82_decoded_event *ev = &obj->events[e];
                     if (ev->main_type != 1) continue;
-                    if (ev->action_name0[0])
-                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->action_name0[0]) gm82_action_execute_named(rt, inst, ev->action_name0);
                     if (ev->code_snippet && ev->code_snippet[0]) {
                         gm82_gml_set_self(inst);
                         gm82_gml_eval_block(rt, inst, ev->code_snippet);
@@ -196,19 +182,16 @@ void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
             int dup = 0;
             for (int i = 0; i < rt->destroy_queue_count; i++)
                 if (rt->destroy_queue[i] == inst->id) { dup = 1; break; }
-            if (!dup)
-                rt->destroy_queue[rt->destroy_queue_count++] = inst->id;
+            if (!dup) rt->destroy_queue[rt->destroy_queue_count++] = inst->id;
         }
         return;
     }
-    if (rt && rt->objects && inst->object_index >= 0 &&
-        inst->object_index < rt->objects->count) {
+    if (rt && rt->objects && inst->object_index >= 0 && inst->object_index < rt->objects->count) {
         const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type != 1) continue;
-            if (ev->action_name0[0])
-                gm82_action_execute_named(rt, inst, ev->action_name0);
+            if (ev->action_name0[0]) gm82_action_execute_named(rt, inst, ev->action_name0);
             if (ev->code_snippet && ev->code_snippet[0]) {
                 gm82_gml_set_self(inst);
                 gm82_gml_eval_block(rt, inst, ev->code_snippet);
@@ -219,18 +202,14 @@ void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
 }
 
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
-    if (!rt || !rt->rooms || room_index < 0 || room_index >= rt->rooms->count)
-        return false;
-
+    if (!rt || !rt->rooms || room_index < 0 || room_index >= rt->rooms->count) return false;
     static int s_room_transition_depth = 0;
     if (s_room_transition_depth > 3) return false;
     s_room_transition_depth++;
 
     gm82_runtime_flush_destroy_queue(rt);
-    if (rt->room_arena.base)
-        gm82_arena_reset(&rt->room_arena);
-    else
-        gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
+    if (rt->room_arena.base) gm82_arena_reset(&rt->room_arena);
+    else gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
 
     const gm82_decoded_room *room = &rt->rooms->items[room_index];
@@ -263,6 +242,12 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
         }
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
         if (inst && src->id > 0) inst->id = src->id;
+        /* Instance Creation Code from room (after Create event) */
+        if (inst && src->creation_code && src->creation_code[0]) {
+            gm82_gml_set_runtime(rt);
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, src->creation_code);
+        }
     }
     rt->running = 1;
     rt->frame = 0;
@@ -313,19 +298,16 @@ void gm82_runtime_step(gm82_runtime *rt) {
         double sec = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0/30.0);
         gm82_gml_set_frame_time(sec);
     }
-
     for (int i = 0; i < rt->instance_count; i++) {
-        gm82_instance *inst = &rt->instances[i];
-        if (!inst->alive) continue;
-        inst->xprevious = inst->x;
-        inst->yprevious = inst->y;
+        if (!rt->instances[i].alive) continue;
+        rt->instances[i].xprevious = rt->instances[i].x;
+        rt->instances[i].yprevious = rt->instances[i].y;
     }
 
     rt->frame_phase = 1;
     gm82_events_fire_begin_step_all(rt);
-    rt->frame_phase = 2; /* Alarm */
+    rt->frame_phase = 2;
 
-    /* Unified alarm path */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -333,38 +315,31 @@ void gm82_runtime_step(gm82_runtime *rt) {
             if (inst->alarms[a] > 0) {
                 inst->alarms[a]--;
                 if (inst->alarms[a] == 0) {
-                    int room_before_alarm = rt->current_room;
+                    int room_before = rt->current_room;
                     inst->alarms[a] = -1;
                     gm82_events_fire_alarm(rt, inst, a);
                     if (rt->actions && inst->alive)
                         gm82_actions_fire_alarm(rt, inst, rt->actions, a);
-                    if (rt->current_room != room_before_alarm) return;
+                    if (rt->current_room != room_before) return;
                 }
             }
         }
     }
 
-    /* Keyboard continuous + Press + Release */
     gm82_events_fire_keyboard_all(rt);
     gm82_events_fire_keypress_all(rt);
     gm82_events_fire_keyrelease_all(rt);
     gm82_events_fire_mouse_all(rt);
-    rt->frame_phase = 3; /* Step */
+    rt->frame_phase = 3;
     gm82_events_fire_step_all(rt);
 
     const int n_move = rt->instance_count;
     for (int i = 0; i < n_move; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-
-        if (inst->speed != 0.0)
-            update_speed_from_dir(inst);
-
-        if (inst->path_index >= 0 && inst->path_speed != 0.0)
-            gm82_path_step_instance(inst);
-        if (inst->timeline_running)
-            gm82_timeline_step_instance(rt, inst);
-
+        if (inst->speed != 0.0) update_speed_from_dir(inst);
+        if (inst->path_index >= 0 && inst->path_speed != 0.0) gm82_path_step_instance(inst);
+        if (inst->timeline_running) gm82_timeline_step_instance(rt, inst);
         if (inst->gravity != 0.0) {
             double rad = inst->gravity_direction * 3.141592653589793 / 180.0;
             inst->hspeed += cos(rad) * inst->gravity;
@@ -377,12 +352,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
             if (inst->vspeed > 0) { inst->vspeed -= f; if (inst->vspeed < 0) inst->vspeed = 0; }
             else if (inst->vspeed < 0) { inst->vspeed += f; if (inst->vspeed > 0) inst->vspeed = 0; }
         }
-
         inst->x += inst->hspeed;
         inst->y += inst->vspeed;
     }
 
-    /* ROOM_BOUNDS_CLAMP */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -396,7 +369,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    /* Collision spatial hash */
     {
         enum { CELL = 64, HASH = 256 };
         int16_t head[HASH];
@@ -407,8 +379,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
             next_i[i] = -1;
             gm82_instance *inst = &rt->instances[i];
             if (!inst->alive) continue;
-            int cx = (int)(inst->x / CELL);
-            int cy = (int)(inst->y / CELL);
+            int cx = (int)(inst->x / CELL), cy = (int)(inst->y / CELL);
             unsigned h = (unsigned)((cx * 73856093) ^ (cy * 19349663)) & (HASH - 1);
             next_i[i] = head[h];
             head[h] = (int16_t)i;
@@ -420,17 +391,14 @@ void gm82_runtime_step(gm82_runtime *rt) {
             const gm82_decoded_frame *fa = NULL;
             if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
                 fa = &rt->sprites->frames[inst->sprite_index];
-                sw = fa->width; sh = fa->height;
-                sox = fa->origin_x; soy = fa->origin_y;
+                sw = fa->width; sh = fa->height; sox = fa->origin_x; soy = fa->origin_y;
             }
             double xs = inst->image_xscale != 0.0 ? inst->image_xscale : 1.0;
             double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1;
-            if (sh < 1) sh = 1;
+            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
-
             int cx0 = (int)(ax1 / CELL) - 1, cy0 = (int)(ay1 / CELL) - 1;
             int cx1 = (int)(ax2 / CELL) + 1, cy1 = (int)(ay2 / CELL) + 1;
             for (int cy = cy0; cy <= cy1; cy++) {
@@ -444,29 +412,24 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         const gm82_decoded_frame *fb = NULL;
                         if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
                             fb = &rt->sprites->frames[other->sprite_index];
-                            ow = fb->width; oh = fb->height;
-                            oox = fb->origin_x; ooy = fb->origin_y;
+                            ow = fb->width; oh = fb->height; oox = fb->origin_x; ooy = fb->origin_y;
                         }
                         double oxs = other->image_xscale != 0.0 ? other->image_xscale : 1.0;
                         double oys = other->image_yscale != 0.0 ? other->image_yscale : 1.0;
                         ow = (int32_t)(ow * oxs); oh = (int32_t)(oh * oys);
                         oox = (int32_t)(oox * oxs); ooy = (int32_t)(ooy * oys);
-                        if (ow < 1) ow = 1;
-                        if (oh < 1) oh = 1;
+                        if (ow < 1) ow = 1; if (oh < 1) oh = 1;
                         double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
                         if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
                         gm82_events_fire_collision(rt, inst, other);
-                        if (inst->alive && other->alive)
-                            gm82_events_fire_collision(rt, other, inst);
+                        if (inst->alive && other->alive) gm82_events_fire_collision(rt, other, inst);
                         if (other->solid) {
-                            inst->x = inst->xprevious;
-                            inst->y = inst->yprevious;
+                            inst->x = inst->xprevious; inst->y = inst->yprevious;
                             if (inst->hspeed != 0) inst->hspeed = 0;
                             if (inst->vspeed != 0) inst->vspeed = 0;
                         }
                         if (inst->solid && !other->solid) {
-                            other->x = other->xprevious;
-                            other->y = other->yprevious;
+                            other->x = other->xprevious; other->y = other->yprevious;
                         }
                     }
                 }
@@ -475,12 +438,54 @@ void gm82_runtime_step(gm82_runtime *rt) {
     }
 
     gm82_events_fire_end_step_all(rt);
-
-    /* Other events after motion */
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
     gm82_events_fire_animation_end_all(rt);
-
     gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = 0;
+}
+
+bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
+    if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
+    rt->frame_phase = GM82_PHASE_PRE_DRAW;
+    gm82_events_fire_pre_draw_all(rt);
+    size_t n = (size_t)buf_w * (size_t)buf_h * 4;
+    memset(rgba, 0, n);
+    rt->frame_phase = GM82_PHASE_DRAW;
+    gm82_events_fire_draw_all(rt);
+    if (rt->sprites) {
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive || !inst->visible) continue;
+            if (inst->sprite_index < 0 || inst->sprite_index >= rt->sprites->count) continue;
+            const gm82_decoded_frame *fr = &rt->sprites->frames[inst->sprite_index];
+            int sw = fr->width > 0 ? fr->width : 16;
+            int sh = fr->height > 0 ? fr->height : 16;
+            int ox = fr->origin_x, oy = fr->origin_y;
+            int dx = (int)(inst->x - ox - rt->view_x);
+            int dy = (int)(inst->y - oy - rt->view_y);
+            for (int y = 0; y < sh; y++) {
+                int py = dy + y;
+                if (py < 0 || py >= buf_h) continue;
+                for (int x = 0; x < sw; x++) {
+                    int px = dx + x;
+                    if (px < 0 || px >= buf_w) continue;
+                    size_t idx = ((size_t)py * (size_t)buf_w + (size_t)px) * 4;
+                    rgba[idx+0]=180; rgba[idx+1]=180; rgba[idx+2]=200; rgba[idx+3]=255;
+                }
+            }
+        }
+    }
+    rt->frame_phase = GM82_PHASE_POST_DRAW;
+    gm82_events_fire_post_draw_all(rt);
+    rt->frame_phase = GM82_PHASE_IDLE;
+    return true;
+}
+
+void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index) {
+    if (!rt || user_event_index < 0 || user_event_index > 15) return;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive)
+            gm82_events_fire_user(rt, &rt->instances[i], user_event_index);
+    }
 }
