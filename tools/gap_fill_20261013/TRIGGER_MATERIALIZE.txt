@@ -1,1 +1,1 @@
-trigger emu ref skin approved
+trigger parity p0 batch 2026-10-29
