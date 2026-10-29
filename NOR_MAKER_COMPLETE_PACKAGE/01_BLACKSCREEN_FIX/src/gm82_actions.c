@@ -850,7 +850,7 @@ void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
             if (!self->alive) return;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type != 4) continue;
-            if (other && ar->event_numb >= 0 && ar->event_numb != other->object_index) continue;
+            if (other && ar->event_numb >= 0 && !gm82_instance_matches_object(rt, other, ar->event_numb)) continue;
             gm82_action_execute_ref(rt, self, ar);
         }
         return;

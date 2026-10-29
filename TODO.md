@@ -16,12 +16,12 @@
 ## التالي (مرتّب بالأولوية)
 
 ### P0 — Event System + GML (من FULL_GM_PARITY_PLAN)
-- [ ] قراءة وتوثيق الترتيب الفعلي داخل `gm82_runtime_step` / `gm82_runtime_step_dt`
-- [ ] توحيد ترتيب الأحداث ليطابق جدول GM 8.x في `EVENT_SYSTEM_PLAN.md`
-- [ ] Alarms → event حقيقي مرتبط بـ `GM82_EV_ALARM`
-- [ ] إكمال `with` / `other` / scopes في الـ evaluator
-- [ ] Instance Creation Code من الـ Room
-- [ ] توقيت Destroy queue مقابل Destroy event
+- [x] قراءة وتوثيق الترتيب الفعلي داخل `gm82_runtime_step` / `gm82_runtime_step_dt`
+- [x] توحيد ترتيب الأحداث ليطابق جدول GM 8.x في `EVENT_SYSTEM_PLAN.md`
+- [x] Alarms → event حقيقي مرتبط بـ `GM82_EV_ALARM`
+- [x] إكمال `with` / `other` / scopes في الـ evaluator
+- [x] Instance Creation Code من الـ Room
+- [x] توقيت Destroy queue مقابل Destroy event
 
 ### P1 — توسيع
 - [ ] User Events (`event_user`)
