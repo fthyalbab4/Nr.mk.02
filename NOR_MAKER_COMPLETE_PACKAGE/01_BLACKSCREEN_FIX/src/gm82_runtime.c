@@ -16,6 +16,7 @@
 
 void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
+    gm82_gml_reset_globals(rt);
     rt->next_id = 100001;
     rt->room_speed = 30;
     rt->room_width = 640;
@@ -350,6 +351,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
             if (inst->alarms[a] > 0) {
                 inst->alarms[a]--;
                 if (inst->alarms[a] == 0) {
+                    int room_before_alarm = rt->current_room;
+                    /* Clear before dispatch so an event can safely re-arm itself. */
+                    inst->alarms[a] = -1;
                     gm82_alarm_fire_scripts(rt, inst, a);
                     /* Object Alarm event (main_type 2, event_numb = a) */
                     if (rt->objects && inst->object_index >= 0 &&
@@ -366,7 +370,11 @@ void gm82_runtime_step(gm82_runtime *rt) {
                             }
                         }
                     }
-                    inst->alarms[a] = -1;
+                    if (rt->actions && inst->alive)
+                        gm82_actions_fire_alarm(rt, inst, rt->actions, a);
+                    /* A room change rebuilds the instance array. Do not continue
+                       this frame through pointers from the previous room. */
+                    if (rt->current_room != room_before_alarm) return;
                 }
             }
         }
@@ -489,6 +497,13 @@ void gm82_runtime_step(gm82_runtime *rt) {
                                 continue;
                         }
                         gm82_events_fire_collision(rt, inst, other);
+                        /* GameMaker dispatches collision events for both participants.
+                           The spatial broad-phase visits each pair once (j > i), so
+                           explicitly notify the other instance as well; otherwise
+                           events owned by the later instance (e.g. goal/coin/enemy)
+                           are silently skipped. */
+                        if (inst->alive && other->alive)
+                            gm82_events_fire_collision(rt, other, inst);
                         if (other->solid) {
                             double overlap_x = (ax2 < bx2 ? ax2 : bx2) - (ax1 > bx1 ? ax1 : bx1);
                             double overlap_y = (ay2 < by2 ? ay2 : by2) - (ay1 > by1 ? ay1 : by1);

@@ -260,7 +260,8 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
     }
-    if (other && other->alive && rt->objects) {
+    if (rt->actions) gm82_actions_fire_collision(rt, inst, other, rt->actions);
+    if (other && other->alive && rt->objects && !rt->actions) {
         int32_t oj = other->object_index;
         if (oj >= 0 && oj < rt->objects->count) {
             const gm82_decoded_object *o2 = &rt->objects->items[oj];
