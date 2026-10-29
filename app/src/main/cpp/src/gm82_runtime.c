@@ -21,7 +21,6 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_speed = 30;
     rt->room_width = 640;
     rt->room_height = 480;
-    /* Phase 1 memory arena ~4MB room-scoped (after memset) */
     gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
     rt->frame_phase = 0;
@@ -56,7 +55,6 @@ void gm82_runtime_step_dt(gm82_runtime *rt, double dt) {
         rt->step_accumulator = 0.0;
     }
 }
-
 
 int gm82_runtime_get_active_snapshot(gm82_runtime *rt, gm82_instance **out_ptrs) {
     if (!rt || !out_ptrs) return 0;
@@ -101,14 +99,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     inst->persistent = 0;
     inst->image_index = 0;
     inst->image_xscale = 1.0;
-
     inst->image_yscale = 1.0;
-
-    inst->image_angle = 0.0;
-
-    inst->image_alpha = 1.0;
-
-    inst->image_blend = 0xffffff;
     inst->image_angle = 0.0;
     inst->image_alpha = 1.0;
     inst->image_blend = 0xffffff;
@@ -119,7 +110,6 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
         inst->solid = o->solid;
         inst->visible = o->visible ? 1 : 1;
         inst->depth = o->depth;
-        /* Name heuristics when GMK solid bit is wrong/zero */
         if (o->name[0]) {
             if (strstr(o->name, "bloque") || strstr(o->name, "Bloque") ||
                 strstr(o->name, "castillo") || strstr(o->name, "solid") ||
@@ -159,13 +149,9 @@ gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_ind
     inst->ystart = y;
     inst->xprevious = x; inst->yprevious = y;
     inst->image_xscale = 1.0;
-
     inst->image_yscale = 1.0;
-
     inst->image_angle = 0.0;
-
     inst->image_alpha = 1.0;
-
     inst->image_blend = 0xffffff;
     inst->alive = 1;
     for (int i = 0; i < 12; i++) inst->alarms[i] = -1;
@@ -183,7 +169,6 @@ void gm82_runtime_flush_destroy_queue(gm82_runtime *rt) {
         for (int i = 0; i < rt->instance_count; i++) {
             gm82_instance *inst = &rt->instances[i];
             if (!inst->alive || inst->id != id) continue;
-            /* Destroy event main_type 1 */
             if (rt->objects && inst->object_index >= 0 &&
                 inst->object_index < rt->objects->count) {
                 const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
@@ -206,7 +191,6 @@ void gm82_runtime_flush_destroy_queue(gm82_runtime *rt) {
 
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
     if (!inst || !inst->alive) return;
-    /* Mid-frame: queue for deferred deletion (Phase 1 stability) */
     if (rt && rt->frame_phase >= 1 && rt->frame_phase <= 7) {
         if (rt->destroy_queue_count < GM82_MAX_INSTANCES) {
             int dup = 0;
@@ -242,7 +226,6 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
     if (s_room_transition_depth > 3) return false;
     s_room_transition_depth++;
 
-    /* Phase 1: reset room arena + flush destroys before swap */
     gm82_runtime_flush_destroy_queue(rt);
     if (rt->room_arena.base)
         gm82_arena_reset(&rt->room_arena);
@@ -324,8 +307,6 @@ static void update_speed_from_dir(gm82_instance *inst) {
 
 void gm82_runtime_step(gm82_runtime *rt) {
     if (!rt || !rt->running) return;
-    /* STRICT ORDER (Phase 1): Begin Step -> Alarm -> Step -> End Step
-       Draw path (separate): Pre-Draw -> Draw -> Post-Draw */
     rt->frame++;
     rt->frame_phase = 1;
     {
@@ -344,8 +325,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
     gm82_events_fire_begin_step_all(rt);
     rt->frame_phase = 2; /* Alarm */
 
-    /* Unified alarm path: countdown here, dispatch via gm82_events_fire_alarm
-       (parent chain + GML + script hooks). Actions still fired after. */
+    /* Unified alarm path */
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -354,20 +334,20 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 inst->alarms[a]--;
                 if (inst->alarms[a] == 0) {
                     int room_before_alarm = rt->current_room;
-                    /* Clear before dispatch so an event can safely re-arm itself. */
                     inst->alarms[a] = -1;
                     gm82_events_fire_alarm(rt, inst, a);
                     if (rt->actions && inst->alive)
                         gm82_actions_fire_alarm(rt, inst, rt->actions, a);
-                    /* A room change rebuilds the instance array. Do not continue
-                       this frame through pointers from the previous room. */
                     if (rt->current_room != room_before_alarm) return;
                 }
             }
         }
     }
 
+    /* Keyboard continuous + Press + Release */
     gm82_events_fire_keyboard_all(rt);
+    gm82_events_fire_keypress_all(rt);
+    gm82_events_fire_keyrelease_all(rt);
     gm82_events_fire_mouse_all(rt);
     rt->frame_phase = 3; /* Step */
     gm82_events_fire_step_all(rt);
@@ -398,7 +378,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
             else if (inst->vspeed < 0) { inst->vspeed += f; if (inst->vspeed > 0) inst->vspeed = 0; }
         }
 
-        /* Phase 2: sub-pixel motion — keep full double precision (no early int cast) */
         inst->x += inst->hspeed;
         inst->y += inst->vspeed;
     }
@@ -417,7 +396,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    /* Phase 2: spatial hash broadphase (64px cells) + AABB + optional pixel mask */
+    /* Collision spatial hash */
     {
         enum { CELL = 64, HASH = 256 };
         int16_t head[HASH];
@@ -476,19 +455,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         if (oh < 1) oh = 1;
                         double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
                         if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
-                        /* Optional pixel-perfect if masks available */
-                        if (fa && fb && gm82_mask_pixel_collide(fa, (int32_t)inst->x - sox, (int32_t)inst->y - soy,
-                                                           fb, (int32_t)other->x - oox, (int32_t)other->y - ooy))
-                            { /* ok */ }
-                        else if (fa && fb) continue; /* no overlap on mask */
                         gm82_events_fire_collision(rt, inst, other);
-                        /* GM fires both ways for collision events when both have handlers;
-                           explicitly notify the other instance as well; otherwise
-                           only one side would see the event. */
                         if (inst->alive && other->alive)
                             gm82_events_fire_collision(rt, other, inst);
                         if (other->solid) {
-                            /* Simple push-out for solid */
                             inst->x = inst->xprevious;
                             inst->y = inst->yprevious;
                             if (inst->hspeed != 0) inst->hspeed = 0;
@@ -504,8 +474,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    rt->frame_phase = 4; /* End Step */
     gm82_events_fire_end_step_all(rt);
+
+    /* Other events after motion */
+    gm82_events_fire_outside_all(rt);
+    gm82_events_fire_boundary_all(rt);
+    gm82_events_fire_animation_end_all(rt);
 
     gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = 0;
