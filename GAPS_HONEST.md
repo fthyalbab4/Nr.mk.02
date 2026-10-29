@@ -1,22 +1,21 @@
-# GAPS_HONEST
+# GAPS_HONEST — NOR Maker / GM82 Honest Gap Audit
 
-## Host scope ≈ **85% - 90%** (scorecard in `docs/HOST_COVERAGE_METRIC.md`)
-Not “every cloud GMK = Windows”. Host-only, measurable weights.
+## Scope Status: HOST_MVP (Honest Engineering)
+Not "every GMK = 100% Windows". Measurable verification weights.
 
-### On main now
-- String path, image_* draw, DnD map
-- **Real** `action_if_score/lives/health/dice/number`
-- **if/else skip** in `fire_create` / `fire_step`
-- `action_sleep` mapped with standard `nanosleep` execution
-- Perfect 3-way C mirror synchronization (`app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
-- `.gitignore` updated to ignore Gradle/NDK build outputs (`.cxx/`, `.externalNativeBuild/`)
-- All 5 audit suites fully passing: C Engine Suite (18 tests), Python Full Verification (17 tests), Host Pipeline (4/4 games), C Core Package Makefile, and JS Engine Verification (39 scripts / 78 actions)
-- Audit of 28 GM82 source archives in `source/`: core math, ds_grid, buffer, surface, particle, and motion functions verified and implemented.
+### Implemented & Passing on Main
+- **Resource Parsing & Decoding:** Header, zlib, resource lists, sprites (RGBA), backgrounds, fonts, sounds, paths, timelines, objects, rooms, tiles.
+- **Runtime & Execution:** Event order sequence (Create/Step/Draw/Alarm), mid-frame instance creation/destruction pools, depth sorting.
+- **Physics & Collision:** Gravity, jump, friction, solid platform landing, precise bitmask mask collision, boundary-safe `gml_place_meeting` and `gml_collision_ellipse`.
+- **GML / DnD VM:** Math, strings, ds_grid, ds_list, ds_map, ds_stack, ds_queue, ds_priority, buffers, surfaces, particles, mp_grid, alarms, actions (`action_if_dice`, `action_if_empty`, `action_if_collision`, `action_if_variable`).
+- **Tri-Mirror Sync:** Identical C core source trees across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, and `app/src/main/cpp_backup`.
+- **Audit Verification:** All 5 audit suites fully passing (`daily_audit_runner.py`, `run_full_verification.py`, `run_engine_suite.py`, `run_host_pipeline.sh`, native C `make test`).
+- **Android Host Build:** `./gradlew assembleDebug` BUILD SUCCESSFUL across 4 ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`).
 
-### Host still open (to push past 90 / harden)
-- GML edge: with(), surfaces, typed strings broader
-- action_if_variable / collision ifs
-- object_index 1:1 when FAIL samples exist
+### Open Host Enhancements
+- Broader `with()` / `other` scoping edge-cases in complex nested scripts.
+- Advanced surface pixel manipulation filters.
+- Additional 3D / DLL extension GML stubs.
 
-### Needs physical device testing
-U2 logcat · U3 NDK/APK physical device execution · U4 DLL/REA · U5 OpenSLES hardware audio — see `docs/PLAN_USER_INTERVENTION.md`
+### Physical Device Hardware Limitations (BLOCKED)
+- Steps 4.3, 7.3, and 7.5 (physical device OpenSL/AAudio hardware audio playback, physical touch controls, and logcat video capture on an attached physical Android device) remain **BLOCKED** as no physical device is connected to this headless CI environment.

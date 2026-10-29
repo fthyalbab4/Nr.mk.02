@@ -232,7 +232,7 @@ static bool aabb_overlap(double ax, double ay, int aw, int ah,
 }
 
 double gml_place_meeting(double x, double y, double object_index) {
-    if (!g_rt || !g_self) return 0;
+    if (!g_rt || !g_self || !isfinite(x) || !isfinite(y) || !isfinite(object_index)) return 0;
     int32_t oi = (int32_t)object_index;
     int32_t sw, sh;
     sprite_size(g_rt, g_self->sprite_index, &sw, &sh);
@@ -298,7 +298,7 @@ double gml_instance_place(double x, double y, double object_index) {
 
 
 double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
-    if (!g_rt) return -4;
+    if (!g_rt || !isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2) || !isfinite(obj)) return -4;
     if (x1 > x2) { double t = x1; x1 = x2; x2 = t; }
     if (y1 > y2) { double t = y1; y1 = y2; y2 = t; }
     double cx = (x1 + x2) / 2.0;

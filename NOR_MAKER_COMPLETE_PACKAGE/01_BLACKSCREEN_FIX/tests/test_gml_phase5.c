@@ -54,6 +54,14 @@ static void test_collision_shapes(void) {
     double miss_ell = gml_collision_ellipse(0, 0, 50, 50, 1, 0, 0);
     assert(miss_ell == -4);
 
+    /* Ellipse collision with NaN/Inf coordinates returns -4 safely */
+    double nan_ell = gml_collision_ellipse(NAN, 0, 50, 50, 1, 0, 0);
+    assert(nan_ell == -4);
+
+    /* Place meeting with NaN coordinates returns 0 safely */
+    double nan_meeting = gml_place_meeting(NAN, 100, 1);
+    assert(nan_meeting == 0);
+
     puts("test_collision_shapes PASS");
 }
 
