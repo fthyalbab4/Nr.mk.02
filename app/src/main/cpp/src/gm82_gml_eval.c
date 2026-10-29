@@ -1313,8 +1313,56 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_instance_create(xarg, yarg, oarg); return true;
         }
         if (strcmp(id, "draw_self") == 0) {
-            if (p->self) gml_draw_sprite((double)p->self->sprite_index, p->self->x, p->self->y);
+            if (p->self) gml_draw_self();
             *out = 1; return true;
+        }
+        if (strcmp(id, "draw_self_ext") == 0) {
+            if (p->self) gml_draw_self_ext();
+            *out = 1; return true;
+        }
+        if (strcmp(id, "draw_self_as") == 0) {
+            if (p->self) gml_draw_self_as(arg);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "draw_self_blend") == 0) {
+            if (p->self) gml_draw_self_blend(arg, nargs >= 2 ? args[1] : 1.0);
+            *out = 1; return true;
+        }
+        if (strcmp(id, "draw_self_floored") == 0) {
+            if (p->self) gml_draw_self_floored();
+            *out = 1; return true;
+        }
+        if (strcmp(id, "move_wrap") == 0) {
+            *out = gml_move_wrap(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0);
+            return true;
+        }
+        if (strcmp(id, "outside_room") == 0) {
+            *out = gml_outside_room();
+            return true;
+        }
+        if (strcmp(id, "position_free") == 0) {
+            *out = gml_position_free(arg, nargs >= 2 ? args[1] : 0);
+            return true;
+        }
+        if (strcmp(id, "ds_list_all") == 0) {
+            *out = gml_ds_list_all(arg, nargs >= 2 ? args[1] : 0);
+            return true;
+        }
+        if (strcmp(id, "ds_list_any") == 0) {
+            *out = gml_ds_list_any(arg, nargs >= 2 ? args[1] : 0);
+            return true;
+        }
+        if (strcmp(id, "ds_list_concat") == 0) {
+            *out = gml_ds_list_concat(arg, nargs >= 2 ? args[1] : 0);
+            return true;
+        }
+        if (strcmp(id, "animation_stop") == 0) {
+            *out = gml_animation_stop();
+            return true;
+        }
+        if (strcmp(id, "animation_pingpong") == 0) {
+            *out = gml_animation_pingpong();
+            return true;
         }
         if (strcmp(id, "sound_loop") == 0) {
             *out = gml_sound_loop(arg); return true;

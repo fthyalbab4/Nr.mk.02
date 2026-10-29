@@ -875,6 +875,25 @@ void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
         return;
     }
 }
+/* Collision events are per object pair: the event number is the index of the
+   other object, so only matching entries may run. */
+void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
+                                 gm82_instance *other, const gm82_action_table *table) {
+    if (!rt || !self || !self->alive || !table || !rt->objects) return;
+    if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
+    const char *oname = rt->objects->items[self->object_index].name;
+    for (int i = 0; i < table->count; i++) {
+        if (strcmp(table->objects[i].object_name, oname) != 0) continue;
+        for (int a = 0; a < table->objects[i].count; a++) {
+            if (!self->alive) return;
+            gm82_action_ref *ar = &table->objects[i].items[a];
+            if (ar->event_type != 4) continue;
+            if (other && ar->event_numb >= 0 && ar->event_numb != other->object_index) continue;
+            gm82_action_execute_ref(rt, self, ar);
+        }
+        return;
+    }
+}
 
 void gm82_actions_fire_draw(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
     gm82_actions_fire_event(rt, self, table, 8, -1);
