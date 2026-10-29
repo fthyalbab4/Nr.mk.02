@@ -88,6 +88,43 @@ gm82_instance *gm82_gml_get_other(void) { return g_other; }
 
 gm82_instance *gm82_gml_get_self(void) { return g_self; }
 
+bool gm82_object_is_ancestor(const gm82_runtime *rt, int32_t child_idx, int32_t parent_idx) {
+    if (!rt || !rt->objects || child_idx < 0 || child_idx >= rt->objects->count) return false;
+    if (parent_idx < 0 || parent_idx >= rt->objects->count) return false;
+    int curr = child_idx;
+    int depth = 0;
+    while (curr >= 0 && curr < rt->objects->count && depth++ < 32) {
+        int p = rt->objects->items[curr].parent_index;
+        if (p == parent_idx) return true;
+        if (p == curr || p < 0) break;
+        curr = p;
+    }
+    return false;
+}
+
+bool gm82_instance_matches_object_raw(const gm82_runtime *rt, const gm82_instance *inst, int32_t target_obj) {
+    if (!inst) return false;
+    if (target_obj < 0) return true; /* -1 or all */
+    if (inst->object_index == target_obj || inst->id == target_obj) return true;
+    return gm82_object_is_ancestor(rt, inst->object_index, target_obj);
+}
+
+bool gm82_instance_matches_object(const gm82_runtime *rt, const gm82_instance *inst, int32_t target_obj) {
+    if (!inst || !inst->alive) return false;
+    return gm82_instance_matches_object_raw(rt, inst, target_obj);
+}
+
+double gml_object_is_ancestor(double child, double parent) {
+    return gm82_object_is_ancestor(g_rt, (int32_t)child, (int32_t)parent) ? 1.0 : 0.0;
+}
+
+double gml_object_get_parent(double object_index) {
+    if (!g_rt || !g_rt->objects) return -1.0;
+    int oi = (int)object_index;
+    if (oi < 0 || oi >= g_rt->objects->count) return -1.0;
+    return (double)g_rt->objects->items[oi].parent_index;
+}
+
 double gml_instance_create(double x, double y, double object_index) {
     if (!g_rt) return -1;
     gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)object_index, x, y);
@@ -118,8 +155,7 @@ double gml_instance_number(double object_index) {
     int32_t oi = (int32_t)object_index;
     int n = 0;
     for (int i = 0; i < g_rt->instance_count; i++) {
-        if (!g_rt->instances[i].alive) continue;
-        if (oi < 0 || g_rt->instances[i].object_index == oi) n++;
+        if (gm82_instance_matches_object(g_rt, &g_rt->instances[i], oi)) n++;
     }
     return (double)n;
 }
@@ -128,8 +164,7 @@ double gml_instance_exists(double id_or_object) {
     if (!g_rt) return 0;
     int32_t v = (int32_t)id_or_object;
     for (int i = 0; i < g_rt->instance_count; i++) {
-        if (!g_rt->instances[i].alive) continue;
-        if (g_rt->instances[i].id == v || g_rt->instances[i].object_index == v)
+        if (gm82_instance_matches_object(g_rt, &g_rt->instances[i], v))
             return 1;
     }
     return 0;
@@ -273,7 +308,7 @@ double gml_place_meeting(double x, double y, double object_index) {
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
@@ -304,7 +339,7 @@ double gml_position_meeting(double x, double y, double object_index) {
     for (int i = 0; i < n; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         double ol, ot, orr, ob;
         inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
         if (x >= ol && x < orr && y >= ot && y < ob) return 1;
@@ -321,7 +356,7 @@ double gml_instance_place(double x, double y, double object_index) {
     for (int i = 0; i < n; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         double ol, ot, orr, ob;
         inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
         if (aabb_overlap_d(sl, st, sr, sb, ol, ot, orr, ob))
@@ -346,7 +381,7 @@ double gml_collision_ellipse(double x1, double y1, double x2, double y2, double 
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
         if (notme && o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         double px = cx < o->x ? o->x : (cx > o->x + ow ? o->x + ow : cx);
@@ -686,9 +721,8 @@ double gml_instance_nearest(double x, double y, double object_index) {
     int32_t best_id = -4;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
-        if (!o->alive) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
-        if (o == g_self) continue;
+        if (!o->alive || o == g_self) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         double dx = o->x - x, dy = o->y - y;
         double d = dx*dx + dy*dy;
         if (d < best) { best = d; best_id = o->id; }
@@ -703,8 +737,7 @@ double gml_instance_find(double object_index, double n) {
     int seen = 0;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
-        if (!o->alive) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         if (seen == want) return (double)o->id;
         seen++;
     }
@@ -718,7 +751,7 @@ double gml_distance_to_object(double object_index) {
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         double dx = o->x - g_self->x, dy = o->y - g_self->y;
         double d = sqrt(dx*dx + dy*dy);
         if (d < best) best = d;
@@ -861,7 +894,7 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
         if (notme && o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         if (aabb_overlap(x1, y1, x2-x1, y2-y1, o->x, o->y, ow, oh)) {
@@ -898,7 +931,7 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
         if (notme && o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         double cx = o->x + ow / 2.0;
@@ -940,7 +973,7 @@ double gml_collision_point(double x, double y, double obj, double prec, double n
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
         if (notme && o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         if (x >= o->x && x < o->x + ow && y >= o->y && y < o->y + oh) {
@@ -992,7 +1025,7 @@ double gml_collision_line(double x1, double y1, double x2, double y2, double obj
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
         if (notme && o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         if (line_aabb_overlap(x1, y1, x2, y2, o->x, o->y, ow, oh)) {
@@ -1248,7 +1281,7 @@ double gml_instance_nearest_notme(double x, double y, double object_index) {
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         double dx = o->x - x, dy = o->y - y;
         double d = dx * dx + dy * dy;
         if (d < best) { best = d; best_id = o->id; }
@@ -1741,7 +1774,7 @@ double gml_instance_deactivate_object(double object_index) {
     int32_t oi = (int32_t)object_index;
     if (oi == -4) return 0; /* noone */
     for (int i = 0; i < g_rt->instance_count; i++) {
-        if (oi == -1 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
+        if (gm82_instance_matches_object_raw(g_rt, &g_rt->instances[i], oi))
             g_rt->instances[i].alive = 0;
     }
     return 1;
@@ -1760,7 +1793,7 @@ double gml_instance_activate_object(double object_index) {
     int32_t oi = (int32_t)object_index;
     if (oi == -4) return 0; /* noone */
     for (int i = 0; i < g_rt->instance_count; i++) {
-        if (oi == -1 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
+        if (gm82_instance_matches_object_raw(g_rt, &g_rt->instances[i], oi))
             g_rt->instances[i].alive = 1;
     }
     return 1;
@@ -3721,7 +3754,7 @@ double gml_place_meeting_precise(double x, double y, double object_index) {
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         if (precise_mask_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y)) {
             return 1;
         }
@@ -4452,8 +4485,7 @@ double gml_instance_farthest(double x, double y, double object_index) {
     double best_d = -1.0, best_id = -4.0;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
-        if (!o->alive) continue;
-        if (oi >= 0 && o->object_index != oi) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
         double dx = o->x - x, dy = o->y - y;
         double d = dx * dx + dy * dy;
         if (d > best_d) { best_d = d; best_id = (double)o->id; }
@@ -4622,7 +4654,8 @@ double gml_random_color(void) {
     return (double)((r & 255) | ((g & 255) << 8) | ((b & 255) << 16));
 }
 double gml_object_is_child_of(double child, double parent) {
-    return ((int32_t)child == (int32_t)parent) ? 1.0 : 0.0;
+    if ((int32_t)child == (int32_t)parent) return 1.0;
+    return gm82_object_is_ancestor(g_rt, (int32_t)child, (int32_t)parent) ? 1.0 : 0.0;
 }
 double gml_string_width(const char *s) {
     if (!s) return 0;

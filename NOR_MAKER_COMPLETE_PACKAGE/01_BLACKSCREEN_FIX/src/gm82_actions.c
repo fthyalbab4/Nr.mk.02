@@ -460,8 +460,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         int op = (argc >= 3) ? args[2] : 2;
         int cnt = 0;
         for (int i = 0; i < rt->instance_count; i++) {
-            if (!rt->instances[i].alive) continue;
-            if (obj < 0 || rt->instances[i].object_index == obj) cnt++;
+            if (gm82_instance_matches_object(rt, &rt->instances[i], obj)) cnt++;
         }
         switch (op) {
             case 1: return cnt < thr;
@@ -476,20 +475,41 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_if_empty") == 0) {
         double x = (argc >= 1) ? (double)args[0] : self->x;
         double y = (argc >= 2) ? (double)args[1] : self->y;
-        int flag_solid = (argc >= 3) ? args[2] : 0;
-        return flag_solid ? (gml_place_free(x, y) != 0.0) : (gml_place_empty(x, y) != 0.0);
+        int obj = (argc >= 3) ? args[2] : -4; /* all */
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *o = &rt->instances[i];
+            if (!o->alive || o == self) continue;
+            if (!gm82_instance_matches_object(rt, o, obj)) continue;
+            double dx = o->x - x, dy = o->y - y;
+            if (dx*dx + dy*dy < 16.0) return false; /* not empty */
+        }
+        return true;
     }
     if (strcmp(name, "action_if_collision") == 0) {
         double x = (argc >= 1) ? (double)args[0] : self->x;
         double y = (argc >= 2) ? (double)args[1] : self->y;
         int obj = (argc >= 3) ? args[2] : -1;
-        return gml_place_meeting(x, y, (double)obj) != 0.0;
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *o = &rt->instances[i];
+            if (!o->alive || o == self) continue;
+            if (!gm82_instance_matches_object(rt, o, obj)) continue;
+            double dx = o->x - x, dy = o->y - y;
+            if (dx*dx + dy*dy < 256.0) return true;
+        }
+        return false;
     }
     if (strcmp(name, "action_if_object") == 0) {
         int obj = (argc >= 1) ? args[0] : -1;
         double x = (argc >= 2) ? (double)args[1] : self->x;
         double y = (argc >= 3) ? (double)args[2] : self->y;
-        return gml_position_meeting(x, y, (double)obj) != 0.0;
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *o = &rt->instances[i];
+            if (!o->alive) continue;
+            if (!gm82_instance_matches_object(rt, o, obj)) continue;
+            double dx = o->x - x, dy = o->y - y;
+            if (dx*dx + dy*dy < 256.0) return true;
+        }
+        return false;
     }
     if (strcmp(name, "action_if_variable") == 0) {
         /* args: value, op, compare — evaluates GML expressions when strings supplied */
@@ -830,7 +850,7 @@ void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
             if (!self->alive) return;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type != 4) continue;
-            if (other && ar->event_numb >= 0 && ar->event_numb != other->object_index) continue;
+            if (other && ar->event_numb >= 0 && !gm82_instance_matches_object(rt, other, ar->event_numb)) continue;
             gm82_action_execute_ref(rt, self, ar);
         }
         return;
