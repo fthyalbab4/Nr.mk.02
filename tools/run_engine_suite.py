@@ -10,6 +10,7 @@ TESTS = [
     ("test_input_key_bounds", "app/src/main/cpp/tests/test_input_key_bounds.c"),
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),
     ("test_mario_physics_parity", "app/src/main/cpp/tests/test_mario_physics_parity.c"),
+    ("test_mario_replay", "app/src/main/cpp/tests/test_mario_replay.c"),
     ("test_gml_comprehensive", "app/src/main/cpp/tests/test_gml_comprehensive.c"),
     ("test_gml_vm_execution", "app/src/main/cpp/tests/test_gml_vm_execution.c"),
     ("test_gml_vm_expanded", "app/src/main/cpp/tests/test_gml_vm_expanded.c"),

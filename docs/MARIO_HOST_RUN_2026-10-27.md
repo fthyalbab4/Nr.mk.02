@@ -22,3 +22,26 @@ SUMMARY ok=4 fail=0
 
 ## Limits
 Host injects VK_RIGHT only. Full touch UI still needs APK with sendKey fix + this decode fix.
+
+## Replay regression fixed
+
+كان تقرير الحركة السابق قد يختار أول اسم يحتوي `mario`، فيختار instance الكائن
+`obj_minimario_pierde` عند `(1408,112)` بدل اللاعب الحقيقي `obj_minimario` عند
+`(32,112)`. كائن الموت لا يملك كود حركة، لذلك ظهر `delta=(0,0)` رغم أن فك كود
+الحركة كان سليمًا.
+
+تم تصحيح الاختيار ليبحث عن `obj_minimario`/`obj_mario` الذي يحمل كود
+`keyboard_check` و`hspeed`، وإضافة `test_mario_replay.c` إلى `ENGINE_SUITE`.
+النتيجة بعد ضغط VK_RIGHT لمدة 30 إطارًا:
+
+```text
+mario replay: object=obj_minimario start_x=32.0 delta_x=105.0 frames=30
+test_mario_replay PASS
+```
+
+كما أصبحت نتيجة `tools/run_host_pipeline.sh` للعبة ماريو:
+
+```text
+PLAYER_IDX 175 obj=6 start=(32.0,112.0)
+STEPS 30 frame=30 moved=1 delta=(105.0,96.0)
+```

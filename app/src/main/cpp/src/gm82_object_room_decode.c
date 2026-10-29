@@ -10,9 +10,20 @@ static int32_t rd_i32(const uint8_t *p) {
     return gm82_read_i32le(p);
 }
 
-/* Keep Create events as Create events (main_type 0) without reclassifying. */
+/* GM82's compressed object stream can lose the event bucket while the GML
+ * snippet remains recoverable. Continuous movement code must run every frame,
+ * not once during Create; classify only snippets with unmistakable Step cues. */
 static void gm82_reclass_step_like_events(gm82_decoded_object *o) {
-    (void)o;
+    if (!o) return;
+    for (int e = 0; e < o->event_count; e++) {
+        char *c = o->events[e].code_snippet;
+        if (!c || !c[0]) continue;
+        if (strstr(c, "keyboard_check") || strstr(c, "place_free") ||
+            strstr(c, "place_meeting") || strstr(c, "vspeed") ||
+            strstr(c, "hspeed") || strstr(c, "x+=") || strstr(c, "x-=")) {
+            if (o->events[e].main_type == 0) o->events[e].main_type = 3;
+        }
+    }
 }
 
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *out_len) {

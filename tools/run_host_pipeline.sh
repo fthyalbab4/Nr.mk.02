@@ -60,7 +60,27 @@ int main(int argc, char **argv) {
         else printf("ROOM 0 inst=%d w=%d h=%d\n", rt.instance_count, rt.room_width, rt.room_height);
     } else { rt.running = 1; rt.room_speed = 30; }
     int pi = -1;
+    /* Prefer the live player object over death/transition objects whose names
+       also contain "mario".  In mario_bros.gmk obj_minimario_pierde appears
+       earlier in the room, but obj_minimario is the object carrying the
+       keyboard_check/hspeed Step code and must be used for the replay. */
+    for (int i = 0; i < rt.instance_count && pi < 0; i++) {
+        if (!rt.instances[i].alive || !rt.objects) continue;
+        int oi = rt.instances[i].object_index;
+        if (oi < 0 || oi >= rt.objects->count) continue;
+        const gm82_decoded_object *o = &rt.objects->items[oi];
+        if (strcmp(o->name, "obj_minimario") != 0 &&
+            strcmp(o->name, "obj_mario") != 0) continue;
+        for (int e = 0; e < o->event_count; e++) {
+            const char *c = o->events[e].code_snippet;
+            if (c && (strstr(c, "keyboard_check") || strstr(c, "hspeed"))) {
+                pi = i;
+                break;
+            }
+        }
+    }
     for (int i = 0; i < rt.instance_count; i++) {
+        if (pi >= 0) break;
         if (!rt.instances[i].alive || !rt.objects) continue;
         int oi = rt.instances[i].object_index;
         if (oi < 0 || oi >= rt.objects->count) continue;
