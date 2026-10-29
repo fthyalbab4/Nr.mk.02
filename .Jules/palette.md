@@ -45,3 +45,7 @@
 ## 2026-10-28 - Editor Toolbar Button ARIA State & Keyboard Focus Ring Parity
 **Learning:** In editor toolbars (such as image, room, or tile editors), icon-only tool buttons using title attributes omit `aria-label`, active state `aria-pressed`, and `focus-visible` rings, rendering tool names and toggle statuses unannounced to screen readers and invisible during keyboard tabbing.
 **Action:** Always bind `aria-label={title}`, `aria-pressed={active !== undefined ? (active ? "true" : "false") : undefined}`, and `focus-visible:ring-1` to reusable icon tool button components.
+
+## 2026-10-29 - Home & End Boundary Keyboard Navigation for Card Grids
+**Learning:** In extensive interactive card grids (such as catalog overlays containing dozens or hundreds of items), directional arrow keys alone require numerous keypresses to navigate between distant items. Adding `Home` (jump to first card) and `End` (jump to last card) key listeners on grid card elements enables instant boundary jumping for keyboard and screen-reader users.
+**Action:** Always bind `Home` and `End` key listeners on interactive grid card focus targets to shift focus directly to the grid's first (`querySelector('.card')`) or last (`querySelectorAll('.card')`) child element.
