@@ -9,6 +9,12 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#define GM82_MKDIR(path) _mkdir(path)
+#else
+#define GM82_MKDIR(path) mkdir((path), 0755)
+#endif
 
 static void mkdir_p(const char *dir) {
     char tmp[512];
@@ -20,13 +26,16 @@ static void mkdir_p(const char *dir) {
     if (len == 0) return;
     if (tmp[len - 1] == '/') tmp[len - 1] = 0;
     for (p = tmp + 1; *p; p++) {
-        if (*p == '/') {
+        if (*p == '/' || *p == '\\') {
+#ifdef _WIN32
+            if (p == tmp + 2 && tmp[1] == ':') continue;
+#endif
             *p = 0;
-            mkdir(tmp, 0755);
+            GM82_MKDIR(tmp);
             *p = '/';
         }
     }
-    mkdir(tmp, 0755);
+    GM82_MKDIR(tmp);
 }
 
 static void ensure_parent_dir(const char *path) {

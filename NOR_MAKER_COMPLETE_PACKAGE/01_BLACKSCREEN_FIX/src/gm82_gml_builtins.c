@@ -4,7 +4,11 @@
 #include <stdint.h>
 #include <limits.h>
 #include <dirent.h>
+#ifndef _WIN32
 #include <fnmatch.h>
+#else
+#include <direct.h>
+#endif
 #include <sys/stat.h>
 #include "gm82_gml_builtins.h"
 #include "gm82_audio_mixer.h"
@@ -35,6 +39,36 @@ static int g_draw_blend_mode = 0;
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifdef _WIN32
+/* Minimal case-insensitive filename glob for Windows builds; POSIX keeps fnmatch. */
+static int gm82_win_fnmatch(const char *pattern, const char *text, int flags) {
+    (void)flags;
+    const char *star = NULL;
+    const char *retry = NULL;
+    while (*text) {
+        if (*pattern == '?') {
+            pattern++;
+            text++;
+        } else if (*pattern == '*' ) {
+            star = pattern++;
+            retry = text;
+        } else if (*pattern && tolower((unsigned char)*pattern) ==
+                             tolower((unsigned char)*text)) {
+            pattern++;
+            text++;
+        } else if (star) {
+            pattern = star + 1;
+            text = ++retry;
+        } else {
+            return 1;
+        }
+    }
+    while (*pattern == '*') pattern++;
+    return *pattern == '\0' ? 0 : 1;
+}
+#define fnmatch gm82_win_fnmatch
+#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -399,6 +433,64 @@ void gml_draw_self(void) {
                         g_self->x, g_self->y,
                         g_self->image_xscale, g_self->image_yscale,
                         g_self->image_angle, 0xFFFFFF, g_self->image_alpha);
+}
+
+void gml_draw_self_ext(void) {
+    if (!g_self) return;
+    gml_draw_sprite_ext((double)g_self->sprite_index, (double)g_self->image_index,
+                        g_self->x, g_self->y,
+                        g_self->image_xscale, g_self->image_yscale,
+                        g_self->image_angle, g_self->image_blend, g_self->image_alpha);
+}
+
+void gml_draw_self_as(double sprite) {
+    if (!g_self) return;
+    gml_draw_sprite_ext(sprite, (double)g_self->image_index,
+                        g_self->x, g_self->y,
+                        g_self->image_xscale, g_self->image_yscale,
+                        g_self->image_angle, g_self->image_blend, g_self->image_alpha);
+}
+
+void gml_draw_self_blend(double color, double alpha) {
+    if (!g_self) return;
+    gml_draw_sprite_ext((double)g_self->sprite_index, (double)g_self->image_index,
+                        g_self->x, g_self->y,
+                        g_self->image_xscale, g_self->image_yscale,
+                        g_self->image_angle, color, alpha);
+}
+
+void gml_draw_self_floored(void) {
+    if (!g_self) return;
+    gml_draw_sprite_ext((double)g_self->sprite_index, (double)g_self->image_index,
+                        floor(g_self->x), floor(g_self->y),
+                        g_self->image_xscale, g_self->image_yscale,
+                        g_self->image_angle, g_self->image_blend, g_self->image_alpha);
+}
+
+double gml_move_wrap(double hor, double vert, double margin) {
+    if (!g_self || !g_rt) return 0;
+    double rw = g_rt->room_width > 0 ? g_rt->room_width : 640;
+    double rh = g_rt->room_height > 0 ? g_rt->room_height : 480;
+    if (hor) {
+        if (g_self->x + margin < 0) g_self->x += rw + margin;
+        else if (g_self->x - margin > rw) g_self->x -= rw + margin;
+    }
+    if (vert) {
+        if (g_self->y + margin < 0) g_self->y += rh + margin;
+        else if (g_self->y - margin > rh) g_self->y -= rh + margin;
+    }
+    return 1;
+}
+
+
+double gml_animation_stop(void) {
+    if (g_self) g_self->image_speed = 0;
+    return 1;
+}
+
+double gml_animation_pingpong(void) {
+    if (g_self) g_self->image_speed = -g_self->image_speed;
+    return 1;
 }
 
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
@@ -2171,6 +2263,39 @@ double gml_ds_list_size(double id) {
     return (double)g_ds_lists[i].size;
 }
 
+double gml_ds_list_all(double id, double val) {
+    int idx = (int)id;
+    if (idx < 0 || idx >= GM82_DS_LIST_MAX || !g_ds_lists[idx].used) return 0;
+    gm82_ds_list *l = &g_ds_lists[idx];
+    if (l->size == 0) return 0;
+    for (int i = 0; i < l->size; i++) {
+        if (l->data[i] != val) return 0;
+    }
+    return 1;
+}
+
+double gml_ds_list_any(double id, double val) {
+    int idx = (int)id;
+    if (idx < 0 || idx >= GM82_DS_LIST_MAX || !g_ds_lists[idx].used) return 0;
+    gm82_ds_list *l = &g_ds_lists[idx];
+    for (int i = 0; i < l->size; i++) {
+        if (l->data[i] == val) return 1;
+    }
+    return 0;
+}
+
+double gml_ds_list_concat(double dest_id, double src_id) {
+    int d_idx = (int)dest_id;
+    int s_idx = (int)src_id;
+    if (d_idx < 0 || d_idx >= GM82_DS_LIST_MAX || !g_ds_lists[d_idx].used) return 0;
+    if (s_idx < 0 || s_idx >= GM82_DS_LIST_MAX || !g_ds_lists[s_idx].used) return 0;
+    gm82_ds_list *s = &g_ds_lists[s_idx];
+    for (int i = 0; i < s->size; i++) {
+        gml_ds_list_add(dest_id, s->data[i]);
+    }
+    return 1;
+}
+
 double gml_ds_list_clear(double id) {
     int i = (int)id;
     if (i < 0 || i >= GM82_DS_LIST_MAX || !g_ds_lists[i].used) return 0;
@@ -3014,7 +3139,11 @@ static void ensure_parent_dir(const char *path) {
     if (!p) p = strrchr(tmp, '\\');
     if (p) {
         *p = '\0';
+#ifdef _WIN32
+        _mkdir(tmp);
+#else
         mkdir(tmp, 0755);
+#endif
     }
 }
 
@@ -4328,7 +4457,7 @@ static void ensure_mixer(void) {
 }
 
 #ifndef GM82_WEAK
-#if defined(__GNUC__) || defined(__clang__)
+#if !defined(_WIN32) && (defined(__GNUC__) || defined(__clang__))
 #define GM82_WEAK __attribute__((weak))
 #else
 #define GM82_WEAK
@@ -4792,7 +4921,7 @@ double gml_timeline_find_name(const char *name) {
 }
 
 static const char *GM82CORE_STUBS[] = {
-  "animation_pingpong", "animation_stop", "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_self_as", "draw_self_blend", "draw_self_ext", "draw_self_floored", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_all", "ds_list_any", "ds_list_concat", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "instance_place_list", "instance_position_list", "instances_place", "instances_position", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_contact_solid_hv", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "place_meetings", "position_meetings", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {

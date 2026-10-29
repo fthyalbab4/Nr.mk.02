@@ -6,6 +6,12 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#define NOR_MKDIR(path) _mkdir(path)
+#else
+#define NOR_MKDIR(path) mkdir((path), 0775)
+#endif
 #include <stdint.h>
 #include <time.h>
 #include <ctype.h>
@@ -166,9 +172,17 @@ static int mkdir_p_native(const char *path) {
     char tmp[2048]; size_t n = strlen(path); if (n == 0 || n >= sizeof(tmp)) return 0;
     memcpy(tmp, path, n + 1);
     for (char *p = tmp + 1; *p; ++p) {
-        if (*p == '/') { *p = 0; mkdir(tmp, 0775); *p = '/'; }
+        if (*p == '/' || *p == '\\') {
+#ifdef _WIN32
+            if (p == tmp + 2 && tmp[1] == ':') continue;
+#endif
+            char separator = *p;
+            *p = 0;
+            NOR_MKDIR(tmp);
+            *p = separator;
+        }
     }
-    return mkdir(tmp, 0775) == 0 || errno == EEXIST;
+    return NOR_MKDIR(tmp) == 0 || errno == EEXIST;
 }
 
 static int copy_file_native(const char *source, const char *output) {
