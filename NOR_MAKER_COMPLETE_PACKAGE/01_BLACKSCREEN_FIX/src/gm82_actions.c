@@ -600,6 +600,58 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         gml_part_particles_create(0, self->x, self->y, 0, 8);
         return true;
     }
+    if (strcmp(name, "action_draw_background") == 0) {
+        double bg = (argc >= 1) ? (double)args[0] : 0;
+        double x = (argc >= 2) ? (double)args[1] : 0;
+        double y = (argc >= 3) ? (double)args[2] : 0;
+        gml_draw_background(bg, x, y);
+        return true;
+    }
+    if (strcmp(name, "action_draw_line") == 0) {
+        double x1 = (argc >= 1) ? (double)args[0] : 0;
+        double y1 = (argc >= 2) ? (double)args[1] : 0;
+        double x2 = (argc >= 3) ? (double)args[2] : 0;
+        double y2 = (argc >= 4) ? (double)args[3] : 0;
+        gml_draw_line(x1, y1, x2, y2);
+        return true;
+    }
+    if (strcmp(name, "action_draw_rectangle") == 0) {
+        double x1 = (argc >= 1) ? (double)args[0] : 0;
+        double y1 = (argc >= 2) ? (double)args[1] : 0;
+        double x2 = (argc >= 3) ? (double)args[2] : 0;
+        double y2 = (argc >= 4) ? (double)args[3] : 0;
+        double outline = (argc >= 5) ? (double)args[4] : 0;
+        gml_draw_rectangle(x1, y1, x2, y2, outline);
+        return true;
+    }
+    if (strcmp(name, "action_draw_ellipse") == 0) {
+        double x1 = (argc >= 1) ? (double)args[0] : 0;
+        double y1 = (argc >= 2) ? (double)args[1] : 0;
+        double x2 = (argc >= 3) ? (double)args[2] : 0;
+        double y2 = (argc >= 4) ? (double)args[3] : 0;
+        double outline = (argc >= 5) ? (double)args[4] : 0;
+        gml_draw_ellipse(x1, y1, x2, y2, outline);
+        return true;
+    }
+    if (strcmp(name, "action_draw_gradient_hor") == 0 || strcmp(name, "action_draw_gradient_vert") == 0) {
+        double x1 = (argc >= 1) ? (double)args[0] : 0;
+        double y1 = (argc >= 2) ? (double)args[1] : 0;
+        double x2 = (argc >= 3) ? (double)args[2] : 0;
+        double y2 = (argc >= 4) ? (double)args[3] : 0;
+        gml_draw_rectangle(x1, y1, x2, y2, 0);
+        return true;
+    }
+    if (strcmp(name, "action_color") == 0 || strcmp(name, "action_set_color") == 0) {
+        if (argc >= 1) gml_draw_set_color((double)args[0]);
+        return true;
+    }
+    if (strcmp(name, "action_font") == 0 || strcmp(name, "action_set_font") == 0) {
+        if (argc >= 1) gml_draw_set_font((double)args[0]);
+        return true;
+    }
+    if (strcmp(name, "action_sleep") == 0) {
+        return true;
+    }
     if (strcmp(name, "action_save_game") == 0) {
         const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
         return gml_game_save(path) > 0;
