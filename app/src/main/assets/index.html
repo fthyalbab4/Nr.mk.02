@@ -154608,7 +154608,7 @@ button, input, textarea, select {
     <!-- Filter & Search Controls -->
     <div style="padding:12px 16px; background:#e5e7eb; border-bottom:1px solid #d1d5db; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
       <div style="flex:1; min-width:200px; position:relative; display:flex; align-items:center;">
-        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px 8px 30px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
+        <input id="gmk-cloud-search" type="text" aria-label="ابحث عن لعبة" title="ابحث عن لعبة (Esc للمسح، ⬇ للانتقال لبطاقات الألعاب)" placeholder="🔍 ابحث عن لعبة (مثال: mario, zelda, pokemon, shooter, racing)..." style="width:100%; box-sizing:border-box; padding:8px 12px 8px 30px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; outline:none;" />
         <button id="gmk-cloud-search-clear" aria-label="مسح البحث" title="مسح البحث" style="display:none; position:absolute; left:8px; background:none; border:none; color:#6b7280; font-size:14px; font-weight:bold; cursor:pointer; padding:2px 6px; border-radius:50%;">✕</button>
       </div>
       <select id="gmk-cloud-category" aria-label="تصنيف الألعاب" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
@@ -154839,6 +154839,18 @@ button, input, textarea, select {
           if (prev && prev.classList.contains("gmk-cloud-card")) {
             e.preventDefault();
             prev.focus();
+          }
+        } else if (e.key === "Home") {
+          const first = grid.querySelector(".gmk-cloud-card");
+          if (first) {
+            e.preventDefault();
+            first.focus();
+          }
+        } else if (e.key === "End") {
+          const cards = grid.querySelectorAll(".gmk-cloud-card");
+          if (cards.length > 0) {
+            e.preventDefault();
+            cards[cards.length - 1].focus();
           }
         }
       };
