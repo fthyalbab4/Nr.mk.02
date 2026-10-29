@@ -23,6 +23,7 @@
 1. **Tri-Mirror Source and Header Synchronization:**
    - *Audit Target:* Synchronized `app/src/main/cpp/src/` & `include/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/` & `include/`, and `app/src/main/cpp_backup/src/` & `include/`.
    - *Verification:* `tools/gm82_audit_tool.py` confirmed **0 differences found** across all 3 C core locations.
+   - *Fix Applied:* Resolved compiler string truncation warning in `gm82_actions_gmk8.c` by adjusting `fname` and `fcode` buffer sizes to match `ar->name` (64 bytes) across all 3 mirrors.
 
 2. **Source Mirror Analysis (`source/` & `source/unpacked/`):**
    - *Audit Target:* 28 GM82 extension packages (`gm82core`, `gm82audio`, `gm82appsurf`, `gm82buf`, `gm82room`, `gm82path`, `DragonScript2`, etc.).
