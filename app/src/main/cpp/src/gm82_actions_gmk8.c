@@ -213,7 +213,7 @@ static int gmk8_parse_object(const uint8_t *blob, size_t len, gm82_object_action
                 int32_t is_cond = g8_i32(&r);
                 (void)g8_u32(&r);                 /* applies to something */
                 (void)g8_u32(&r);                 /* execution type */
-                char fname[128], fcode[128];
+                char fname[64], fcode[64];
                 if (!g8_str(&r, fname, sizeof(fname))) return 1;
                 if (!g8_str(&r, fcode, sizeof(fcode))) return 1;
                 (void)g8_u32(&r);                 /* param count */
