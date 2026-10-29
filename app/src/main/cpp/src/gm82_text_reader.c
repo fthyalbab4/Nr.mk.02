@@ -95,6 +95,173 @@ static int count_assets(const char *root, const char *group) {
     return count ? count : count_asset_dirs(root, group);
 }
 
+static int find_name_id(char **names, int count, const char *name) {
+    if (!name || !*name) return -1;
+    for (int i = 0; i < count; ++i) if (names[i] && !strcmp(names[i], name)) return i;
+    return -1;
+}
+
+static char *read_code_file(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    char *buf = (char *)calloc(GM82_SCRIPT_CODE_MAX, 1);
+    if (!buf) { fclose(f); return NULL; }
+    size_t n = fread(buf, 1, GM82_SCRIPT_CODE_MAX - 1, f);
+    buf[n] = '\0';
+    fclose(f);
+    return buf;
+}
+
+static void load_settings_txt(const char *root, gm82_project_settings *s) {
+    char path[1200], line[2048];
+    snprintf(path, sizeof(path), "%s/settings/settings.txt", root);
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    while (fgets(line, sizeof(line), f)) {
+        char *p = strchr(line, '=');
+        if (!p) continue;
+        *p++ = '\0';
+        char *key = trim_line(line), *value = trim_line(p);
+        ++s->loaded_key_count;
+        if (!strcmp(key, "fullscreen")) s->fullscreen = parse_bool(value, 0);
+        else if (!strcmp(key, "interpolate_pixels")) s->interpolate_pixels = parse_bool(value, 0);
+        else if (!strcmp(key, "dont_draw_border")) s->dont_draw_border = parse_bool(value, 0);
+        else if (!strcmp(key, "display_cursor")) s->display_cursor = parse_bool(value, 0);
+        else if (!strcmp(key, "allow_resize")) s->allow_resize = parse_bool(value, 0);
+        else if (!strcmp(key, "window_on_top")) s->window_on_top = parse_bool(value, 0);
+        else if (!strcmp(key, "set_resolution")) s->set_resolution = parse_bool(value, 0);
+        else if (!strcmp(key, "dont_show_buttons")) s->dont_show_buttons = parse_bool(value, 0);
+        else if (!strcmp(key, "vsync")) s->vsync = parse_bool(value, 0);
+        else if (!strcmp(key, "swap_creation_events")) s->swap_creation_events = parse_bool(value, 0);
+        else if (!strcmp(key, "disable_screensaver")) s->disable_screensaver = parse_bool(value, 0);
+        else if (!strcmp(key, "f4_fullscreen_toggle")) s->f4_fullscreen_toggle = parse_bool(value, 0);
+        else if (!strcmp(key, "f1_help_menu")) s->f1_help_menu = parse_bool(value, 0);
+        else if (!strcmp(key, "esc_close_game")) s->esc_close_game = parse_bool(value, 0);
+        else if (!strcmp(key, "f5_save_f6_load")) s->f5_save_f6_load = parse_bool(value, 0);
+        else if (!strcmp(key, "f9_screenshot")) s->f9_screenshot = parse_bool(value, 0);
+        else if (!strcmp(key, "treat_close_as_esc")) s->treat_close_as_esc = parse_bool(value, 0);
+        else if (!strcmp(key, "freeze_on_lose_focus")) s->freeze_on_lose_focus = parse_bool(value, 0);
+        else if (!strcmp(key, "transparent")) s->transparent = parse_bool(value, 0);
+        else if (!strcmp(key, "scale_progress_bar")) s->scale_progress_bar = parse_bool(value, 0);
+        else if (!strcmp(key, "custom_loader")) s->custom_loader = parse_bool(value, 0);
+        else if (!strcmp(key, "show_error_messages")) s->show_error_messages = parse_bool(value, 0);
+        else if (!strcmp(key, "log_errors")) s->log_errors = parse_bool(value, 0);
+        else if (!strcmp(key, "always_abort")) s->always_abort = parse_bool(value, 0);
+        else if (!strcmp(key, "zero_uninitialized_vars")) s->zero_uninitialized_vars = parse_bool(value, 0);
+        else if (!strcmp(key, "error_on_uninitialized_args")) s->error_on_uninitialized_args = parse_bool(value, 0);
+        else if (!strcmp(key, "scaling")) s->scaling = parse_i32(value, s->scaling);
+        else if (!strcmp(key, "clear_color")) s->clear_color = parse_i32(value, s->clear_color);
+        else if (!strcmp(key, "color_depth")) s->color_depth = parse_i32(value, s->color_depth);
+        else if (!strcmp(key, "resolution")) s->resolution = parse_i32(value, s->resolution);
+        else if (!strcmp(key, "frequency")) s->frequency = parse_i32(value, s->frequency);
+        else if (!strcmp(key, "priority")) s->priority = parse_i32(value, s->priority);
+        else if (!strcmp(key, "translucency")) s->translucency = parse_i32(value, s->translucency);
+        else if (!strcmp(key, "custom_bar")) s->custom_bar = parse_i32(value, s->custom_bar);
+    }
+    fclose(f);
+}
+
+static void load_constants_txt(const char *root, gm82_project_ir *ir) {
+    char path[1200], line[2048];
+    snprintf(path, sizeof(path), "%s/settings/constants.txt", root);
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    int cap = 0;
+    while (fgets(line, sizeof(line), f)) {
+        char *p = strchr(line, '=');
+        if (!p) continue;
+        *p++ = '\0';
+        char *name = trim_line(line), *value = trim_line(p);
+        if (!*name) continue;
+        if (ir->constant_count == cap) {
+            int next = cap ? cap * 2 : 32;
+            gm82_res_constant *grown = (gm82_res_constant *)realloc(ir->constants, (size_t)next * sizeof(*grown));
+            if (!grown) break;
+            ir->constants = grown; cap = next;
+        }
+        ir->constants[ir->constant_count].name = strdup(name);
+        ir->constants[ir->constant_count].value = strdup(value);
+        ++ir->constant_count;
+    }
+    fclose(f);
+}
+
+static void load_datafiles(const char *root, gm82_project_ir *ir) {
+    char **names = NULL;
+    int count = read_index_names(root, "datafiles", &names);
+    if (!count || !names) { if (names) free(names); return; }
+    ir->included_files = (gm82_res_included_file *)calloc((size_t)count, sizeof(*ir->included_files));
+    if (!ir->included_files) { for (int i = 0; i < count; ++i) free(names[i]); free(names); return; }
+    int kept = 0;
+    for (int i = 0; i < count; ++i) {
+        gm82_res_included_file *inc = &ir->included_files[kept];
+        memset(inc, 0, sizeof(*inc));
+        inc->name = strdup(names[i]);
+        char meta[1400], line[2048];
+        snprintf(meta, sizeof(meta), "%s/datafiles/%s.txt", root, names[i]);
+        FILE *f = fopen(meta, "r");
+        if (f) {
+            while (fgets(line, sizeof(line), f)) {
+                char *p = strchr(line, '=');
+                if (!p) continue;
+                *p++ = '\0';
+                char *key = trim_line(line), *value = trim_line(p);
+                if (!strcmp(key, "store")) inc->stored_in_gmk = parse_bool(value, 0);
+                else if (!strcmp(key, "free")) inc->free_memory = parse_bool(value, 0);
+                else if (!strcmp(key, "overwrite")) inc->overwrite_file = parse_bool(value, 0);
+                else if (!strcmp(key, "remove")) inc->remove_at_end = parse_bool(value, 0);
+                else if (!strcmp(key, "export")) inc->export_setting = parse_i32(value, 0);
+                else if (!strcmp(key, "export_folder")) inc->export_folder = strdup(value);
+            }
+            fclose(f);
+        }
+        snprintf(meta, sizeof(meta), "%s/datafiles/include/%s", root, names[i]);
+        struct stat st;
+        if (stat(meta, &st) == 0 && S_ISREG(st.st_mode)) {
+            inc->source_path = strdup(meta);
+            inc->source_length = (size_t)st.st_size;
+        }
+        ++kept;
+    }
+    ir->included_file_count = kept;
+    for (int i = 0; i < count; ++i) free(names[i]);
+    free(names);
+}
+
+static void load_triggers_dir(const char *root, gm82_project_ir *ir) {
+    char **names = NULL;
+    int count = read_index_names(root, "triggers", &names);
+    if (!count || !names) { if (names) free(names); return; }
+    ir->triggers = (gm82_res_trigger *)calloc((size_t)count, sizeof(*ir->triggers));
+    if (!ir->triggers) { for (int i = 0; i < count; ++i) free(names[i]); free(names); return; }
+    int kept = 0;
+    for (int i = 0; i < count; ++i) {
+        gm82_res_trigger *trig = &ir->triggers[kept];
+        memset(trig, 0, sizeof(*trig));
+        trig->name = strdup(names[i]);
+        char meta[1400], line[2048];
+        snprintf(meta, sizeof(meta), "%s/triggers/%s.txt", root, names[i]);
+        FILE *f = fopen(meta, "r");
+        if (f) {
+            while (fgets(line, sizeof(line), f)) {
+                char *p = strchr(line, '=');
+                if (!p) continue;
+                *p++ = '\0';
+                char *key = trim_line(line), *value = trim_line(p);
+                if (!strcmp(key, "constant")) trig->constant_name = strdup(value);
+                else if (!strcmp(key, "kind")) trig->kind = parse_i32(value, 0);
+            }
+            fclose(f);
+        }
+        snprintf(meta, sizeof(meta), "%s/triggers/%s.gml", root, names[i]);
+        trig->condition = read_code_file(meta);
+        ++kept;
+    }
+    ir->trigger_count = kept;
+    for (int i = 0; i < count; ++i) free(names[i]);
+    free(names);
+}
+
 static void load_scripts_from_dir(const char *root, gm82_script_list *list) {
     char subpath[512];
     snprintf(subpath, sizeof(subpath), "%s/scripts", root);
@@ -182,6 +349,94 @@ static void load_room_txt(const char *root, const char *name, gm82_res_room *roo
     fclose(f);
 }
 
+static void load_room_instances(const char *root, const char *room_name,
+                                gm82_res_room *room, char **object_names, int object_count) {
+    char path[1200], line[4096];
+    snprintf(path, sizeof(path), "%s/rooms/%s/instances.txt", root, room_name);
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    int cap = 0;
+    while (fgets(line, sizeof(line), f)) {
+        char *p = trim_line(line);
+        if (!*p) continue;
+        if (room->instance_count == cap) {
+            int next = cap ? cap * 2 : 16;
+            gm82_room_instance *grown = (gm82_room_instance *)realloc(room->instances, (size_t)next * sizeof(*grown));
+            if (!grown) break;
+            room->instances = grown; cap = next;
+        }
+        gm82_room_instance *inst = &room->instances[room->instance_count];
+        memset(inst, 0, sizeof(*inst));
+        inst->id = room->instance_count;
+        inst->xscale = 1.0; inst->yscale = 1.0;
+        char *fields[12] = {0};
+        int nf = 0;
+        for (char *tok = strtok(p, ","); tok && nf < 12; tok = strtok(NULL, ",")) fields[nf++] = tok;
+        if (nf < 4) continue;
+        inst->object_id = find_name_id(object_names, object_count, fields[0]);
+        inst->x = strtod(fields[1], NULL);
+        inst->y = strtod(fields[2], NULL);
+        inst->locked = nf > 4 ? parse_bool(fields[4], 0) : 0;
+        if (nf > 5) inst->xscale = strtod(fields[5], NULL);
+        if (nf > 6) inst->yscale = strtod(fields[6], NULL);
+        if (nf > 7) inst->blend = parse_i32(fields[7], 0);
+        if (nf > 8) inst->angle = strtod(fields[8], NULL);
+        if (nf > 9 && parse_bool(fields[9], 0) && fields[3][0]) {
+            char code_path[1400];
+            snprintf(code_path, sizeof(code_path), "%s/rooms/%s/%s.gml", root, room_name, fields[3]);
+            inst->creation_code = read_code_file(code_path);
+        }
+        ++room->instance_count;
+    }
+    fclose(f);
+}
+
+static void load_room_tiles(const char *root, const char *room_name,
+                            gm82_res_room *room, char **background_names, int background_count) {
+    char layers_path[1200], line[4096];
+    snprintf(layers_path, sizeof(layers_path), "%s/rooms/%s/layers.txt", root, room_name);
+    FILE *layers = fopen(layers_path, "r");
+    if (!layers) return;
+    int cap = 0;
+    while (fgets(line, sizeof(line), layers)) {
+        char *depth_name = trim_line(line);
+        if (!*depth_name) continue;
+        char tile_path[1400];
+        snprintf(tile_path, sizeof(tile_path), "%s/rooms/%s/%s.txt", root, room_name, depth_name);
+        FILE *tf = fopen(tile_path, "r");
+        if (!tf) continue;
+        char tile_line[4096];
+        while (fgets(tile_line, sizeof(tile_line), tf)) {
+            char *p = trim_line(tile_line);
+            if (!*p) continue;
+            if (room->tile_count == cap) {
+                int next = cap ? cap * 2 : 32;
+                gm82_room_tile *grown = (gm82_room_tile *)realloc(room->tiles, (size_t)next * sizeof(*grown));
+                if (!grown) break;
+                room->tiles = grown; cap = next;
+            }
+            gm82_room_tile *tile = &room->tiles[room->tile_count];
+            memset(tile, 0, sizeof(*tile));
+            tile->id = room->tile_count;
+            tile->depth = parse_i32(depth_name, 0);
+            char *fields[12] = {0}; int nf = 0;
+            for (char *tok = strtok(p, ","); tok && nf < 12; tok = strtok(NULL, ",")) fields[nf++] = tok;
+            if (nf < 8) continue;
+            tile->background_id = find_name_id(background_names, background_count, fields[0]);
+            tile->x = parse_i32(fields[1], 0); tile->y = parse_i32(fields[2], 0);
+            tile->src_x = parse_i32(fields[3], 0); tile->src_y = parse_i32(fields[4], 0);
+            tile->width = parse_i32(fields[5], 0); tile->height = parse_i32(fields[6], 0);
+            tile->locked = parse_bool(fields[7], 0);
+            tile->xscale = nf > 8 ? strtod(fields[8], NULL) : 1.0;
+            tile->yscale = nf > 9 ? strtod(fields[9], NULL) : 1.0;
+            tile->blend = nf > 10 ? parse_i32(fields[10], 0) : 0;
+            ++room->tile_count;
+        }
+        fclose(tf);
+    }
+    fclose(layers);
+}
+
 gm82_text_load_result gm82_text_load_project(const char *path) {
     gm82_text_load_result r;
     memset(&r, 0, sizeof(r));
@@ -198,6 +453,9 @@ gm82_text_load_result gm82_text_load_project(const char *path) {
         ir->background_count = count_assets(path, "backgrounds");
         ir->sprite_count = count_assets(path, "sprites");
         ir->sound_count = count_assets(path, "sounds");
+        char **object_names = NULL, **background_names = NULL;
+        int object_name_count = read_index_names(path, "objects", &object_names);
+        int background_name_count = read_index_names(path, "backgrounds", &background_names);
         char **room_names = NULL;
         int room_cnt = read_index_names(path, "rooms", &room_names);
         if (!room_cnt) room_cnt = count_asset_dirs(path, "rooms");
@@ -211,9 +469,17 @@ gm82_text_load_result gm82_text_load_project(const char *path) {
                 const char *name = room_names && i < room_cnt ? room_names[i] : fallback;
                 init_room_defaults(&ir->rooms[i], i, name);
                 load_room_txt(path, name, &ir->rooms[i]);
+                load_room_instances(path, name, &ir->rooms[i], object_names, object_name_count);
+                load_room_tiles(path, name, &ir->rooms[i], background_names, background_name_count);
             }
         }
         if (room_names) { for (int i = 0; i < room_cnt; ++i) free(room_names[i]); free(room_names); }
+        if (object_names) { for (int i = 0; i < object_name_count; ++i) free(object_names[i]); free(object_names); }
+        if (background_names) { for (int i = 0; i < background_name_count; ++i) free(background_names[i]); free(background_names); }
+        load_settings_txt(path, &ir->settings);
+        load_constants_txt(path, ir);
+        load_datafiles(path, ir);
+        load_triggers_dir(path, ir);
         gm82_script_list scripts;
         gm82_script_list_init(&scripts);
         load_scripts_from_dir(path, &scripts);

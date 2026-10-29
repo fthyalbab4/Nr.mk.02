@@ -47,12 +47,29 @@ static void free_room(gm82_res_room *r) {
 
 void gm82_project_ir_free(gm82_project_ir *ir) {
     if (!ir) return;
-    for (int32_t i = 0; i < ir->sprite_count; i++) free_sprite(&ir->sprites[i]);
+    for (int32_t i = 0; ir->sprites && i < ir->sprite_count; i++) free_sprite(&ir->sprites[i]);
     free(ir->sprites);
-    for (int32_t i = 0; i < ir->background_count; i++) free_background(&ir->backgrounds[i]);
+    for (int32_t i = 0; ir->backgrounds && i < ir->background_count; i++) free_background(&ir->backgrounds[i]);
     free(ir->backgrounds);
-    for (int32_t i = 0; i < ir->room_count; i++) free_room(&ir->rooms[i]);
+    for (int32_t i = 0; ir->rooms && i < ir->room_count; i++) free_room(&ir->rooms[i]);
     free(ir->rooms);
+    for (int32_t i = 0; ir->constants && i < ir->constant_count; i++) {
+        free(ir->constants[i].name);
+        free(ir->constants[i].value);
+    }
+    free(ir->constants);
+    for (int32_t i = 0; ir->included_files && i < ir->included_file_count; i++) {
+        free(ir->included_files[i].name);
+        free(ir->included_files[i].export_folder);
+        free(ir->included_files[i].source_path);
+    }
+    free(ir->included_files);
+    for (int32_t i = 0; ir->triggers && i < ir->trigger_count; i++) {
+        free(ir->triggers[i].name);
+        free(ir->triggers[i].constant_name);
+        free(ir->triggers[i].condition);
+    }
+    free(ir->triggers);
     free(ir->source_path);
     free(ir->source_data);
     free(ir->error_message);
@@ -62,17 +79,19 @@ void gm82_project_ir_free(gm82_project_ir *ir) {
 void gm82_project_ir_recompute_complete(gm82_project_ir *ir) {
     if (!ir) return;
     int32_t partial = 0;
-    for (int32_t i = 0; i < ir->sprite_count; i++)
+    /* Text-format projects may declare counts without allocating resource
+     * arrays (nothing is decoded yet), so every loop must tolerate NULL. */
+    for (int32_t i = 0; ir->sprites && i < ir->sprite_count; i++)
         if (ir->sprites[i].status != GM82_RES_DECODED) partial++;
-    for (int32_t i = 0; i < ir->background_count; i++)
+    for (int32_t i = 0; ir->backgrounds && i < ir->background_count; i++)
         if (ir->backgrounds[i].status != GM82_RES_DECODED) partial++;
-    for (int32_t i = 0; i < ir->room_count; i++)
+    for (int32_t i = 0; ir->rooms && i < ir->room_count; i++)
         if (ir->rooms[i].status != GM82_RES_DECODED) partial++;
     ir->partial_count = partial;
     bool has_pixels = false;
-    for (int32_t i = 0; i < ir->sprite_count; i++)
+    for (int32_t i = 0; ir->sprites && i < ir->sprite_count; i++)
         if (ir->sprites[i].status == GM82_RES_DECODED && ir->sprites[i].rgba) has_pixels = true;
-    for (int32_t i = 0; i < ir->background_count; i++)
+    for (int32_t i = 0; ir->backgrounds && i < ir->background_count; i++)
         if (ir->backgrounds[i].status == GM82_RES_DECODED && ir->backgrounds[i].rgba) has_pixels = true;
     /* complete when no partial resources, has a room, and at least one pixel resource */
     ir->complete = (partial == 0) && (ir->room_count > 0) && has_pixels;
