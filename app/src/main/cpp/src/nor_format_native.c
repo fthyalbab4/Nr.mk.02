@@ -238,7 +238,7 @@ static const char *gmx_resource_type_native(const char *name) {
     return "file";
 }
 
-static int gmx_manifest_walk_native(FILE *f, const char *root, const char *path, int *count) {
+static int __attribute__((unused)) gmx_manifest_walk_native(FILE *f, const char *root, const char *path, int *count) {
     DIR *d;
     struct dirent *ent;
     struct stat st;

@@ -4,7 +4,11 @@
 #include <stdint.h>
 #include <limits.h>
 #include <dirent.h>
+#ifndef _WIN32
 #include <fnmatch.h>
+#else
+#include <direct.h>
+#endif
 #include <sys/stat.h>
 #include "gm82_gml_builtins.h"
 #include "gm82_audio_mixer.h"
@@ -35,6 +39,36 @@ static int g_draw_blend_mode = 0;
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifdef _WIN32
+/* Minimal case-insensitive filename glob for Windows builds; POSIX keeps fnmatch. */
+static int gm82_win_fnmatch(const char *pattern, const char *text, int flags) {
+    (void)flags;
+    const char *star = NULL;
+    const char *retry = NULL;
+    while (*text) {
+        if (*pattern == '?') {
+            pattern++;
+            text++;
+        } else if (*pattern == '*' ) {
+            star = pattern++;
+            retry = text;
+        } else if (*pattern && tolower((unsigned char)*pattern) ==
+                             tolower((unsigned char)*text)) {
+            pattern++;
+            text++;
+        } else if (star) {
+            pattern = star + 1;
+            text = ++retry;
+        } else {
+            return 1;
+        }
+    }
+    while (*pattern == '*') pattern++;
+    return *pattern == '\0' ? 0 : 1;
+}
+#define fnmatch gm82_win_fnmatch
+#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -3014,7 +3048,11 @@ static void ensure_parent_dir(const char *path) {
     if (!p) p = strrchr(tmp, '\\');
     if (p) {
         *p = '\0';
+#ifdef _WIN32
+        _mkdir(tmp);
+#else
         mkdir(tmp, 0755);
+#endif
     }
 }
 
@@ -4328,7 +4366,7 @@ static void ensure_mixer(void) {
 }
 
 #ifndef GM82_WEAK
-#if defined(__GNUC__) || defined(__clang__)
+#if !defined(_WIN32) && (defined(__GNUC__) || defined(__clang__))
 #define GM82_WEAK __attribute__((weak))
 #else
 #define GM82_WEAK
