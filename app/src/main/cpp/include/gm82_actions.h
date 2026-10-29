@@ -56,6 +56,8 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
 bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action_ref *ar);
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table);
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table);
+void gm82_actions_fire_alarm(gm82_runtime *rt, gm82_instance *self,
+                             const gm82_action_table *table, int alarm_index);
 void gm82_actions_fire_draw(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table);
 
 #ifdef __cplusplus

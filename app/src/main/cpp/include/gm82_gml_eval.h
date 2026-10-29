@@ -29,6 +29,8 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
 /* Set/get script arguments (argument0, argument1, ...) */
 void gm82_gml_set_script_args(const double *args, int count);
 double gm82_gml_get_script_arg(int index);
+/* Reset project-wide global variables when a new runtime starts. */
+void gm82_gml_reset_globals(gm82_runtime *rt);
 
 /* ---- String-returning VM support ---- */
 /* Last string produced by a string_* builtin or string literal in eval. */

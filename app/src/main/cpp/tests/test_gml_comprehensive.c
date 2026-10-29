@@ -21,6 +21,16 @@ int main(void) {
     gm82_gml_eval_stmt(&rt, inst, "while (x < 5) x += 1;");
     assert(inst->x == 5.0);
 
+    /* GM8 accepts '=' as equality in conditions; global.* is project-wide. */
+    gm82_gml_eval_stmt(&rt, inst, "global.win=0;");
+    gm82_gml_eval_block(&rt, inst, "if global.win=0 { global.win=1; alarm[0]=49; }");
+    assert(inst->alarms[0] == 49);
+    gm82_instance *other_inst = gm82_runtime_instance_create(&rt, 1, 0, 0);
+    assert(other_inst != NULL);
+    double global_win = 0;
+    assert(gm82_gml_eval_expr(&rt, other_inst, "global.win", &global_win));
+    assert(global_win == 1.0);
+
     /* Test do ... until loop */
     inst->y = 0;
     gm82_gml_eval_stmt(&rt, inst, "do { y += 2; } until (y >= 10);");

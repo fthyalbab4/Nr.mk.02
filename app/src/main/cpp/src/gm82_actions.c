@@ -715,7 +715,8 @@ void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_
 
 /* Phase 4: nested if/else/block runner for event_type filter */
 static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
-                                    const gm82_action_table *table, int event_type) {
+                                    const gm82_action_table *table, int event_type,
+                                    int event_numb) {
     if (!rt || !self || !self->alive || !table || !rt->objects) return;
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
@@ -732,6 +733,8 @@ static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
             if (event_type >= 0) {
                 if (!(ar->event_type == event_type || ar->event_type == -1)) continue;
             }
+            if (event_numb >= 0 && ar->event_type == event_type &&
+                ar->event_numb != event_numb) continue;
             const char *nm = ar->name;
             int is_if = (strncmp(nm, "action_if", 9) == 0);
             int is_else = (strcmp(nm, "action_else") == 0);
@@ -776,7 +779,11 @@ static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
 }
 
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    gm82_actions_fire_event(rt, self, table, 3);
+    gm82_actions_fire_event(rt, self, table, 3, -1);
+}
+void gm82_actions_fire_alarm(gm82_runtime *rt, gm82_instance *self,
+                             const gm82_action_table *table, int alarm_index) {
+    gm82_actions_fire_event(rt, self, table, 2, alarm_index);
 }
 /* Collision events are per object pair: the event number is the index of the
    other object, so only matching entries may run. */
@@ -799,5 +806,5 @@ void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
 }
 
 void gm82_actions_fire_draw(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    gm82_actions_fire_event(rt, self, table, 8);
+    gm82_actions_fire_event(rt, self, table, 8, -1);
 }
