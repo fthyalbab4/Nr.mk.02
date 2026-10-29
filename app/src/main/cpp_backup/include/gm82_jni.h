@@ -26,6 +26,8 @@ bool gm82_native_load_game(const char *path, char *err, int err_len);
 void gm82_native_resize(int w, int h);
 void gm82_native_step(void);          /* one game frame */
 void gm82_native_draw(void);          /* render to current GL context – STUB until GL wired */
+/* Software frame as tightly packed RGBA8888; valid until the next frame call or shutdown. */
+const uint8_t *gm82_native_frame_rgba(int *w, int *h);
 
 /* Input from Java */
 void gm82_native_key_down(int vk);
@@ -36,6 +38,29 @@ void gm82_native_touch(int x, int y, int action); /* 0=down 1=up 2=move */
 int  gm82_native_is_running(void);
 int  gm82_native_room_width(void);
 int  gm82_native_room_height(void);
+int  gm82_native_room_speed(void);
+
+/* Diagnostics: copy up to max_count live instances so hosts (the PC shell, the
+ * editor preview and the test harness) can report real gameplay state such as
+ * player/enemy positions instead of only a rendered frame. Returns the count
+ * copied, or -1 when the engine is not initialised. */
+#include "gm82_runtime.h"
+int  gm82_native_instance_snapshot(gm82_instance *out, int max_count);
+int  gm82_native_frame_count(void);
+
+typedef struct {
+    int frame;
+    int current_room;
+    int room_count;
+    int instance_count;
+    int room_width;
+    int room_height;
+    int room_speed;
+    int running;
+} gm82_native_runtime_info_t;
+
+/* Snapshot of the runtime bookkeeping (current room, frame, live instance count). */
+int  gm82_native_runtime_info(gm82_native_runtime_info_t *out);
 
 #ifdef __cplusplus
 }

@@ -456,8 +456,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         int op = (argc >= 3) ? args[2] : 2;
         int cnt = 0;
         for (int i = 0; i < rt->instance_count; i++) {
-            if (!rt->instances[i].alive) continue;
-            if (obj < 0 || rt->instances[i].object_index == obj) cnt++;
+            if (gm82_instance_matches_object(rt, &rt->instances[i], obj)) cnt++;
         }
         switch (op) {
             case 1: return cnt < thr;
@@ -476,7 +475,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         for (int i = 0; i < rt->instance_count; i++) {
             gm82_instance *o = &rt->instances[i];
             if (!o->alive || o == self) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
+            if (!gm82_instance_matches_object(rt, o, obj)) continue;
             double dx = o->x - x, dy = o->y - y;
             if (dx*dx + dy*dy < 16.0) return false; /* not empty */
         }
@@ -489,7 +488,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         for (int i = 0; i < rt->instance_count; i++) {
             gm82_instance *o = &rt->instances[i];
             if (!o->alive || o == self) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
+            if (!gm82_instance_matches_object(rt, o, obj)) continue;
             double dx = o->x - x, dy = o->y - y;
             if (dx*dx + dy*dy < 256.0) return true;
         }
@@ -502,7 +501,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         for (int i = 0; i < rt->instance_count; i++) {
             gm82_instance *o = &rt->instances[i];
             if (!o->alive) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
+            if (!gm82_instance_matches_object(rt, o, obj)) continue;
             double dx = o->x - x, dy = o->y - y;
             if (dx*dx + dy*dy < 256.0) return true;
         }
@@ -798,7 +797,7 @@ void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self,
             if (!self->alive) return;
             gm82_action_ref *ar = &table->objects[i].items[a];
             if (ar->event_type != 4) continue;
-            if (other && ar->event_numb >= 0 && ar->event_numb != other->object_index) continue;
+            if (other && ar->event_numb >= 0 && !gm82_instance_matches_object(rt, other, ar->event_numb)) continue;
             gm82_action_execute_ref(rt, self, ar);
         }
         return;

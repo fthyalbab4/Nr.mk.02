@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include "gm82_int_read.h"
 #include "gm82_background_decode.h"
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +19,7 @@ void gm82_decoded_background_list_free(gm82_decoded_background_list *L) {
 }
 
 static int32_t rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0] | (p[1]<<8) | (p[2]<<16) | (p[3]<<24));
+    return gm82_read_i32le(p);
 }
 
 static uint8_t *inflate_at(const uint8_t *src, size_t src_len, size_t *out_len) {
@@ -127,8 +128,8 @@ int gm82_decode_backgrounds_from_gmk(const uint8_t *data, size_t size,
                                 data[i+1] == 0x01 || data[i+1] == 0x5e)) {
             size_t ol = 0;
             uint8_t *inf = inflate_at(data + i, size - i, &ol);
-            if (inf && ol > 40) {
-                scan_bg_blob(out, inf, ol);
+            if (inf) {
+                if (ol > 40) scan_bg_blob(out, inf, ol);
                 free(inf);
             }
             i += 16;
