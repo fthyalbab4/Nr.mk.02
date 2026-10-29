@@ -21,7 +21,7 @@ typedef struct {
 } gm82_decoded_event;
 
 typedef struct {
-    char    name[64];
+    char    name[128];
     int32_t sprite_index;   /* -1 if none */
     int32_t solid;
     int32_t visible;
@@ -53,7 +53,7 @@ typedef struct {
 } gm82_decoded_tile;
 
 typedef struct {
-    char    name[64];
+    char    name[128];
     int32_t width, height;
     int32_t speed;
     gm82_decoded_instance *instances;

@@ -54,7 +54,7 @@ void gm82_action_table_free(gm82_action_table *t) {
 
 static void add_action(gm82_object_actions *oa, int etype, int enumb, const char *name,
                        int aid, int kind, const int32_t *args, int argc,
-                       const char str_args[][64], int str_argc) {
+                       const char str_args[][128], int str_argc) {
     if (oa->count >= oa->capacity) {
         int nc = oa->capacity ? oa->capacity * 2 : 8;
         gm82_action_ref *n = (gm82_action_ref *)realloc(oa->items, (size_t)nc * sizeof(*n));
@@ -79,13 +79,13 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
     if (str_args && str_argc > 0) {
         int n = str_argc > 4 ? 4 : str_argc;
         for (int i = 0; i < n; i++) {
-            memcpy(a->str_args[i], str_args[i], 63);
-            a->str_args[i][63] = '\0';
+            memcpy(a->str_args[i], str_args[i], 127);
+            a->str_args[i][127] = '\0';
         }
         a->str_argc = n;
     }
     if (name) {
-        snprintf(a->name, sizeof(a->name), "%.63s", name);
+        snprintf(a->name, sizeof(a->name), "%s", name);
     }
 }
 
@@ -124,7 +124,7 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
             if (dup) { o += 4 + (size_t)n; continue; }
             int32_t args[GM82_ACTION_MAX_ARGS];
             int argc = 0;
-            char str_args[4][64];
+            char str_args[4][128];
             int str_argc = 0;
             memset(str_args, 0, sizeof(str_args));
             size_t ao = o + 4 + (size_t)n;
@@ -174,7 +174,7 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
 
 static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char *name,
                                const int32_t *args, int argc,
-                               const char str_args[][64], int str_argc) {
+                               const char str_args[][128], int str_argc) {
     if (!rt || !self || !name) return false;
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
@@ -644,7 +644,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
 }
 
 bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char *name) {
-    static const char empty_str[4][64] = {{0}};
+    static const char empty_str[4][128] = {{0}};
     return execute_named_args(rt, self, name, NULL, 0, empty_str, 0);
 }
 
