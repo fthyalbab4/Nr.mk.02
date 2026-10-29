@@ -2,46 +2,40 @@
 
 > **اقرأ أولًا:** `FULL_GM_PARITY_PLAN.md` ثم `EVENT_SYSTEM_PLAN.md`
 
-## تم (مُقاس)
+## تم (مُقاس بالكود)
 
 - [x] Sprite decoder + multi-frame storage
 - [x] Room/object decode + أسماء `r001`
 - [x] Host pipeline 4/4
-- [x] Host SO symbols + smoke mario/zelda
 - [x] Behaviors Create/Step scaffolding + fire_create_one
 - [x] إزالة ادعاءات 100% من التقارير الأساسية
-- [x] إنشاء `EVENT_SYSTEM_PLAN.md`
-- [x] إنشاء `FULL_GM_PARITY_PLAN.md` (خطة تسليم بين الوكلاء)
+- [x] إنشاء `EVENT_SYSTEM_PLAN.md` + `FULL_GM_PARITY_PLAN.md`
+- [x] استعادة `gm82_events.c` + collision `other`
+- [x] توحيد Alarm path
+- [x] Key Press / Key Release events
+- [x] Outside / Boundary / Animation End (Other)
+- [x] User event helper
+- [x] تحديث ترتيب runtime_step ليقارب GM 8.x
 
 ## التالي (مرتّب بالأولوية)
 
-### P0 — Event System + GML (من FULL_GM_PARITY_PLAN)
-- [ ] قراءة وتوثيق الترتيب الفعلي داخل `gm82_runtime_step` / `gm82_runtime_step_dt`
-- [ ] توحيد ترتيب الأحداث ليطابق جدول GM 8.x في `EVENT_SYSTEM_PLAN.md`
-- [ ] Alarms → event حقيقي مرتبط بـ `GM82_EV_ALARM`
-- [ ] إكمال `with` / `other` / scopes في الـ evaluator
-- [ ] Instance Creation Code من الـ Room
-- [ ] توقيت Destroy queue مقابل Destroy event
+### P0 المتبقي
+- [ ] Instance Creation Code من الـ Room (تنفيذ + اختبار)
+- [ ] تأكيد توقيت Destroy queue مقابل Destroy event باختبارات
+- [ ] توسيع تغطية `with` في evaluator للحالات الحدية
 
-### P1 — توسيع
-- [ ] User Events (`event_user`)
-- [ ] Outside Room / Boundary / Animation End
-- [ ] Action lists من GMK أوسع من الـ subset الحالي
-- [ ] Pre-Draw / Post-Draw تُستدعى فعليًا
+### P1
+- [ ] Pre-Draw / Post-Draw تُستدعى من مسار الرسم فعليًا
+- [ ] Action lists من GMK أوسع
+- [ ] Precise collision mask path مفعّل دائمًا عند توفر mask
 
 ### Android حقيقي
-- [ ] NDK build `libgm82_android.so` (arm64)
-- [ ] دمج SO في APK + `addJavascriptInterface(..., "NorNative")`
-- [ ] حقن `assets/www` scripts في `index.html`
-- [ ] تشغيل mario على جهاز وتسجيل لوج/فيديو
+- [ ] NDK build + APK + اختبار جهاز (mario) + لوج
 
 ### جودة
-- [ ] Precise collision
 - [ ] Audio playback على الجهاز
-- [ ] Corpus مقارنة مع ويندوز / Portable (باستخدام `source/reverse-engineering/`)
+- [ ] Corpus مقارنة مع Portable باستخدام RE maps
 
 ---
 
 لا تُعلَّم أي خانة [x] من غير أمر اختبار أو لوج جهاز.
-
-أي وكيل يكمل العمل: حدّث هذا الملف + `STATUS.md` + `FULL_GM_PARITY_PLAN.md` بعد كل تقدم مقاس.
