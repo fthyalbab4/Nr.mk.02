@@ -1,3 +1,4 @@
+#include "gm82_int_read.h"
 #include "gm82_gmk_format.h"
 #include <string.h>
 
@@ -9,9 +10,9 @@ gm82_gmk_probe_result gm82_gmk_probe(const uint8_t *data, size_t size) {
 
     if (!data || size < 12) return r;
 
-    int32_t magic = (int32_t)(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
-    int32_t version = (int32_t)(data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24));
-    int32_t app_id = (int32_t)(data[8] | (data[9] << 8) | (data[10] << 16) | (data[11] << 24));
+    int32_t magic = gm82_read_i32le(data);
+    int32_t version = gm82_read_i32le(data + 4);
+    int32_t app_id = gm82_read_i32le(data + 8);
 
     r.magic = magic;
     r.version = version;
