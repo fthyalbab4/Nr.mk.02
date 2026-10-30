@@ -81,39 +81,6 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         }
         return 1;
     }
-    if (strcmp(name, "action_if_dice") == 0) {
-        int sides = (argc >= 1 && args[0] > 0) ? args[0] : 6;
-        int not_flag = (argc >= 2) ? args[1] : 0;
-        int roll = (rand() % sides) == 0;
-        return not_flag ? !roll : roll;
-    }
-    if (strcmp(name, "action_if_empty") == 0) {
-        double x = (argc >= 1) ? (double)args[0] : self->x;
-        double y = (argc >= 2) ? (double)args[1] : self->y;
-        int flag = (argc >= 3) ? args[2] : 0;
-        int not_flag = (argc >= 4) ? args[3] : 0;
-        (void)flag;
-        int empty = (gml_place_empty(x, y) != 0.0);
-        return not_flag ? !empty : empty;
-    }
-    if (strcmp(name, "action_if_collision") == 0) {
-        double x = (argc >= 1) ? (double)args[0] : self->x;
-        double y = (argc >= 2) ? (double)args[1] : self->y;
-        int obj = (argc >= 3) ? args[2] : -1;
-        int not_flag = (argc >= 4) ? args[3] : 0;
-        int coll = (gml_place_meeting(x, y, (double)obj) != 0.0);
-        return not_flag ? !coll : coll;
-    }
-    if (strcmp(name, "action_if_variable") == 0) {
-        double val1 = (argc >= 1) ? (double)args[0] : 0.0;
-        int op = (argc >= 2) ? args[1] : 0;
-        double val2 = (argc >= 3) ? (double)args[2] : 0.0;
-        int res = 0;
-        if (op == 0) res = (val1 == val2);
-        else if (op == 1) res = (val1 < val2);
-        else if (op == 2) res = (val1 > val2);
-        return res;
-    }
     if (strcmp(name, "action_comment") == 0 || strcmp(name, "action_exit") == 0 ||
         strcmp(name, "action_set_caption") == 0 || strcmp(name, "action_set_background") == 0)
         return 1;
@@ -181,6 +148,71 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         if (self->alarms[idx] < 0) self->alarms[idx] = 0;
         self->alarms[idx] += val;
         return 1;
+    }
+
+    /* DnD Conditional Actions */
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        double empty = gml_place_empty(x, y);
+        return (empty != 0.0) ? 1 : 0;
+    }
+    if (strcmp(name, "action_if_dice") == 0) {
+        int sides = (argc >= 1 && args[0] > 0) ? args[0] : 6;
+        return (rand() % sides) == 0;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        double obj = (argc >= 3) ? (double)args[2] : -1.0;
+        double hit = gml_place_meeting(x, y, obj);
+        return (hit != 0.0) ? 1 : 0;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        double var_val = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double target_val = (argc >= 3) ? (double)args[2] : 0.0;
+        if (op == 0) return var_val == target_val;
+        if (op == 1) return var_val < target_val;
+        if (op == 2) return var_val > target_val;
+        return var_val == target_val;
+    }
+    if (strcmp(name, "action_if_number") == 0) {
+        int obj = (argc >= 1) ? args[0] : -1;
+        int op = (argc >= 2) ? args[1] : 0;
+        double val = (argc >= 3) ? (double)args[2] : 0.0;
+        double cnt = gml_instance_number((double)obj);
+        if (op == 0) return cnt == val;
+        if (op == 1) return cnt < val;
+        if (op == 2) return cnt > val;
+        return cnt == val;
+    }
+    if (strcmp(name, "action_if_score") == 0) {
+        double val = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double sc = gml_get_score();
+        if (op == 0) return sc == val;
+        if (op == 1) return sc < val;
+        if (op == 2) return sc > val;
+        return sc == val;
+    }
+    if (strcmp(name, "action_if_life") == 0 || strcmp(name, "action_if_lives") == 0) {
+        double val = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double lv = gml_get_lives();
+        if (op == 0) return lv == val;
+        if (op == 1) return lv < val;
+        if (op == 2) return lv > val;
+        return lv == val;
+    }
+    if (strcmp(name, "action_if_health") == 0) {
+        double val = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double hp = gml_get_health();
+        if (op == 0) return hp == val;
+        if (op == 1) return hp < val;
+        if (op == 2) return hp > val;
+        return hp == val;
     }
     return 0;
 }
