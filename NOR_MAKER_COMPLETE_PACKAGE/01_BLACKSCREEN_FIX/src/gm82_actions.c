@@ -93,8 +93,8 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_reverse_x") == 0) { self->hspeed = -self->hspeed; return true; }
     if (strcmp(name, "action_reverse_y") == 0) { self->vspeed = -self->vspeed; return true; }
     if (strcmp(name, "action_bounce") == 0) {
-        if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640)) self->hspeed = -self->hspeed;
-        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480)) self->vspeed = -self->vspeed;
+        self->hspeed = -self->hspeed;
+        self->vspeed = -self->vspeed;
         return true;
     }
     if (strcmp(name, "action_next_room") == 0) {
