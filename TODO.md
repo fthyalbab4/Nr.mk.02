@@ -16,6 +16,8 @@
 - [x] Outside / Boundary / Animation End (Other)
 - [x] User event helper
 - [x] تحديث ترتيب runtime_step ليقارب GM 8.x
+- [x] إصلاح أخطاء التجميع والنوع في gm82_events.c و gm82_runtime.c
+- [x] اجتياز جميع اختبارات run_full_verification.py و run_engine_suite.py بنسبة نجاح كاملة
 
 ## التالي (مرتّب بالأولوية)
 
