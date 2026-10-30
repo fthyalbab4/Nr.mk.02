@@ -1,15 +1,25 @@
-# STATUS — GM82 / NOR Maker Android Core Sync (2026-10-30)
+# STATUS — Noor Maker / GM82 parity (2026-10-30)
 
 ## Done
-- [x] C engine core source & header synchronization across `app/src/main/cpp`, `app/src/main/cpp_backup`, and `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`.
-- [x] DnD conditional actions (`action_if_dice`, `action_if_empty`, `action_if_collision`, `action_if_variable`) integrated into C core with boolean return handling.
-- [x] Host test suites (`make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX clean && make test`) 100% passing (18 binaries).
-- [x] Full verification script (`python3 run_full_verification.py`) 100% passing (17 test suites).
-- [x] Android NDK multi-ABI CMake build (`./gradlew assembleDebug`) 100% successful for `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`.
+- [x] Event system order (BeginStep → Alarm → Key → Step → Collision → EndStep → Other → Destroy)
+- [x] Collision sets GML `other`
+- [x] Instance Creation Code (struct + runtime + decoder)
+- [x] runtime_draw Pre → Draw → Post
+- [x] Actions core + `gm82_actions_extra.c` (set_variable, if_key*, healthbar, path/timeline, create_object_motion, conditionals, ...)
+- [x] Bitmask API present
+- [x] Host tests / multi-ABI build reported passing on main
 
-## Still Open
-- Physical Android hardware touch playtesting
-- 100% claim — **not claimed** until physical device testing is completed.
+## Open
+- [ ] Wire bitmask into every collision when masks exist
+- [ ] Physical Android playtest
+- [ ] 100% — **not claimed**
+
+## Repo → Private (owner only)
+Connected tools **cannot** change visibility. Do this yourself:
+
+1. افتح: https://github.com/fthyalbab4/Nr.mk.02/settings
+2. General → Danger Zone
+3. **Change repository visibility** → **Make private**
 
 ## Honesty
-Truthful tracking strictly enforced: host C/JS core parity is ~90-95%, while physical Android device testing requires real device playtesting before claiming 100% complete capability.
+Event/GML improved. Actions = core + extra (subset of full GM8 DnD). No 100% claim.
