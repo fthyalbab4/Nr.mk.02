@@ -691,3 +691,92 @@ int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
     }
     return bound;
 }
+
+/* Compatibility entry points retained for gm82_runtime.c.  The parity
+ * dispatcher above owns the event traversal; these wrappers only select the
+ * relevant transition or synthetic event. */
+static void fire_key_transition_all(gm82_runtime *rt, int main_type, int transition) {
+    if (!rt || !rt->objects) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    gm82_gml_set_runtime(rt);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        int32_t oi = inst->object_index;
+        int depth = 0;
+        while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
+            const gm82_decoded_object *obj = &rt->objects->items[oi];
+            bool fired = false;
+            for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+                const gm82_decoded_event *ev = &obj->events[e];
+                if (ev->main_type != main_type || ev->event_numb < 0) continue;
+                bool hit = transition > 0
+                    ? gml_keyboard_check_pressed((double)ev->event_numb)
+                    : gml_keyboard_check_released((double)ev->event_numb);
+                if (!hit) continue;
+                fired = true;
+                if (ev->action_name0[0]) gm82_action_execute_named(rt, inst, ev->action_name0);
+                if (ev->code_snippet && ev->code_snippet[0]) {
+                    gm82_gml_set_self(inst);
+                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                }
+            }
+            if (fired) break;
+            int parent_i = obj->parent_index;
+            if (parent_i < 0 || parent_i == oi) break;
+            oi = parent_i;
+        }
+    }
+}
+
+void gm82_events_fire_keypress_all(gm82_runtime *rt) {
+    fire_key_transition_all(rt, GM82_EV_KEYPRESS, 1);
+}
+
+void gm82_events_fire_keyrelease_all(gm82_runtime *rt) {
+    fire_key_transition_all(rt, GM82_EV_KEYRELEASE, 0);
+}
+
+void gm82_events_fire_user(gm82_runtime *rt, gm82_instance *inst, int user_index) {
+    if (user_index < 0 || user_index > 15) return;
+    gm82_events_fire_other(rt, inst, GM82_OTHER_USER0 + user_index);
+}
+
+void gm82_events_fire_outside_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        if (inst->x < 0 || inst->y < 0 || inst->x > rt->room_width || inst->y > rt->room_height)
+            gm82_events_fire_other(rt, inst, GM82_OTHER_OUTSIDE);
+    }
+}
+
+void gm82_events_fire_boundary_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive) continue;
+        if (inst->x < 0 || inst->y < 0 || inst->x > rt->room_width || inst->y > rt->room_height)
+            gm82_events_fire_other(rt, inst, GM82_OTHER_BOUNDARY);
+    }
+}
+
+void gm82_events_fire_animation_end_all(gm82_runtime *rt) {
+    if (!rt) return;
+    gm82_instance *snapshot[GM82_MAX_INSTANCES];
+    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
+    for (int i = 0; i < count; i++) {
+        gm82_instance *inst = snapshot[i];
+        if (!inst || !inst->alive || inst->image_speed == 0.0) continue;
+        double prev = inst->image_index;
+        double next = prev + inst->image_speed;
+        if ((int)next != (int)prev && (int)next < (int)prev)
+            gm82_events_fire_other(rt, inst, GM82_OTHER_ANIMATION_END);
+    }
+}
