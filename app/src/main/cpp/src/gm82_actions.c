@@ -136,12 +136,6 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
 int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *out) {
     (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
 }
-int gm82_actions_parse_gmk8(const uint8_t *data, size_t size, gm82_action_table *out) {
-    (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
-}
-int gm82_objects_parse_gmk8(const uint8_t *data, size_t size, gm82_decoded_object_list *out) {
-    (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
-}
 void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self, gm82_instance *other, const gm82_action_table *table) {
     (void)rt; (void)self; (void)other; (void)table;
 }
