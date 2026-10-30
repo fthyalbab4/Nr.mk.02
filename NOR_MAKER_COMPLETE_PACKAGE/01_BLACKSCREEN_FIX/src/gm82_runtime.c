@@ -101,14 +101,7 @@ static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t
     inst->persistent = 0;
     inst->image_index = 0;
     inst->image_xscale = 1.0;
-
     inst->image_yscale = 1.0;
-
-    inst->image_angle = 0.0;
-
-    inst->image_alpha = 1.0;
-
-    inst->image_blend = 0xffffff;
     inst->image_angle = 0.0;
     inst->image_alpha = 1.0;
     inst->image_blend = 0xffffff;
@@ -279,7 +272,13 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             if (!on || !on[0]) continue;
         }
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
-        if (inst && src->id > 0) inst->id = src->id;
+        if (inst) {
+            if (src->id > 0) inst->id = src->id;
+            if (src->creation_code && src->creation_code[0]) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, src->creation_code);
+            }
+        }
     }
     rt->running = 1;
     rt->frame = 0;
@@ -381,6 +380,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
     }
 
     gm82_events_fire_keyboard_all(rt);
+    gm82_events_fire_keypress_all(rt);
+    gm82_events_fire_keyrelease_all(rt);
     gm82_events_fire_mouse_all(rt);
     rt->frame_phase = 3; /* Step */
     gm82_events_fire_step_all(rt);
@@ -537,6 +538,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
     }
 
     gm82_events_fire_end_step_all(rt);
+    gm82_events_fire_outside_all(rt);
+    gm82_events_fire_boundary_all(rt);
+    gm82_events_fire_animation_end_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = 0;
 
