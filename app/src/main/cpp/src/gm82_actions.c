@@ -97,6 +97,15 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         self->vspeed = -self->vspeed;
         return true;
     }
+    if (strcmp(name, "action_wrap") == 0) {
+        double room_w = rt->room_width ? (double)rt->room_width : 640.0;
+        double room_h = rt->room_height ? (double)rt->room_height : 480.0;
+        if (self->x < 0) self->x = room_w + self->x;
+        else if (self->x > room_w) self->x -= room_w;
+        if (self->y < 0) self->y = room_h + self->y;
+        else if (self->y > room_h) self->y -= room_h;
+        return true;
+    }
     if (strcmp(name, "action_next_room") == 0) {
         if (rt->rooms && rt->current_room + 1 < rt->rooms->count)
             gm82_runtime_goto_room(rt, rt->current_room + 1);
