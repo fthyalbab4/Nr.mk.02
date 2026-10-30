@@ -92129,6 +92129,59 @@ function gmlToJs(gml) {
   js = fixConditionParens(js, "if");
   js = fixConditionParens(js, "while");
 
+  // Robust string/comment-masked parenthesis-aware if/else semicolon fixer
+  const fixIfElseSemicolons = (code) => {
+    const tokens = [];
+    const maskStringsAndComments = (str) => {
+      let res = "";
+      let i = 0;
+      while (i < str.length) {
+        if (str.startsWith("//", i)) {
+          let end = str.indexOf("\n", i);
+          if (end === -1) end = str.length;
+          tokens.push(str.slice(i, end));
+          res += `__TOK_${tokens.length - 1}__`;
+          i = end;
+        } else if (str.startsWith("/*", i)) {
+          let end = str.indexOf("*/", i + 2);
+          if (end === -1) end = str.length;
+          else end += 2;
+          tokens.push(str.slice(i, end));
+          res += `__TOK_${tokens.length - 1}__`;
+          i = end;
+        } else if (str[i] === '"' || str[i] === "'") {
+          let q = str[i];
+          let j = i + 1;
+          while (j < str.length && str[j] !== q) {
+            if (str[j] === "\\") j++;
+            j++;
+          }
+          if (j < str.length) j++;
+          tokens.push(str.slice(i, j));
+          res += `__TOK_${tokens.length - 1}__`;
+          i = j;
+        } else {
+          res += str[i];
+          i++;
+        }
+      }
+      return res;
+    };
+
+    let masked = maskStringsAndComments(code);
+
+    masked = masked.replace(/(\bif\s*\([\s\S]*?\)|\bif\s+[^{};\n]+?\s*\n?)\s*([^{};]+?)\s+\belse\b/g, (m, cond, stmt) => {
+      let trimmedStmt = stmt.trim();
+      if (!trimmedStmt || trimmedStmt.endsWith(";") || trimmedStmt.endsWith("}")) {
+        return m;
+      }
+      return `${cond} ${stmt}; else`;
+    });
+
+    return masked.replace(/__TOK_(\d+)__/g, (_, id) => tokens[parseInt(id, 10)]);
+  };
+  js = fixIfElseSemicolons(js);
+
   // div and mod operators
   for (let iter = 0; iter < 4; iter++) {
     js = js.replace(/(\([^()]+\)|[a-zA-Z0-9_\]\.]+)\s+\bdiv\b\s+(\([^()]+\)|[a-zA-Z0-9_\[\.]+)/g, "Math.floor(($1)/($2))");
