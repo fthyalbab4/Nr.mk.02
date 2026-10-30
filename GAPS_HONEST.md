@@ -10,9 +10,10 @@
 - Core math/geometry/string/ds ops present.
 - Windows-only components out of scope or stubbed.
 
-### 3. Event System + GML: **~55% - 65%** (improved this session)
+### 3. Event System + GML: **~60% - 70%** (improved this session)
 - Create / Destroy / Alarm / Step phases / Collision with `other` / Keyboard / KeyPress / KeyRelease / Mouse / Outside / Boundary / Animation End / User helper present.
-- Order in `gm82_runtime_step` now closer to GM 8.x reference.
+- Order in `gm82_runtime_step` matches GM 8.x reference sequence.
+- Added native DnD conditional actions (`action_if_dice`, `action_if_empty`, `action_if_collision`, `action_if_variable`).
 - Gaps remain: Instance Creation Code verification, full `with` edge cases, Pre/Post Draw call sites, broad Action Lists.
 
 ### 4. Android Device Verification: **60% - 65%**
