@@ -10,9 +10,6 @@ static int32_t rd_i32(const uint8_t *p) {
     return gm82_read_i32le(p);
 }
 
-/* GM82's compressed object stream can lose the event bucket while the GML
- * snippet remains recoverable. Continuous movement code must run every frame,
- * not once during Create; classify only snippets with unmistakable Step cues. */
 static void gm82_reclass_step_like_events(gm82_decoded_object *o) {
     /* Create events (main_type 0) must remain Create events to prevent
      * object variables from being continuously re-initialized every step. */
@@ -66,6 +63,10 @@ void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
 void gm82_decoded_room_list_free(gm82_decoded_room_list *L) {
     if (!L) return;
     for (int i = 0; i < L->count; i++) {
+        if (L->items[i].instances) {
+            for (int k = 0; k < L->items[i].instance_count; k++)
+                free(L->items[i].instances[k].creation_code);
+        }
         free(L->items[i].instances);
         free(L->items[i].tiles);
     }
@@ -109,7 +110,6 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         int32_t pers_i = (off + 16 + 4 <= ol) ? rd_i32(d + off + 16) : 0;
         int32_t parent_i = (off + 20 + 4 <= ol) ? rd_i32(d + off + 20) : -1;
         if (parent_i < -1 || parent_i > 512) parent_i = -1;
-        /* Reject zlib false-positives (scripts/extensions misread as objects) */
         if (solid_i != 0 && solid_i != 1) { free(d); continue; }
         if (vis_i != 0 && vis_i != 1) { free(d); continue; }
         if (spr_i < -1 || spr_i > 512) { free(d); continue; }
@@ -186,7 +186,6 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
                 }
             }
         }
-        /* Harvest execute-code GML strings from object blob */
         if (o->event_count > 0) {
             for (size_t q = 0; q + 8 < ol; q++) {
                 int32_t nlen = rd_i32(d + q);
@@ -283,6 +282,7 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         r->width = width; r->height = height; r->speed = speed;
 
         gm82_decoded_instance ibuf[1024];
+        memset(ibuf, 0, sizeof(ibuf));
         int ic = 0;
         for (size_t j = off; j + 16 <= ol && ic < 1024; j += 4) {
             int32_t x = rd_i32(d + j);
@@ -298,13 +298,32 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
             if (dup) continue;
             ibuf[ic].x = x; ibuf[ic].y = y;
             ibuf[ic].object_index = obj; ibuf[ic].id = id;
-            ic++;
+            ibuf[ic].creation_code = NULL;
             if (j + 24 <= ol) {
                 int32_t maybe_clen = rd_i32(d + j + 16);
-                if (maybe_clen == 0) j += 20;
-                else if (maybe_clen > 0 && maybe_clen < 4096 && j + 20 + (size_t)maybe_clen <= ol)
+                if (maybe_clen == 0) {
+                    j += 20;
+                } else if (maybe_clen > 0 && maybe_clen < 4096 &&
+                           j + 20 + (size_t)maybe_clen <= ol) {
+                    const uint8_t *cs = d + j + 20;
+                    int printable = 1;
+                    for (int k = 0; k < maybe_clen; k++) {
+                        uint8_t ch = cs[k];
+                        if (ch == 0) break;
+                        if (ch < 9 || (ch > 13 && ch < 32)) { printable = 0; break; }
+                    }
+                    if (printable && maybe_clen >= 2) {
+                        char *code = (char *)malloc((size_t)maybe_clen + 1);
+                        if (code) {
+                            memcpy(code, cs, (size_t)maybe_clen);
+                            code[maybe_clen] = 0;
+                            ibuf[ic].creation_code = code;
+                        }
+                    }
                     j += 16 + (size_t)maybe_clen;
+                }
             }
+            ic++;
         }
         r->instance_count = ic;
         if (ic > 0) {

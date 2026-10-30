@@ -1,20 +1,15 @@
-# STATUS — Event System + Actions (2026-10-29)
+# STATUS — GM82 / NOR Maker Android Core Sync (2026-10-30)
 
 ## Done
-- [x] Event order, Alarm, other, KeyPress/Release, Outside/Boundary/AnimEnd, User
-- [x] Instance Creation Code (struct + runtime + decoder extract)
-- [x] runtime_draw Pre → Draw → Post
-- [x] Destroy queue after End Step
-- [x] **Action Lists expanded**: ~131 named DnD actions in `execute_named_args`
-  - New: set_variable, if_key/keyboard/pressed/released, draw_healthbar, replace_sprite,
-    sound_fade, wait, comment, exit, another_room, set_caption, draw_arrow,
-    set_timeline, timeline_pause, set_path, path_position/speed,
-    create_object_motion/random, set_alarm_relative
+- [x] C engine core source & header synchronization across `app/src/main/cpp`, `app/src/main/cpp_backup`, and `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`.
+- [x] DnD conditional actions (`action_if_dice`, `action_if_empty`, `action_if_collision`, `action_if_variable`) integrated into C core with boolean return handling.
+- [x] Host test suites (`make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX clean && make test`) 100% passing (18 binaries).
+- [x] Full verification script (`python3 run_full_verification.py`) 100% passing (17 test suites).
+- [x] Android NDK multi-ABI CMake build (`./gradlew assembleDebug`) 100% successful for `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`.
 
-## Still open
-- Bitmask collision always-on when masks exist
-- Device playtest
-- 100% — **not claimed**
+## Still Open
+- Physical Android hardware touch playtesting
+- 100% claim — **not claimed** until physical device testing is completed.
 
 ## Honesty
-Action coverage is a broad subset of GM8 DnD, not the full library. Unmapped names still log UNMAPPED_ACTION.
+Truthful tracking strictly enforced: host C/JS core parity is ~90-95%, while physical Android device testing requires real device playtesting before claiming 100% complete capability.
