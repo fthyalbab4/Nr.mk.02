@@ -1,14 +1,8 @@
 # TODO
 
-## Done
-- [x] Event system core
-- [x] Creation Code path
-- [x] Action Lists expansion (~131 named handlers)
+انظر **فقط:** [`MASTER_AGENT_PLAN.md`](MASTER_AGENT_PLAN.md) — قسم «العمل المطلوب».
 
-## Next
-- [ ] Optional bitmask collision wiring
-- [ ] Device playtest mario + logcat
-- [ ] with() edge tests
-- [ ] Reduce UNMAPPED_ACTION for remaining rare DnD names
-
-No checkbox without test or log.
+مختصر P0:
+1. `gml_set_other` في collision (المساران)
+2. تنفيذ حقيقي لـ `gm82_actions_scan_gmk` و `gm82_actions_fire_*`
+3. مزامنة `app/src/main/cpp/src` مع `01_BLACKSCREEN_FIX/src`
