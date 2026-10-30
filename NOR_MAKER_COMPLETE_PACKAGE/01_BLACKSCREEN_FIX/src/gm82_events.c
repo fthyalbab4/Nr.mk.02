@@ -529,7 +529,12 @@ void gm82_events_fire_other(gm82_runtime *rt, gm82_instance *inst, int other_ind
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type == GM82_EV_OTHER) {
-                if (other_index >= 0 && ev->event_numb != other_index) continue;
+                if (other_index >= 0) {
+                    bool match = (ev->event_numb == other_index);
+                    if (other_index >= GM82_OTHER_USER0 && other_index <= GM82_OTHER_USER15)
+                        match = match || (ev->event_numb == other_index - GM82_OTHER_USER0);
+                    if (!match) continue;
+                }
                 fired = true;
                 if (ev->action_name0[0]) {
                     gm82_action_execute_named(rt, inst, ev->action_name0);
