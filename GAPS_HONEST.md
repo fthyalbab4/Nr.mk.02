@@ -15,6 +15,9 @@
 - Create / Destroy / Alarm / Step phases / Collision / Keyboard / KeyPress / KeyRelease / Mouse / Outside / Boundary / Animation End / User helper present.
 - Instance Creation Code from room decoder executed directly after Create event.
 - Pre/Draw/Post Draw phases integrated into runtime draw.
+- Order in `gm82_runtime_step` matches the GM 8.x reference sequence.
+- Added native DnD conditional actions (`action_if_dice`, `action_if_empty`, `action_if_collision`, `action_if_variable`).
+- Remaining gaps include full `with` edge cases, broad Action Lists, and physical-device verification.
 
 ### 4. Android Device Verification: **60% - 65%**
 - NDK builds succeed across 4 ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`) via `./gradlew assembleDebug`.
