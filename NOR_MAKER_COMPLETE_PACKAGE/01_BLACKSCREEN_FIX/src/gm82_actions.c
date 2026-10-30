@@ -133,6 +133,35 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         self->alarms[idx] = val; return true;
     }
 
+    if (strcmp(name, "action_if_dice") == 0) {
+        int n = (argc >= 1 && args[0] > 0) ? args[0] : 2;
+        return (rand() % n) == 0;
+    }
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        return gml_place_empty(x, y) != 0.0;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int obj = (argc >= 3) ? args[2] : -1;
+        return gml_place_meeting(x, y, (double)obj) != 0.0;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        double val = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double cmp = (argc >= 3) ? (double)args[2] : 0.0;
+        switch (op) {
+            case 1: return val < cmp;
+            case 2: return val > cmp;
+            case 3: return val <= cmp;
+            case 4: return val >= cmp;
+            case 5: return val != cmp;
+            default: return val == cmp;
+        }
+    }
+
     /* Expanded handlers */
     if (gm82_action_execute_extra(rt, self, name, args, argc, str_args, str_argc))
         return true;

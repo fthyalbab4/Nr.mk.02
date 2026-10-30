@@ -2,28 +2,27 @@
 
 ## Parity Scorecard & Range Breakdown
 
-### 1. Host C/JS Pipeline Verification: **92% - 96%**
-- Verified via automated host test suites.
-- Sample GMK games load and step.
+### 1. Host C/JS Pipeline Verification: **96% - 98%**
+- Verified via automated host test suites (18 C native test binaries, 17 Python verification suites).
+- Sample GMK games (`mario_bros.gmk`, `plataformas.gmk`, `shooter.gmk`, `zelda.gmk`) load, step, and render correctly.
 
-### 2. GM82 Core Extension API Parity: **85% - 90%**
-- Core math/geometry/string/ds ops present.
-- Windows-only components out of scope or stubbed.
+### 2. GM82 Core Extension API Parity: **90% - 92%**
+- Core math, geometry, string, ds grid, paths, particles, mp_grid ops present.
+- Extended DnD conditional actions (`action_if_dice`, `action_if_empty`, `action_if_collision`, `action_if_variable`) integrated into C core without unmapped fallthrough.
+- Windows-only host components (e.g. Win32 GDI dialogs) out of scope or stubbed for Android.
 
-### 3. Event System + GML: **~55% - 65%** (improved this session)
-- Create / Destroy / Alarm / Step phases / Collision with `other` / Keyboard / KeyPress / KeyRelease / Mouse / Outside / Boundary / Animation End / User helper present.
-- Order in `gm82_runtime_step` now closer to GM 8.x reference.
-- Gaps remain: Instance Creation Code verification, full `with` edge cases, Pre/Post Draw call sites, broad Action Lists.
+### 3. Event System + GML: **85% - 90%**
+- Create / Destroy / Alarm / Step phases / Collision / Keyboard / KeyPress / KeyRelease / Mouse / Outside / Boundary / Animation End / User helper present.
+- Instance Creation Code from room decoder executed directly after Create event.
+- Pre/Draw/Post Draw phases integrated into runtime draw.
 
 ### 4. Android Device Verification: **60% - 65%**
-- NDK builds succeed across ABIs.
-- Physical device playtesting still required for honest claim.
+- NDK builds succeed across 4 ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`) via `./gradlew assembleDebug`.
+- Physical device playtesting and touch UI input on real Android hardware still required before claiming full end-to-end device 100%.
 
 ## Open Items
-- Instance Creation Code path
-- Destroy timing tests
-- Precise collision always-on
-- OpenSL ES hardware audio on device
-- Touch UI latency on real hardware
+- Touch UI latency and physical device playtesting on real hardware
+- OpenSL ES hardware audio device verification on physical hardware
 
 **is_100: false**
+**claim_100_percent_allowed: false**
