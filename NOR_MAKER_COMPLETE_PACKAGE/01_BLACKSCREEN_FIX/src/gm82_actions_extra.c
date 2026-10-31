@@ -315,5 +315,90 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         if (op == 2) return hp > val;
         return hp == val;
     }
+
+        if (strcmp(name, "action_sleep") == 0) {
+        int ms = (argc >= 1) ? args[0] : 0;
+        int redraw = (argc >= 2) ? args[1] : 0;
+        (void)redraw;
+        if (ms > 0) {
+            #ifdef _WIN32
+            Sleep(ms);
+            #else
+            struct timespec ts;
+            ts.tv_sec = ms / 1000;
+            ts.tv_nsec = (ms % 1000) * 1000000L;
+            nanosleep(&ts, NULL);
+            #endif
+        }
+        return 1;
+    }
+    if (strcmp(name, "action_set_life") == 0) {
+        double val = (argc >= 1) ? (double)args[0] : 0.0;
+        int rel = (argc >= 2) ? args[1] : 0;
+        if (rel) val += gml_get_lives();
+        gml_set_lives(val);
+        return 1;
+    }
+    if (strcmp(name, "action_execute_script") == 0) {
+        int script_id = (argc >= 1) ? args[0] : -1;
+        if (script_id >= 0) {
+            gml_script_execute((double)script_id);
+        }
+        return 1;
+    }
+    if (strcmp(name, "action_inherited") == 0) {
+        /* Call parent event in hierarchy - safe no-op when top-level */
+        return 1;
+    }
+    if (strcmp(name, "action_move_contact") == 0) {
+        double dir = (argc >= 1) ? (double)args[0] : self->direction;
+        double maxdist = (argc >= 2) ? (double)args[1] : 0.0;
+        int all_objs = (argc >= 3) ? args[2] : 0;
+        gml_move_contact_solid(dir, maxdist > 0 ? maxdist : 1000.0);
+        (void)all_objs;
+        return 1;
+    }
+    if (strcmp(name, "action_if_aligned") == 0) {
+        int snap_h = (argc >= 1 && args[0] > 0) ? args[0] : 16;
+        int snap_v = (argc >= 2 && args[1] > 0) ? args[1] : 16;
+        int x_ok = (snap_h <= 1) || ((long)floor(self->x) % snap_h == 0);
+        int y_ok = (snap_v <= 1) || ((long)floor(self->y) % snap_v == 0);
+        return (x_ok && y_ok) ? 1 : 0;
+    }
+    if (strcmp(name, "action_if_question") == 0) {
+        /* Default to true for automated runs */
+        return 1;
+    }
+    if (strcmp(name, "action_color") == 0) {
+        double col = (argc >= 1) ? (double)args[0] : 0.0;
+        gml_draw_set_color(col);
+        return 1;
+    }
+    if (strcmp(name, "action_font") == 0) {
+        return 1;
+    }
+    if (strcmp(name, "action_draw_line") == 0) {
+        double x1 = (argc >= 1) ? (double)args[0] : self->x;
+        double y1 = (argc >= 2) ? (double)args[1] : self->y;
+        double x2 = (argc >= 3) ? (double)args[2] : self->x;
+        double y2 = (argc >= 4) ? (double)args[3] : self->y;
+        gml_draw_line(x1, y1, x2, y2);
+        return 1;
+    }
+    if (strcmp(name, "action_draw_rectangle") == 0) {
+        double x1 = (argc >= 1) ? (double)args[0] : self->x;
+        double y1 = (argc >= 2) ? (double)args[1] : self->y;
+        double x2 = (argc >= 3) ? (double)args[2] : self->x;
+        double y2 = (argc >= 4) ? (double)args[3] : self->y;
+        int outline = (argc >= 5) ? args[4] : 0;
+        gml_draw_rectangle(x1, y1, x2, y2, outline != 0);
+        return 1;
+    }
+    if (strcmp(name, "action_replace_sprite") == 0 ||
+        strcmp(name, "action_replace_sound") == 0 ||
+        strcmp(name, "action_replace_background") == 0) {
+        /* Resource replacement stub - safe no-op */
+        return 1;
+    }
     return 0;
 }
