@@ -90,7 +90,7 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
 
 void gm82_events_register_defaults(void) { }
 
-static bool gm82_instance_matches_object(gm82_runtime *rt, gm82_instance *inst, int32_t object_index) {
+static bool gm82_events_instance_matches_object(const gm82_runtime *rt, const gm82_instance *inst, int32_t object_index) {
     if (!rt || !inst || !rt->objects) return false;
     if (inst->object_index == object_index) return true;
     int32_t oi = inst->object_index;
@@ -338,7 +338,7 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type != GM82_EV_COLLISION) continue;
-            if (other && ev->event_numb >= 0 && !gm82_instance_matches_object(rt, other, ev->event_numb))
+            if (other && ev->event_numb >= 0 && !gm82_events_instance_matches_object(rt, other, ev->event_numb))
                 continue;
             fired = true;
             if (ev->action_name0[0])
