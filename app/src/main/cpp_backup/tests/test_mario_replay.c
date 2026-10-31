@@ -1,6 +1,6 @@
 /* Deterministic replay for the real mario_bros.gmk sample. It intentionally
  * selects obj_minimario (the live player), not obj_minimario_pierde or the
- * transition object, then holds VK_RIGHT for 30 frames. */
+ * transition object, then exercises right, left, and jump input. */
 #include "gm82_sprite_decode.h"
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
@@ -82,10 +82,51 @@ int main(void) {
         gm82_input_key_down(&input, 39); /* VK_RIGHT */
         gm82_runtime_step(&rt);
     }
-    double dx = rt.instances[player_index].x - x0;
-    assert(dx > 0.0);
-    printf("  mario replay: object=%s start_x=%.1f delta_x=%.1f frames=30\n",
-           objects.items[rt.instances[player_index].object_index].name, x0, dx);
+    double x_right = rt.instances[player_index].x;
+    double dx_right = x_right - x0;
+    assert(dx_right > 0.0);
+    gm82_input_key_up(&input, 39);
+    for (int frame = 0; frame < 30; ++frame) {
+        gm82_input_begin_frame(&input);
+        gm82_input_key_down(&input, 37); /* VK_LEFT */
+        gm82_runtime_step(&rt);
+    }
+    double x_left = rt.instances[player_index].x;
+    double dx_left = x_left - x_right;
+    assert(dx_left < 0.0);
+    gm82_input_key_up(&input, 37);
+
+    /* Reset the room so the jump starts from a known grounded spawn rather
+       than from whatever platform/edge the walking replay reached. */
+    assert(gm82_runtime_goto_room(&rt, 0));
+    player_index = -1;
+    for (int i = 0; i < rt.instance_count; ++i) {
+        int oi = rt.instances[i].object_index;
+        if (rt.instances[i].alive && oi == live_player_object) { player_index = i; break; }
+    }
+    assert(player_index >= 0);
+    gm82_input_init(&input);
+    gm82_input_bind_global(&input);
+
+    /* Cover either classic jump binding (Up or Space) for one frame. */
+    double y_before_jump = rt.instances[player_index].y;
+    double y_min = y_before_jump;
+    for (int frame = 0; frame < 24; ++frame) {
+        gm82_input_begin_frame(&input);
+        if (frame == 0) {
+            gm82_input_key_down(&input, 38); /* VK_UP */
+            gm82_input_key_down(&input, 32); /* Space */
+        } else {
+            gm82_input_key_up(&input, 38);
+            gm82_input_key_up(&input, 32);
+        }
+        gm82_runtime_step(&rt);
+        if (rt.instances[player_index].y < y_min) y_min = rt.instances[player_index].y;
+    }
+    assert(y_min < y_before_jump);
+    printf("  mario replay: object=%s right_dx=%.1f left_dx=%.1f jump_y=%.1f->%.1f\n",
+           objects.items[rt.instances[player_index].object_index].name,
+           dx_right, dx_left, y_before_jump, y_min);
 
     gm82_runtime_cleanup(&rt);
     gm82_sprite_group_list_free(&groups);
