@@ -397,7 +397,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
             double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
+            if (sw < 1) sw = 1;
+            if (sh < 1) sh = 1;
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
             int cx0 = (int)(ax1 / CELL) - 1, cy0 = (int)(ay1 / CELL) - 1;
             int cx1 = (int)(ax2 / CELL) + 1, cy1 = (int)(ay2 / CELL) + 1;
@@ -418,7 +419,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         double oys = other->image_yscale != 0.0 ? other->image_yscale : 1.0;
                         ow = (int32_t)(ow * oxs); oh = (int32_t)(oh * oys);
                         oox = (int32_t)(oox * oxs); ooy = (int32_t)(ooy * oys);
-                        if (ow < 1) ow = 1; if (oh < 1) oh = 1;
+                        if (ow < 1) ow = 1;
+                        if (oh < 1) oh = 1;
                         double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
                         if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
                         gm82_events_fire_collision(rt, inst, other);
