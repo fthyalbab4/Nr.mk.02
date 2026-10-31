@@ -60,6 +60,7 @@ static void skip_space_comments(gml_lexer *l) {
 }
 
 static gml_ast *parse_expression(gml_lexer *l);
+static int consume_char(gml_lexer *l, char c);
 
 static gml_ast *parse_primary_expr(gml_lexer *l) {
     skip_space_comments(l);
@@ -80,18 +81,26 @@ static gml_ast *parse_primary_expr(gml_lexer *l) {
     if (c == '"' || c == '\'') {
         char quote = c;
         l->pos++;
-        size_t start = l->pos;
-        while (l->pos < l->len && l->src[l->pos] != quote) l->pos++;
-        size_t slen = l->pos - start;
-        if (l->pos < l->len) l->pos++;
         gml_ast *n = ast_new(GML_AST_STRING);
         if (n) {
-            n->text = (char *)malloc(slen + 1);
+            size_t cap = l->len - l->pos + 1, out = 0;
+            n->text = (char *)malloc(cap ? cap : 1);
             if (n->text) {
-                memcpy(n->text, l->src + start, slen);
-                n->text[slen] = 0;
+                while (l->pos < l->len && l->src[l->pos] != quote) {
+                    unsigned char ch = (unsigned char)l->src[l->pos++];
+                    if (ch == '\\' && l->pos < l->len) {
+                        unsigned char esc = (unsigned char)l->src[l->pos++];
+                        if (esc == 'n') ch = '\n';
+                        else if (esc == 'r') ch = '\r';
+                        else if (esc == 't') ch = '\t';
+                        else ch = esc;
+                    }
+                    n->text[out++] = (char)ch;
+                }
+                n->text[out] = 0;
             }
         }
+        if (l->pos < l->len) l->pos++;
         return n;
     }
 
@@ -138,7 +147,36 @@ static gml_ast *parse_primary_expr(gml_lexer *l) {
 
         gml_ast *var_node = ast_new(GML_AST_NAME);
         if (var_node) var_node->text = strdup(name);
-        return var_node;
+        gml_ast *node = var_node;
+        for (;;) {
+            skip_space_comments(l);
+            if (l->pos < l->len && l->src[l->pos] == '[') {
+                l->pos++;
+                gml_ast *index = parse_expression(l);
+                if (!consume_char(l, ']')) snprintf(l->error, sizeof(l->error), "expected ']' after index");
+                gml_ast *wrapped = ast_new(GML_AST_INDEX);
+                if (wrapped) { wrapped->left = node; wrapped->right = index; node = wrapped; }
+                continue;
+            }
+            if (l->pos < l->len && l->src[l->pos] == '.') {
+                l->pos++;
+                skip_space_comments(l);
+                size_t ms = l->pos;
+                while (l->pos < l->len && (isalnum((unsigned char)l->src[l->pos]) || l->src[l->pos] == '_')) l->pos++;
+                if (l->pos == ms) { snprintf(l->error, sizeof(l->error), "expected member name after '.'"); break; }
+                size_t ml = l->pos - ms;
+                gml_ast *wrapped = ast_new(GML_AST_MEMBER);
+                if (wrapped) {
+                    wrapped->left = node;
+                    wrapped->text = (char *)malloc(ml + 1);
+                    if (wrapped->text) { memcpy(wrapped->text, l->src + ms, ml); wrapped->text[ml] = 0; }
+                    node = wrapped;
+                }
+                continue;
+            }
+            break;
+        }
+        return node;
     }
 
     return NULL;
@@ -326,6 +364,14 @@ static gml_ast *parse_statement(gml_lexer *l) {
     if (consume_keyword(l, "repeat")) {
         gml_ast *node = ast_new(GML_AST_REPEAT);
         node->left = parse_expression(l);
+        node->right = parse_statement(l);
+        return node;
+    }
+    if (consume_keyword(l, "with")) {
+        gml_ast *node = ast_new(GML_AST_WITH);
+        if (!consume_char(l, '(')) snprintf(l->error, sizeof(l->error), "expected '(' after with");
+        node->left = parse_expression(l);
+        if (!consume_char(l, ')')) snprintf(l->error, sizeof(l->error), "expected ')' after with target");
         node->right = parse_statement(l);
         return node;
     }

@@ -18,6 +18,20 @@ static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
 }
 
+/* Studio/Web contract: 1 <, 2 <=, 3 ==, 4 !=, 5 >=, 6 >. */
+static int compare_action_values(double lhs, double rhs, int op) {
+    switch (op) {
+        case 1: return lhs < rhs;
+        case 2: return lhs <= rhs;
+        case 3: return lhs == rhs;
+        case 4: return lhs != rhs;
+        case 5: return lhs >= rhs;
+        case 6: return lhs > rhs;
+        case 0: return lhs == rhs; /* explicit legacy equality */
+        default: return 0;
+    }
+}
+
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol = 0;
     z_stream strm; memset(&strm, 0, sizeof(strm));
@@ -468,54 +482,38 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         double x = (argc >= 1) ? (double)args[0] : self->x;
         double y = (argc >= 2) ? (double)args[1] : self->y;
         int obj = (argc >= 3) ? args[2] : -4; /* all */
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || o == self) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
-            double dx = o->x - x, dy = o->y - y;
-            if (dx*dx + dy*dy < 16.0) return false; /* not empty */
-        }
-        return true;
+        gm82_instance *previous = gm82_gml_get_self();
+        gm82_gml_set_self(self);
+        int occupied = gml_instance_place(x, y, obj) != -4.0;
+        gm82_gml_set_self(previous);
+        return occupied ? false : true;
     }
     if (strcmp(name, "action_if_collision") == 0) {
         double x = (argc >= 1) ? (double)args[0] : self->x;
         double y = (argc >= 2) ? (double)args[1] : self->y;
         int obj = (argc >= 3) ? args[2] : -1;
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive || o == self) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
-            double dx = o->x - x, dy = o->y - y;
-            if (dx*dx + dy*dy < 256.0) return true;
-        }
-        return false;
+        gm82_instance *previous = gm82_gml_get_self();
+        gm82_gml_set_self(self);
+        int hit = gml_instance_place(x, y, obj) != -4.0;
+        gm82_gml_set_self(previous);
+        return hit ? true : false;
     }
     if (strcmp(name, "action_if_object") == 0) {
         int obj = (argc >= 1) ? args[0] : -1;
         double x = (argc >= 2) ? (double)args[1] : self->x;
         double y = (argc >= 3) ? (double)args[2] : self->y;
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *o = &rt->instances[i];
-            if (!o->alive) continue;
-            if (obj >= 0 && o->object_index != obj) continue;
-            double dx = o->x - x, dy = o->y - y;
-            if (dx*dx + dy*dy < 256.0) return true;
-        }
-        return false;
+        gm82_instance *previous = gm82_gml_get_self();
+        gm82_gml_set_self(self);
+        int hit = gml_instance_place(x, y, obj) != -4.0;
+        gm82_gml_set_self(previous);
+        return hit ? true : false;
     }
     if (strcmp(name, "action_if_variable") == 0) {
-        /* args: value, op, compare — uses score as proxy when no var table */
+        /* Canonical args: value, compare, op. */
         double cur = (argc >= 1) ? (double)args[0] : 0.0;
-        int op = (argc >= 2) ? args[1] : 0;
-        double thr = (argc >= 3) ? (double)args[2] : 0.0;
-        switch (op) {
-            case 1: return cur < thr;
-            case 2: return cur > thr;
-            case 3: return cur <= thr;
-            case 4: return cur >= thr;
-            case 5: return cur != thr;
-            default: return cur == thr;
-        }
+        double thr = (argc >= 2) ? (double)args[1] : 0.0;
+        int op = (argc >= 3) ? args[2] : 0;
+        return compare_action_values(cur, thr, op) ? true : false;
     }
     if (strcmp(name, "action_if_mouse") == 0) {
         int btn = (argc >= 1) ? args[0] : 0;

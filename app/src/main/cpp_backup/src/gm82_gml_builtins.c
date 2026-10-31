@@ -953,21 +953,23 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
         if (!o->alive) continue;
         if (notme && o == g_self) continue;
         if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x1, y1, x2-x1, y2-y1, o->x, o->y, ow, oh)) {
+        double ol, ot, orr, ob;
+        inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
+        if (aabb_overlap_d(x1, y1, x2, y2, ol, ot, orr, ob)) {
             if (prec && g_rt->sprites && o->sprite_index >= 0 && o->sprite_index < g_rt->sprites->count) {
                 const gm82_decoded_frame *s = &g_rt->sprites->frames[o->sprite_index];
                 if (s->rgba) {
-                    int ix1 = (int)(x1 > o->x ? x1 : o->x);
-                    int ix2 = (int)(x2 < o->x + ow ? x2 : o->x + ow);
-                    int iy1 = (int)(y1 > o->y ? y1 : o->y);
-                    int iy2 = (int)(y2 < o->y + oh ? y2 : o->y + oh);
+                    double sx = fabs(o->image_xscale != 0.0 ? o->image_xscale : 1.0);
+                    double sy = fabs(o->image_yscale != 0.0 ? o->image_yscale : 1.0);
+                    int ix1 = (int)fmax(x1, ol), ix2 = (int)fmin(x2, orr);
+                    int iy1 = (int)fmax(y1, ot), iy2 = (int)fmin(y2, ob);
                     bool hit = false;
                     for (int py = iy1; py < iy2; py++) {
-                        int r = (py - (int)o->y) * s->width;
                         for (int px = ix1; px < ix2; px++) {
-                            int off = (r + (px - (int)o->x)) * 4 + 3;
+                            int spx = (int)floor((px - ol) / sx);
+                            int spy = (int)floor((py - ot) / sy);
+                            if (spx < 0 || spy < 0 || spx >= s->width || spy >= s->height) continue;
+                            int off = (spy * s->width + spx) * 4 + 3;
                             if (s->rgba[off] > 16) { hit = true; break; }
                         }
                         if (hit) break;
