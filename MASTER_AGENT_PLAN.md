@@ -1,6 +1,6 @@
 # MASTER_AGENT_PLAN — الخطة الوحيدة المعتمدة
 
-**آخر تحديث:** 2026-10-31 ~20:50 CDT
+**آخر تحديث:** 2026-10-31 ~20:55 CDT
 
 ## قواعد
 - لا نسبة بدون اختبار مسجّل هنا.
@@ -10,36 +10,31 @@
 
 | بند | الحالة |
 |-----|--------|
-| `gm82_actions_scan_gmk` → `parse_gmk8` | **على main** (app + BLACKSCREEN_FIX) |
-| `gm82_actions_fire_*` تنفيذ جدول | **على main** (app + BLACKSCREEN_FIX) |
-| `gml_set_other` في collision | **على main (app path)** — الدالة تحتوي set_other قبل action و eval. الملف الكامل (كل الدوال بعد collision) لسه مقطوع على remote بسبب حدود حجم الـ API push. النسخة الكاملة 33426 بايت جاهزة محلياً. |
+| `gm82_actions_scan_gmk` → `parse_gmk8` | **على main** |
+| `gm82_actions_fire_*` | **على main** |
+| `gml_set_other` في collision | **على main (app)** — الدالة تحتوي set_other. الملف الكامل (كل الدوال) قد يحتاج استعادة يدوية إن كان مقطوعاً |
 
 ### Host tests
 ```
 Date: 2026-10-31
-Command: make test in NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX (with full patched events)
-Result: PASS (exit 0)
-  - Nr.mk.01 compatibility APIs PASS
-  - paths/mp_grid PASS
-  - PHASE 1 ALL PASSED
-  - arena/sprites/lifecycle PASS
-  - runtime_guard ALL PASS
+make test in 01_BLACKSCREEN_FIX with full patched events → PASS (exit 0)
+gm82_events.c compiles clean with gml_set_other x4
 ```
 
-### إصلاح الملف الكامل (يدوياً أو من جهازك)
-انسخ الملف الكامل من أي نسخة محلية جيدة أو من commit سابق كامل إلى:
-- app/src/main/cpp/src/gm82_events.c
-- NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_events.c
+## P1
 
-ثم:
-```bash
-git add ... && git commit -m "P0: full gm82_events.c" && git push
-make test   # في 01_BLACKSCREEN_FIX
-```
+| بند | الحالة |
+|-----|--------|
+| NES runner ↔ native bridge | **تم** — `assets/www/nes-runner.html` يستدعي `NorNativeLoop.attach` + rAF loop + يحوّل D-Pad/A/B/SELECT/START إلى key events (37-40, 88, 90, 13, 17) |
+| تحميل GMK samples من HTML | **لم يبدأ** — يحتاج WebView/native أو WASM host |
+| اختبار mario/zelda على host | samples موجودة في `02_SAMPLES/` و `app/.../samples/` |
 
-## P1 (التالي)
-1. ربط NES HTML runner (`assets/www/nes-runner.html`) بالـ runtime الحقيقي (حالياً UI فقط).
-2. اختبار samples (mario/zelda إن وُجدت).
-3. Windows host / Android APK smoke إن أمكن.
+### تشغيل NES UI
+افتح `assets/www/nes-runner.html` في متصفح أو WebView. بدون `NorNative`/`Gm82Native` يظهر: `UI shell only`. مع الـ native bridge يظهر frames + active.
+
+## P2
+- استعادة الملف الكامل لـ gm82_events.c على المسارين إن لزم
+- ربط input من الـ canvas إلى gm82_input
+- تجربة mario_bros.gmk على host runner
 
 **is_100: false**
