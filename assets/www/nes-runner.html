@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>NOR Maker — NES Runner UI</title>
+  <link rel="stylesheet" href="runner-emu-ref.css" />
+  <link rel="stylesheet" href="runner-landscape-nes.css" />
+  <style>
+    #nor-status {
+      position: fixed; left: 8px; bottom: 8px; z-index: 50;
+      font: 11px/1.3 monospace; color: #7ff; background: rgba(0,0,0,.65);
+      padding: 4px 8px; border-radius: 4px; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="nes-emu-root" id="nesRoot">
+    <div class="nes-emu-layout">
+      <div class="nes-pillar-left">
+        <div class="nes-select-start-deck">
+          <button type="button" class="nes-pill-btn" data-btn="select" data-key="17">SELECT</button>
+          <button type="button" class="nes-pill-btn" data-btn="start" data-key="13">START</button>
+        </div>
+        <div class="nes-dpad-wrap" id="dpad">
+          <div class="nes-dpad-arm nes-dpad-up" data-btn="up" data-key="38"><span class="nes-arrow-icon">▲</span></div>
+          <div class="nes-dpad-arm nes-dpad-down" data-btn="down" data-key="40"><span class="nes-arrow-icon">▼</span></div>
+          <div class="nes-dpad-arm nes-dpad-left" data-btn="left" data-key="37"><span class="nes-arrow-icon">◀</span></div>
+          <div class="nes-dpad-arm nes-dpad-right" data-btn="right" data-key="39"><span class="nes-arrow-icon">▶</span></div>
+          <div class="nes-dpad-center"><div class="nes-dpad-pivot-circle"></div></div>
+        </div>
+        <div class="nes-ntsc-tag">NTSC</div>
+      </div>
+      <div class="nes-center-stage">
+        <div class="nes-game-frame" id="gameFrame">
+          <canvas id="gameCanvas" width="320" height="240" style="width:100%;height:100%;image-rendering:pixelated;background:#000;"></canvas>
+        </div>
+      </div>
+      <div class="nes-pillar-right">
+        <div class="nes-top-menu">
+          <button type="button" class="nes-menu-btn" data-btn="menu" title="Menu">⋮</button>
+        </div>
+        <div class="nes-action-deck">
+          <div class="nes-action-plate"><button type="button" class="nes-action-btn" data-btn="b" data-key="90">B</button></div>
+          <div class="nes-action-plate"><button type="button" class="nes-action-btn" data-btn="a" data-key="88">A</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="nor-status">init…</div>
+  <script src="nor_native_loop_bridge.js"></script>
+  <script>
+    (function () {
+      var statusEl = document.getElementById("nor-status");
+      function setStatus(t) { if (statusEl) statusEl.textContent = t; }
+      function setActive(el, on) { if (el) el.classList.toggle("is-active", !!on); }
+      function synthKey(code, type) {
+        document.dispatchEvent(new KeyboardEvent(type, { keyCode: code, which: code, bubbles: true, cancelable: true }));
+        var b = window.NorNative || window.Gm82Native;
+        if (b) {
+          if (type === "keydown" && typeof b.keyDown === "function") b.keyDown(code);
+          if (type === "keyup" && typeof b.keyUp === "function") b.keyUp(code);
+        }
+      }
+      function bindPress(el) {
+        if (!el) return;
+        var code = parseInt(el.getAttribute("data-key") || "0", 10);
+        var down = function (e) { e.preventDefault(); setActive(el, true); if (code) synthKey(code, "keydown"); };
+        var up = function (e) { e.preventDefault(); setActive(el, false); if (code) synthKey(code, "keyup"); };
+        el.addEventListener("pointerdown", down);
+        el.addEventListener("pointerup", up);
+        el.addEventListener("pointerleave", up);
+        el.addEventListener("pointercancel", up);
+      }
+      document.querySelectorAll("[data-btn]").forEach(bindPress);
+      var root = document.getElementById("nesRoot");
+      var menu = document.querySelector("[data-btn=\"menu\"]");
+      if (menu) menu.addEventListener("click", function () { root.classList.toggle("is-fullscreen"); });
+      var hasNative = false;
+      if (window.NorNativeLoop) {
+        hasNative = !!window.NorNativeLoop.attach({ canvasId: "gameCanvas", preferNative: true, targetFps: 60 });
+      }
+      var lastStats = 0;
+      function frame(ts) {
+        if (window.NorNativeLoop) {
+          window.NorNativeLoop.onFrame();
+          if (ts - lastStats > 500) {
+            lastStats = ts;
+            var s = window.NorNativeLoop.getStats();
+            setStatus((s.hasBridge ? "native" : "shell") + " frames=" + s.frames +
+              (s.nativeActive ? " active" : " idle") + (s.lastError ? " ERR:" + s.lastError : ""));
+          }
+        } else setStatus("no NorNativeLoop bridge");
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+      setStatus(hasNative ? "native bridge attached" : "UI shell only (no native runtime)");
+    })();
+  </script>
+</body>
+</html>
