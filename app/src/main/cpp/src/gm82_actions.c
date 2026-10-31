@@ -773,8 +773,7 @@ static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
     if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
     const char *oname = rt->objects->items[self->object_index].name;
     for (int i = 0; i < table->count; i++) {
-        if (strcmp(table->objects[i].object_name, oname) != 0 &&
-            strcmp(table->objects[i].object_name, "_global_actions") != 0)
+        if (strcmp(table->objects[i].object_name, oname) != 0)
             continue;
         /* skip_depth: >0 means skipping until matching block_end / else handling */
         int skip_depth = 0;

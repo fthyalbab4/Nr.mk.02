@@ -4963,3 +4963,34 @@ int gm82_gm82core_try_stub(const char *id, double *out) {
         if (strcmp(id, GM82CORE_STUBS[i]) == 0) { *out = 0.0; return 1; }
     return 0;
 }
+
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y) {
+    if (!g_rt || !g_rt->backgrounds || !g_draw_buf) return;
+    int bi = (int)bg;
+    if (bi < 0 || bi >= g_rt->backgrounds->count) return;
+    int bw = g_rt->backgrounds->items[bi].width;
+    int bh = g_rt->backgrounds->items[bi].height;
+    const uint8_t *src = g_rt->backgrounds->items[bi].rgba;
+    if (!src || bw <= 0 || bh <= 0) return;
+
+    int l = (int)left, t = (int)top, w = (int)width, h = (int)height;
+    if (l < 0) { w += l; x -= l; l = 0; }
+    if (t < 0) { h += t; y -= t; t = 0; }
+    if (l + w > bw) w = bw - l;
+    if (t + h > bh) h = bh - t;
+    if (w <= 0 || h <= 0) return;
+
+    int dx0 = (int)x, dy0 = (int)y;
+    for (int sy = 0; sy < h; sy++) {
+        int dy = dy0 + sy;
+        if (dy < 0 || dy >= g_draw_h) continue;
+        for (int sx = 0; sx < w; sx++) {
+            int dx = dx0 + sx;
+            if (dx < 0 || dx >= g_draw_w) continue;
+            const uint8_t *s = src + ((size_t)(t + sy) * (size_t)bw + (size_t)(l + sx)) * 4;
+            if (s[3] == 0) continue;
+            uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4;
+            d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
+        }
+    }
+}

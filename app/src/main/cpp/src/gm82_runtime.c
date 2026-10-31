@@ -23,6 +23,22 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_height = 480;
     gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
+    /* Camera / View follow */
+    if (rt->view_enabled && rt->view_follow_object >= 0 && rt->objects) {
+        for (int i = 0; i < rt->instance_count; i++) {
+            if (rt->instances[i].alive && rt->instances[i].object_index == rt->view_follow_object) {
+                rt->view_x = (int32_t)(rt->instances[i].x - rt->view_w / 2.0);
+                rt->view_y = (int32_t)(rt->instances[i].y - rt->view_h / 2.0);
+                if (rt->view_x < 0) rt->view_x = 0;
+                if (rt->view_y < 0) rt->view_y = 0;
+                if (rt->room_width > 0 && rt->view_x > rt->room_width - rt->view_w)
+                    rt->view_x = rt->room_width - (int32_t)rt->view_w;
+                if (rt->room_height > 0 && rt->view_y > rt->room_height - rt->view_h)
+                    rt->view_y = rt->room_height - (int32_t)rt->view_h;
+                break;
+            }
+        }
+    }
     rt->frame_phase = 0;
 }
 
@@ -437,47 +453,93 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        if (inst->image_speed != 0.0) {
+            inst->image_index += inst->image_speed;
+        }
+    }
     gm82_events_fire_end_step_all(rt);
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
     gm82_events_fire_animation_end_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
+    /* Camera / View follow */
+    if (rt->view_enabled && rt->view_follow_object >= 0 && rt->objects) {
+        for (int i = 0; i < rt->instance_count; i++) {
+            if (rt->instances[i].alive && rt->instances[i].object_index == rt->view_follow_object) {
+                rt->view_x = (int32_t)(rt->instances[i].x - rt->view_w / 2.0);
+                rt->view_y = (int32_t)(rt->instances[i].y - rt->view_h / 2.0);
+                if (rt->view_x < 0) rt->view_x = 0;
+                if (rt->view_y < 0) rt->view_y = 0;
+                if (rt->room_width > 0 && rt->view_x > rt->room_width - rt->view_w)
+                    rt->view_x = rt->room_width - (int32_t)rt->view_w;
+                if (rt->room_height > 0 && rt->view_y > rt->room_height - rt->view_h)
+                    rt->view_y = rt->room_height - (int32_t)rt->view_h;
+                break;
+            }
+        }
+    }
     rt->frame_phase = 0;
 }
 
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
-    rt->frame_phase = GM82_PHASE_PRE_DRAW;
-    gm82_events_fire_pre_draw_all(rt);
     size_t n = (size_t)buf_w * (size_t)buf_h * 4;
     memset(rgba, 0, n);
+    gm82_draw_set_target(rgba, buf_w, buf_h);
+
+    rt->frame_phase = GM82_PHASE_PRE_DRAW;
+    gm82_events_fire_pre_draw_all(rt);
+
     rt->frame_phase = GM82_PHASE_DRAW;
-    gm82_events_fire_draw_all(rt);
-    if (rt->sprites) {
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *inst = &rt->instances[i];
-            if (!inst->alive || !inst->visible) continue;
-            if (inst->sprite_index < 0 || inst->sprite_index >= rt->sprites->count) continue;
-            const gm82_decoded_frame *fr = &rt->sprites->frames[inst->sprite_index];
-            int sw = fr->width > 0 ? fr->width : 16;
-            int sh = fr->height > 0 ? fr->height : 16;
-            int ox = fr->origin_x, oy = fr->origin_y;
-            int dx = (int)(inst->x - ox - rt->view_x);
-            int dy = (int)(inst->y - oy - rt->view_y);
-            for (int y = 0; y < sh; y++) {
-                int py = dy + y;
-                if (py < 0 || py >= buf_h) continue;
-                for (int x = 0; x < sw; x++) {
-                    int px = dx + x;
-                    if (px < 0 || px >= buf_w) continue;
-                    size_t idx = ((size_t)py * (size_t)buf_w + (size_t)px) * 4;
-                    rgba[idx+0]=180; rgba[idx+1]=180; rgba[idx+2]=200; rgba[idx+3]=255;
-                }
+
+    /* 1. Draw room background and tiles */
+    if (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
+        const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
+        for (int ti = 0; ti < room->tile_count; ti++) {
+            const gm82_decoded_tile *tile = &room->tiles[ti];
+            if (tile->background_index >= 0) {
+                gml_draw_background_part((double)tile->background_index, (double)tile->xo, (double)tile->yo, (double)tile->width, (double)tile->height, tile->x - rt->view_x, tile->y - rt->view_y);
             }
         }
     }
+
+    /* 2. Depth sort active instances descending (higher depth first) */
+    int order[GM82_MAX_INSTANCES];
+    int n_inst = 0;
+    for (int i = 0; i < rt->instance_count; i++) {
+        if (rt->instances[i].alive && rt->instances[i].visible)
+            order[n_inst++] = i;
+    }
+    for (int i = 0; i < n_inst - 1; i++) {
+        for (int j = i + 1; j < n_inst; j++) {
+            if (rt->instances[order[i]].depth < rt->instances[order[j]].depth) {
+                int tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+            }
+        }
+    }
+
+    /* 3. Render instances in depth order */
+    for (int k = 0; k < n_inst; k++) {
+        gm82_instance *inst = &rt->instances[order[k]];
+        if (!inst->alive || !inst->visible) continue;
+        if (gm82_events_has_draw_event(rt, inst)) {
+            gm82_events_fire_draw_single(rt, inst);
+        } else if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
+            gm82_gml_set_self(inst);
+            gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                                inst->x - rt->view_x, inst->y - rt->view_y,
+                                inst->image_xscale != 0.0 ? inst->image_xscale : 1.0,
+                                inst->image_yscale != 0.0 ? inst->image_yscale : 1.0,
+                                inst->image_angle, inst->image_blend, inst->image_alpha);
+        }
+    }
+
     rt->frame_phase = GM82_PHASE_POST_DRAW;
     gm82_events_fire_post_draw_all(rt);
+
     rt->frame_phase = GM82_PHASE_IDLE;
     return true;
 }

@@ -1,3 +1,4 @@
+#include "gm82_gml_builtins.h"
 #ifndef GM82_EVENTS_H
 #define GM82_EVENTS_H
 
@@ -29,6 +30,36 @@ enum {
     GM82_STEP_END = 2
 };
 
+/* Other event subtypes (GM 8.x) */
+enum {
+    GM82_OTHER_OUTSIDE = 0,
+    GM82_OTHER_BOUNDARY = 1,
+    GM82_OTHER_GAME_START = 2,
+    GM82_OTHER_GAME_END = 3,
+    GM82_OTHER_ROOM_START = 4,
+    GM82_OTHER_ROOM_END = 5,
+    GM82_OTHER_NO_MORE_LIVES = 6,
+    GM82_OTHER_ANIMATION_END = 7,
+    GM82_OTHER_END_OF_PATH = 8,
+    GM82_OTHER_NO_MORE_HEALTH = 9,
+    GM82_OTHER_USER0 = 10,
+    GM82_OTHER_USER1 = 11,
+    GM82_OTHER_USER2 = 12,
+    GM82_OTHER_USER3 = 13,
+    GM82_OTHER_USER4 = 14,
+    GM82_OTHER_USER5 = 15,
+    GM82_OTHER_USER6 = 16,
+    GM82_OTHER_USER7 = 17,
+    GM82_OTHER_USER8 = 18,
+    GM82_OTHER_USER9 = 19,
+    GM82_OTHER_USER10 = 20,
+    GM82_OTHER_USER11 = 21,
+    GM82_OTHER_USER12 = 22,
+    GM82_OTHER_USER13 = 23,
+    GM82_OTHER_USER14 = 24,
+    GM82_OTHER_USER15 = 25
+};
+
 typedef void (*gm82_event_fn)(gm82_runtime *rt, gm82_instance *self);
 
 typedef struct {
@@ -46,8 +77,15 @@ void gm82_events_fire_begin_step_all(gm82_runtime *rt);
 void gm82_events_fire_step_all(gm82_runtime *rt);
 void gm82_events_fire_end_step_all(gm82_runtime *rt);
 void gm82_events_fire_keyboard_all(gm82_runtime *rt);
+void gm82_events_fire_keypress_all(gm82_runtime *rt);
+void gm82_events_fire_keyrelease_all(gm82_runtime *rt);
 void gm82_events_fire_mouse_all(gm82_runtime *rt);
 void gm82_events_fire_other(gm82_runtime *rt, gm82_instance *inst, int other_index);
+void gm82_events_fire_other_all(gm82_runtime *rt, int other_index);
+void gm82_events_fire_user(gm82_runtime *rt, gm82_instance *inst, int user_index);
+void gm82_events_fire_outside_all(gm82_runtime *rt);
+void gm82_events_fire_boundary_all(gm82_runtime *rt);
+void gm82_events_fire_animation_end_all(gm82_runtime *rt);
 void gm82_events_fire_pre_draw_all(gm82_runtime *rt);
 void gm82_events_fire_draw_all(gm82_runtime *rt);
 void gm82_events_fire_draw_single(gm82_runtime *rt, gm82_instance *inst);
@@ -59,6 +97,8 @@ void gm82_events_clear_gml_bindings(void);
 bool gm82_events_bind_gml_step(const char *object_name_prefix, const char *code);
 bool gm82_events_bind_gml_create(const char *object_name_prefix, const char *code);
 int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size);
+int gm82_events_autobind_from_gmk_blob(const uint8_t *blob, size_t len);
+int gm82_events_autobind_scan_zlib_regions(const uint8_t *data, size_t len);
 
 #ifdef __cplusplus
 }

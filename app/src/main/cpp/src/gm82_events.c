@@ -90,17 +90,7 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
 
 void gm82_events_register_defaults(void) { }
 
-static bool gm82_instance_matches_object(gm82_runtime *rt, gm82_instance *inst, int32_t object_index) {
-    if (!rt || !inst || !rt->objects) return false;
-    if (inst->object_index == object_index) return true;
-    int32_t oi = inst->object_index;
-    int depth = 0;
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        if (oi == object_index) return true;
-        oi = rt->objects->items[oi].parent_index;
-    }
-    return false;
-}
+
 
 static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
                                int main_type, int event_numb,
@@ -114,7 +104,11 @@ static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type != main_type) continue;
-            if (event_numb >= 0 && ev->event_numb != event_numb) continue;
+            if (event_numb >= 0 && ev->event_numb != event_numb) {
+                if (main_type == GM82_EV_OTHER && event_numb >= 10 && event_numb <= 25 && ev->event_numb == (event_numb - 10)) {
+                    /* match user event 0..15 */
+                } else continue;
+            }
             if (ev->action_name0[0])
                 gm82_action_execute_named(rt, inst, ev->action_name0);
             if (ev->code_snippet && ev->code_snippet[0]) {
@@ -124,12 +118,15 @@ static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
                 if (use_other) gm82_gml_set_other(NULL);
             }
         }
-        oi = obj->parent_index;
+        int parent_i = obj->parent_index;
+        if (parent_i < 0 || parent_i == oi) break;
+        oi = parent_i;
     }
 }
 
 void gm82_events_fire_create_single(gm82_runtime *rt, gm82_instance *inst) {
-    if (!rt || !inst) return;
+    if (!rt || !inst || !inst->alive || inst->create_fired) return;
+    inst->create_fired = 1;
     fire_object_events(rt, inst, GM82_EV_CREATE, -1, 0, NULL);
     const gm82_behavior *b = gm82_events_find_behavior(rt, inst->object_index);
     if (b && b->on_create) b->on_create(rt, inst);
@@ -351,7 +348,9 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             }
         }
         if (fired) break;
-        oi = obj->parent_index;
+        int parent_i = obj->parent_index;
+        if (parent_i < 0 || parent_i == oi) break;
+        oi = parent_i;
     }
 }
 
@@ -378,7 +377,9 @@ bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst) {
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             if (obj->events[e].main_type == GM82_EV_DRAW) return true;
         }
-        oi = obj->parent_index;
+        int parent_i = obj->parent_index;
+        if (parent_i < 0 || parent_i == oi) break;
+        oi = parent_i;
     }
     return false;
 }
