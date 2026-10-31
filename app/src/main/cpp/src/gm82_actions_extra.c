@@ -114,6 +114,16 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         else if (op == 2) res = (val1 > val2);
         return res;
     }
+    if (strcmp(name, "action_sprite_set") == 0) {
+        if (argc >= 1 && args[0] >= 0) self->sprite_index = args[0];
+        if (argc >= 2 && args[1] >= 0) self->image_index = args[1];
+        if (argc >= 3) self->image_speed = (double)args[2];
+        return 1;
+    }
+    if (strcmp(name, "action_effect") == 0) {
+        /* effect_create_above/below(kind, x, y, size, color) */
+        return 1;
+    }
     if (strcmp(name, "action_comment") == 0 || strcmp(name, "action_exit") == 0 ||
         strcmp(name, "action_set_caption") == 0 || strcmp(name, "action_set_background") == 0)
         return 1;
