@@ -1190,6 +1190,110 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_string_trim(s); return true;
         }
 
+
+        /* GM82 Core Extensions */
+        if (strcmp(id, "choose_weighted") == 0) {
+            int pairs = nargs / 2;
+            if (pairs > 0) {
+                double vals[16], weights[16];
+                int maxp = pairs > 16 ? 16 : pairs;
+                for (int i = 0; i < maxp; i++) {
+                    vals[i] = args[i * 2];
+                    weights[i] = args[i * 2 + 1];
+                }
+                *out = gml_choose_weighted(vals, weights, maxp);
+            } else {
+                *out = nargs > 0 ? args[0] : 0.0;
+            }
+            return true;
+        }
+        if (strcmp(id, "bigchoose") == 0) {
+            for (int i = 0; i < nargs; i++) gml_bigchoose_add(args[i]);
+            *out = 0.0; return true;
+        }
+        if (strcmp(id, "bigchoose_get") == 0) {
+            *out = gml_bigchoose_get(); return true;
+        }
+        if (strcmp(id, "bigchoose_clear") == 0) {
+            gml_bigchoose_clear(); *out = 0.0; return true;
+        }
+        if (strcmp(id, "bigchoose_weighted") == 0) {
+            for (int i = 0; i + 1 < nargs; i += 2)
+                gml_bigchoose_weighted_add(args[i], args[i+1]);
+            *out = 0.0; return true;
+        }
+        if (strcmp(id, "bigchoose_weighted_get") == 0) {
+            *out = gml_bigchoose_weighted_get(); return true;
+        }
+        if (strcmp(id, "instance_create_depth_moving_ext") == 0) {
+            if (nargs < 6) return false;
+            double hsp = nargs >= 7 ? args[6] : 0.0;
+            double vsp = nargs >= 8 ? args[7] : 0.0;
+            double grav = nargs >= 9 ? args[8] : 0.0;
+            double gdir = nargs >= 10 ? args[9] : 270.0;
+            *out = gml_instance_create_depth_moving_ext(args[0], args[1], args[2], args[3],
+                                                        args[4], args[5], hsp, vsp, grav, gdir);
+            return true;
+        }
+        if (strcmp(id, "move_towards_gravity") == 0) {
+            *out = gml_move_towards_gravity(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0);
+            return true;
+        }
+        if (strcmp(id, "move_towards_jump") == 0) {
+            if (nargs < 5) return false;
+            *out = gml_move_towards_jump(args[0], args[1], args[2], args[3], args[4]);
+            return true;
+        }
+        if (strcmp(id, "draw_setb") == 0) {
+            *out = gml_draw_setb(args[0], nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "draw_setf") == 0) {
+            if (nargs < 5) return false;
+            *out = gml_draw_setf(args[0], args[1], args[2], args[3], args[4]); return true;
+        }
+        if (strcmp(id, "draw_sprite_part_centered") == 0) {
+            if (nargs < 8) return false;
+            *out = gml_draw_sprite_part_centered(args[0], args[1], args[2], args[3],
+                                                 args[4], args[5], args[6], args[7]);
+            return true;
+        }
+        if (strcmp(id, "string_replace_many") == 0) {
+            const char *src_str = (p->str_mask & 1) ? p->str_args[0] : "";
+            const char *pairs[16];
+            int pair_count = 0;
+            for (int i = 1; i + 1 < nargs && pair_count < 8; i += 2) {
+                pairs[pair_count * 2] = (p->str_mask & (1 << i)) ? p->str_args[i] : "";
+                pairs[pair_count * 2 + 1] = (p->str_mask & (1 << (i+1))) ? p->str_args[i+1] : "";
+                pair_count++;
+            }
+            *out = gml_string_replace_many(src_str, pairs, pair_count);
+            return true;
+        }
+        if (strcmp(id, "string_justify") == 0) {
+            const char *src_str = (p->str_mask & 1) ? p->str_args[0] : "";
+            *out = gml_string_justify(src_str, nargs >= 2 ? args[1] : 0.0);
+            return true;
+        }
+        if (strcmp(id, "ds_bag_create") == 0) { *out = gml_ds_bag_create(); return true; }
+        if (strcmp(id, "ds_bag_destroy") == 0) { *out = gml_ds_bag_destroy(arg); return true; }
+        if (strcmp(id, "ds_bag_clear") == 0) { *out = gml_ds_bag_clear(arg); return true; }
+        if (strcmp(id, "ds_bag_add") == 0) {
+            for (int i = 1; i < nargs; i++) gml_ds_bag_add(arg, args[i]);
+            *out = 1.0; return true;
+        }
+        if (strcmp(id, "ds_bag_remove") == 0) {
+            *out = gml_ds_bag_remove(arg, nargs >= 2 ? args[1] : 0.0); return true;
+        }
+        if (strcmp(id, "ds_bag_grab") == 0) { *out = gml_ds_bag_grab(arg); return true; }
+        if (strcmp(id, "ds_bag_size") == 0) { *out = gml_ds_bag_size(arg); return true; }
+        if (strcmp(id, "ds_bag_empty") == 0) { *out = gml_ds_bag_empty(arg); return true; }
+        if (strcmp(id, "dslist") == 0) {
+            *out = gml_dslist_access(arg, nargs, args); return true;
+        }
+        if (strcmp(id, "dsmap") == 0) {
+            *out = gml_dsmap_access(arg, nargs, args); return true;
+        }
+
         if (gm82_gm82core_try_stub(id, out)) return true;
 
         if (strcmp(id, "file_text_writelf") == 0) {

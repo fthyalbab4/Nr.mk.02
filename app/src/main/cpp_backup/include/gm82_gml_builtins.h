@@ -671,6 +671,37 @@ double gml_directory_previous(const char *path);
 double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
+/* GM82 Core additions */
+double gml_choose_weighted(const double *vals, const double *weights, int count);
+void gml_bigchoose_add(double val);
+double gml_bigchoose_get(void);
+void gml_bigchoose_clear(void);
+void gml_bigchoose_weighted_add(double val, double weight);
+double gml_bigchoose_weighted_get(void);
+double gml_instance_create_depth_moving_ext(double x, double y, double depth, double obj,
+                                           double sp, double dir, double hsp, double vsp,
+                                           double grav, double gdir);
+double gml_move_towards_gravity(double xto, double yto, double grav);
+double gml_move_towards_jump(double gox, double goy, double hlim, double vsp_in, double grav);
+double gml_draw_setb(double col, double alpha);
+double gml_draw_setf(double font, double halign, double valign, double col, double alpha);
+double gml_draw_sprite_part(double spr, double subimg, double left, double top,
+                            double width, double height, double x, double y);
+double gml_draw_sprite_part_centered(double spr, double subimg, double left, double top,
+                                    double width, double height, double x, double y);
+double gml_string_replace_many(const char *str, const char **pairs, int pair_count);
+double gml_string_justify(const char *str, double width);
+double gml_ds_bag_create(void);
+double gml_ds_bag_destroy(double id);
+double gml_ds_bag_clear(double id);
+double gml_ds_bag_add(double id, double val);
+double gml_ds_bag_remove(double id, double val);
+double gml_ds_bag_grab(double id);
+double gml_ds_bag_size(double id);
+double gml_ds_bag_empty(double id);
+double gml_dslist_access(double list, int nargs, const double *args);
+double gml_dsmap_access(double map, int nargs, const double *args);
+
 
 #ifdef __cplusplus
 }

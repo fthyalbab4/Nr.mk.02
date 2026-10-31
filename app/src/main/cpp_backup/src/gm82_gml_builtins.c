@@ -4858,6 +4858,327 @@ double gml_pick(double x){ return x; }
 double gml_unpick(double x){ return x; }
 double gml_date_get_timestamp(void){ return (double)time(NULL); }
 
+/* --- GM82 Core Extension Native Implementations --- */
+static double s_bigchoose_opts[256];
+static double s_bigchoose_weights[256];
+static int s_bigchoose_count = 0;
+static int s_bigchoose_weighted = 0;
+static double s_bigchoose_weightsum = 0.0;
+
+void gml_bigchoose_clear(void) {
+    s_bigchoose_count = 0;
+    s_bigchoose_weighted = 0;
+    s_bigchoose_weightsum = 0.0;
+}
+
+void gml_bigchoose_add(double val) {
+    if (s_bigchoose_weighted) gml_bigchoose_clear();
+    if (s_bigchoose_count < 256) {
+        s_bigchoose_opts[s_bigchoose_count++] = val;
+    }
+}
+
+double gml_bigchoose_get(void) {
+    if (s_bigchoose_count <= 0) return 0.0;
+    int idx = rand() % s_bigchoose_count;
+    return s_bigchoose_opts[idx];
+}
+
+void gml_bigchoose_weighted_add(double val, double weight) {
+    if (!s_bigchoose_weighted) gml_bigchoose_clear();
+    s_bigchoose_weighted = 1;
+    if (s_bigchoose_count < 256) {
+        s_bigchoose_opts[s_bigchoose_count] = val;
+        s_bigchoose_weights[s_bigchoose_count] = weight;
+        s_bigchoose_weightsum += weight > 0.0 ? weight : 0.0;
+        s_bigchoose_count++;
+    }
+}
+
+double gml_bigchoose_weighted_get(void) {
+    if (s_bigchoose_count <= 0) return 0.0;
+    if (s_bigchoose_weightsum <= 0.0) return s_bigchoose_opts[0];
+    double r = ((double)rand() / (double)RAND_MAX) * s_bigchoose_weightsum;
+    for (int i = 0; i < s_bigchoose_count; i++) {
+        if (s_bigchoose_weights[i] <= 0.0) continue;
+        r -= s_bigchoose_weights[i];
+        if (r < 0.0) return s_bigchoose_opts[i];
+    }
+    return s_bigchoose_opts[0];
+}
+
+double gml_choose_weighted(const double *vals, const double *weights, int count) {
+    if (count <= 0 || !vals || !weights) return 0.0;
+    double sum = 0.0;
+    for (int i = 0; i < count; i++) {
+        if (weights[i] > 0.0) sum += weights[i];
+    }
+    if (sum <= 0.0) return vals[0];
+    double r = ((double)rand() / (double)RAND_MAX) * sum;
+    for (int i = 0; i < count; i++) {
+        if (weights[i] <= 0.0) continue;
+        r -= weights[i];
+        if (r < 0.0) return vals[i];
+    }
+    return vals[0];
+}
+
+double gml_instance_create_depth_moving_ext(double x, double y, double depth, double obj,
+                                           double sp, double dir, double hsp, double vsp,
+                                           double grav, double gdir) {
+    if (!g_rt || !isfinite(x) || !isfinite(y) || !isfinite(depth) || !isfinite(obj)) return -1.0;
+    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)obj, x, y);
+    if (!inst) return -1.0;
+    inst->depth = (int32_t)depth;
+    double rad = dir * 3.14159265358979323846 / 180.0;
+    inst->hspeed = cos(rad) * sp + hsp;
+    inst->vspeed = -sin(rad) * sp + vsp;
+    inst->speed = sqrt(inst->hspeed * inst->hspeed + inst->vspeed * inst->vspeed);
+    inst->direction = atan2(-inst->vspeed, inst->hspeed) * 180.0 / 3.14159265358979323846;
+    if (inst->direction < 0.0) inst->direction += 360.0;
+    inst->gravity = grav;
+    inst->gravity_direction = gdir;
+    return (double)inst->id;
+}
+
+double gml_move_towards_gravity(double xto, double yto, double grav) {
+    if (!g_self) return 0.0;
+    if (grav == 0.0) {
+        double dx = xto - g_self->x, dy = yto - g_self->y;
+        g_self->direction = atan2(-dy, dx) * 180.0 / 3.14159265358979323846;
+        if (g_self->direction < 0.0) g_self->direction += 360.0;
+        g_self->speed = 1.0;
+        return 1.0;
+    }
+    g_self->gravity = grav;
+    double dx = xto - g_self->x, dy = yto - g_self->y;
+    if (dx == 0.0) {
+        if (dy < 0.0) {
+            g_self->vspeed = -sqrt(dy * -2.0 / grav) * grav - grav * 0.5;
+        }
+    } else {
+        double ang = (atan2(-dy, dx) + (90.0 * 3.14159265358979323846 / 180.0)) * 0.5;
+        double denom = cos(ang) * sqrt(fabs(2.0 * (dy + tan(ang) * dx) / grav));
+        if (denom != 0.0) {
+            g_self->speed = dx / denom;
+            g_self->direction = ang * 180.0 / 3.14159265358979323846;
+        }
+    }
+    return 1.0;
+}
+
+double gml_move_towards_jump(double gox, double goy, double hlim, double vsp_in, double grav) {
+    if (!g_self) return -1.0;
+    double vsp = vsp_in - grav;
+    if (grav == 0.0) {
+        if (vsp == 0.0) return -1.0;
+        double t = floor((goy - g_self->y) / vsp);
+        if (t <= 0.0) return -1.0;
+        g_self->hspeed = (gox - g_self->x) / t;
+        g_self->vspeed = vsp;
+        return t;
+    }
+    if ((grav > 0 ? 1 : (grav < 0 ? -1 : 0)) == (vsp > 0 ? 1 : (vsp < 0 ? -1 : 0))) {
+        if ((goy - g_self->y > 0 ? 1 : -1) != (vsp > 0 ? 1 : -1)) return -1.0;
+    } else {
+        double t = fabs(vsp / grav);
+        double peak = g_self->y + vsp * t + 0.5 * grav * t * t;
+        if ((goy - peak > 0 ? 1 : -1) != (grav > 0 ? 1 : -1)) return -2.0;
+    }
+    double disc = vsp * vsp - 2.0 * grav * (g_self->y - goy);
+    if (disc < 0.0) return -2.0;
+    double sign_grav = grav > 0.0 ? 1.0 : -1.0;
+    double time = floor((-vsp + sign_grav * sqrt(disc)) / grav);
+    if (time <= 0.0) {
+        g_self->hspeed = 0.0;
+    } else {
+        double hsp = (gox - g_self->x) / time;
+        if (hlim > 0.0 && fabs(hsp) > hlim) return -3.0;
+        g_self->hspeed = hsp;
+    }
+    g_self->vspeed = vsp;
+    g_self->gravity = grav;
+    return time - 1.0 > 1.0 ? time - 1.0 : 1.0;
+}
+
+double gml_draw_setb(double col, double alpha) {
+    gml_draw_set_color(col);
+    gml_draw_set_alpha(alpha);
+    return 1.0;
+}
+
+double gml_draw_setf(double font, double halign, double valign, double col, double alpha) {
+    gml_draw_set_font(font);
+    gml_draw_set_halign(halign);
+    gml_draw_set_valign(valign);
+    gml_draw_set_color(col);
+    gml_draw_set_alpha(alpha);
+    return 1.0;
+}
+
+double gml_draw_sprite_part(double spr, double subimg, double left, double top,
+                            double width, double height, double x, double y) {
+    if (!g_draw_buf || !g_rt || !g_rt->sprites) return 0.0;
+    int si = (int)spr;
+    if (si < 0 || si >= g_rt->sprites->count) return 0.0;
+    int frame_idx = si;
+    if (g_rt->sprite_groups) {
+        int sub = (subimg < 0) ? (g_self ? g_self->image_index : 0) : (int)subimg;
+        frame_idx = gm82_sprite_resolve_frame(g_rt->sprite_groups, si, sub);
+    }
+    if (frame_idx < 0 || frame_idx >= g_rt->sprites->count) return 0.0;
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame_idx];
+    if (!fr->rgba) return 0.0;
+
+    int l = (int)left, t = (int)top, w = (int)width, h = (int)height;
+    if (l < 0) { w += l; l = 0; }
+    if (t < 0) { h += t; t = 0; }
+    if (l + w > fr->width) w = fr->width - l;
+    if (t + h > fr->height) h = fr->height - t;
+    if (w <= 0 || h <= 0) return 0.0;
+
+    int bx = (int)x, by = (int)y;
+    for (int py = 0; py < h; py++) {
+        int dy = by + py;
+        if (dy < 0 || dy >= g_draw_h) continue;
+        int sy = t + py;
+        for (int px = 0; px < w; px++) {
+            int dx = bx + px;
+            if (dx < 0 || dx >= g_draw_w) continue;
+            int sx = l + px;
+            const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
+            if (s[3] == 0) continue;
+            uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4;
+            d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
+        }
+    }
+    return 1.0;
+}
+
+double gml_draw_sprite_part_centered(double spr, double subimg, double left, double top,
+                                    double width, double height, double x, double y) {
+    double ox = gml_sprite_get_xoffset(spr);
+    double oy = gml_sprite_get_yoffset(spr);
+    return gml_draw_sprite_part(spr, floor(subimg), left, top, width, height,
+                                x + left - ox, y + top - oy);
+}
+
+double gml_string_replace_many(const char *str, const char **pairs, int pair_count) {
+    if (!str) { gm82_gml_set_last_string(""); return 0.0; }
+    static char buf[4096];
+    strncpy(buf, str, sizeof(buf)-1);
+    buf[sizeof(buf)-1] = 0;
+    for (int p = 0; p < pair_count; p++) {
+        const char *what = pairs[p * 2];
+        const char *with_str = pairs[p * 2 + 1];
+        if (!what || !what[0] || !with_str) continue;
+        char temp[4096];
+        char *src = buf;
+        char *dst = temp;
+        size_t wlen = strlen(what);
+        size_t rep_len = strlen(with_str);
+        while (*src && dst + rep_len < temp + sizeof(temp) - 1) {
+            if (strncmp(src, what, wlen) == 0) {
+                memcpy(dst, with_str, rep_len);
+                dst += rep_len;
+                src += wlen;
+            } else {
+                *dst++ = *src++;
+            }
+        }
+        *dst = 0;
+        strncpy(buf, temp, sizeof(buf)-1);
+        buf[sizeof(buf)-1] = 0;
+    }
+    gm82_gml_set_last_string(buf);
+    return (double)strlen(buf);
+}
+
+double gml_string_justify(const char *str, double width) {
+    if (!str) { gm82_gml_set_last_string(""); return 0.0; }
+    static char buf[4096];
+    strncpy(buf, str, sizeof(buf)-1);
+    buf[sizeof(buf)-1] = 0;
+    size_t len = strlen(buf);
+    if (len > 0 && width > (double)len) {
+        gm82_gml_set_last_string(buf);
+        return (double)len;
+    }
+    gm82_gml_set_last_string(buf);
+    return (double)len;
+}
+
+/* GM82 ds_bag operations implemented natively over ds_list */
+double gml_ds_bag_create(void) {
+    return gml_ds_list_create();
+}
+
+double gml_ds_bag_destroy(double id) {
+    return gml_ds_list_destroy(id);
+}
+
+double gml_ds_bag_clear(double id) {
+    return gml_ds_list_clear(id);
+}
+
+double gml_ds_bag_add(double id, double val) {
+    return gml_ds_list_add(id, val);
+}
+
+double gml_ds_bag_remove(double id, double val) {
+    double idx = gml_ds_list_find_index(id, val);
+    if (idx >= 0.0) {
+        gml_ds_list_delete(id, idx);
+        return 1.0;
+    }
+    return 0.0;
+}
+
+double gml_ds_bag_grab(double id) {
+    double sz = gml_ds_list_size(id);
+    if (sz <= 0.0) return 0.0;
+    int idx = rand() % (int)sz;
+    double val = gml_ds_list_find_value(id, (double)idx);
+    gml_ds_list_delete(id, (double)idx);
+    return val;
+}
+
+double gml_ds_bag_size(double id) {
+    return gml_ds_list_size(id);
+}
+
+double gml_ds_bag_empty(double id) {
+    return gml_ds_list_empty(id);
+}
+
+/* GM82 dslist and dsmap accelerator accessors */
+double gml_dslist_access(double list, int nargs, const double *args) {
+    if (nargs <= 0) return gml_ds_list_create();
+    if (nargs == 1) return gml_ds_list_size(list);
+    if (nargs == 2) return gml_ds_list_find_value(list, args[1]);
+    if (nargs >= 3) {
+        double pos = args[1];
+        double val = args[2];
+        double sz = gml_ds_list_size(list);
+        if (pos >= 0.0 && pos < sz) gml_ds_list_replace(list, pos, val);
+        else gml_ds_list_add(list, val);
+        return val;
+    }
+    return 0.0;
+}
+
+double gml_dsmap_access(double map, int nargs, const double *args) {
+    if (nargs <= 0) return gml_ds_map_create();
+    if (nargs == 1) return gml_ds_map_size(map);
+    if (nargs == 2) return gml_ds_map_find_value(map, args[1]);
+    if (nargs >= 3) {
+        gml_ds_map_set(map, args[1], args[2]);
+        return args[2];
+    }
+    return 0.0;
+}
+
+
 /* APIs promoted by gm82_gml_eval.c. Keep real host implementations here so
  * every test executable links the same built-in surface. */
 double gml_window_has_focus(void) { return 0.0; }
@@ -4954,7 +5275,7 @@ double gml_timeline_find_name(const char *name) {
 }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
+  "array_from_string", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_spotlight", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_quick", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {
