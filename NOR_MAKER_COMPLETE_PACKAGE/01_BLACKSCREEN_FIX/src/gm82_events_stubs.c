@@ -70,3 +70,8 @@ bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst) {
     return false;
 }
 void gm82_events_fire_post_draw_all(gm82_runtime *rt) { (void)rt; }
+
+int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
+    (void)data; (void)size;
+    return 0;
+}
