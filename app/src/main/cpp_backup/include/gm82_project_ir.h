@@ -47,6 +47,9 @@ typedef struct gm82_room_instance {
     int32_t id;
     int32_t object_id;
     double  x, y;
+    double  xscale, yscale;
+    double  angle;
+    int32_t blend;
     char   *creation_code;
     bool    locked;
 } gm82_room_instance;
@@ -59,6 +62,8 @@ typedef struct gm82_room_tile {
     int32_t width, height;
     int32_t depth;
     bool    locked;
+    double  xscale, yscale;
+    int32_t blend;
 } gm82_room_tile;
 
 typedef struct gm82_room_view {
@@ -93,6 +98,69 @@ typedef struct gm82_res_room {
     gm82_resource_status status;
 } gm82_res_room;
 
+/* GM82 settings/settings.txt — mirrors the official key names. */
+typedef struct gm82_project_settings {
+    bool    fullscreen;
+    bool    interpolate_pixels;
+    bool    dont_draw_border;
+    bool    display_cursor;
+    bool    allow_resize;
+    bool    window_on_top;
+    bool    set_resolution;
+    bool    dont_show_buttons;
+    bool    vsync;
+    bool    swap_creation_events;
+    bool    disable_screensaver;
+    bool    f4_fullscreen_toggle;
+    bool    f1_help_menu;
+    bool    esc_close_game;
+    bool    f5_save_f6_load;
+    bool    f9_screenshot;
+    bool    treat_close_as_esc;
+    bool    freeze_on_lose_focus;
+    bool    transparent;
+    bool    scale_progress_bar;
+    bool    custom_loader;
+    bool    show_error_messages;
+    bool    log_errors;
+    bool    always_abort;
+    bool    zero_uninitialized_vars;
+    bool    error_on_uninitialized_args;
+    int32_t scaling;
+    int32_t clear_color;
+    int32_t color_depth;
+    int32_t resolution;
+    int32_t frequency;
+    int32_t priority;
+    int32_t translucency;
+    int32_t custom_bar;
+    int32_t loaded_key_count;
+} gm82_project_settings;
+
+typedef struct gm82_res_constant {
+    char *name;
+    char *value;
+} gm82_res_constant;
+
+typedef struct gm82_res_included_file {
+    char   *name;
+    bool    stored_in_gmk;
+    bool    free_memory;
+    bool    overwrite_file;
+    bool    remove_at_end;
+    int32_t export_setting;
+    char   *export_folder;
+    char   *source_path;
+    size_t  source_length;
+} gm82_res_included_file;
+
+typedef struct gm82_res_trigger {
+    char   *name;
+    char   *constant_name;
+    int32_t kind;
+    char   *condition;
+} gm82_res_trigger;
+
 typedef struct gm82_project_ir {
     int32_t ir_version;
     gm82_gmk_format_kind format;
@@ -109,8 +177,21 @@ typedef struct gm82_project_ir {
     int32_t room_count;
     gm82_res_room *rooms;
     int32_t object_count;
+    /* Resource names in declaration order (index.yyd), owned by the IR.
+     * Needed because instances/tiles reference resources by name. */
+    int32_t object_name_count;
+    char  **object_names;
+    int32_t background_name_count;
+    char  **background_names;
     int32_t sound_count;
     int32_t script_count;
+    gm82_project_settings settings;
+    int32_t constant_count;
+    gm82_res_constant *constants;
+    int32_t included_file_count;
+    gm82_res_included_file *included_files;
+    int32_t trigger_count;
+    gm82_res_trigger *triggers;
     char   *error_message;
     int32_t partial_count;
 } gm82_project_ir;

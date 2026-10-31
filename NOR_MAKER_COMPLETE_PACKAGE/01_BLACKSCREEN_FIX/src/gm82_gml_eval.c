@@ -79,7 +79,7 @@ static bool parse_ident(gml_parser *p, char *buf, size_t buflen) {
     skip_ws(p);
     if (p->i >= p->n || (!isalpha((unsigned char)p->s[p->i]) && p->s[p->i] != '_')) return false;
     size_t j = 0;
-    while (p->i < p->n && (isalnum((unsigned char)p->s[p->i]) || p->s[p->i]=='_' || p->s[p->i]=='.')) {
+    while (p->i < p->n && (isalnum((unsigned char)p->s[p->i]) || p->s[p->i]=='_')) {
         if (j + 1 < buflen) buf[j++] = p->s[p->i];
         p->i++;
     }

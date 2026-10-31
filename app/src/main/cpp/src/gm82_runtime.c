@@ -17,6 +17,7 @@
 void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     gm82_gml_reset_globals(rt);
+    gm82_gml_set_runtime(rt);
     rt->next_id = 100001;
     rt->room_speed = 30;
     rt->room_width = 640;

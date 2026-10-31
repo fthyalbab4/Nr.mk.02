@@ -149,5 +149,49 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         self->alarms[idx] += val;
         return 1;
     }
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int flag = (argc >= 3) ? args[2] : 0;
+        if (flag == 1) { x += self->x; y += self->y; }
+        return gml_place_empty(x, y) != 0.0;
+    }
+    if (strcmp(name, "action_if_dice") == 0) {
+        int sides = (argc >= 1 && args[0] > 0) ? args[0] : 6;
+        return (rand() % sides) == 0;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        double obj = (argc >= 3) ? (double)args[2] : -1;
+        return gml_place_meeting(x, y, obj) != 0.0;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        double val1 = 0, val2 = (argc >= 3) ? (double)args[2] : 0;
+        int op = (argc >= 2) ? args[1] : 0;
+        if (str_argc >= 1 && str_args[0][0]) {
+            gm82_gml_eval_expr(rt, self, str_args[0], &val1);
+        } else {
+            val1 = (argc >= 1) ? (double)args[0] : 0;
+        }
+        if (str_argc >= 2 && str_args[1][0]) {
+            gm82_gml_eval_expr(rt, self, str_args[1], &val2);
+        }
+        switch (op) {
+            case 0: return val1 == val2;
+            case 1: return val1 < val2;
+            case 2: return val1 > val2;
+            case 3: return val1 <= val2;
+            case 4: return val1 >= val2;
+            case 5: return val1 != val2;
+            default: return val1 == val2;
+        }
+    }
+    if (strcmp(name, "action_sprite_set") == 0) {
+        if (argc >= 1) self->sprite_index = args[0];
+        if (argc >= 2) self->image_index = args[1];
+        if (argc >= 3) self->image_speed = (double)args[2];
+        return 1;
+    }
     return 0;
 }

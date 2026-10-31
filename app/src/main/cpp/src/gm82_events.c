@@ -90,17 +90,6 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
 
 void gm82_events_register_defaults(void) { }
 
-static bool gm82_instance_matches_object(gm82_runtime *rt, gm82_instance *inst, int32_t object_index) {
-    if (!rt || !inst || !rt->objects) return false;
-    if (inst->object_index == object_index) return true;
-    int32_t oi = inst->object_index;
-    int depth = 0;
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        if (oi == object_index) return true;
-        oi = rt->objects->items[oi].parent_index;
-    }
-    return false;
-}
 
 static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
                                int main_type, int event_numb,
@@ -124,7 +113,9 @@ static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
                 if (use_other) gm82_gml_set_other(NULL);
             }
         }
-        oi = obj->parent_index;
+        int32_t p = obj->parent_index;
+        if (p < 0 || p == oi) break;
+        oi = p;
     }
 }
 
@@ -204,7 +195,9 @@ void gm82_events_fire_keyboard_all(gm82_runtime *rt) {
                     gm82_gml_eval_block(rt, inst, ev->code_snippet);
                 }
             }
-            oi = obj->parent_index;
+            int32_t p = obj->parent_index;
+            if (p < 0 || p == oi) break;
+            oi = p;
         }
     }
 }
@@ -230,7 +223,9 @@ void gm82_events_fire_keypress_all(gm82_runtime *rt) {
                     gm82_gml_eval_block(rt, inst, ev->code_snippet);
                 }
             }
-            oi = obj->parent_index;
+            int32_t p = obj->parent_index;
+            if (p < 0 || p == oi) break;
+            oi = p;
         }
     }
 }
@@ -256,7 +251,9 @@ void gm82_events_fire_keyrelease_all(gm82_runtime *rt) {
                     gm82_gml_eval_block(rt, inst, ev->code_snippet);
                 }
             }
-            oi = obj->parent_index;
+            int32_t p = obj->parent_index;
+            if (p < 0 || p == oi) break;
+            oi = p;
         }
     }
 }
@@ -351,7 +348,9 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             }
         }
         if (fired) break;
-        oi = obj->parent_index;
+        int32_t p = obj->parent_index;
+        if (p < 0 || p == oi) break;
+        oi = p;
     }
 }
 
@@ -378,7 +377,9 @@ bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst) {
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             if (obj->events[e].main_type == GM82_EV_DRAW) return true;
         }
-        oi = obj->parent_index;
+        int32_t p = obj->parent_index;
+        if (p < 0 || p == oi) break;
+        oi = p;
     }
     return false;
 }
