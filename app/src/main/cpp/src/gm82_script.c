@@ -18,10 +18,28 @@ int gm82_script_add(gm82_script_list *L, const char *name, const char *code) {
     return L->count++;
 }
 
+static void normalize_name(const char *src, char *dst, size_t dst_sz) {
+    size_t j = 0;
+    for (size_t i = 0; src[i] && j + 1 < dst_sz; i++) {
+        char c = src[i];
+        if (c == '_' || c == ' ' || c == '-') continue;
+        if (c >= 'A' && c <= 'Z') c = (char)(c + 32);
+        dst[j++] = c;
+    }
+    dst[j] = 0;
+}
+
 int gm82_script_find(const gm82_script_list *L, const char *name) {
     if (!L || !name) return -1;
-    for (int i = 0; i < L->count; i++)
+    for (int i = 0; i < L->count; i++) {
         if (strcmp(L->items[i].name, name) == 0) return i;
+    }
+    char n1[64], n2[64];
+    normalize_name(name, n1, sizeof(n1));
+    for (int i = 0; i < L->count; i++) {
+        normalize_name(L->items[i].name, n2, sizeof(n2));
+        if (n1[0] && strcmp(n1, n2) == 0) return i;
+    }
     return -1;
 }
 
@@ -73,9 +91,12 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
         if (ver != 800 && ver != 400 && ver != 520) { free(d); continue; }
         int32_t n = rd_i32(d + off); off += 4;
         if (n < 0 || off + (size_t)n > ol) { free(d); continue; }
-        if (strncmp(name, "scr", 3) != 0 && strncmp(name, "script", 6) != 0) {
-            if (off + (size_t)n != ol) { free(d); continue; }
+        if (strncmp(name, "spr", 3) == 0 || strncmp(name, "bg", 2) == 0 ||
+            strncmp(name, "obj", 3) == 0 || strncmp(name, "rm", 2) == 0 ||
+            strncmp(name, "room", 4) == 0) {
+            free(d); continue;
         }
+        if (off + (size_t)n != ol) { free(d); continue; }
         char code[GM82_SCRIPT_CODE_MAX] = "";
         size_t copy_len = (size_t)n < (GM82_SCRIPT_CODE_MAX - 1) ? (size_t)n : (GM82_SCRIPT_CODE_MAX - 1);
         memcpy(code, d + off, copy_len);

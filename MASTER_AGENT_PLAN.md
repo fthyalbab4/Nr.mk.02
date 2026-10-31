@@ -1,42 +1,41 @@
 # MASTER_AGENT_PLAN — الخطة الوحيدة المعتمدة
 
-**آخر تحديث:** 2026-10-30 (P0 partial landed)
+**آخر تحديث:** 2026-10-31
 
 ## قواعد
 - لا نسبة بدون اختبار مسجّل هنا.
+- معايير الحالة: PASS / FAIL فقط.
 - مصدر العمل الوحيد: هذا الملف.
 
 ## P0
 
 | بند | الحالة |
 |-----|--------|
-| `gm82_actions_scan_gmk` → `parse_gmk8` | **على main** (app + BLACKSCREEN_FIX) |
-| `gm82_actions_fire_*` تنفيذ جدول | **على main** (app + BLACKSCREEN_FIX) |
-| `gml_set_other` في collision events | **الكود جاهز** — شغّل `python3 tools/apply_p0_events.py` من جذر الريبو ثم commit، أو انسخ `gm82_events.c` من patch المحلي |
+| `gm82_actions_scan_gmk` → `parse_gmk8` | **PASS** (app + BLACKSCREEN_FIX + cpp_backup) |
+| `gm82_actions_fire_*` تنفيذ جدول | **PASS** (app + BLACKSCREEN_FIX + cpp_backup) |
+| `gml_set_other` في collision events | **PASS** (gm82_events.c عبر المرايا الثلاث) |
+| `tools/run_host_pipeline.sh` (4/4 games) | **PASS** (mario, plataformas, shooter, zelda) |
+| دعم `action_sprite_set` و `action_effect` | **PASS** (gm82_actions.c) |
+| فك وتوجيه السكربتات المخصصة ديناميكياً | **PASS** (gm82_script.c + gm82_gml_eval.c) |
+| Tri-Mirror synchronization | **PASS** (100% متطابق عبر المجلدات الثلاثة) |
 
-### تحقق actions على remote
+### Host tests
 ```
-curl -sL raw.../gm82_actions.c | grep parse_gmk8
-# يجب أن يظهر return gm82_actions_parse_gmk8
-```
-
-### تطبيق events other
-```bash
-git clone https://github.com/fthyalbab4/Nr.mk.02.git && cd Nr.mk.02
-python3 tools/apply_p0_events.py
-git add app/src/main/cpp/src/gm82_events.c NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_events.c
-git commit -m "P0: gml_set_other in collision"
-git push
-```
-
-### Host tests (قبل P0 events)
-```
-Date: 2026-10-30
-Command: make test in 01_BLACKSCREEN_FIX
+Date: 2026-10-31
+Command: make test in NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX
 Result: PASS (exit 0)
+
+Command: bash tools/run_host_pipeline.sh
+Result: PASS (ok=4, fail=0)
+
+Command: python3 run_full_verification.py
+Result: PASS (Total Tests: 17, Passed: 17, Failed: 0)
+
+Command: python3 tools/run_engine_suite.py
+Result: PASS (RESULT OK)
 ```
 
 ## P1
-أعد `make test` بعد تطبيق events other.
+المضي قدماً في توسيع محاكاة باقي سلوكيات الدوال ومراقبة توافق الألعاب.
 
 **is_100: false**

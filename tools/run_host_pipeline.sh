@@ -145,7 +145,7 @@ gcc -O2 -I"$INC" -I"$CPP" -o "$ROOT/build_host/pipeline_min" \
   "$SRC/gm82_gml_builtins.c" "$SRC/gm82_gml_eval.c" "$SRC/gm82_gml_string_vm.c" \
   "$SRC/gm82_audio_mixer.c" \
   "$SRC/gm82_portable_compat.c" \
-  "$SRC/gm82_actions.c" "$SRC/gm82_actions_extra.c" "$SRC/gm82_view.c" "$SRC/gm82_path.c" \
+  "$SRC/gm82_actions.c" "$SRC/gm82_actions_extra.c" "$SRC/gm82_actions_gmk8.c" "$SRC/gm82_view.c" "$SRC/gm82_path.c" \
   "$SRC/gm82_timeline.c" "$SRC/gm82_script.c" \
   "$SRC/gm82_particles.c" "$SRC/gm82_mp_grid.c" \
   "$SRC/gm82_sound_runtime.c" "$SRC/gm82_soft_render.c" \

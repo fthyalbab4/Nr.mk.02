@@ -14,9 +14,7 @@
 #include <windows.h>
 #endif
 
-/* Full action table restored from good commit + hook to gm82_actions_extra.c.
- * For complete body see repo history; this version prioritizes the extra hook path.
- */
+/* Full action table + hook to gm82_actions_extra.c + real table fire/scan. */
 
 extern int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char *name,
     const int32_t *args, int argc, const char str_args[][128], int str_argc);
@@ -57,7 +55,6 @@ bool gm82_action_execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_a
     return true;
 }
 
-/* Minimal core + extra hook. Extended handlers live in gm82_actions_extra.c */
 static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char *name,
                                const int32_t *args, int argc,
                                const char str_args[][128], int str_argc) {
@@ -121,7 +118,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_set_score") == 0) { gml_set_score((argc >= 1) ? (double)args[0] : 0); return true; }
     if (strcmp(name, "action_set_lives") == 0) { gml_set_lives((argc >= 1) ? (double)args[0] : 3); return true; }
     if (strcmp(name, "action_set_health") == 0) { gml_set_health((argc >= 1) ? (double)args[0] : 100); return true; }
-    if (strcmp(name, "action_set_sprite") == 0) {
+    if (strcmp(name, "action_set_sprite") == 0 || strcmp(name, "action_sprite_set") == 0) {
         if (argc >= 1) self->sprite_index = args[0];
         if (argc >= 2) self->image_index = args[1];
         return true;
@@ -131,6 +128,9 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         int val = (argc >= 2) ? args[1] : 30;
         if (idx < 0) idx = 0; if (idx > 11) idx = 11;
         self->alarms[idx] = val; return true;
+    }
+    if (strcmp(name, "action_effect") == 0) {
+        return true;
     }
 
     if (strcmp(name, "action_if_dice") == 0) {
@@ -162,7 +162,6 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         }
     }
 
-    /* Expanded handlers */
     if (gm82_action_execute_extra(rt, self, name, args, argc, str_args, str_argc))
         return true;
 
@@ -170,22 +169,78 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     return false;
 }
 
-/* Stubs for table scan / fire — keep symbols for link */
 int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *out) {
-    (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
+    if (!out) return 0;
+    return gm82_actions_parse_gmk8(data, size, out);
 }
-void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self, gm82_instance *other, const gm82_action_table *table) {
-    (void)rt; (void)self; (void)other; (void)table;
+
+static const gm82_object_actions *gm82_actions_find_object(const gm82_action_table *table,
+                                                          gm82_runtime *rt, gm82_instance *self) {
+    if (!table || !table->objects || table->count <= 0 || !rt || !self || !rt->objects)
+        return NULL;
+    int oi = self->object_index;
+    if (oi < 0 || oi >= rt->objects->count) return NULL;
+    const char *name = rt->objects->items[oi].name;
+    if (!name || !name[0]) return NULL;
+    if (oi < table->count && table->objects[oi].object_name[0] &&
+        strcmp(table->objects[oi].object_name, name) == 0)
+        return &table->objects[oi];
+    for (int i = 0; i < table->count; i++) {
+        if (strcmp(table->objects[i].object_name, name) == 0)
+            return &table->objects[i];
+    }
+    return NULL;
 }
+
+static void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self,
+                                    const gm82_action_table *table,
+                                    int event_type, int event_numb, int match_numb) {
+    const gm82_object_actions *oa = gm82_actions_find_object(table, rt, self);
+    if (!oa || !oa->items) return;
+    for (int i = 0; i < oa->count; i++) {
+        const gm82_action_ref *ar = &oa->items[i];
+        if (ar->event_type != event_type) continue;
+        if (match_numb && ar->event_numb != event_numb) continue;
+        if (ar->is_condition) {
+            (void)gm82_action_execute_ref(rt, self, ar);
+            continue;
+        }
+        gm82_action_execute_ref(rt, self, ar);
+    }
+}
+
+void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self, gm82_instance *other,
+                                 const gm82_action_table *table) {
+    if (!rt || !self || !table) return;
+    const gm82_object_actions *oa = gm82_actions_find_object(table, rt, self);
+    if (!oa || !oa->items) return;
+    int other_obj = (other && other->alive) ? other->object_index : -1;
+    if (other) gm82_gml_set_other(other);
+    for (int i = 0; i < oa->count; i++) {
+        const gm82_action_ref *ar = &oa->items[i];
+        if (ar->event_type != 4) continue;
+        if (ar->event_numb >= 0 && other_obj >= 0 && ar->event_numb != other_obj) continue;
+        if (ar->is_condition) {
+            (void)gm82_action_execute_ref(rt, self, ar);
+            continue;
+        }
+        gm82_action_execute_ref(rt, self, ar);
+    }
+    gm82_gml_set_other(NULL);
+}
+
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    (void)rt; (void)self; (void)table;
+    gm82_actions_fire_event(rt, self, table, 0, 0, 0);
 }
+
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    (void)rt; (void)self; (void)table;
+    gm82_actions_fire_event(rt, self, table, 3, 0, 1);
 }
+
 void gm82_actions_fire_alarm(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table, int alarm_index) {
-    (void)rt; (void)self; (void)table; (void)alarm_index;
+    gm82_actions_fire_event(rt, self, table, 2, alarm_index, 1);
 }
+
 void gm82_actions_fire_draw(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {
-    (void)rt; (void)self; (void)table;
+    gm82_actions_fire_event(rt, self, table, 8, 0, 1);
 }
