@@ -9,7 +9,23 @@ const s2_end = html.indexOf("</script>", s2);
 let mainScript = html.substring(html.indexOf(">", s2) + 1, s2_end).replace(/import\.meta\.url/g, "\"file:///\"").replace(/import\.meta/g, "{}");
 mainScript = mainScript.replace("class GmkConverter {", "window.GmkConverter = class GmkConverter {").replace("const createEngineHTML =", "window.createEngineHTML =");
 class FakeBlob { constructor() {} }
-const makeEl = () => ({ getContext: () => ({ drawImage: () => {}, fillRect: () => {}, clearRect: () => {}, createImageData: (w,h) => ({ data: new Uint8Array(w*h*4) }), putImageData: () => {} }), style: {}, setAttribute: () => {}, removeAttribute: () => {}, appendChild: () => {}, addEventListener: () => {}, removeEventListener: () => {}, toDataURL: () => "data:image/png;base64,", relList: { supports: () => true } });
+const makeEl = () => ({
+  nodeType: 1,
+  nodeName: "DIV",
+  childNodes: [],
+  getContext: () => ({ drawImage: () => {}, fillRect: () => {}, clearRect: () => {}, createImageData: (w,h) => ({ data: new Uint8Array(w*h*4) }), putImageData: () => {} }),
+  style: {},
+  setAttribute: () => {},
+  removeAttribute: () => {},
+  appendChild: (c) => c,
+  removeChild: (c) => c,
+  insertBefore: (c) => c,
+  replaceChild: (c) => c,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  toDataURL: () => "data:image/png;base64,",
+  relList: { supports: () => true }
+});
 const sandbox = { console, setTimeout, clearTimeout, Uint8Array, ArrayBuffer, DataView, TextDecoder, TextEncoder, Math, JSON, String, Number, Array, Object, RegExp, Set, Map, URL, URLSearchParams, Blob: FakeBlob, document: { createElement: makeEl, getElementById: () => makeEl(), querySelector: () => makeEl(), querySelectorAll: () => [], head: makeEl(), body: makeEl(), addEventListener: () => {}, removeEventListener: () => {} }, navigator: { userAgent: "Node" }, location: { href: "http://localhost/" } };
 sandbox.URL.createObjectURL = () => "blob:fake";
 sandbox.window = sandbox; sandbox.global = sandbox; sandbox.globalThis = sandbox;
