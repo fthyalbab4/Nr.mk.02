@@ -49,3 +49,7 @@
 ## 2026-10-29 - Home & End Boundary Keyboard Navigation for Card Grids
 **Learning:** In extensive interactive card grids (such as catalog overlays containing dozens or hundreds of items), directional arrow keys alone require numerous keypresses to navigate between distant items. Adding `Home` (jump to first card) and `End` (jump to last card) key listeners on grid card elements enables instant boundary jumping for keyboard and screen-reader users.
 **Action:** Always bind `Home` and `End` key listeners on interactive grid card focus targets to shift focus directly to the grid's first (`querySelector('.card')`) or last (`querySelectorAll('.card')`) child element.
+
+## 2026-10-31 - Modal Dialog Accessible Name Computation via aria-labelledby
+**Learning:** Using only `aria-label` on modal dialog containers (`role="dialog"`) often overrides or disconnects screen reader announcements from visible header typography. When a visual title header exists within the dialog, binding `aria-labelledby` directly to the title element's ID ensures full compliance with WAI-ARIA dialog practices and guarantees screen readers announce the exact rendered modal heading upon dialog focus.
+**Action:** Always assign a dedicated ID to the modal's primary title element and bind the modal container via `aria-labelledby="[modal-title-id]"`.
