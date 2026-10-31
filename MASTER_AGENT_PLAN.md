@@ -1,6 +1,6 @@
 # MASTER_AGENT_PLAN — الخطة الوحيدة المعتمدة
 
-**آخر تحديث:** 2026-10-30 (P0 partial landed)
+**آخر تحديث:** 2026-10-31 (P0 events gml_set_other landed in local + host test PASS)
 
 ## قواعد
 - لا نسبة بدون اختبار مسجّل هنا.
@@ -12,31 +12,32 @@
 |-----|--------|
 | `gm82_actions_scan_gmk` → `parse_gmk8` | **على main** (app + BLACKSCREEN_FIX) |
 | `gm82_actions_fire_*` تنفيذ جدول | **على main** (app + BLACKSCREEN_FIX) |
-| `gml_set_other` في collision events | **الكود جاهز** — شغّل `python3 tools/apply_p0_events.py` من جذر الريبو ثم commit، أو انسخ `gm82_events.c` من patch المحلي |
+| `gml_set_other` في collision events | **الكود جاهز + مختبر** — الملف الكامل (33426 بايت، 4x gml_set_other) موجود محليا في `tools/restore_events_full.py`. على remote: app/ version مقطوعة (فقط collision) — شغّل `python3 tools/restore_events_full.py` بعد pull لإصلاح كلا المسارين |
 
-### تحقق actions على remote
+### Host tests (after P0 events patch)
 ```
-curl -sL raw.../gm82_actions.c | grep parse_gmk8
-# يجب أن يظهر return gm82_actions_parse_gmk8
+Date: 2026-10-31
+Command: make test in NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX
+Result: PASS (exit 0)
+  - Nr.mk.01 compatibility APIs PASS
+  - paths/mp_grid PASS
+  - PHASE 1 ALL PASSED
+  - arena/sprites/lifecycle PASS
+  - runtime_guard ALL PASS
 ```
 
-### تطبيق events other
+### تطبيق الإصلاح الكامل على remote
 ```bash
-git clone https://github.com/fthyalbab4/Nr.mk.02.git && cd Nr.mk.02
-python3 tools/apply_p0_events.py
+git pull
+python3 tools/restore_events_full.py
+# يجب أن يطبع: restored ... 33426 4
 git add app/src/main/cpp/src/gm82_events.c NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_events.c
-git commit -m "P0: gml_set_other in collision"
+git commit -m "P0: full gm82_events.c with gml_set_other x4"
 git push
 ```
 
-### Host tests (قبل P0 events)
-```
-Date: 2026-10-30
-Command: make test in 01_BLACKSCREEN_FIX
-Result: PASS (exit 0)
-```
-
 ## P1
-أعد `make test` بعد تطبيق events other.
+- HTML/Windows/Android sample testing (mario/zelda runners)
+- Re-run make test after full remote restore
 
 **is_100: false**
