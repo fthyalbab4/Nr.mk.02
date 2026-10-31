@@ -58,7 +58,7 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         gml_draw_text(x1, y1, buf);
         return 1;
     }
-    if (strcmp(name, "action_replace_sprite") == 0) {
+    if (strcmp(name, "action_replace_sprite") == 0 || strcmp(name, "action_sprite_set") == 0) {
         if (argc >= 1) self->sprite_index = args[0];
         if (argc >= 2) self->image_index = args[1];
         return 1;
@@ -113,6 +113,9 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         else if (op == 1) res = (val1 < val2);
         else if (op == 2) res = (val1 > val2);
         return res;
+    }
+    if (strcmp(name, "action_effect") == 0) {
+        return 1;
     }
     if (strcmp(name, "action_comment") == 0 || strcmp(name, "action_exit") == 0 ||
         strcmp(name, "action_set_caption") == 0 || strcmp(name, "action_set_background") == 0)

@@ -58,7 +58,7 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         gml_draw_text(x1, y1, buf);
         return 1;
     }
-    if (strcmp(name, "action_replace_sprite") == 0) {
+    if (strcmp(name, "action_replace_sprite") == 0 || strcmp(name, "action_sprite_set") == 0) {
         if (argc >= 1) self->sprite_index = args[0];
         if (argc >= 2) self->image_index = args[1];
         return 1;
@@ -79,6 +79,42 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
             nanosleep(&ts, NULL);
 #endif
         }
+        return 1;
+    }
+    if (strcmp(name, "action_if_dice") == 0) {
+        int sides = (argc >= 1 && args[0] > 0) ? args[0] : 6;
+        int not_flag = (argc >= 2) ? args[1] : 0;
+        int roll = (rand() % sides) == 0;
+        return not_flag ? !roll : roll;
+    }
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int flag = (argc >= 3) ? args[2] : 0;
+        int not_flag = (argc >= 4) ? args[3] : 0;
+        (void)flag;
+        int empty = (gml_place_empty(x, y) != 0.0);
+        return not_flag ? !empty : empty;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int obj = (argc >= 3) ? args[2] : -1;
+        int not_flag = (argc >= 4) ? args[3] : 0;
+        int coll = (gml_place_meeting(x, y, (double)obj) != 0.0);
+        return not_flag ? !coll : coll;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        double val1 = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double val2 = (argc >= 3) ? (double)args[2] : 0.0;
+        int res = 0;
+        if (op == 0) res = (val1 == val2);
+        else if (op == 1) res = (val1 < val2);
+        else if (op == 2) res = (val1 > val2);
+        return res;
+    }
+    if (strcmp(name, "action_effect") == 0) {
         return 1;
     }
     if (strcmp(name, "action_comment") == 0 || strcmp(name, "action_exit") == 0 ||

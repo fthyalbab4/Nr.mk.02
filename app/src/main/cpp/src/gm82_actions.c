@@ -89,6 +89,11 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     }
     if (strcmp(name, "action_reverse_x") == 0) { self->hspeed = -self->hspeed; return true; }
     if (strcmp(name, "action_reverse_y") == 0) { self->vspeed = -self->vspeed; return true; }
+    if (strcmp(name, "action_effect") == 0) {
+        /* effect type args: type, x, y, size, color, relative */
+        gml_part_particles_create(0, self->x, self->y, 0, (argc >= 4 && args[3] > 0) ? args[3] * 4 : 8);
+        return true;
+    }
     if (strcmp(name, "action_bounce") == 0) {
         self->hspeed = -self->hspeed;
         self->vspeed = -self->vspeed;
@@ -118,7 +123,7 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_set_score") == 0) { gml_set_score((argc >= 1) ? (double)args[0] : 0); return true; }
     if (strcmp(name, "action_set_lives") == 0) { gml_set_lives((argc >= 1) ? (double)args[0] : 3); return true; }
     if (strcmp(name, "action_set_health") == 0) { gml_set_health((argc >= 1) ? (double)args[0] : 100); return true; }
-    if (strcmp(name, "action_set_sprite") == 0) {
+    if (strcmp(name, "action_set_sprite") == 0 || strcmp(name, "action_sprite_set") == 0) {
         if (argc >= 1) self->sprite_index = args[0];
         if (argc >= 2) self->image_index = args[1];
         return true;

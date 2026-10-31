@@ -1,3 +1,4 @@
+#include <strings.h>
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_int_read.h"
 #include "gm82_script.h"
@@ -18,10 +19,37 @@ int gm82_script_add(gm82_script_list *L, const char *name, const char *code) {
     return L->count++;
 }
 
+static int script_name_match(const char *s1, const char *s2) {
+    if (!s1 || !s2) return 0;
+    if (strcmp(s1, s2) == 0) return 1;
+#ifdef _WIN32
+    if (_stricmp(s1, s2) == 0) return 1;
+#else
+    if (strcasecmp(s1, s2) == 0) return 1;
+#endif
+    char b1[64], b2[64];
+    int p1 = 0, p2 = 0;
+    for (int i = 0; s1[i] && p1 < 63; i++) {
+        if (s1[i] != '_') {
+            b1[p1++] = (s1[i] >= 'A' && s1[i] <= 'Z') ? (s1[i] + ('a' - 'A')) : s1[i];
+        }
+    }
+    b1[p1] = 0;
+    for (int i = 0; s2[i] && p2 < 63; i++) {
+        if (s2[i] != '_') {
+            b2[p2++] = (s2[i] >= 'A' && s2[i] <= 'Z') ? (s2[i] + ('a' - 'A')) : s2[i];
+        }
+    }
+    b2[p2] = 0;
+    return (strcmp(b1, b2) == 0);
+}
+
 int gm82_script_find(const gm82_script_list *L, const char *name) {
     if (!L || !name) return -1;
     for (int i = 0; i < L->count; i++)
         if (strcmp(L->items[i].name, name) == 0) return i;
+    for (int i = 0; i < L->count; i++)
+        if (script_name_match(L->items[i].name, name)) return i;
     return -1;
 }
 
