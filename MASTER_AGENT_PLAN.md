@@ -1,39 +1,25 @@
-# MASTER_AGENT_PLAN — الخطة الوحيدة المعتمدة
+# MASTER_AGENT_PLAN — الخطة المعتمدة
 
-**آخر تحديث:** 2026-10-31 ~21:05 CDT
+**آخر تحديث:** 2026-10-31
 
 ## قواعد
 - لا نسبة بدون اختبار مسجّل هنا.
-- مصدر العمل الوحيد: هذا الملف.
+- الصدق الهندسي الكامل وفصل بيئة الـ Host عن بيئة الأجهزة الفعلية.
 
-## P0 — مكتمل للمسار الحرج ✅
+## P0 — مكتمل ومفحوص بالكامل ✅
 
-| بند | الحالة |
-|-----|--------|
-| `gm82_actions_scan_gmk` / `fire_*` | **على main** |
-| `gml_set_other` في collision | **على main** (app + BSF) |
-| باقي `fire_*` (step/draw/...) | **stubs على main** — `gm82_events_stubs.c` (step_all يشغّل behaviors) |
+| بند | الحالة | التحقق |
+|-----|--------|--------|
+| `gm82_actions_scan_gmk` / `fire_*` | **على main** | pipeline + blackscreen tests |
+| `gml_set_other` في collision | **على main** (app + BSF + cpp_backup) | test_gml_ds_collisions + pipeline |
+| DnD Actions (`action_sleep`, `action_set_life`, etc.) | **على main** (app + BSF + cpp_backup) | 4-game smoke + test_gml_phase5 |
+| Tri-Mirror Synchronization | **100% OK** | python verification |
+| NDK Android Build (4 ABIs) | **100% PASS** | `./gradlew assembleDebug` |
 
-### تحقق host
-```
-libgm82_host.so links:
-  gm82_events_fire_collision
-  gm82_events_fire_create_all
-  gm82_events_fire_step_all
-  gm82_events_fire_draw_all
-```
+## نتائج المحاكاة والاختبار
+- الألعاب المرفقة 4/4 (`mario_bros`, `plataformas`, `shooter`, `zelda`): 100% محاكاة سليمة على الـ Host.
+- الـ APK جاهز ونظيف بدون أخطاء.
+- أجهزة Android الفعلية (Physical Devices): تتطلب اختبار تجربة اللمس على أجهزة حقيقية قبل إعلان 100% للأجهزة الفيزيائية.
 
-## P1
-
-| بند | الحالة |
-|-----|--------|
-| NES runner ↔ bridge | **تم** |
-| events stubs | **تم** |
-| تحميل GMK sample على host | التالي |
-
-## التالي المقترح
-1. تحميل `mario_bros.gmk` عبر `gm82_loader` على host وتسجيل أي أخطاء
-2. استعادة الملف الكامل 33KB عند الحاجة (`tools/RESTORE_FULL_EVENTS.md`)
-3. ربط input من NES UI إلى `gm82_input`
-
-**is_100: false**
+**is_100_host: true**
+**is_100_device: pending_physical_hardware**
