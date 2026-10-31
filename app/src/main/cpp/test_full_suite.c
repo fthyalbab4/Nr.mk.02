@@ -372,7 +372,7 @@ void test_user_events_and_drawing_suite(void) {
     obj.event_count = 1;
 
     obj.events[0].main_type = 7; /* User Event */
-    obj.events[0].event_numb = 0; /* Event User 0 */
+    obj.events[0].event_numb = 10; /* Event User 0 (GM82_OTHER_USER0) */
     obj.events[0].code_snippet = "x += 50; y += 100;";
 
     obj_list.count = 1;

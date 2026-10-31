@@ -90,17 +90,6 @@ const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_
 
 void gm82_events_register_defaults(void) { }
 
-static bool gm82_instance_matches_object(gm82_runtime *rt, gm82_instance *inst, int32_t object_index) {
-    if (!rt || !inst || !rt->objects) return false;
-    if (inst->object_index == object_index) return true;
-    int32_t oi = inst->object_index;
-    int depth = 0;
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        if (oi == object_index) return true;
-        oi = rt->objects->items[oi].parent_index;
-    }
-    return false;
-}
 
 static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
                                int main_type, int event_numb,
@@ -124,6 +113,7 @@ static void fire_object_events(gm82_runtime *rt, gm82_instance *inst,
                 if (use_other) gm82_gml_set_other(NULL);
             }
         }
+        if (obj->parent_index == oi || obj->parent_index < 0) break;
         oi = obj->parent_index;
     }
 }

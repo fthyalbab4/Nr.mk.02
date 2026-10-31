@@ -437,6 +437,29 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive || inst->image_speed == 0.0) continue;
+        inst->image_index += inst->image_speed;
+    }
+
+    if (rt->view_enabled && rt->view_follow_object >= 0 && rt->objects) {
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (inst->alive && inst->object_index == rt->view_follow_object) {
+                rt->view_x = (int32_t)(inst->x - rt->view_w / 2.0);
+                rt->view_y = (int32_t)(inst->y - rt->view_h / 2.0);
+                if (rt->view_x < 0) rt->view_x = 0;
+                if (rt->view_y < 0) rt->view_y = 0;
+                if (rt->room_width > 0 && rt->view_x + rt->view_w > rt->room_width)
+                    rt->view_x = (int32_t)(rt->room_width - rt->view_w);
+                if (rt->room_height > 0 && rt->view_y + rt->view_h > rt->room_height)
+                    rt->view_y = (int32_t)(rt->room_height - rt->view_h);
+                break;
+            }
+        }
+    }
+
     gm82_events_fire_end_step_all(rt);
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
@@ -464,14 +487,32 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
             int ox = fr->origin_x, oy = fr->origin_y;
             int dx = (int)(inst->x - ox - rt->view_x);
             int dy = (int)(inst->y - oy - rt->view_y);
-            for (int y = 0; y < sh; y++) {
-                int py = dy + y;
-                if (py < 0 || py >= buf_h) continue;
-                for (int x = 0; x < sw; x++) {
-                    int px = dx + x;
-                    if (px < 0 || px >= buf_w) continue;
-                    size_t idx = ((size_t)py * (size_t)buf_w + (size_t)px) * 4;
-                    rgba[idx+0]=180; rgba[idx+1]=180; rgba[idx+2]=200; rgba[idx+3]=255;
+            if (fr->rgba) {
+                for (int y = 0; y < sh; y++) {
+                    int py = dy + y;
+                    if (py < 0 || py >= buf_h) continue;
+                    for (int x = 0; x < sw; x++) {
+                        int px = dx + x;
+                        if (px < 0 || px >= buf_w) continue;
+                        size_t sidx = ((size_t)y * (size_t)sw + (size_t)x) * 4;
+                        if (fr->rgba[sidx + 3] == 0) continue;
+                        size_t idx = ((size_t)py * (size_t)buf_w + (size_t)px) * 4;
+                        rgba[idx+0] = fr->rgba[sidx+0];
+                        rgba[idx+1] = fr->rgba[sidx+1];
+                        rgba[idx+2] = fr->rgba[sidx+2];
+                        rgba[idx+3] = fr->rgba[sidx+3];
+                    }
+                }
+            } else {
+                for (int y = 0; y < sh; y++) {
+                    int py = dy + y;
+                    if (py < 0 || py >= buf_h) continue;
+                    for (int x = 0; x < sw; x++) {
+                        int px = dx + x;
+                        if (px < 0 || px >= buf_w) continue;
+                        size_t idx = ((size_t)py * (size_t)buf_w + (size_t)px) * 4;
+                        rgba[idx+0]=180; rgba[idx+1]=180; rgba[idx+2]=200; rgba[idx+3]=255;
+                    }
                 }
             }
         }

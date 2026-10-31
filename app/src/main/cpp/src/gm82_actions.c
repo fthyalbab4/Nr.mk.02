@@ -93,8 +93,15 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_reverse_x") == 0) { self->hspeed = -self->hspeed; return true; }
     if (strcmp(name, "action_reverse_y") == 0) { self->vspeed = -self->vspeed; return true; }
     if (strcmp(name, "action_bounce") == 0) {
-        if (self->x < 0 || self->x > (rt->room_width ? rt->room_width : 640)) self->hspeed = -self->hspeed;
-        if (self->y < 0 || self->y > (rt->room_height ? rt->room_height : 480)) self->vspeed = -self->vspeed;
+        if (self->x <= 0 || self->x >= (rt->room_width ? rt->room_width : 640)) self->hspeed = -self->hspeed;
+        if (self->y <= 0 || self->y >= (rt->room_height ? rt->room_height : 480)) self->vspeed = -self->vspeed;
+        return true;
+    }
+    if (strcmp(name, "action_wrap") == 0) {
+        double hor = (argc >= 1) ? (double)args[0] : 1.0;
+        double vert = (argc >= 2) ? (double)args[1] : 1.0;
+        double margin = (argc >= 3) ? (double)args[2] : 0.0;
+        gml_move_wrap(hor, vert, margin);
         return true;
     }
     if (strcmp(name, "action_next_room") == 0) {
@@ -134,12 +141,6 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
 
 /* Stubs for table scan / fire — keep symbols for link */
 int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *out) {
-    (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
-}
-int gm82_actions_parse_gmk8(const uint8_t *data, size_t size, gm82_action_table *out) {
-    (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
-}
-int gm82_objects_parse_gmk8(const uint8_t *data, size_t size, gm82_decoded_object_list *out) {
     (void)data; (void)size; if (out) memset(out, 0, sizeof(*out)); return 0;
 }
 void gm82_actions_fire_collision(gm82_runtime *rt, gm82_instance *self, gm82_instance *other, const gm82_action_table *table) {

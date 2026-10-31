@@ -149,5 +149,39 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         self->alarms[idx] += val;
         return 1;
     }
+    if (strcmp(name, "action_if_dice") == 0) {
+        int sides = (argc >= 1) ? args[0] : 1;
+        if (sides <= 1) return 1;
+        return (rand() % sides) == 0;
+    }
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int flag = (argc >= 3) ? args[2] : 0;
+        if (flag == 1) { x += self->x; y += self->y; }
+        return gml_place_empty(x, y) != 0.0;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        double obj = (argc >= 3) ? (double)args[2] : -1;
+        int flag = (argc >= 4) ? args[3] : 0;
+        if (flag == 1) { x += self->x; y += self->y; }
+        return gml_place_meeting(x, y, obj) != 0.0;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        double v1 = (argc >= 1) ? (double)args[0] : 0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double v2 = (argc >= 3) ? (double)args[2] : 0;
+        switch (op) {
+            case 0: return v1 == v2;
+            case 1: return v1 < v2;
+            case 2: return v1 > v2;
+            case 3: return v1 <= v2;
+            case 4: return v1 >= v2;
+            case 5: return v1 != v2;
+            default: return v1 == v2;
+        }
+    }
     return 0;
 }

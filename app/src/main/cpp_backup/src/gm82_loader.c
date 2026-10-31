@@ -2,6 +2,7 @@
 #include "gm82_loader.h"
 #include "gm82_gmk_reader.h"
 #include "gm82_text_reader.h"
+#include "gm82_text_materialize.h"
 #include "gm82_materialize.h"
 #include "gm82_runtime_guard.h"
 #include <stdio.h>
@@ -76,6 +77,19 @@ bool gm82_load_and_prepare(const char *path, gm82_project_ir **out_ir, char *err
     /* Materialize (currently keeps most resources PARTIAL – correct) */
     gm82_materialize_options opts = gm82_materialize_default_options();
     gm82_materialize_all(lr.ir, &opts);
+
+    /* Text projects store assets as separate PNG files, so the GMK decoders
+     * above cannot see them. Run the text materializer last: the GMK failure
+     * path only marks resources PARTIAL and never frees them. */
+    if (lr.kind == GM82_SOURCE_GM82) {
+        gm82_text_materialize_result tm = gm82_text_materialize_assets(lr.ir);
+        if (errbuf && errbuf_size && !tm.ok) {
+            snprintf(errbuf, errbuf_size,
+                     "text project assets incomplete (sprites %d/%d, backgrounds %d/%d)",
+                     tm.sprites_decoded, tm.sprites_decoded + tm.sprites_failed,
+                     tm.backgrounds_decoded, tm.backgrounds_decoded + tm.backgrounds_failed);
+        }
+    }
 
     /* Hard guard – never claim playable until complete */
     if (!gm82_runtime_require_playable(lr.ir, errbuf, errbuf_size)) {
