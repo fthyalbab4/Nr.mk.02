@@ -69,8 +69,10 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         gml_sound_volume(sid, vol);
         return 1;
     }
-    if (strcmp(name, "action_wait") == 0) {
+    if (strcmp(name, "action_wait") == 0 || strcmp(name, "action_sleep") == 0) {
         int ms = (argc >= 1) ? args[0] : 0;
+        int redraw = (argc >= 2) ? args[1] : 0;
+        (void)redraw;
         if (ms > 0) {
 #ifdef _WIN32
             Sleep(ms);
@@ -79,6 +81,72 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
             nanosleep(&ts, NULL);
 #endif
         }
+        return 1;
+    }
+    if (strcmp(name, "action_kill_position") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        double inst = gml_instance_position(x, y, -1);
+        if (inst > 0) {
+            gml_instance_destroy_id(inst);
+        }
+        return 1;
+    }
+    if (strcmp(name, "action_execute_script") == 0) {
+        int scr = (argc >= 1) ? args[0] : -1;
+        if (scr >= 0) {
+            gml_script_execute((double)scr);
+        }
+        return 1;
+    }
+    if (strcmp(name, "action_move_contact") == 0) {
+        double dir = (argc >= 1) ? (double)args[0] : self->direction;
+        double maxdist = (argc >= 2) ? (double)args[1] : 1000.0;
+        int solid_only = (argc >= 3) ? args[2] : 0;
+        if (solid_only) {
+            gml_move_contact_solid(dir, maxdist);
+        } else {
+            gml_move_contact_all(dir, maxdist);
+        }
+        return 1;
+    }
+    if (strcmp(name, "action_set_life") == 0) {
+        double val = (argc >= 1) ? (double)args[0] : 3.0;
+        gml_set_lives(val);
+        return 1;
+    }
+    if (strcmp(name, "action_draw_life_images") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "LIVES: %g", gml_get_lives());
+        gml_draw_text(x, y, buf);
+        return 1;
+    }
+    if (strcmp(name, "action_partemit_stream") == 0) {
+        int sys = (argc >= 1) ? args[0] : 0;
+        int ptype = (argc >= 2) ? args[1] : 0;
+        int count = (argc >= 3) ? args[2] : 1;
+        gml_part_particles_create((double)sys, self->x, self->y, (double)ptype, (double)count);
+        return 1;
+    }
+    if (strcmp(name, "action_partemit_destroy") == 0) {
+        return 1;
+    }
+    if (strcmp(name, "action_partsyst_clear") == 0) {
+        return 1;
+    }
+    if (strcmp(name, "action_partsyst_destroy") == 0) {
+        int sys = (argc >= 1) ? args[0] : 0;
+        gml_part_system_destroy((double)sys);
+        return 1;
+    }
+    if (strcmp(name, "action_color") == 0) {
+        int col = (argc >= 1) ? args[0] : 0;
+        gml_draw_set_color((double)col);
+        return 1;
+    }
+    if (strcmp(name, "action_font") == 0) {
         return 1;
     }
     if (strcmp(name, "action_if_dice") == 0) {
