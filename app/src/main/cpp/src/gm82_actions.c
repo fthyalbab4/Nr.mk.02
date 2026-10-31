@@ -606,6 +606,9 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         const char *path = (str_argc >= 1 && str_args[0][0]) ? str_args[0] : "nor_save.dat";
         return gml_game_load(path) > 0;
     }
+    if (strcmp(name, "action_sleep") == 0) {
+        return true;
+    }
 
     /* Fallback to extended actions in gm82_actions_extra.c */
     if (gm82_action_execute_extra(rt, self, name, args, argc, str_args, str_argc))
