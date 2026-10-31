@@ -31,6 +31,8 @@ TESTS = [
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+import glob
+
 def run_test(name, src):
     print(f"=== {name} ===")
     src_path = os.path.join(ROOT, src)
@@ -38,7 +40,7 @@ def run_test(name, src):
         print(f"  SKIP missing {src}")
         return True
     bin_path = f"/tmp/{name}_bin"
-    cmd_build = f"gcc -O2 -Iapp/src/main/cpp/include -Iapp/src/main/cpp {src_path} app/src/main/cpp/gml_vm.c app/src/main/cpp/src/*.c -lz -lm -o {bin_path}"
+    cmd_build = f"gcc -O2 -Iapp/src/main/cpp/include -Iapp/src/main/cpp {src_path} /tmp/gm82_objs/*.o -lz -lm -o {bin_path}"
     res_build = subprocess.run(cmd_build, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
     if res_build.returncode != 0:
         print(f"  FAIL build {src}:\n{res_build.stderr}")
@@ -52,6 +54,16 @@ def run_test(name, src):
 
 def main():
     os.chdir(ROOT)
+    os.makedirs("/tmp/gm82_objs", exist_ok=True)
+    core_srcs = ["app/src/main/cpp/gml_vm.c"] + glob.glob("app/src/main/cpp/src/*.c")
+    for csrc in core_srcs:
+        obj_name = os.path.basename(csrc).replace(".c", ".o")
+        obj_path = os.path.join("/tmp/gm82_objs", obj_name)
+        cmd = f"gcc -O2 -Iapp/src/main/cpp/include -Iapp/src/main/cpp -c {csrc} -o {obj_path}"
+        res = subprocess.run(cmd, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
+        if res.returncode != 0:
+            print(f"Failed to build core object {csrc}:\n{res.stderr}")
+            return 1
     ok = True
     for name, src in TESTS:
         if not run_test(name, src):
