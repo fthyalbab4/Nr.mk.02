@@ -18,8 +18,14 @@
  * For complete body see repo history; this version prioritizes the extra hook path.
  */
 
-extern int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char *name,
-    const int32_t *args, int argc, const char str_args[][128], int str_argc);
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((weak))
+#endif
+int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char *name,
+    const int32_t *args, int argc, const char str_args[][128], int str_argc) {
+    (void)rt; (void)self; (void)name; (void)args; (void)argc; (void)str_args; (void)str_argc;
+    return 0;
+}
 
 #define GM82_ACTION_MAX_ARGS 8
 
@@ -131,6 +137,79 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         int val = (argc >= 2) ? args[1] : 30;
         if (idx < 0) idx = 0; if (idx > 11) idx = 11;
         self->alarms[idx] = val; return true;
+    }
+    if (strcmp(name, "action_if_dice") == 0) {
+        int n = (argc >= 1 && args[0] > 0) ? args[0] : 2;
+        return (rand() % n) == 0;
+    }
+    if (strcmp(name, "action_if_empty") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int relative = (argc >= 3) ? args[2] : 0;
+        if (relative) { x += self->x; y += self->y; }
+        return gml_place_empty(x, y) != 0.0;
+    }
+    if (strcmp(name, "action_if_collision") == 0) {
+        double x = (argc >= 1) ? (double)args[0] : self->x;
+        double y = (argc >= 2) ? (double)args[1] : self->y;
+        int target_obj = (argc >= 3) ? args[2] : -1;
+        return gml_place_meeting(x, y, (double)target_obj) != 0.0;
+    }
+    if (strcmp(name, "action_if_variable") == 0) {
+        double v1 = 0.0, v2 = 0.0;
+        if (str_argc >= 1 && str_args[0][0]) gm82_gml_eval_expr(rt, self, str_args[0], &v1);
+        else if (argc >= 1) v1 = (double)args[0];
+        int op = (argc >= 2) ? args[1] : 0;
+        if (str_argc >= 2 && str_args[1][0]) gm82_gml_eval_expr(rt, self, str_args[1], &v2);
+        else if (argc >= 3) v2 = (double)args[2];
+        switch (op) {
+            case 1: return v1 < v2;
+            case 2: return v1 > v2;
+            case 3: return v1 <= v2;
+            case 4: return v1 >= v2;
+            case 5: return v1 != v2;
+            default: return v1 == v2;
+        }
+    }
+    if (strcmp(name, "action_sprite_set") == 0) {
+        if (argc >= 1) self->sprite_index = args[0];
+        if (argc >= 2) self->image_index = args[1];
+        if (argc >= 3) self->image_speed = (double)args[2];
+        return true;
+    }
+    if (strcmp(name, "action_if_score") == 0 || strcmp(name, "action_if_lives") == 0 || strcmp(name, "action_if_health") == 0) {
+        double cur = 0.0;
+        if (strcmp(name, "action_if_score") == 0) cur = gml_get_score();
+        else if (strcmp(name, "action_if_lives") == 0) cur = gml_get_lives();
+        else cur = gml_get_health();
+        double thr = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        switch (op) {
+            case 1: return cur < thr;
+            case 2: return cur > thr;
+            case 3: return cur <= thr;
+            case 4: return cur >= thr;
+            case 5: return cur != thr;
+            default: return cur == thr;
+        }
+    }
+    if (strcmp(name, "action_if_number") == 0) {
+        int obj = (argc >= 1) ? args[0] : -1;
+        int thr = (argc >= 2) ? args[1] : 0;
+        int op = (argc >= 3) ? args[2] : 2;
+        int cnt = 0;
+        for (int i = 0; i < rt->instance_count; i++) {
+            if (!rt->instances[i].alive) continue;
+            if (obj < 0 || rt->instances[i].object_index == obj) cnt++;
+        }
+        switch (op) {
+            case 1: return cnt < thr;
+            case 2: return cnt > thr;
+            case 3: return cnt <= thr;
+            case 4: return cnt >= thr;
+            case 5: return cnt != thr;
+            default: return cnt == thr;
+        }
     }
 
     /* Expanded handlers */
