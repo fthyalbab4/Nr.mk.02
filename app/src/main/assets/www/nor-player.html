@@ -22,7 +22,7 @@ body{background:#0d0d0f;color:#ccc;font-family:'Courier New',monospace;display:f
 #drop-zone p{color:#666;font-size:.75em;margin-top:4px}
 #drop-zone .hint{margin-top:16px;font-size:.7em;color:#444}
 #btn-open{display:inline-block;margin-top:16px;padding:8px 20px;background:#1a1a2e;border:1px solid #4a9eff;color:#4a9eff;font-family:inherit;font-size:.75em;cursor:pointer;letter-spacing:1px;border-radius:3px}
-#btn-open:hover{background:#4a9eff;color:#000}
+#btn-open:hover,#drop-zone:focus-visible #btn-open{background:#4a9eff;color:#000}
 #screen-wrap{display:none;flex-direction:column;align-items:center;gap:6px}
 #hud{width:100%;display:flex;justify-content:space-between;font-size:.65em;color:#666;padding:0 2px}
 #canvas-wrap{position:relative}
@@ -50,13 +50,13 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;borde
   <div id="hud"><span id="hud-title">NOR</span><span id="hud-room">Room 0</span><span id="hud-hp">HP: 100</span></div>
   <div id="canvas-wrap">
     <canvas id="game"></canvas>
-    <div id="overlay">
+    <div id="overlay" role="status" aria-live="polite">
       <h2 id="overlay-title">PAUSED</h2>
       <p id="overlay-sub">Press ENTER to start</p>
     </div>
-    <div id="msg-box"></div>
+    <div id="msg-box" role="status" aria-live="polite"></div>
   </div>
-  <div id="controls">
+  <div id="controls" aria-label="Game controls guide: Arrow keys to move, Up or Space to jump, Escape to pause, R to restart">
     <span class="key">←→</span> Move &nbsp;
     <span class="key">↑</span> / <span class="key">Space</span> Jump &nbsp;
     <span class="key">Esc</span> Pause &nbsp;
