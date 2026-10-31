@@ -437,6 +437,47 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    if (rt->view_enabled && rt->view_w > 0) {
+        gm82_instance *follow_inst = NULL;
+        for (int i = 0; i < rt->instance_count; i++) {
+            if (rt->instances[i].alive) {
+                if (rt->view_follow_object >= 0 && rt->instances[i].object_index == rt->view_follow_object) {
+                    follow_inst = &rt->instances[i];
+                    break;
+                }
+                if (!follow_inst) follow_inst = &rt->instances[i];
+            }
+        }
+        if (follow_inst) {
+            double hborder = rt->view_w * 0.4;
+            double left = rt->view_x + hborder;
+            double right = rt->view_x + rt->view_w - hborder;
+            if (follow_inst->x < left) rt->view_x -= (left - follow_inst->x);
+            if (follow_inst->x > right) rt->view_x += (follow_inst->x - right);
+            if (rt->view_x < 0) rt->view_x = 0;
+            if (rt->room_width > rt->view_w && rt->view_x + rt->view_w > rt->room_width)
+                rt->view_x = rt->room_width - rt->view_w;
+        }
+    }
+
+    for (int i = 0; i < rt->instance_count; i++) {
+        gm82_instance *inst = &rt->instances[i];
+        if (!inst->alive) continue;
+        if (inst->image_speed != 0.0) {
+            inst->image_index += (int32_t)(inst->image_speed > 0 ? 1 : -1);
+            if (rt->sprite_groups && inst->sprite_index >= 0) {
+                int gi = gm82_sprite_group_index_for_frame(rt->sprite_groups, inst->sprite_index);
+                if (gi >= 0) {
+                    int fc = rt->sprite_groups->items[gi].frame_count;
+                    if (fc > 0) {
+                        if (inst->image_index < 0) inst->image_index = fc - 1;
+                        else if (inst->image_index >= fc) inst->image_index = 0;
+                    }
+                }
+            }
+        }
+    }
+
     gm82_events_fire_end_step_all(rt);
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
@@ -445,39 +486,101 @@ void gm82_runtime_step(gm82_runtime *rt) {
     rt->frame_phase = 0;
 }
 
+static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int sh, int dx, int dy) {
+    for (int y = 0; y < sh; y++) {
+        int yy = dy + y;
+        if (yy < 0 || yy >= dh) continue;
+        for (int x = 0; x < sw; x++) {
+            int xx = dx + x;
+            if (xx < 0 || xx >= dw) continue;
+            const uint8_t *s = src + (y * sw + x) * 4;
+            if (s[3] == 0) continue;
+            uint8_t *d = dst + (yy * dw + xx) * 4;
+            d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
+        }
+    }
+}
+
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
+
+    gm82_draw_set_target(rgba, buf_w, buf_h);
     rt->frame_phase = GM82_PHASE_PRE_DRAW;
     gm82_events_fire_pre_draw_all(rt);
-    size_t n = (size_t)buf_w * (size_t)buf_h * 4;
-    memset(rgba, 0, n);
     rt->frame_phase = GM82_PHASE_DRAW;
-    gm82_events_fire_draw_all(rt);
-    if (rt->sprites) {
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *inst = &rt->instances[i];
-            if (!inst->alive || !inst->visible) continue;
-            if (inst->sprite_index < 0 || inst->sprite_index >= rt->sprites->count) continue;
-            const gm82_decoded_frame *fr = &rt->sprites->frames[inst->sprite_index];
-            int sw = fr->width > 0 ? fr->width : 16;
-            int sh = fr->height > 0 ? fr->height : 16;
-            int ox = fr->origin_x, oy = fr->origin_y;
-            int dx = (int)(inst->x - ox - rt->view_x);
-            int dy = (int)(inst->y - oy - rt->view_y);
-            for (int y = 0; y < sh; y++) {
-                int py = dy + y;
-                if (py < 0 || py >= buf_h) continue;
-                for (int x = 0; x < sw; x++) {
-                    int px = dx + x;
-                    if (px < 0 || px >= buf_w) continue;
-                    size_t idx = ((size_t)py * (size_t)buf_w + (size_t)px) * 4;
-                    rgba[idx+0]=180; rgba[idx+1]=180; rgba[idx+2]=200; rgba[idx+3]=255;
+
+    for (int i = 0; i < buf_w * buf_h; i++) {
+        rgba[i*4+0]=20; rgba[i*4+1]=20; rgba[i*4+2]=40; rgba[i*4+3]=255;
+    }
+
+    if (rt->backgrounds && rt->backgrounds->count > 0 && rt->backgrounds->items[0].rgba) {
+        const gm82_decoded_background *bg = &rt->backgrounds->items[0];
+        int has_tiles = (rt->rooms && rt->current_room >= 0 && rt->current_room < rt->rooms->count
+                         && rt->rooms->items[rt->current_room].tile_count > 0);
+        if (!has_tiles)
+            blit(rgba, buf_w, buf_h, bg->rgba, bg->width, bg->height, 0, 0);
+    }
+
+    if (rt->rooms && rt->backgrounds && rt->current_room >= 0 && rt->current_room < rt->rooms->count) {
+        const gm82_decoded_room *room = &rt->rooms->items[rt->current_room];
+        for (int ti = 0; ti < room->tile_count; ti++) {
+            const gm82_decoded_tile *tile = &room->tiles[ti];
+            if (tile->background_index < 0 || tile->background_index >= rt->backgrounds->count)
+                continue;
+            const gm82_decoded_background *bg = &rt->backgrounds->items[tile->background_index];
+            if (!bg->rgba) continue;
+            int tw = tile->width, th = tile->height;
+            for (int y = 0; y < th; y++) {
+                int sy = tile->yo + y, dy = tile->y + y - (int)rt->view_y;
+                if (sy < 0 || sy >= bg->height || dy < 0 || dy >= buf_h) continue;
+                for (int x = 0; x < tw; x++) {
+                    int sx = tile->xo + x, dx = tile->x + x - (int)rt->view_x;
+                    if (sx < 0 || sx >= bg->width || dx < 0 || dx >= buf_w) continue;
+                    const uint8_t *s = bg->rgba + ((size_t)sy * (size_t)bg->width + (size_t)sx) * 4;
+                    if (s[3] == 0) continue;
+                    uint8_t *d = rgba + ((size_t)dy * (size_t)buf_w + (size_t)dx) * 4;
+                    d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
                 }
             }
         }
     }
+
+    int order[GM82_MAX_INSTANCES];
+    int n = 0;
+    for (int i = 0; i < rt->instance_count && n < GM82_MAX_INSTANCES; i++)
+        if (rt->instances[i].alive && rt->instances[i].visible)
+            order[n++] = i;
+    for (int i = 1; i < n; i++) {
+        int key = order[i];
+        int j = i - 1;
+        while (j >= 0 && rt->instances[order[j]].depth < rt->instances[key].depth) {
+            order[j+1] = order[j];
+            j--;
+        }
+        order[j+1] = key;
+    }
+
+    for (int k = 0; k < n; k++) {
+        gm82_instance *inst = &rt->instances[order[k]];
+        if (!inst->alive || !inst->visible) continue;
+        gm82_gml_set_self(inst);
+        if (gm82_events_has_draw_event(rt, inst)) {
+            gm82_events_fire_draw_single(rt, inst);
+        } else if (inst->sprite_index >= 0) {
+            double dx = inst->x - rt->view_x;
+            double dy = inst->y - rt->view_y;
+            gml_draw_sprite_ext((double)inst->sprite_index, (double)inst->image_index,
+                                dx, dy,
+                                inst->image_xscale,
+                                inst->image_yscale,
+                                inst->image_angle,
+                                (double)(inst->image_blend ? inst->image_blend : 0xFFFFFF),
+                                inst->image_alpha > 0.0 ? inst->image_alpha : 1.0);
+        }
+    }
     rt->frame_phase = GM82_PHASE_POST_DRAW;
     gm82_events_fire_post_draw_all(rt);
+    gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = GM82_PHASE_IDLE;
     return true;
 }
