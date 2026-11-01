@@ -267,6 +267,10 @@ void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_ind
 /* GM82_EV_COLLISION = 4 */
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
     if (!rt || !inst || !rt->objects) return;
+    gm82_instance *previous_self = gm82_gml_get_self();
+    gm82_instance *previous_other = gm82_gml_get_other();
+    gm82_gml_set_self(inst);
+    gm82_gml_set_other(other);
     int32_t oi = inst->object_index;
     int depth = 0;
     gm82_gml_set_runtime(rt);
@@ -280,15 +284,14 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
                 continue;
             fired = true;
             if (ev->action_name0[0]) {
-                if (other) gm82_gml_set_other(other);
+                gm82_gml_set_self(inst);
+                gm82_gml_set_other(other);
                 gm82_action_execute_named(rt, inst, ev->action_name0);
-                gm82_gml_set_other(NULL);
             }
             if (ev->code_snippet && ev->code_snippet[0]) {
                 gm82_gml_set_self(inst);
-                if (other) gm82_gml_set_other(other);
+                gm82_gml_set_other(other);
                 gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                gm82_gml_set_other(NULL);
             }
         }
         if (fired) break;
@@ -313,6 +316,8 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             }
         }
     }
+    gm82_gml_set_self(previous_self);
+    gm82_gml_set_other(previous_other);
 }
 
 /* Helper to fire object event for a specific main_type and event_numb */
