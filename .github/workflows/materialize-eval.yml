@@ -6,18 +6,15 @@ on:
       - 'tools/gap_fill_20261013/gml_eval_full.zlib.b64.*'
       - 'tools/gap_fill_20261013/DECODE_EVAL.py'
 jobs:
-  decode:
+  verify:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Decode eval payload
-        run: python3 tools/gap_fill_20261013/DECODE_EVAL.py
-      - name: Inject string VM calls if needed
-        run: python3 tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py || true
-      - name: Commit materialized sources
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: materialize gm82_gml_eval.c (string VM body)"
-          file_pattern: "app/src/main/cpp/src/gm82_gml_eval.c app/src/main/cpp_backup/src/gm82_gml_eval.c NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Engine regression suite
+        run: python3 tools/run_engine_suite.py
+      - name: Reference and security contracts
+        run: python3 -m unittest discover -s tests/reference -p 'test_*.py' -v
+      - name: Ensure verification did not mutate the checkout
+        run: git diff --exit-code

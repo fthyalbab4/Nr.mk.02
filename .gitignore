@@ -32,3 +32,11 @@ NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/build_host/
 test_save.dat
 __pycache__/
 *.py[cod]
+
+# Signing material is local/CI-secret only; never commit it.
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.key
+*.pem

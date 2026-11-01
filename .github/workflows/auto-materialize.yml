@@ -7,21 +7,15 @@ on:
       - '.github/workflows/auto-materialize.yml'
   workflow_dispatch:
 jobs:
-  materialize:
+  verify:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: APPLY
-        run: |
-          python3 tools/gap_fill_20261013/APPLY_PARITY_P0_RUNTIME.py || true
-          python3 tools/gap_fill_20261013/APPLY_FIX_RUNNER_BLACK_SCREEN.py || true
-          python3 tools/gap_fill_20261013/APPLY_EXPORT_SCROLL_AND_SAVE.py || true
-          python3 tools/gap_fill_20261013/APPLY_JAVA_EXPORT_SAVE.py || true
-      - name: Host pipeline
-        run: bash tools/run_host_pipeline.sh || echo soft-fail
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: materialize parity P0 runtime restore"
-          file_pattern: "app/src/main/cpp/** docs/**"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Engine regression suite
+        run: python3 tools/run_engine_suite.py
+      - name: Reference and security contracts
+        run: python3 -m unittest discover -s tests/reference -p 'test_*.py' -v
+      - name: Ensure verification did not mutate the checkout
+        run: git diff --exit-code

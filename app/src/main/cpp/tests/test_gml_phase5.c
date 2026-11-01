@@ -163,11 +163,19 @@ static void test_dnd_action_conditionals(void) {
     memset(&act_var, 0, sizeof(act_var));
     strncpy(act_var.name, "action_if_variable", sizeof(act_var.name) - 1);
     act_var.args[0] = 10;
-    act_var.args[1] = 0; /* equal */
+    act_var.args[1] = 0; /* legacy equality */
     act_var.args[2] = 10;
     act_var.argc = 3;
     assert(gm82_action_execute_ref(&rt, inst, &act_var) == true);
-
+    const int ops[] = {1, 2, 3, 4, 5, 6};
+    const int lhs[] = {4, 4, 4, 4, 5, 5};
+    const int rhs[] = {5, 4, 4, 5, 4, 4};
+    for (size_t i = 0; i < sizeof(ops) / sizeof(ops[0]); ++i) {
+        act_var.args[0] = lhs[i];
+        act_var.args[1] = ops[i];
+        act_var.args[2] = rhs[i];
+        assert(gm82_action_execute_ref(&rt, inst, &act_var) == true);
+    }
     puts("test_dnd_action_conditionals PASS");
 }
 

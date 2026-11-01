@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Log;
@@ -36,6 +37,7 @@ import android.widget.Toast;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -59,6 +61,8 @@ public class MainActivity extends Activity {
     private static final int ROOM_W = 640;
     private static final int ROOM_H = 480;
     private static final int FILE_CHOOSER_REQUEST = 4102;
+    private static final int GM82_FOLDER_REQUEST = 4103;
+    private static final int GMX_FOLDER_REQUEST = 4104;
     private static final int VK_LEFT = 37;
     private static final int VK_UP = 38;
     private static final int VK_RIGHT = 39;
@@ -66,6 +70,11 @@ public class MainActivity extends Activity {
     private static final int VK_SPACE = 32;
     private static final int VK_ENTER = 13;
     private static final int MAX_GMK_BYTES = 128 * 1024 * 1024;
+    private static final int MAX_GMZ_BYTES = 64 * 1024 * 1024;
+    private static final int MAX_GMZ_EXPOSED_BYTES = 96 * 1024 * 1024;
+    private static final int MAX_GMZ_FILE_BYTES = 32 * 1024 * 1024;
+    private static final int MAX_GMZ_FILE_COUNT = 2048;
+    private static final String STUDIO_ASSET_PREFIX = "file:///android_asset/www/";
     private static final long TARGET_FPS = 90;
     private static final long FRAME_MS = 1000 / TARGET_FPS;
 
@@ -84,6 +93,11 @@ public class MainActivity extends Activity {
     private volatile boolean nativePlayerVisible = false;
     private long lastFrameNanos;
     private boolean holdLeft, holdRight, holdUp, holdDown, holdSpace;
+    private int activeTouchPointerId = MotionEvent.INVALID_POINTER_ID;
+    private boolean nativeMouseDown = false;
+    private int nativeMouseX = ROOM_W / 2;
+    private int nativeMouseY = ROOM_H / 2;
+    private volatile boolean awaitingGmxGmzPicker = false;
     private SoundPool soundPool;
     private final Map<Integer, Integer> soundResources = new HashMap<>();
     private final Map<Integer, Integer> soundStreams = new HashMap<>();
@@ -185,7 +199,7 @@ public class MainActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         try {
-            nativeRuntimeCreate(ROOM_W, ROOM_H);
+            synchronized (nativeLock) { nativeRuntimeCreate(ROOM_W, ROOM_H); }
         } catch (Throwable t) {
             Log.e(TAG, "nativeRuntimeCreate failed", t);
         }
@@ -231,6 +245,30 @@ public class MainActivity extends Activity {
         Log.i(TAG, "NOR_SMOKE_RESULT=" + result);
     }
 
+    private static boolean isTrustedStudioUri(Uri uri) {
+        if (uri == null || !"file".equalsIgnoreCase(uri.getScheme())) return false;
+        return uri.toString().startsWith(STUDIO_ASSET_PREFIX);
+    }
+
+    /** Keep the privileged JS bridge on the bundled Studio page only. */
+    private boolean handleStudioNavigation(Uri uri) {
+        if (isTrustedStudioUri(uri)) return false;
+        String scheme = uri == null || uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
+        if ("http".equals(scheme) || "https".equals(scheme)) {
+            try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); }
+            catch (Exception e) { Log.w(TAG, "No browser for " + uri, e); }
+        }
+        // Do not render data:, blob:, javascript:, content:, or arbitrary file: URLs in
+        // this WebView: addJavascriptInterface is process-privileged, not origin-scoped.
+        return true;
+    }
+
+    private static boolean isAllowedCloudGmkUrl(URL url) {
+        if (url == null || !"https".equalsIgnoreCase(url.getProtocol())) return false;
+        String host = url.getHost() == null ? "" : url.getHost().toLowerCase(Locale.ROOT);
+        return "cdn.jsdelivr.net".equals(host) || "raw.githubusercontent.com".equals(host);
+    }
+
     private void buildUnifiedStudioView() {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(20, 20, 40));
@@ -242,28 +280,22 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        // Bundled assets remain available through file:///android_asset even when
+        // generic filesystem access is disabled. This prevents project scripts
+        // from treating the Studio origin as a local-filesystem origin.
+        settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setAllowFileAccessFromFileURLs(false);
-        // The Studio is a bundled, trusted file:// app and its cloud catalog uses
-        // HTTPS GMK sources. Keep native download as the primary path, but allow
-        // the WebView fallback to reach those sources when native networking is
-        // unavailable on a device.
-        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setSupportMultipleWindows(false);
         webView.addJavascriptInterface(new StudioNativeBridge(), "NorNative");
         webView.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                Uri uri = request.getUrl();
-                String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
-                if ("file".equals(scheme) || "about".equals(scheme) || "data".equals(scheme)
-                        || "blob".equals(scheme) || "javascript".equals(scheme)) return false;
-                if ("http".equals(scheme) || "https".equals(scheme)) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); }
-                    catch (Exception e) { Log.w(TAG, "No browser for " + uri, e); }
-                }
-                return true;
+                return handleStudioNavigation(request.getUrl());
+            }
+            @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return handleStudioNavigation(Uri.parse(url));
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
@@ -390,33 +422,73 @@ public class MainActivity extends Activity {
         if (notify) Toast.makeText(this, saved == null ? "تم إيقاف التسجيل" : "تم حفظ فيديو اللعب", Toast.LENGTH_SHORT).show();
     }
 
+    private int[] mapTouchToRoom(float viewX, float viewY) {
+        if (nativeGameView == null) return null;
+        int viewW = nativeGameView.getWidth(), viewH = nativeGameView.getHeight();
+        if (viewW <= 0 || viewH <= 0) return null;
+        float scale = Math.min((float) viewW / ROOM_W, (float) viewH / ROOM_H);
+        if (!(scale > 0f)) return null;
+        float contentW = ROOM_W * scale, contentH = ROOM_H * scale;
+        float offsetX = (viewW - contentW) / 2f, offsetY = (viewH - contentH) / 2f;
+        int x = Math.max(0, Math.min(ROOM_W - 1, Math.round((viewX - offsetX) / scale)));
+        int y = Math.max(0, Math.min(ROOM_H - 1, Math.round((viewY - offsetY) / scale)));
+        return new int[]{x, y};
+    }
+
+    private void sendNativeMouse(MotionEvent event, int pointerIndex, boolean down) {
+        if (pointerIndex < 0) return;
+        int[] point = mapTouchToRoom(event.getX(pointerIndex), event.getY(pointerIndex));
+        if (point == null) return;
+        nativeMouseX = point[0];
+        nativeMouseY = point[1];
+        synchronized (nativeLock) { nativeRuntimeMouse(nativeMouseX, nativeMouseY, 0, down); }
+        nativeMouseDown = down;
+    }
+
+    private void updateTouchPad(float x, float y, int w, int h) {
+        // Controls are confined to the bottom strip so taps in the playfield remain mouse input.
+        boolean inPad = y >= h * 0.58f;
+        setNativeKey(VK_LEFT, inPad && x < w * 0.25f);
+        setNativeKey(VK_RIGHT, inPad && x >= w * 0.25f && x < w * 0.50f);
+        setNativeKey(VK_UP, false);
+        setNativeKey(VK_DOWN, false);
+        setNativeKey(VK_SPACE, inPad && x >= w * 0.70f);
+    }
+
     private boolean handleNativeTouch(MotionEvent event) {
         int w = nativeGameView.getWidth(), h = nativeGameView.getHeight();
         if (w <= 0 || h <= 0) return true;
-        float x = event.getX(), y = event.getY();
         int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
-            synchronized (nativeLock) { nativeRuntimeMouse((int)x, (int)y, 0, action == MotionEvent.ACTION_DOWN); }
-            // Keep the playfield free of accidental key presses.  The old
-            // mapping treated every touch in the upper half as UP+SPACE,
-            // which made tapping the game or dragging the mouse trigger a
-            // permanent jump.  Controls are now confined to a bottom strip:
-            // left quarter = left, next quarter = right, right quarter = jump.
-            boolean inPad = y >= h * 0.58f;
-            setNativeKey(VK_LEFT, inPad && x < w * 0.25f);
-            setNativeKey(VK_RIGHT, inPad && x >= w * 0.25f && x < w * 0.50f);
-            setNativeKey(VK_UP, false);
-            setNativeKey(VK_DOWN, false);
-            setNativeKey(VK_SPACE, inPad && x >= w * 0.70f);
+        int actionIndex = event.getActionIndex();
+        if (action == MotionEvent.ACTION_DOWN) {
+            activeTouchPointerId = event.getPointerId(actionIndex);
+            sendNativeMouse(event, actionIndex, true);
+            updateTouchPad(event.getX(actionIndex), event.getY(actionIndex), w, h);
             return true;
         }
-        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-            synchronized (nativeLock) { nativeRuntimeMouse((int)x, (int)y, 0, false); }
-            setNativeKey(VK_LEFT, false); setNativeKey(VK_RIGHT, false);
-            setNativeKey(VK_UP, false); setNativeKey(VK_DOWN, false); setNativeKey(VK_SPACE, false);
+        if (action == MotionEvent.ACTION_MOVE) {
+            int pointerIndex = event.findPointerIndex(activeTouchPointerId);
+            if (pointerIndex >= 0) {
+                // Keep button 0 held throughout a drag; gm82_input_mouse_down is edge-safe.
+                sendNativeMouse(event, pointerIndex, true);
+                updateTouchPad(event.getX(pointerIndex), event.getY(pointerIndex), w, h);
+            }
             return true;
         }
-        return false;
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+            if (event.getPointerId(actionIndex) == activeTouchPointerId) {
+                sendNativeMouse(event, actionIndex, false);
+                activeTouchPointerId = MotionEvent.INVALID_POINTER_ID;
+                setNativeKey(VK_LEFT, false); setNativeKey(VK_RIGHT, false);
+                setNativeKey(VK_UP, false); setNativeKey(VK_DOWN, false); setNativeKey(VK_SPACE, false);
+            }
+            return true;
+        }
+        if (action == MotionEvent.ACTION_CANCEL) {
+            releaseNativeKeys();
+            return true;
+        }
+        return true;
     }
 
     private void setNativeKey(int vk, boolean down) {
@@ -432,6 +504,7 @@ public class MainActivity extends Activity {
     /** Release every held key when focus or the activity changes state. */
     private void releaseNativeKeys() {
         holdLeft = holdRight = holdUp = holdDown = holdSpace = false;
+        activeTouchPointerId = MotionEvent.INVALID_POINTER_ID;
         try {
             synchronized (nativeLock) {
                 nativeRuntimeKey(VK_LEFT, false);
@@ -440,6 +513,8 @@ public class MainActivity extends Activity {
                 nativeRuntimeKey(VK_DOWN, false);
                 nativeRuntimeKey(VK_SPACE, false);
                 nativeRuntimeKey(VK_ENTER, false);
+                if (nativeMouseDown) nativeRuntimeMouse(nativeMouseX, nativeMouseY, 0, false);
+                nativeMouseDown = false;
             }
         } catch (Throwable t) {
             Log.w(TAG, "Unable to release native input", t);
@@ -482,11 +557,62 @@ public class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == GM82_FOLDER_REQUEST || requestCode == GMX_FOLDER_REQUEST) {
+            if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+            final boolean gm82Folder = requestCode == GM82_FOLDER_REQUEST;
+            final Uri treeUri = data.getData();
+            final int grantFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            try { getContentResolver().takePersistableUriPermission(treeUri, grantFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION); }
+            catch (Exception ignored) { /* transient access is still sufficient for this copy */ }
+            try {
+                importExecutor.execute(() -> {
+                    TreeImportResult copied = copyDocumentTreeToImports(treeUri, gm82Folder ? "gm82_import" : "gmx_import");
+                    runOnUiThread(() -> {
+                        if (isFinishing()) return;
+                        if (copied.path.isEmpty()) {
+                            Toast.makeText(this, "تعذر نسخ مجلد المشروع المحدد", Toast.LENGTH_LONG).show();
+                        } else if (gm82Folder) {
+                            dispatchGm82FolderPicked(copied);
+                        } else {
+                            dispatchGmxFolderPicked(copied.path);
+                        }
+                    });
+                });
+            } catch (RuntimeException rejected) {
+                Log.w(TAG, "Folder import worker is unavailable", rejected);
+                Toast.makeText(this, "تعذر فتح مجلد المشروع", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
         if (requestCode != FILE_CHOOSER_REQUEST) return;
         final ValueCallback<Uri[]> callback = pendingFileCallback;
         pendingFileCallback = null;
         Uri[] results = (resultCode == RESULT_OK && data != null)
                 ? WebChromeClient.FileChooserParams.parseResult(resultCode, data) : null;
+
+        if (awaitingGmxGmzPicker) {
+            awaitingGmxGmzPicker = false;
+            if (results == null || results.length == 0) return;
+            final Uri selectedArchive = results[0];
+            try {
+                importExecutor.execute(() -> {
+                    final String stagedPath = stageGmxGmzArchive(selectedArchive);
+                    runOnUiThread(() -> {
+                        if (isFinishing()) return;
+                        if (stagedPath.isEmpty()) {
+                            Toast.makeText(this, "تعذر استيراد الأرشيف: استخدم ملف GMZ/ZIP صالحاً حتى 64 MiB", Toast.LENGTH_LONG).show();
+                        } else {
+                            dispatchGmxGmzPicked(stagedPath);
+                        }
+                    });
+                });
+            } catch (RuntimeException rejected) {
+                Log.w(TAG, "GMZ import worker is unavailable", rejected);
+                Toast.makeText(this, "تعذر فتح الأرشيف", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+
         if (callback == null) return;
         if (results == null || results.length == 0) { callback.onReceiveValue(null); return; }
         nativeProjectLoaded = false;
@@ -512,6 +638,140 @@ public class MainActivity extends Activity {
         } catch (RuntimeException rejected) {
             Log.w(TAG, "GMK import worker is unavailable", rejected);
             callback.onReceiveValue(results);
+        }
+    }
+
+    private File getGmxImportsRoot() { return new File(getFilesDir(), "imports"); }
+    private File getGmxStagingRoot() { return new File(getCacheDir(), "gmx-staging"); }
+
+    private static boolean isWithinDirectory(File candidate, File root) throws IOException {
+        String rootPath = root.getCanonicalPath();
+        String candidatePath = candidate.getCanonicalPath();
+        return candidatePath.equals(rootPath) || candidatePath.startsWith(rootPath + File.separator);
+    }
+
+    private String stageGmxGmzArchive(Uri uri) {
+        String displayName = getDisplayName(uri);
+        if (displayName == null || !displayName.toLowerCase(Locale.ROOT).matches(".*\\.(gmz|zip)$")) return "";
+        File root = getGmxStagingRoot();
+        if (!root.exists() && !root.mkdirs()) return "";
+        String safeName = displayName.replaceAll("[^A-Za-z0-9._-]", "_");
+        File staged = new File(root, System.currentTimeMillis() + "_" + safeName);
+        try (InputStream in = getContentResolver().openInputStream(uri);
+             OutputStream out = new FileOutputStream(staged)) {
+            if (in == null) throw new IOException("Archive stream unavailable");
+            byte[] buffer = new byte[64 * 1024];
+            int total = 0, read;
+            while ((read = in.read(buffer)) != -1) {
+                total += read;
+                if (total > MAX_GMZ_BYTES) throw new IOException("Archive exceeds limit");
+                out.write(buffer, 0, read);
+            }
+            return staged.getCanonicalPath();
+        } catch (Exception error) {
+            Log.w(TAG, "Unable to stage GMZ archive", error);
+            if (staged.exists()) staged.delete();
+            return "";
+        }
+    }
+
+    private void dispatchGmxGmzPicked(String archivePath) {
+        if (webView == null || archivePath == null || archivePath.isEmpty()) return;
+        String quoted = JSONObject.quote(archivePath);
+        webView.evaluateJavascript("if (typeof window.__norGmxGmzPicked === 'function') { window.__norGmxGmzPicked(" + quoted + "); }", null);
+    }
+
+    private static final class TreeImportResult {
+        String path = "";
+        int filesRead = 0;
+        int readErrors = 0;
+        long bytesRead = 0;
+        boolean hasGm82Manifest = false;
+    }
+
+    private void dispatchGm82FolderPicked(TreeImportResult result) {
+        if (webView == null || result == null || result.path.isEmpty()) return;
+        String diagnostics = "{\"filesRead\":" + result.filesRead + ",\"readErrors\":" + result.readErrors
+                + ",\"manifestPath\":\"" + (result.hasGm82Manifest ? "present" : "missing") + "\"}";
+        webView.evaluateJavascript("if (typeof window.__norGm82FolderPicked === 'function') { window.__norGm82FolderPicked("
+                + JSONObject.quote(result.path) + "," + diagnostics + "); }", null);
+    }
+
+    private void dispatchGmxFolderPicked(String path) {
+        if (webView == null || path == null || path.isEmpty()) return;
+        webView.evaluateJavascript("if (typeof window.__norGmxGmzFolderPicked === 'function') { window.__norGmxGmzFolderPicked("
+                + JSONObject.quote(path) + "); }", null);
+    }
+
+    private TreeImportResult copyDocumentTreeToImports(Uri treeUri, String prefix) {
+        TreeImportResult result = new TreeImportResult();
+        File importsRoot = getGmxImportsRoot();
+        File target = new File(importsRoot, prefix + "_" + System.currentTimeMillis());
+        try {
+            if (!importsRoot.exists() && !importsRoot.mkdirs()) return result;
+            if (!isWithinDirectory(target, importsRoot) || target.getCanonicalPath().equals(importsRoot.getCanonicalPath()) || !target.mkdirs()) return result;
+            String rootDocumentId = DocumentsContract.getTreeDocumentId(treeUri);
+            copyDocumentChildren(treeUri, rootDocumentId, target, target, result);
+            if (result.filesRead == 0 || result.readErrors != 0) throw new IOException("Folder did not copy cleanly");
+            result.path = target.getCanonicalPath();
+            return result;
+        } catch (Exception error) {
+            Log.w(TAG, "Unable to copy document tree", error);
+            try { if (target.exists()) deleteImportTree(target, importsRoot); } catch (Exception ignored) { }
+            result.path = "";
+            return result;
+        }
+    }
+
+    private void copyDocumentChildren(Uri treeUri, String parentDocumentId, File targetRoot, File target,
+                                      TreeImportResult result) throws IOException {
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId);
+        String[] projection = {DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE};
+        try (Cursor cursor = getContentResolver().query(childrenUri, projection, null, null, null)) {
+            if (cursor == null) throw new IOException("Cannot enumerate selected folder");
+            int idColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID);
+            int nameColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME);
+            int mimeColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE);
+            int sizeColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_SIZE);
+            while (cursor.moveToNext()) {
+                String documentId = cursor.getString(idColumn);
+                String rawName = cursor.getString(nameColumn);
+                String mime = cursor.getString(mimeColumn);
+                String name = rawName == null ? "" : rawName;
+                if (name.isEmpty() || ".".equals(name) || "..".equals(name) || name.contains("/") || name.contains("\\"))
+                    throw new IOException("Unsafe document name");
+                File destination = new File(target, name);
+                if (!isWithinDirectory(destination, targetRoot)) throw new IOException("Document escapes target");
+                if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+                    if (!destination.mkdirs() && !destination.isDirectory()) throw new IOException("Cannot create directory");
+                    copyDocumentChildren(treeUri, documentId, targetRoot, destination, result);
+                    continue;
+                }
+                if (++result.filesRead > MAX_GMZ_FILE_COUNT) throw new IOException("Too many files");
+                long declared = cursor.isNull(sizeColumn) ? -1L : cursor.getLong(sizeColumn);
+                if (declared > MAX_GMZ_FILE_BYTES || (declared >= 0 && result.bytesRead + declared > MAX_GMZ_EXPOSED_BYTES))
+                    throw new IOException("Selected file exceeds import limit");
+                Uri documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
+                long copied = 0;
+                try (InputStream in = getContentResolver().openInputStream(documentUri);
+                     OutputStream out = new FileOutputStream(destination)) {
+                    if (in == null) throw new IOException("Document stream unavailable");
+                    byte[] buffer = new byte[64 * 1024]; int read;
+                    while ((read = in.read(buffer)) != -1) {
+                        copied += read;
+                        if (copied > MAX_GMZ_FILE_BYTES || result.bytesRead + copied > MAX_GMZ_EXPOSED_BYTES)
+                            throw new IOException("Selected folder exceeds import limit");
+                        out.write(buffer, 0, read);
+                    }
+                } catch (IOException error) {
+                    destination.delete();
+                    result.readErrors++;
+                    throw error;
+                }
+                result.bytesRead += copied;
+                if (name.toLowerCase(Locale.ROOT).endsWith(".gm82")) result.hasGm82Manifest = true;
+            }
         }
     }
 
@@ -687,13 +947,25 @@ public class MainActivity extends Activity {
         if (n.endsWith(".gmx") || n.endsWith(".gml")) return "text/plain";
         return "application/octet-stream";
     }
-    private static void collectGmxFiles(File root, File current, JSONArray out) throws Exception {
+    private static final class GmxReadBudget {
+        int fileCount = 0;
+        long bytes = 0;
+    }
+
+    private static void collectGmxFiles(File root, File current, JSONArray out, GmxReadBudget budget) throws Exception {
+        if (!isWithinDirectory(current, root)) throw new IOException("Path escapes import root");
         File[] children = current.listFiles();
         if (children == null) return;
         for (File file : children) {
-            if (file.isDirectory()) { collectGmxFiles(root, file, out); continue; }
-            if (!file.isFile() || file.length() > 32L * 1024L * 1024L) continue;
-            try (InputStream in = new java.io.FileInputStream(file); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+            if (!isWithinDirectory(file, root)) throw new IOException("Symlink escapes import root");
+            if (file.isDirectory()) { collectGmxFiles(root, file, out, budget); continue; }
+            if (!file.isFile()) continue;
+            long length = file.length();
+            if (length < 0 || length > MAX_GMZ_FILE_BYTES) throw new IOException("GMZ file exceeds limit");
+            if (++budget.fileCount > MAX_GMZ_FILE_COUNT || budget.bytes + length > MAX_GMZ_EXPOSED_BYTES)
+                throw new IOException("GMZ extraction exceeds limit");
+            budget.bytes += length;
+            try (InputStream in = new java.io.FileInputStream(file); ByteArrayOutputStream bytes = new ByteArrayOutputStream((int) length)) {
                 byte[] buffer = new byte[8192]; int n;
                 while ((n = in.read(buffer)) >= 0) if (n > 0) bytes.write(buffer, 0, n);
                 JSONObject item = new JSONObject();
@@ -704,6 +976,15 @@ public class MainActivity extends Activity {
                 out.put(item);
             }
         }
+    }
+
+    private static boolean deleteImportTree(File file, File root) throws IOException {
+        if (!isWithinDirectory(file, root)) return false;
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) for (File child : children) if (!deleteImportTree(child, root)) return false;
+        }
+        return file.delete();
     }
     public final class StudioNativeBridge {
         @JavascriptInterface public void clearEvents() {
@@ -747,10 +1028,9 @@ public class MainActivity extends Activity {
             }
         }
 
-        @JavascriptInterface public boolean exportNorJson(String json, String outputPath) {
-            return nativeExportNorJson(json, outputPath);
-        }
         @JavascriptInterface public String runRuntimeSmokeTest() {
+            if (!BuildConfig.DEBUG) return "{\"enabled\":false}";
+            synchronized (nativeLock) {
             boolean created = nativeRuntimeCreate(320, 240);
             int id = created ? nativeRuntimeAddInstance(1, -1, 1, 1, 1, 10f, 20f, 30f, 0f) : -1;
             String before = nativeRuntimeSnapshotJson(); nativeRuntimeStep(0.1f);
@@ -762,99 +1042,151 @@ public class MainActivity extends Activity {
             boolean roomChanged = room != null && room.contains("\"room\":2");
             boolean clean = fresh != null && !fresh.contains("\"instances\":[{");
             return "{\"created\":" + created + ",\"instanceId\":" + id + ",\"moved\":" + movedForward + ",\"roomChanged\":" + roomChanged + ",\"recreated\":" + recreated + ",\"clean\":" + clean + "}";
+            }
         }
         @JavascriptInterface public void pickGmxGmz() {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("application/octet-stream");
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/octet-stream", "application/zip", "text/xml"});
-            try { startActivityForResult(intent, FILE_CHOOSER_REQUEST); } catch (Exception ignored) { }
+            runOnUiThread(() -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/zip");
+                intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/zip", "application/octet-stream"});
+                awaitingGmxGmzPicker = true;
+                try { startActivityForResult(intent, FILE_CHOOSER_REQUEST); }
+                catch (Exception ignored) { awaitingGmxGmzPicker = false; }
+            });
         }
-        @JavascriptInterface public void step(float delta) { nativeRuntimeStep(delta); drainNativeSoundCommands(); }
+        @JavascriptInterface public void pickGm82Folder() { pickProjectFolder(GM82_FOLDER_REQUEST); }
+        @JavascriptInterface public void pickGmxGmzFolder() { pickProjectFolder(GMX_FOLDER_REQUEST); }
+        private void pickProjectFolder(int requestCode) {
+            runOnUiThread(() -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                try { startActivityForResult(intent, requestCode); }
+                catch (Exception error) { Log.w(TAG, "Folder picker unavailable", error); }
+            });
+        }
+        @JavascriptInterface public void step(float delta) { synchronized (nativeLock) { nativeRuntimeStep(delta); drainNativeSoundCommands(); } }
         @JavascriptInterface public boolean registerSound(int soundId, String path) { return registerSoundResource(soundId, path); }
         @JavascriptInterface public void clearSounds() { clearSoundResources(); }
-        @JavascriptInterface public String snapshot() { return nativeRuntimeSnapshotJson(); }
-        @JavascriptInterface public String evaluateGml(String source) { return nativeEvaluateGml(source); }
-        @JavascriptInterface public boolean registerEvent(int objectId, int mainType, int subType, String source) { return nativeRuntimeRegisterEvent(objectId, mainType, subType, source); }
-        @JavascriptInterface public boolean registerObject(int objectId, String name) { return nativeRuntimeRegisterObject(objectId, name); }
-        @JavascriptInterface public boolean registerScript(String name, String source) { return nativeRuntimeRegisterScript(name, source); }
-        @JavascriptInterface public void clearScripts() { nativeRuntimeClearScripts(); }
+        @JavascriptInterface public String snapshot() { synchronized (nativeLock) { return nativeRuntimeSnapshotJson(); } }
+        @JavascriptInterface public boolean registerEvent(int objectId, int mainType, int subType, String source) { synchronized (nativeLock) { return nativeRuntimeRegisterEvent(objectId, mainType, subType, source); } }
+        @JavascriptInterface public boolean registerObject(int objectId, String name) { synchronized (nativeLock) { return nativeRuntimeRegisterObject(objectId, name); } }
+        @JavascriptInterface public boolean registerScript(String name, String source) { synchronized (nativeLock) { return nativeRuntimeRegisterScript(name, source); } }
+        @JavascriptInterface public void clearScripts() { synchronized (nativeLock) { nativeRuntimeClearScripts(); } }
         @JavascriptInterface public boolean setSpriteBitmapBase64(int spriteId, int frame, int width, int height, String rgbaBase64) {
             if (rgbaBase64 == null || rgbaBase64.length() == 0) return false;
-            try { return nativeRuntimeSetSpriteBitmap(spriteId, frame, width, height, Base64.decode(rgbaBase64, Base64.DEFAULT)); }
+            try { synchronized (nativeLock) { return nativeRuntimeSetSpriteBitmap(spriteId, frame, width, height, Base64.decode(rgbaBase64, Base64.DEFAULT)); } }
             catch (IllegalArgumentException error) { return false; }
         }
-        @JavascriptInterface public void clearRoomTransient() { nativeRuntimeClearRoomTransient(); }
-        @JavascriptInterface public boolean executeGml(int instanceId, String source) { return nativeRuntimeExecuteGml(instanceId, source); }
-        @JavascriptInterface public String consumeSoundCommands() { return nativeRuntimeConsumeSoundCommands(); }
-        @JavascriptInterface public int room() { return nativeRuntimeGetRoom(); }
-        @JavascriptInterface public int resourceCount() { return nativeResourceCount(); }
-        @JavascriptInterface public int registerObjectEvent(int objectId, int mainType, int subType, String source) { return nativeRegisterObjectEvent(objectId, mainType, subType, source); }
-        @JavascriptInterface public int objectEventCount() { return nativeObjectEventCount(); }
-        @JavascriptInterface public double gm82CompatCheck() { return nativeGm82CompatCheck(); }
-        @JavascriptInterface public double gm82ColorReverse(double color) { return nativeGm82ColorReverse(color); }
-        @JavascriptInterface public double gm82ColorInverse(double color) { return nativeGm82ColorInverse(color); }
-        @JavascriptInterface public int gm82TokenStart(String text, String separator) { return nativeGm82TokenStart(text, separator); }
-        @JavascriptInterface public String gm82TokenNext() { return nativeGm82TokenNext(); }
-        @JavascriptInterface public void gm82TokenReset() { nativeGm82TokenReset(); }
+        @JavascriptInterface public void clearRoomTransient() { synchronized (nativeLock) { nativeRuntimeClearRoomTransient(); } }
+        @JavascriptInterface public String consumeSoundCommands() { synchronized (nativeLock) { return nativeRuntimeConsumeSoundCommands(); } }
+        @JavascriptInterface public int room() { synchronized (nativeLock) { return nativeRuntimeGetRoom(); } }
+        @JavascriptInterface public int resourceCount() { synchronized (nativeLock) { return nativeResourceCount(); } }
         @JavascriptInterface public String coreIdentity() { return nativeCoreIdentity(); }
+        private byte[] decodeBoundedGmkBase64(String base64) {
+            if (base64 == null || base64.length() == 0 || base64.length() > MAX_GMK_BYTES * 2) return null;
+            try {
+                byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                return bytes.length <= MAX_GMK_BYTES ? bytes : null;
+            } catch (IllegalArgumentException invalid) { return null; }
+        }
         @JavascriptInterface public boolean validateGmk(byte[] bytes) { return nativeValidateGmk(bytes); }
+        @JavascriptInterface public String gmkResourceManifestBase64(String base64) {
+            byte[] bytes = decodeBoundedGmkBase64(base64);
+            if (bytes == null) return "";
+            synchronized (nativeLock) { return nativeGmkResourceManifest(bytes); }
+        }
+        @JavascriptInterface public String importGmkSnapshotBase64(String base64) {
+            byte[] bytes = decodeBoundedGmkBase64(base64);
+            if (bytes == null) return "{\"ok\":false,\"error\":\"invalid_input\"}";
+            synchronized (nativeLock) {
+                String result = nativeImportGmkSnapshot(bytes, getFilesDir().getAbsolutePath());
+                nativeProjectLoaded = result != null && result.contains("\"complete\":true");
+                return result == null ? "{\"ok\":false,\"error\":\"native_import_failed\"}" : result;
+            }
+        }
         @JavascriptInterface public String gmkHeaderJson(byte[] bytes) { return nativeGmkHeaderJson(bytes); }
         @JavascriptInterface public String gmkLayoutJson(byte[] bytes) { return nativeGmkLayoutJson(bytes); }
         @JavascriptInterface public String gmkChunkInventory(byte[] bytes) { return nativeGmkChunkInventory(bytes); }
         @JavascriptInterface public String gmkResourceManifest(byte[] bytes) { return nativeGmkResourceManifest(bytes); }
-        @JavascriptInterface public int compileGml(String source) { return nativeCompileGml(source); }
-        @JavascriptInterface public boolean codeExists(int codeId) { return nativeCodeExists(codeId); }
-        @JavascriptInterface public int codeArgCount(int codeId) { return nativeCodeGetArgCount(codeId); }
-        @JavascriptInterface public void destroyCode(int codeId) { nativeCodeDestroy(codeId); }
-        @JavascriptInterface public int executeCode(int instanceId, int codeId) { return nativeCodeExecute(instanceId, codeId); }
-        @JavascriptInterface public boolean exportRom(String title, String outputPath, int kind) { return nativeExportRom(title, outputPath, kind); }
-        @JavascriptInterface public int detectRom(String path) { return nativeDetectRom(path); }
-        @JavascriptInterface public boolean validateRom(String path, int kind) { return nativeValidateRom(path, kind); }
         @JavascriptInterface public String importGmxGmzToApp(String archivePath, String folderName) {
             if (archivePath == null || archivePath.length() == 0) return "";
             String safeName = (folderName == null || folderName.length() == 0 ? "gmx_import" : folderName).replaceAll("[^A-Za-z0-9._-]", "_");
-            File target = new File(new File(getFilesDir(), "imports"), safeName);
-            if (!target.exists() && !target.mkdirs()) return "";
-            return nativeImportGmxGmz(archivePath, target.getAbsolutePath()) != 0 ? target.getAbsolutePath() : "";
+            if (safeName.isEmpty() || ".".equals(safeName) || "..".equals(safeName)) return "";
+            File importsRoot = getGmxImportsRoot();
+            File stagingRoot = getGmxStagingRoot();
+            File archive = new File(archivePath);
+            File target = new File(importsRoot, safeName);
+            try {
+                if (!archive.isFile() || !isWithinDirectory(archive, stagingRoot)) return "";
+                if (!importsRoot.exists() && !importsRoot.mkdirs()) return "";
+                if (!isWithinDirectory(target, importsRoot) || target.getCanonicalPath().equals(importsRoot.getCanonicalPath())) return "";
+                if (target.exists() && !deleteImportTree(target, importsRoot)) return "";
+                if (!target.mkdirs()) return "";
+                return nativeImportGmxGmz(archive.getCanonicalPath(), target.getCanonicalPath()) != 0 ? target.getCanonicalPath() : "";
+            } catch (Exception error) {
+                Log.w(TAG, "Native GMZ import rejected", error);
+                return "";
+            }
         }
         @JavascriptInterface public String readGmxGmzFiles(String extractedDir) {
-            try { File root = new File(extractedDir); if (!root.isDirectory()) return ""; JSONObject payload = new JSONObject(); JSONArray files = new JSONArray(); collectGmxFiles(root, root, files); payload.put("root", root.getAbsolutePath()); payload.put("files", files); return payload.toString(); }
-            catch (Exception ignored) { return ""; }
-        }
-        @JavascriptInterface public boolean exportGmxGmz(String sourceDir, String outputPath, String kind) { return nativeExportGmxGmz(sourceDir, outputPath, kind) != 0; }
-        @JavascriptInterface public boolean exportGmkRaw(String sourcePath, String outputPath) { return nativeExportGmkRaw(sourcePath, outputPath); }
-        @JavascriptInterface public boolean exportGmxSemantic(String sourceDir, String outputDir, String projectName) { return nativeExportGmxSemantic(sourceDir, outputDir, projectName); }
-        /** Downloads cloud GMK files outside the file:// WebView origin, avoiding CORS failures. */
-        @JavascriptInterface public String downloadCloudGmkBase64(String sourceUrl) {
-            if (sourceUrl == null || !sourceUrl.startsWith("https://")) return "";
-            HttpURLConnection connection = null;
             try {
-                connection = (HttpURLConnection) new URL(sourceUrl).openConnection();
-                connection.setInstanceFollowRedirects(true);
-                connection.setConnectTimeout(15000);
-                connection.setReadTimeout(60000);
-                connection.setRequestProperty("User-Agent", "NOR-Maker-Android/1.0");
-                int status = connection.getResponseCode();
-                if (status < 200 || status >= 300) return "";
-                int declared = connection.getContentLength();
-                if (declared > MAX_GMK_BYTES) return "";
-                try (InputStream in = connection.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(8192, declared))) {
-                    byte[] chunk = new byte[64 * 1024];
-                    int total = 0, n;
-                    while ((n = in.read(chunk)) != -1) {
-                        total += n;
-                        if (total > MAX_GMK_BYTES) return "";
-                        out.write(chunk, 0, n);
-                    }
-                    return total > 100 ? Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP) : "";
-                }
-            } catch (Throwable error) {
-                Log.w(TAG, "Cloud GMK native download failed: " + sourceUrl, error);
+                File importsRoot = getGmxImportsRoot();
+                File root = new File(extractedDir);
+                if (!root.isDirectory() || !isWithinDirectory(root, importsRoot)) return "";
+                JSONObject payload = new JSONObject();
+                JSONArray files = new JSONArray();
+                collectGmxFiles(root, root, files, new GmxReadBudget());
+                payload.put("root", root.getCanonicalPath());
+                payload.put("files", files);
+                return payload.toString();
+            } catch (Exception error) {
+                Log.w(TAG, "GMZ file enumeration rejected", error);
                 return "";
-            } finally {
-                if (connection != null) connection.disconnect();
             }
+        }
+        /** Downloads only catalog-pinned HTTPS hosts; every redirect is revalidated. */
+        @JavascriptInterface public String downloadCloudGmkBase64(String sourceUrl) {
+            if (sourceUrl == null) return "";
+            URL current;
+            try { current = new URL(sourceUrl); } catch (Exception invalid) { return ""; }
+            for (int redirectCount = 0; redirectCount <= 3; redirectCount++) {
+                if (!isAllowedCloudGmkUrl(current)) return "";
+                HttpURLConnection connection = null;
+                try {
+                    connection = (HttpURLConnection) current.openConnection();
+                    connection.setInstanceFollowRedirects(false);
+                    connection.setConnectTimeout(15000);
+                    connection.setReadTimeout(60000);
+                    connection.setRequestProperty("User-Agent", "NOR-Maker-Android/1.0");
+                    int status = connection.getResponseCode();
+                    if (status >= 300 && status < 400) {
+                        String location = connection.getHeaderField("Location");
+                        if (location == null || location.isEmpty()) return "";
+                        current = new URL(current, location);
+                        continue;
+                    }
+                    if (status < 200 || status >= 300) return "";
+                    long declared = connection.getContentLengthLong();
+                    if (declared > MAX_GMK_BYTES) return "";
+                    try (InputStream in = connection.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.max(8192L, declared))) {
+                        byte[] chunk = new byte[64 * 1024];
+                        int total = 0, n;
+                        while ((n = in.read(chunk)) != -1) {
+                            total += n;
+                            if (total > MAX_GMK_BYTES) return "";
+                            out.write(chunk, 0, n);
+                        }
+                        return total > 100 ? Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP) : "";
+                    }
+                } catch (Throwable error) {
+                    Log.w(TAG, "Cloud GMK native download failed: " + current, error);
+                    return "";
+                } finally {
+                    if (connection != null) connection.disconnect();
+                }
+            }
+            return "";
         }
     }
 

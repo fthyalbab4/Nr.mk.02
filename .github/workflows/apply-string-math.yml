@@ -2,21 +2,15 @@ name: apply-string-math
 on:
   workflow_dispatch:
 jobs:
-  apply:
+  verify:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Materialize
-        run: |
-          python3 tools/gap_fill_20261013/MATERIALIZE_FROM_BLOBS.py
-          python3 tools/gap_fill_20261013/APPLY_DND_EXTRAS.py || true
-          python3 tools/gap_fill_20261013/APPLY_INSTANCE_IMAGE_FIELDS.py || true
-          python3 tools/gap_fill_20261013/APPLY_ACTION_IMAGE_AND_LOG.py || true
-          python3 tools/gap_fill_20261013/APPLY_DRAW_AND_DND2.py || true
-          python3 tools/gap_fill_20261013/VERIFY_AFTER_APPLY.py
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: materialize gap-fill sources"
-          file_pattern: "app/src/main/cpp/** NOR_MAKER_COMPLETE_PACKAGE/**"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Engine regression suite
+        run: python3 tools/run_engine_suite.py
+      - name: Reference and security contracts
+        run: python3 -m unittest discover -s tests/reference -p 'test_*.py' -v
+      - name: Ensure verification did not mutate the checkout
+        run: git diff --exit-code

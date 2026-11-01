@@ -509,11 +509,11 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         return hit ? true : false;
     }
     if (strcmp(name, "action_if_variable") == 0) {
-        /* Canonical args: value, compare, op. */
-        double cur = (argc >= 1) ? (double)args[0] : 0.0;
-        double thr = (argc >= 2) ? (double)args[1] : 0.0;
-        int op = (argc >= 3) ? args[2] : 0;
-        return compare_action_values(cur, thr, op) ? true : false;
+        /* GM8 DnD order: left value, comparison opcode, right value. */
+        double lhs = (argc >= 1) ? (double)args[0] : 0.0;
+        int op = (argc >= 2) ? args[1] : 0;
+        double rhs = (argc >= 3) ? (double)args[2] : 0.0;
+        return compare_action_values(lhs, rhs, op) ? true : false;
     }
     if (strcmp(name, "action_if_mouse") == 0) {
         int btn = (argc >= 1) ? args[0] : 0;

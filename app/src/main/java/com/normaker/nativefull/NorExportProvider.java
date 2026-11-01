@@ -18,16 +18,25 @@ public class NorExportProvider extends ContentProvider {
         return true;
     }
 
+    private File resolveCacheFile(Uri uri) throws FileNotFoundException {
+        if (getContext() == null) throw new FileNotFoundException("Context is null");
+        String filename = uri == null ? null : uri.getLastPathSegment();
+        if (filename == null || filename.isEmpty()) throw new FileNotFoundException("Invalid URI: " + uri);
+        try {
+            File cacheRoot = getContext().getCacheDir().getCanonicalFile();
+            File candidate = new File(cacheRoot, filename).getCanonicalFile();
+            if (!candidate.getPath().startsWith(cacheRoot.getPath() + File.separator) || !candidate.isFile())
+                throw new FileNotFoundException("File not found in cache");
+            return candidate;
+        } catch (java.io.IOException error) {
+            throw new FileNotFoundException("Invalid cache path");
+        }
+    }
+
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-        if (getContext() == null) throw new FileNotFoundException("Context is null");
-        String filename = uri.getLastPathSegment();
-        if (filename == null) throw new FileNotFoundException("Invalid URI: " + uri);
-        File file = new File(getContext().getCacheDir(), filename);
-        if (file.exists()) {
-            return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
-        }
-        throw new FileNotFoundException("File not found in cache: " + filename);
+        if (!"r".equals(mode)) throw new FileNotFoundException("Read-only provider");
+        return ParcelFileDescriptor.open(resolveCacheFile(uri), ParcelFileDescriptor.MODE_READ_ONLY);
     }
 
     @Override
@@ -41,11 +50,9 @@ public class NorExportProvider extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        if (getContext() == null) return null;
-        String filename = uri.getLastPathSegment();
-        if (filename == null) return null;
-        File file = new File(getContext().getCacheDir(), filename);
-        if (!file.exists()) return null;
+        File file;
+        try { file = resolveCacheFile(uri); }
+        catch (FileNotFoundException error) { return null; }
 
         String[] cols = projection != null ? projection : new String[]{
                 OpenableColumns.DISPLAY_NAME,
