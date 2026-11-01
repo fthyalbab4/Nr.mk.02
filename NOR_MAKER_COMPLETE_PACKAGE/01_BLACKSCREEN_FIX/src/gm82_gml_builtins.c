@@ -2862,11 +2862,19 @@ static size_t buf_type_size(int type) {
 
 double gml_buffer_sizeof(double type) { return (double)buf_type_size((int)type); }
 
+static int buffer_offset_from_double(double value, size_t *out) {
+    if (!out || !isfinite(value) || value < 0.0 || value > (double)GM82_BUF_CAP) return 0;
+    *out = (size_t)value;
+    return 1;
+}
+
 double gml_buffer_create(double size, double type, double alignment) {
     (void)type; (void)alignment;
-    size_t sz = (size_t)size;
-    if (sz < 16) sz = 16;
-    if (sz > GM82_BUF_CAP) sz = GM82_BUF_CAP;
+    size_t sz = 16;
+    if (isfinite(size) && size > 0.0) {
+        sz = size > (double)GM82_BUF_CAP ? GM82_BUF_CAP : (size_t)size;
+        if (sz < 16) sz = 16;
+    }
     for (int i = 0; i < GM82_BUF_MAX; i++) {
         if (g_bufs[i].used) continue;
         uint8_t *p = (uint8_t *)calloc(sz, 1);
@@ -2891,7 +2899,7 @@ double gml_buffer_delete(double id) {
 
 static int buf_write_at(gm82_buffer *b, size_t pos, int type, double value) {
     size_t ts = buf_type_size(type);
-    if (pos + ts > b->capacity) return 0;
+    if (!b || !b->data || pos > b->capacity || ts > b->capacity - pos) return 0;
     uint8_t *p = b->data + pos;
     switch (type) {
         case 0:
@@ -2909,7 +2917,7 @@ static int buf_write_at(gm82_buffer *b, size_t pos, int type, double value) {
 
 static double buf_read_at(gm82_buffer *b, size_t pos, int type) {
     size_t ts = buf_type_size(type);
-    if (pos + ts > b->capacity) return 0;
+    if (!b || !b->data || pos > b->capacity || ts > b->capacity - pos) return 0;
     uint8_t *p = b->data + pos;
     switch (type) {
         case 0:
@@ -2936,6 +2944,7 @@ double gml_buffer_read(double id, double type) {
     int i = (int)id;
     if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used) return 0;
     size_t ts = buf_type_size((int)type);
+    if (g_bufs[i].pos > g_bufs[i].capacity || ts > g_bufs[i].capacity - g_bufs[i].pos) return 0;
     double v = buf_read_at(&g_bufs[i], g_bufs[i].pos, (int)type);
     g_bufs[i].pos += ts;
     return v;
@@ -2943,25 +2952,26 @@ double gml_buffer_read(double id, double type) {
 
 double gml_buffer_poke(double id, double offset, double type, double value) {
     int i = (int)id;
-    if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used) return 0;
-    return buf_write_at(&g_bufs[i], (size_t)offset, (int)type, value) ? 1.0 : 0.0;
+    size_t pos;
+    if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used || !buffer_offset_from_double(offset, &pos)) return 0;
+    return buf_write_at(&g_bufs[i], pos, (int)type, value) ? 1.0 : 0.0;
 }
 
 double gml_buffer_peek(double id, double offset, double type) {
     int i = (int)id;
-    if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used) return 0;
-    return buf_read_at(&g_bufs[i], (size_t)offset, (int)type);
+    size_t pos;
+    if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used || !buffer_offset_from_double(offset, &pos)) return 0;
+    return buf_read_at(&g_bufs[i], pos, (int)type);
 }
 
 double gml_buffer_seek(double id, double base, double offset) {
     int i = (int)id;
-    if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used) return 0;
-    size_t pos;
-    if ((int)base == 0) pos = (size_t)offset; /* start */
-    else if ((int)base == 1) pos = g_bufs[i].pos + (size_t)offset; /* relative */
-    else pos = g_bufs[i].size + (size_t)offset; /* end */
-    if (pos > g_bufs[i].capacity) pos = g_bufs[i].capacity;
-    g_bufs[i].pos = pos;
+    if (i < 0 || i >= GM82_BUF_MAX || !g_bufs[i].used || !isfinite(base) || !isfinite(offset)) return 0;
+    double origin = ((int)base == 0) ? 0.0 : ((int)base == 1) ? (double)g_bufs[i].pos : (double)g_bufs[i].size;
+    double target = origin + offset;
+    if (target <= 0.0) g_bufs[i].pos = 0;
+    else if (target >= (double)g_bufs[i].capacity) g_bufs[i].pos = g_bufs[i].capacity;
+    else g_bufs[i].pos = (size_t)target;
     return 1;
 }
 

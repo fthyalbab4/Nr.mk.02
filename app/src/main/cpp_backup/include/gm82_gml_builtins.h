@@ -677,3 +677,5 @@ double gml_date_get_timestamp(void);
 #endif
 
 #endif
+
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
