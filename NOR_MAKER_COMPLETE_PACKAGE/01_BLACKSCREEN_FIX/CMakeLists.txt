@@ -9,7 +9,7 @@ include_directories(
     .
 )
 
-file(GLOB GM82_SOURCES
+file(GLOB GM82_SOURCES CONFIGURE_DEPENDS
     src/*.c
     gm82_jni.c
     gml_vm.c

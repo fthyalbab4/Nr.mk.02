@@ -1,6 +1,6 @@
 # Daily Periodic Audit Report — NOR Maker GM82 Engine
 
-**Date:** 2026-11-01
+**Date:** 2026-11-02
 **Audit Conducted By:** Jules (Automated Periodic Engine Verifier)
 **Reference Repositories:** `source/` (28 GM82 source archives from https://github.com/GM82Project) & `REPORTING_RULES.md`
 
@@ -24,21 +24,22 @@
 1. **Tri-Mirror Source and Header Synchronization:**
    - *Audit Target:* Synchronized `app/src/main/cpp/src/` & `include/`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/` & `include/`, and `app/src/main/cpp_backup/src/` & `include/`.
    - *Verification:* Verified **0 differences found** across all 3 C core locations.
-   - *Package Makefile Fix:* Updated `gm82_actions_extra.c` and test suites across all mirrors, resolving C Core Package Makefile build failure.
+   - *Package Makefile Build & Test:* Updated `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` with synchronized sources and tests (`test_buffer_bounds.c`, `test_gmz_import_limits.c`), resolving `test_dnd_action_conditionals` and passing all 24 test executables.
 
 2. **Source Mirror Analysis (`source/` & `source/unpacked/`):**
    - *Audit Target:* 28 GM82 extension packages (`gm82core`, `gm82audio`, `gm82appsurf`, `gm82buf`, `gm82room`, `gm82path`, `DragonScript2`, etc.).
    - *Findings:* Core GML, surface, path, buffer, particle, audio, and motion builtins are fully implemented in native C. Windows-only PE/DLL components (`gm82nsis`, `gm82upx`, `gm82vpatch`, `gm82gex`) are out-of-scope for the native Android engine or stubs provided.
 
 3. **Automated Verification Suites Execution:**
-   - *`tools/run_engine_suite.py`:* 22/22 C test binaries and pipelines PASS (100% ok).
+   - *`tools/daily_audit_runner.py`:* 5/5 sub-suites PASS (C Engine Suite: PASS, Python Full Verification: PASS, Host Pipeline: PASS, C Core Package Makefile: PASS, JS Engine Verification: PASS).
+   - *`tools/run_engine_suite.py`:* All test binaries and pipelines PASS (100% ok).
    - *`run_full_verification.py`:* 17/17 PASS (100% success rate across all test assertions).
    - *`tools/run_host_pipeline.sh`:* ok=4 fail=0 across all sample GMK games (`mario_bros`, `plataformas`, `shooter`, `zelda`).
-   - *`make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test`:* All test binaries compiled and passed cleanly.
+   - *`make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test`:* All 24 test binaries compiled and passed cleanly.
    - *`node test_all_games_inlined.js`:* 39/39 scripts (100%), 78/78 actions (100%) PASS.
 
 4. **Android Gradle Build Verification:**
-   - *`./gradlew assembleDebug`:* BUILD SUCCESSFUL in 2s (arm64-v8a, armeabi-v7a, x86, x86_64).
+   - *`./gradlew assembleDebug`:* BUILD SUCCESSFUL (arm64-v8a, armeabi-v7a, x86, x86_64).
 
 ---
 
@@ -77,11 +78,11 @@ $ bash tools/run_host_pipeline.sh
 
 # C Core Package Makefile Test
 $ make -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test
-  All C test executables compiled and passed cleanly.
+  All 24 C test executables compiled and passed cleanly.
 
 # Android APK Compilation
 $ ./gradlew assembleDebug
-  BUILD SUCCESSFUL in 2s (41 actionable tasks)
+  BUILD SUCCESSFUL in 1m 36s (41 actionable tasks)
 
 # Tri-Mirror Synchronization Audit
 $ diff -rq app/src/main/cpp/include NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include
