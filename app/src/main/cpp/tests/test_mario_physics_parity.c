@@ -92,6 +92,33 @@ int main(void) {
     assert(player->hspeed == 0.0);
     printf("  [PASS] Axis-separated ceiling/wall resolution\n");
 
+    printf("Testing fractional image_speed animation...\n");
+    gm82_sprite_group animation_group;
+    memset(&animation_group, 0, sizeof(animation_group));
+    animation_group.frame_start = 0;
+    animation_group.frame_count = 3;
+    gm82_sprite_group_list animation_groups = { &animation_group, 1 };
+    gm82_runtime_bind_sprite_groups(&rt, &animation_groups);
+    player->image_index = 0.0;
+    player->image_speed = 0.25;
+    gm82_runtime_step(&rt);
+    assert(fabs(player->image_index - 0.25) < 0.0001);
+    gm82_runtime_step(&rt);
+    assert(fabs(player->image_index - 0.50) < 0.0001);
+    player->image_speed = -0.25;
+    gm82_runtime_step(&rt);
+    assert(fabs(player->image_index - 0.25) < 0.0001);
+    player->image_index = 2.75;
+    player->image_speed = 0.5;
+    gm82_runtime_step(&rt);
+    assert(fabs(player->image_index - 0.25) < 0.0001);
+    player->image_index = 0.25;
+    player->image_speed = -0.5;
+    gm82_runtime_step(&rt);
+    assert(fabs(player->image_index - 2.75) < 0.0001);
+    printf("  [PASS] Fractional speed and bidirectional frame wrapping: image_index=%.2f\n",
+           player->image_index);
+
     free(objs.items);
     printf("ALL_MARIO_PHYSICS_PARITY_TESTS_PASS\n");
     return 0;

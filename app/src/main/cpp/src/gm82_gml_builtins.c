@@ -700,8 +700,8 @@ void gml_set_speed(double v) {
 }
 double gml_get_sprite_index(void) { return g_self ? (double)g_self->sprite_index : -1; }
 void gml_set_sprite_index(double v) { if (g_self) g_self->sprite_index = (int32_t)v; }
-double gml_get_image_index(void) { return g_self ? (double)g_self->image_index : 0; }
-void gml_set_image_index(double v) { if (g_self) g_self->image_index = (int32_t)v; }
+double gml_get_image_index(void) { return g_self ? g_self->image_index : 0; }
+void gml_set_image_index(double v) { if (g_self) g_self->image_index = v; }
 double gml_get_solid(void) { return g_self ? (double)g_self->solid : 0; }
 double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 
