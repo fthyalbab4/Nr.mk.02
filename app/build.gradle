@@ -6,6 +6,21 @@ android {
     namespace 'com.normaker.nativefull'
     compileSdk 34
     ndkVersion '25.2.9519653'
+    def releaseKeystorePath = System.getenv('ANDROID_KEYSTORE_PATH')
+    def releaseKeystorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+    def releaseKeyAlias = System.getenv('ANDROID_KEY_ALIAS')
+    def releaseKeyPassword = System.getenv('ANDROID_KEY_PASSWORD')
+    def releaseSigningConfigured = [releaseKeystorePath, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
+    signingConfigs {
+        release {
+            if (releaseSigningConfigured) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
 
     buildFeatures {
         buildConfig true
@@ -37,6 +52,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (releaseSigningConfigured) signingConfig signingConfigs.release
         }
     }
 
