@@ -56,10 +56,14 @@
       function setActive(el, on) { if (el) el.classList.toggle("is-active", !!on); }
       function synthKey(code, type) {
         document.dispatchEvent(new KeyboardEvent(type, { keyCode: code, which: code, bubbles: true, cancelable: true }));
-        var b = window.NorNative || window.Gm82Native;
-        if (b) {
-          if (type === "keydown" && typeof b.keyDown === "function") b.keyDown(code);
-          if (type === "keyup" && typeof b.keyUp === "function") b.keyUp(code);
+        var b = window.NorNative || window.Gm82Native || null;
+        if (!b) return;
+        if (type === "keydown") {
+          if (typeof b.keyDown === "function") b.keyDown(code);
+          else if (typeof b.key === "function") b.key(code, true);
+        } else if (type === "keyup") {
+          if (typeof b.keyUp === "function") b.keyUp(code);
+          else if (typeof b.key === "function") b.key(code, false);
         }
       }
       function bindPress(el) {
