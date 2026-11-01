@@ -119,6 +119,29 @@ int main(void) {
     printf("  [PASS] Fractional speed and bidirectional frame wrapping: image_index=%.2f\n",
            player->image_index);
 
+    printf("Testing high-speed solid-wall crossing...\n");
+    player->x = 50.0; player->y = 50.0;
+    player->xprevious = player->x; player->yprevious = player->y;
+    player->hspeed = 500.0; player->vspeed = 0.0;
+    player->speed = 0.0; player->gravity = 0.0; player->friction = 0.0;
+    floor->x = 200.0; floor->y = 50.0;
+    gm82_runtime_step(&rt);
+    assert(player->hit_right == 1);
+    assert(player->hspeed == 0.0);
+    assert(player->x + 16.0 <= floor->x + 0.0001);
+    printf("  [PASS] High-speed wall crossing resolved: player_x=%.1f wall_x=%.1f\n",
+           player->x, floor->x);
+
+    player->x = 50.0; player->y = 50.0;
+    player->hspeed = 0.0; player->vspeed = 500.0;
+    floor->x = 50.0; floor->y = 200.0;
+    gm82_runtime_step(&rt);
+    assert(player->on_ground == 1);
+    assert(player->vspeed == 0.0);
+    assert(player->y + 16.0 <= floor->y + 0.0001);
+    printf("  [PASS] High-speed floor crossing resolved: player_y=%.1f floor_y=%.1f\n",
+           player->y, floor->y);
+
     free(objs.items);
     printf("ALL_MARIO_PHYSICS_PARITY_TESTS_PASS\n");
     return 0;
