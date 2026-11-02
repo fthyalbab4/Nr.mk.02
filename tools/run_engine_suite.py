@@ -12,6 +12,7 @@ TESTS = [
     ("test_mario_physics_parity", "app/src/main/cpp/tests/test_mario_physics_parity.c"),
     ("test_mario_replay", "app/src/main/cpp/tests/test_mario_replay.c"),
     ("test_gml_comprehensive", "app/src/main/cpp/tests/test_gml_comprehensive.c"),
+    ("test_gml_parser", "app/src/main/cpp/tests/test_gml_parser.c"),
     ("test_gml_phase5", "app/src/main/cpp/tests/test_gml_phase5.c"),
     ("test_gml_vm_advanced", "app/src/main/cpp/tests/test_gml_vm_advanced.c"),
     ("test_phase1", "app/src/main/cpp/tests/test_phase1.c"),
