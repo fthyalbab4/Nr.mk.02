@@ -25,6 +25,7 @@ TESTS = [
     ("test_gml_ds_collisions", "app/src/main/cpp/tests/test_gml_ds_collisions.c"),
     ("test_paths_particles_mpgrid", "app/src/main/cpp/tests/test_paths_particles_mpgrid.c"),
     ("test_event_order", "app/src/main/cpp/tests/test_event_order.c"),
+    ("test_action_global_dispatch", "app/src/main/cpp/tests/test_action_global_dispatch.c"),
     ("test_phase1_arena_sprites_lifecycle", "app/src/main/cpp/tests/test_phase1_arena_sprites_lifecycle.c"),
     ("test_gml_string_repeat", "app/src/main/cpp/tests/test_gml_string_repeat.c"),
     ("test_nr01_compat_apis", "app/src/main/cpp/tests/test_nr01_compat_apis.c"),
