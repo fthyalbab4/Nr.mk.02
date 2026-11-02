@@ -15,7 +15,8 @@ This file distinguishes work that was executed in this checkout from work that s
 
 ## Not verified here
 
-- **Android APK/NDK build and on-device behavior:** this environment has no Android SDK or NDK configured. Java/manifest structure and contracts were checked statically, but no APK, instrumentation test, touchscreen run, or WebView run was produced.
+- **Android APK/NDK build verification:** The project builds `app/build/outputs/apk/debug/app-debug.apk` cleanly via `./gradlew assembleDebug` and passes `./gradlew check` using Android SDK 34, NDK 25.2.9519653, and CMake 3.22.1 across arm64-v8a, armeabi-v7a, x86, and x86_64 ABI targets.
+- **Android on-device instrumentation and behavior:** while the debug APK builds cleanly with embedded native shared libraries, on-device instrumentation tests, physical touch input replay, and live hardware display rendering remain unverified pending a connected physical Android device/emulator.
 - **Release signing:** no replacement production identity was created. A project owner must rotate the exposed identity and supply release credentials through an approved secret store or Play App Signing.
 - **GMX XML import:** the Android folder picker can import a complete GMX project tree, while the archive picker deliberately accepts only GMZ/ZIP. A standalone `.gmx` manifest without its resource tree is rejected rather than being misrepresented as a complete project.
 - **Cloud GMK integrity:** downloads are TLS-only, host-restricted, size-limited, and redirects are revalidated. The bundled catalog still needs immutable revision pins and per-file SHA-256 verification before its remote content can be treated as reproducible.
