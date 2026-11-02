@@ -1263,6 +1263,23 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "path_ease") == 0) { *out = gml_path_ease(arg, nargs>=2?args[1]:0); return true; }
         if (strcmp(id, "object_other_is_child_of") == 0) { *out = gml_object_other_is_child_of(arg); return true; }
         if (strcmp(id, "instance_create_moving_ext") == 0) { *out = gml_instance_create_moving_ext(args[0],args[1],args[2],args[3],args[4], nargs>=6?args[5]:0, nargs>=7?args[6]:270); return true; }
+        if (strcmp(id, "instance_create_depth_moving_ext") == 0) {
+            *out = gml_instance_create_depth_moving_ext(
+                nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0, nargs>=4?args[3]:0,
+                nargs>=5?args[4]:0, nargs>=6?args[5]:0, nargs>=7?args[6]:0, nargs>=8?args[7]:0,
+                nargs>=9?args[8]:0, nargs>=10?args[9]:270);
+            return true;
+        }
+        if (strcmp(id, "move_towards_gravity") == 0) {
+            *out = gml_move_towards_gravity(nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0);
+            return true;
+        }
+        if (strcmp(id, "move_towards_jump") == 0) {
+            *out = gml_move_towards_jump(
+                nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0,
+                nargs>=4?args[3]:0, nargs>=5?args[4]:0);
+            return true;
+        }
         if (strcmp(id, "instance_some") == 0) { *out = gml_instance_some(arg); return true; }
         if (strcmp(id, "filename_remove_ext") == 0) { *out = gml_filename_remove_ext((p->str_mask&1)?p->str_args[0]:""); return true; }
         if (strcmp(id, "string_ord_at") == 0) { *out = gml_string_ord_at((p->str_mask&1)?p->str_args[0]:"", nargs>=2?args[1]:1); return true; }

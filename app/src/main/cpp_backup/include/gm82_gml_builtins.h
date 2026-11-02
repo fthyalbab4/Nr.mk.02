@@ -620,6 +620,11 @@ double gml_move_contact_solid_hv(double hspd, double vspd);
 double gml_modwrap(double val, double minv, double maxv);
 double gml_direction_to_object(double object_index);
 double gml_move_towards_fixed(double tx, double ty, double sp);
+double gml_move_towards_gravity(double xto, double yto, double grav);
+double gml_move_towards_jump(double xto, double yto, double hspeed_limit, double vsp, double grav);
+double gml_instance_create_depth_moving_ext(double x, double y, double depth, double obj,
+                                           double sp, double dir, double addh, double addv,
+                                           double grav, double gravdir);
 double gml_esign(double val, double defv);
 double gml_round_unbiased(double val);
 double gml_point_line_distance(double px, double py, double x1, double y1, double x2, double y2, double segment);
