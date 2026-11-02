@@ -72,7 +72,7 @@ static void test_ast_execution(void) {
     assert(self_bc != NULL);
     gm82_gml_parser bytecode_parser;
     gm82_gml_parser_init(&bytecode_parser,
-        "x = 0; i = 0; while (i < 5) { x += i; i += 1; } return x;");
+        "x = 0; for (i = 0; i < 5; i += 1) { x += i; } return x;");
     gm82_gml_ast *bytecode_root = gm82_gml_parse_program(&bytecode_parser);
     assert(bytecode_root != NULL);
     gm82_gml_bytecode bytecode;

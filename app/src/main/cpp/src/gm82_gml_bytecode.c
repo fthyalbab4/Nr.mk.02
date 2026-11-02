@@ -59,11 +59,34 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
             int back = emit_code(bc, GM82_BC_JUMP, NULL); if (back < 0) return false;
             bc->code[back].target = start; bc->code[exit].target = (int)bc->count; return true;
         }
+        case GM82_AST_FOR: {
+            if (n->a) {
+                if (!source_of(n->a, source)) return false;
+                if (emit_code(bc, GM82_BC_EVAL_STMT, source) < 0) return false;
+            }
+            int start = (int)bc->count;
+            int exit = -1;
+            if (n->b) {
+                if (!source_of(n->b, source)) return false;
+                exit = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source);
+                if (exit < 0) return false;
+            }
+            if (!compile_node(n->d, bc)) return false;
+            if (n->c) {
+                if (!source_of(n->c, source)) return false;
+                if (emit_code(bc, GM82_BC_EVAL_STMT, source) < 0) return false;
+            }
+            int back = emit_code(bc, GM82_BC_JUMP, NULL);
+            if (back < 0) return false;
+            bc->code[back].target = start;
+            if (exit >= 0) bc->code[exit].target = (int)bc->count;
+            return true;
+        }
         case GM82_AST_RETURN:
             if (n->a && !source_of(n->a, source)) return false;
             return emit_code(bc, GM82_BC_RETURN, n->a ? source : "0") >= 0;
         default:
-            /* Repeat/for/with are kept as explicit compatibility instructions for now. */
+            /* Repeat/with remain explicit compatibility instructions for now. */
             if (!source_of(n, source)) return false;
             return emit_code(bc, GM82_BC_EVAL_STMT, source) >= 0;
     }
