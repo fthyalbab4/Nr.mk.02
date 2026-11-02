@@ -82,11 +82,23 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
             if (exit >= 0) bc->code[exit].target = (int)bc->count;
             return true;
         }
+        case GM82_AST_REPEAT: {
+            if (!source_of(n->a, source)) return false;
+            int init = emit_code(bc, GM82_BC_REPEAT_INIT, source);
+            if (init < 0) return false;
+            int body = (int)bc->count;
+            if (!compile_node(n->b, bc)) return false;
+            int next = emit_code(bc, GM82_BC_REPEAT_NEXT, NULL);
+            if (next < 0) return false;
+            bc->code[next].target = body;
+            bc->code[init].target = (int)bc->count;
+            return true;
+        }
         case GM82_AST_RETURN:
             if (n->a && !source_of(n->a, source)) return false;
             return emit_code(bc, GM82_BC_RETURN, n->a ? source : "0") >= 0;
         default:
-            /* Repeat/with remain explicit compatibility instructions for now. */
+            /* with remains an explicit compatibility instruction for now. */
             if (!source_of(n, source)) return false;
             return emit_code(bc, GM82_BC_EVAL_STMT, source) >= 0;
     }
@@ -109,6 +121,8 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
     if (!rt || !bc || !r) return false;
     memset(r, 0, sizeof(*r));
     int pc = 0; double value = 0;
+    int repeat_counts[64];
+    int repeat_depth = 0;
     while (pc >= 0 && (size_t)pc < bc->count) {
         if (++r->steps > GM82_BC_MAX_STEPS) return false;
         const gm82_gml_bc_instruction *ins = &bc->code[pc];
@@ -124,6 +138,19 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
             case GM82_BC_JUMP_IF_FALSE:
                 if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
                 pc = value != 0.0 ? pc + 1 : ins->target; break;
+            case GM82_BC_REPEAT_INIT:
+                if (repeat_depth >= (int)(sizeof(repeat_counts) / sizeof(repeat_counts[0]))) return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                if (value < 0.0 || value > (double)GM82_BC_MAX_STEPS) return false;
+                repeat_counts[repeat_depth++] = (int)value;
+                if (repeat_counts[repeat_depth - 1] <= 0) { repeat_depth--; pc = ins->target; }
+                else pc++;
+                break;
+            case GM82_BC_REPEAT_NEXT:
+                if (repeat_depth <= 0) return false;
+                if (--repeat_counts[repeat_depth - 1] > 0) pc = ins->target;
+                else { repeat_depth--; pc++; }
+                break;
             case GM82_BC_RETURN:
                 if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
                 r->returned = true; r->return_value = value; return true;

@@ -83,6 +83,17 @@ static void test_ast_execution(void) {
     assert(self_bc->x == 10.0);
     gm82_gml_bytecode_free(&bytecode);
     gm82_gml_ast_free(bytecode_root);
+    self_bc->x = 0.0;
+    gm82_gml_parser repeat_parser;
+    gm82_gml_parser_init(&repeat_parser, "repeat (3) { repeat (2) { x += 1; } } return x;");
+    gm82_gml_ast *repeat_root = gm82_gml_parse_program(&repeat_parser);
+    assert(repeat_root != NULL);
+    assert(gm82_gml_compile_bytecode(repeat_root, &bytecode));
+    memset(&bytecode_result, 0, sizeof(bytecode_result));
+    assert(gm82_gml_execute_bytecode(&rt_bc, self_bc, &bytecode, &bytecode_result));
+    assert(bytecode_result.returned && bytecode_result.return_value == 6.0);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(repeat_root);
     gm82_runtime_cleanup(&rt_bc);
     gm82_gml_ast_free(root);
     gm82_runtime_cleanup(&rt);
