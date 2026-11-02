@@ -98016,10 +98016,10 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                   /* @__PURE__ */ jsxRuntimeExports.jsx("iframe", {
                     ref: iframeRef,
                     srcDoc: content,
-                    className: "w-full h-full border-none select-none z-10",
-                    title: "Game Engine",
-                    sandbox: "allow-scripts allow-modals allow-pointer-lock",
-                    tabIndex: 0
+                  className: "w-full h-full border-none select-none z-10",
+                  title: "Game Engine",
+                  sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
+                  tabIndex: 0
                   }),
                   /* CRT Scanlines */
                   scanlinesEnabled && /* @__PURE__ */ jsxRuntimeExports.jsx("div", {
@@ -127849,7 +127849,7 @@ const App = () => {
     const ir = createProjectIR(project, converted);
     const title = String(project.gameInformation.caption || "Imported GM82");
     const applied = applyImportedProject({ source: "GM82", title, story: `Imported from GM82 (v${project.version})`, converted, ir, sourceDiagnostics });
-    window.alert(`تم استيراد مشروع GM82 بنجاح!\n🎨 صور: ${converted.sprites.length} | 🔊 أصوات: ${converted.sounds.length} | 📜 سكربتات: ${converted.scripts.length}\n🧩 كائنات: ${converted.gameObjects.length} | 🗺 غرف: ${converted.rooms.length}`);
+    console.info(`تم استيراد مشروع GM82 بنجاح! صور: ${converted.sprites.length} | أصوات: ${converted.sounds.length} | سكربتات: ${converted.scripts.length} | كائنات: ${converted.gameObjects.length} | غرف: ${converted.rooms.length}`);
     return { ...converted, diagnostics: applied.diagnostics, ir };
   };
   reactExports.useEffect(() => {
@@ -128650,11 +128650,9 @@ const App = () => {
       const importedTitle = String(((_a3 = project.gameInformation) == null ? void 0 : _a3.caption) || ((_b3 = project.sprites[0]) == null ? void 0 : _b3.name) || "Imported GMK");
       const applied = applyImportedProject({ source: isGm82TextProject ? "GM82" : "GMK", title: importedTitle, story: `Imported from ${isGm82TextProject ? "GM82" : "GMK"} (v${project.version})`, converted, ir });
       if (project.version < 800) {
-        window.alert(`Warning: This is an older GMK version (${project.version}). Some resources might not load correctly or may be partially corrupted. We've attempted to load as much as possible.
-
-Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
+        console.warn(`Warning: This is an older GMK version (${project.version}). Some resources might not load correctly or may be partially corrupted. Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
       } else {
-        window.alert(`Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
+        console.info(`Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
       }
     } catch (err2) {
       console.error("GMK Parsing Error:", err2);
