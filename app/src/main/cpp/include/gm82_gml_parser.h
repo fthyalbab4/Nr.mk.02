@@ -83,6 +83,7 @@ gm82_gml_ast *gm82_gml_parse_program(gm82_gml_parser *parser);
 void gm82_gml_ast_free(gm82_gml_ast *node);
 const char *gm82_gml_parser_error(const gm82_gml_parser *parser);
 const char *gm82_gml_ast_kind_name(gm82_gml_ast_kind kind);
+bool gm82_gml_ast_to_source(const gm82_gml_ast *node, char *out, size_t out_size);
 
 typedef struct {
     bool returned;
@@ -96,6 +97,34 @@ typedef struct {
 bool gm82_gml_execute_ast(gm82_runtime *rt, gm82_instance *self,
                           const gm82_gml_ast *program,
                           gm82_gml_exec_result *result);
+
+typedef enum {
+    GM82_BC_HALT = 0,
+    GM82_BC_EVAL_STMT,
+    GM82_BC_EVAL_EXPR,
+    GM82_BC_JUMP,
+    GM82_BC_JUMP_IF_FALSE,
+    GM82_BC_RETURN
+} gm82_gml_bc_opcode;
+
+typedef struct {
+    gm82_gml_bc_opcode opcode;
+    int target;
+    char *source;
+} gm82_gml_bc_instruction;
+
+typedef struct {
+    gm82_gml_bc_instruction *code;
+    size_t count;
+    size_t capacity;
+    char error[192];
+} gm82_gml_bytecode;
+
+bool gm82_gml_compile_bytecode(const gm82_gml_ast *program, gm82_gml_bytecode *bytecode);
+void gm82_gml_bytecode_free(gm82_gml_bytecode *bytecode);
+bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self,
+                               const gm82_gml_bytecode *bytecode,
+                               gm82_gml_exec_result *result);
 
 #ifdef __cplusplus
 }
