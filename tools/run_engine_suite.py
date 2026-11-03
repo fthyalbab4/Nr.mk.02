@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
+"""Build and run the native C test suite from a fresh, isolated object directory."""
+from pathlib import Path
 import subprocess
 import sys
-import os
+import tempfile
 
+ROOT = Path(__file__).resolve().parent.parent
 TESTS = [
     ("test_full_suite", "app/src/main/cpp/test_full_suite.c"),
     ("test_runtime_guard", "app/src/main/cpp/tests/test_runtime_guard.c"),
+    ("test_runtime_rendering_collision", "app/src/main/cpp/tests/test_runtime_rendering_collision.c"),
     ("test_dual_load", "app/src/main/cpp/tests/test_dual_load.c"),
     ("test_input_key_bounds", "app/src/main/cpp/tests/test_input_key_bounds.c"),
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),
@@ -32,7 +36,6 @@ TESTS = [
     ("test_native_frame_api", "app/src/main/cpp/tests/test_native_frame_api.c"),
     ("test_gm82_text_project", "app/src/main/cpp/tests/test_gm82_text_project.c"),
     ("test_gm82_text_runtime", "app/src/main/cpp/tests/test_gm82_text_runtime.c"),
-    # Imported from the friend's Full Core package; compiled against the current modular core.
     ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
     ("test_friend_gml_exec", "app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c"),
     ("test_friend_format_import", "app/src/main/cpp/tests/friend_reference/test_friend_format_import.c"),
@@ -41,57 +44,66 @@ TESTS = [
     ("test_reference_gml_invoke_scope", "app/src/main/assets/core_validation/gml_invoke_test.c"),
 ]
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-import glob
-
-def run_test(name, src):
-    print(f"=== {name} ===")
-    src_path = os.path.join(ROOT, src)
-    if not os.path.isfile(src_path):
-        print(f"  SKIP missing {src}")
-        return True
-    bin_path = f"/tmp/{name}_bin"
-    cmd_build = f"gcc -O2 -Iapp/src/main/cpp/include -Iapp/src/main/cpp {src_path} /tmp/gm82_objs/*.o -lz -lm -o {bin_path}"
-    res_build = subprocess.run(cmd_build, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
-    if res_build.returncode != 0:
-        print(f"  FAIL build {src}:\n{res_build.stderr}")
+def run(command, label):
+    result = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, errors="replace")
+    if result.returncode:
+        print(f"FAIL {label} (exit {result.returncode})\n{result.stdout}")
         return False
-    res_run = subprocess.run(bin_path, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
-    if res_run.returncode != 0:
-        print(f"  FAIL run {bin_path}:\n{res_run.stderr}")
-        return False
-    print(f"  PASS {src}")
+    if result.stdout:
+        print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
     return True
 
+
 def main():
-    os.chdir(ROOT)
-    os.makedirs("/tmp/gm82_objs", exist_ok=True)
-    core_srcs = ["app/src/main/cpp/gml_vm.c"] + glob.glob("app/src/main/cpp/src/*.c")
-    for csrc in core_srcs:
-        obj_name = os.path.basename(csrc).replace(".c", ".o")
-        obj_path = os.path.join("/tmp/gm82_objs", obj_name)
-        cmd = f"gcc -O2 -Iapp/src/main/cpp/include -Iapp/src/main/cpp -c {csrc} -o {obj_path}"
-        res = subprocess.run(cmd, shell=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors='replace')
-        if res.returncode != 0:
-            print(f"Failed to build core object {csrc}:\n{res.stderr}")
-            return 1
-    ok = True
-    for name, src in TESTS:
-        if not run_test(name, src):
-            ok = False
-    # Prefer existing host pipeline when present
-    pipe = os.path.join(ROOT, "tools", "run_host_pipeline.sh")
-    if os.path.isfile(pipe):
-        print("=== run_host_pipeline.sh ===")
-        r = subprocess.run(["bash", pipe], cwd=ROOT)
-        if r.returncode != 0:
-            ok = False
-            print("FAIL pipeline")
+    missing = [src for _, src in TESTS if not (ROOT / src).is_file()]
+    if missing:
+        for src in missing:
+            print(f"FAIL missing required test: {src}")
+        return 1
+
+    with tempfile.TemporaryDirectory(prefix="normaker-engine-") as temp:
+        build_dir = Path(temp)
+        objects_dir = build_dir / "obj"
+        objects_dir.mkdir()
+        core_sources = [ROOT / "app/src/main/cpp/gml_vm.c"] + sorted(
+            (ROOT / "app/src/main/cpp/src").glob("*.c"))
+        object_files = []
+        for source in core_sources:
+            obj = objects_dir / (source.stem + ".o")
+            cmd = ["gcc", "-O2", "-Iapp/src/main/cpp/include", "-Iapp/src/main/cpp",
+                   "-c", str(source), "-o", str(obj)]
+            if not run(cmd, f"compile {source.relative_to(ROOT)}"):
+                return 1
+            object_files.append(str(obj))
+
+        passed = 0
+        for name, src in TESTS:
+            print(f"=== {name} ===")
+            binary = build_dir / name
+            cmd = ["gcc", "-O2", "-Iapp/src/main/cpp/include", "-Iapp/src/main/cpp",
+                   str(ROOT / src), *object_files, "-lz", "-lm", "-o", str(binary)]
+            if not run(cmd, f"build {src}"):
+                return 1
+            if not run([str(binary)], f"run {src}"):
+                return 1
+            print(f"PASS {src}")
+            passed += 1
+
+        print(f"ENGINE_TESTS_PASS={passed}/{len(TESTS)}")
+        pipeline = ROOT / "tools/run_host_pipeline.sh"
+        if pipeline.is_file():
+            if not run(["bash", str(pipeline)], "run_host_pipeline.sh"):
+                return 1
+            print("PASS pipeline")
         else:
-            print("PASS pipeline invoke")
-    print("RESULT", "OK" if ok else "FAIL")
-    return 0 if ok else 1
+            print("FAIL missing tools/run_host_pipeline.sh")
+            return 1
+
+    print("RESULT OK")
+    return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

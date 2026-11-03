@@ -1,48 +1,47 @@
-# NOR Maker — Android GM82/GMK runtime (عمل قيد التطوير)
+# NOR Maker — تطبيق Android ومحرك GM82 الموحد
 
-محرك/نواة لإعادة تشغيل مشاريع **Game Maker 8.2 / GMK** على Android.
+هذا المستودع هو مشروع التطبيق الموحد: Studio داخل WebView ومشغّل C/JNI ضمن نقطة دخول Android واحدة. يجري تطويره لدعم مشاريع GameMaker 8.2 المحمولة، مع الحفاظ على الإضافات الموجودة وترحيل الوظائف الناقصة بدل استبدال مشروع كامل بآخر.
 
-> **تحذير صادق:** هذا **ليس** IDE كامل ولا «محاكاة 100% مثل ويندوز» بعد.  
-> ما هو مُثبت اليوم: اختبارات host للمحرك ومسار تشغيل Android الموحد الذي يستضيف Studio في WebView ومشغل GM82 الأصلي عبر JNI. يلزم بناء APK واختباره على جهاز/محاكي Android للتحقق من التكامل الكامل.
+> **حدود التكافؤ:** اجتياز اختبارات المضيف وبناء APK لا يثبتان تطابق كل واجهات أو دلالات Windows Portable. لا توجد نسبة تكافؤ عامة أو ادعاء 100% موثق.
 
-## الحالة المختصرة
+## نتائج التحقق — 3 نوفمبر 2026
 
-انظر **`STATUS.md`** و **`GAPS_HONEST.md`** و **`REPORTING_RULES.md`**.
+| المجال | النتيجة |
+|---|---|
+| اختبارات النواة النشطة | `ENGINE_TESTS_PASS=34/34`، وتشمل renderer/collision وGML parser والـbytecode وhost pipeline. |
+| عينات الألعاب الأربع | `SUMMARY ok=4 fail=0`؛ اجتازت التحميل والرسم وsave/load ضمن fixtures المضيف. |
+| Python/security contracts | 12 اختبارًا، exit code 0. |
+| حزمة C المستقلة | 26 test executables، `make -B test` exit code 0 بعد مزامنة parser/bytecode والـloop-control. |
+| تطابق ملفات core mirrors | نُسخت ملفات C/H من المصدر النشط؛ تحقق source/include لكل من `cpp_backup` والحزمة أظهر صفر ملفات مفقودة أو إضافية أو مختلفة. |
+| Android Debug APK | `BUILD SUCCESSFUL`؛ أرشيف سليم ويضم ABIs الأربعة؛ SHA-256: `45e3f8f1031fa17afba33ad59a39e96ced2ce037446ad57851ddb9ec69a88dd2`. |
+| اختبار جهاز Android فعلي | غير منفذ؛ يلزم اختبار import → edit → run → export. |
+| تكافؤ Windows Portable | غير مثبت؛ لا تُستخدم نسبة إجمالية. |
 
-| | |
-|--|--|
-| Host pipeline 4 عينات | OK |
-| Host native SO smoke | OK |
-| APK + NDK على جهاز | غير مُثبت في بيئة التوثيق هذه |
-| نسبة host تقديرية | ~55–65% |
+## مكونات المشروع
 
-## هيكل مهم
+- `app/src/main/` — تطبيق Android، Studio المضمّن، ومشغّل JNI.
+- `app/src/main/cpp/src/` — المصدر النشط لنواة C/GML/renderer.
+- `app/src/main/cpp_backup/` و`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/` — نسخ source/header مرايا؛ يحمي `tools/verify_core_mirrors.py` تطابق ملفات `.c` و`.h` مع المصدر النشط. ملفات `.o` المولدة مستثناة من المقارنة.
+- `app/src/main/assets/www/samples/` — عينات host pipeline.
+- `tools/` — مشغلات الاختبار والتحقق من المرايا.
+- `.github/workflows/android-build.yml` — CI لاختبارات Python، وتطابق المرايا، ومحرك C، وحزمة C، وبناء APK.
 
-- `app/src/main/` — تطبيق Android الموحد وواجهة Studio ومشغل JNI
-- `app/src/main/assets/www/vendor/` — تبعيات الواجهة المحلية
-- `tests/reference/` و `app/src/main/cpp/tests/` — اختبارات مرجعية واختبارات host
-- `tools/` — فحوص المحرك، فهرسة موارد GMK، واختبارات الاستيراد
-- `STEP_LOG.md` — سجل خطوات فعلية
-
-## بناء host (بدون NDK)
+## التشغيل والاختبار محليًا
 
 ```bash
-# مثال — راجع tools/run_host_pipeline.sh إن وُجد
-gcc -O2 -Iinclude -o pipeline_test tools/host_pipeline_test.c src/*.c ... -lz -lm
-./pipeline_test samples/mario_bros.gmk 30
+python3 -m unittest discover -s tests/reference -p 'test_*.py' -v
+python3 tools/verify_core_mirrors.py
+python3 tools/run_engine_suite.py
+make -B -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test
+git diff --check
 ```
 
 ## بناء Android
 
-يتطلب **Android SDK وNDK**. إعداد CMake وNDK مضاف إلى المشروع؛ بعد تثبيت المتطلبات:
+يتطلب Android SDK 34 وNDK `25.2.9519653` وJava 17:
 
 ```bash
-./gradlew assembleDebug
+./gradlew --no-daemon assembleDebug
 ```
 
-يسجل `MainActivity` جسر `NorNative` في WebView ويضم مشغل GM82 الأصلي في النشاط نفسه.
-
-## قواعد للوكلاء
-
-أي تقرير جديد **يجب** أن يلتزم بـ `REPORTING_RULES.md`.  
-ممنوع تضخيم النسب أو إعلان اكتمال phases من غير دليل.
+ينشئ البناء APK ضمن `app/build/outputs/apk/debug/app-debug.apk`. هذا Debug build للاختبار، وليس Release موقّعًا للنشر. راجع [`docs/GAPS_HONEST.md`](docs/GAPS_HONEST.md) و[`docs/IMPLEMENTATION_STATUS_AR.md`](docs/IMPLEMENTATION_STATUS_AR.md) و[`docs/UPSTREAM_REVIEW_2026-11-02_AR.md`](docs/UPSTREAM_REVIEW_2026-11-02_AR.md) للفجوات وسجل الأدلة.

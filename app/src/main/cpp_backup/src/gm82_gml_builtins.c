@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include <math.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
@@ -4978,6 +4979,9 @@ int gm82_gm82core_try_stub(const char *id, double *out) {
 
 void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y) {
     if (!g_rt || !g_rt->backgrounds || !g_draw_buf) return;
+    if (!isfinite(bg) || !isfinite(left) || !isfinite(top) || !isfinite(width) ||
+        !isfinite(height) || !isfinite(x) || !isfinite(y)) return;
+    if (bg < 0.0 || bg >= g_rt->backgrounds->count) return;
     int bi = (int)bg;
     if (bi < 0 || bi >= g_rt->backgrounds->count) return;
     int bw = g_rt->backgrounds->items[bi].width;
@@ -4985,23 +4989,29 @@ void gml_draw_background_part(double bg, double left, double top, double width, 
     const uint8_t *src = g_rt->backgrounds->items[bi].rgba;
     if (!src || bw <= 0 || bh <= 0) return;
 
-    int l = (int)left, t = (int)top, w = (int)width, h = (int)height;
-    if (l < 0) { w += l; x -= l; l = 0; }
-    if (t < 0) { h += t; y -= t; t = 0; }
-    if (l + w > bw) w = bw - l;
-    if (t + h > bh) h = bh - t;
+    const double int_min = (double)INT_MIN, int_max = (double)INT_MAX;
+    if (left < int_min || left > int_max || top < int_min || top > int_max ||
+        width < int_min || width > int_max || height < int_min || height > int_max ||
+        x < int_min || x > int_max || y < int_min || y > int_max) return;
+    int64_t l = (int64_t)left, t = (int64_t)top;
+    int64_t w = (int64_t)width, h = (int64_t)height;
+    int64_t dx0 = (int64_t)x, dy0 = (int64_t)y;
+    if (l < 0) { w += l; dx0 -= l; l = 0; }
+    if (t < 0) { h += t; dy0 -= t; t = 0; }
+    if (l >= bw || t >= bh) return;
+    if (l + w > bw) w = (int64_t)bw - l;
+    if (t + h > bh) h = (int64_t)bh - t;
     if (w <= 0 || h <= 0) return;
 
-    int dx0 = (int)x, dy0 = (int)y;
-    for (int sy = 0; sy < h; sy++) {
-        int dy = dy0 + sy;
+    for (int64_t sy = 0; sy < h; sy++) {
+        int64_t dy = dy0 + sy;
         if (dy < 0 || dy >= g_draw_h) continue;
-        for (int sx = 0; sx < w; sx++) {
-            int dx = dx0 + sx;
+        for (int64_t sx = 0; sx < w; sx++) {
+            int64_t dx = dx0 + sx;
             if (dx < 0 || dx >= g_draw_w) continue;
-            const uint8_t *s = src + ((size_t)(t + sy) * (size_t)bw + (size_t)(l + sx)) * 4;
+            const uint8_t *s = src + ((size_t)(t + sy) * (size_t)bw + (size_t)(l + sx)) * 4u;
             if (s[3] == 0) continue;
-            uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4;
+            uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4u;
             d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
         }
     }

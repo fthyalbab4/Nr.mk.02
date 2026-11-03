@@ -176,7 +176,67 @@ static void test_dnd_action_conditionals(void) {
         act_var.args[2] = rhs[i];
         assert(gm82_action_execute_ref(&rt, inst, &act_var) == true);
     }
+    const int false_lhs[] = {5, 5, 4, 4, 4, 4};
+    const int false_rhs[] = {4, 4, 5, 4, 5, 5};
+    for (size_t i = 0; i < sizeof(ops) / sizeof(ops[0]); ++i) {
+        act_var.args[0] = false_lhs[i];
+        act_var.args[1] = ops[i];
+        act_var.args[2] = false_rhs[i];
+        assert(gm82_action_execute_ref(&rt, inst, &act_var) == false);
+    }
+    act_var.args[0] = 1;
+    act_var.args[1] = 0;
+    act_var.args[2] = 2;
+    assert(gm82_action_execute_ref(&rt, inst, &act_var) == false);
     puts("test_dnd_action_conditionals PASS");
+}
+
+static void test_gmk_code_and_alarm_selection(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_decoded_object_list objects = {0};
+    objects.items = (gm82_decoded_object *)calloc(1, sizeof(*objects.items));
+    assert(objects.items != NULL);
+    objects.count = 1;
+    strncpy(objects.items[0].name, "obj", sizeof(objects.items[0].name) - 1);
+    rt.objects = &objects;
+
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 10.0);
+    assert(inst != NULL);
+    gm82_action_ref code_action = {0};
+    code_action.code = "x += 2;";
+    assert(gm82_action_execute_ref(&rt, inst, &code_action));
+    assert(fabs(inst->x - 12.0) < 1e-9);
+
+    assert(gm82_gml_eval_block(&rt, inst, "alarm_zero = -1; alarm_one = -1;"));
+    gm82_action_table table = {0};
+    table.objects = (gm82_object_actions *)calloc(1, sizeof(*table.objects));
+    assert(table.objects != NULL);
+    table.count = 1;
+    strncpy(table.objects[0].object_name, "obj", sizeof(table.objects[0].object_name) - 1);
+    table.objects[0].items = (gm82_action_ref *)calloc(2, sizeof(*table.objects[0].items));
+    assert(table.objects[0].items != NULL);
+    table.objects[0].count = 2;
+    table.objects[0].capacity = 2;
+    for (int i = 0; i < 2; ++i) {
+        gm82_action_ref *a = &table.objects[0].items[i];
+        a->event_type = 2;
+        a->event_numb = i;
+        a->argc = 1;
+        a->args[0] = 7 + i;
+        a->str_argc = 1;
+        strncpy(a->name, "action_set_variable", sizeof(a->name) - 1);
+        snprintf(a->str_args[0], sizeof(a->str_args[0]), "alarm_%s", i ? "one" : "zero");
+    }
+    gm82_actions_fire_alarm(&rt, inst, &table, 0);
+    double value = 0.0;
+    assert(gm82_gml_eval_expr(&rt, inst, "alarm_zero", &value) && value == 7.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "alarm_one", &value) && value == -1.0);
+
+    gm82_action_table_free(&table);
+    free(objects.items);
+    gm82_runtime_cleanup(&rt);
+    puts("test_gmk_code_and_alarm_selection PASS");
 }
 
 int main(void) {
@@ -185,6 +245,7 @@ int main(void) {
     test_collision_shapes();
     test_math_builtins_and_eval();
     test_dnd_action_conditionals();
+    test_gmk_code_and_alarm_selection();
     puts("GML_PHASE5_TEST_PASS");
     return 0;
 }
