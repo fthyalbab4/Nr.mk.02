@@ -671,6 +671,25 @@ double gml_directory_previous(const char *path);
 double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
+double gml_unlerp(double a, double b, double val);
+double gml_unclerp(double a, double b, double val);
+double gml_saturate(double val);
+double gml_roundto(double val, double to);
+double gml_roundto_unbiased(double val, double to);
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_in_range(double val, double vmin, double vmax);
+double gml_range_collision(double a1, double a2, double b1, double b2);
+double gml_lines_intersect(double x1, double y1, double x2, double y2,
+                           double x3, double y3, double x4, double y4, double segment);
+double gml_pack_bools(double b7, double b6, double b5, double b4,
+                      double b3, double b2, double b1, double b0);
+double gml_unpack_bool(double pbool, double which);
+double gml_point_direction_pitch(double x1, double y1, double z1,
+                                 double x2, double y2, double z2);
+double gml_angle_difference_3d(double x1, double y1, double z1,
+                               double x2, double y2, double z2);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
 
 #ifdef __cplusplus
 }
