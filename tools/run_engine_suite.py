@@ -11,7 +11,10 @@ TESTS = [
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),
     ("test_mario_physics_parity", "app/src/main/cpp/tests/test_mario_physics_parity.c"),
     ("test_mario_replay", "app/src/main/cpp/tests/test_mario_replay.c"),
+    ("test_mario_scripts_fixtures", "app/src/main/cpp/tests/test_mario_scripts_fixtures.c"),
+    ("test_gml_lexer", "app/src/main/cpp/tests/test_gml_lexer.c"),
     ("test_gml_comprehensive", "app/src/main/cpp/tests/test_gml_comprehensive.c"),
+    ("test_gml_parser", "app/src/main/cpp/tests/test_gml_parser.c"),
     ("test_gml_phase5", "app/src/main/cpp/tests/test_gml_phase5.c"),
     ("test_gml_vm_advanced", "app/src/main/cpp/tests/test_gml_vm_advanced.c"),
     ("test_phase1", "app/src/main/cpp/tests/test_phase1.c"),
@@ -32,6 +35,9 @@ TESTS = [
     ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
     ("test_friend_gml_exec", "app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c"),
     ("test_friend_format_import", "app/src/main/cpp/tests/friend_reference/test_friend_format_import.c"),
+    # Regression fixtures carried by the external GM8.2 reference package.
+    ("test_reference_gml_do_until", "app/src/main/assets/core_validation/gml_do_until_test.c"),
+    ("test_reference_gml_invoke_scope", "app/src/main/assets/core_validation/gml_invoke_test.c"),
 ]
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
