@@ -672,6 +672,16 @@ double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
 
+/* gm82core math builtins */
+double gml_unlerp(double a, double b, double val);
+double gml_unclerp(double a, double b, double val);
+double gml_roundto(double val, double to);
+double gml_roundto_unbiased(double val, double to);
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0);
+double gml_unpack_bool(double pbool, double which);
+
 #ifdef __cplusplus
 }
 #endif
