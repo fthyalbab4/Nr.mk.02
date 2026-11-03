@@ -601,6 +601,21 @@ static bool parse_primary(gml_parser *p, double *out) {
             else *out = gml_modwrap(arg, 0.0, 1.0);
             return true;
         }
+                if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "roundto_unbiased") == 0) {
+            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "approach_angle_biased") == 0) {
+            *out = gml_approach_angle_biased(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0, nargs >= 4 ? args[3] : 0.0); return true;
+        }
         if (strcmp(id, "round_unbiased") == 0) {
             *out = gml_round_unbiased(arg); return true;
         }

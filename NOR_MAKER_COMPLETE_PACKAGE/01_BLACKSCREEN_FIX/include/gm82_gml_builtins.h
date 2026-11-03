@@ -676,6 +676,13 @@ double gml_date_get_timestamp(void);
 }
 #endif
 
+
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_roundto(double val, double to);
+double gml_roundto_unbiased(double val, double to);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+
 #endif
 
 void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);

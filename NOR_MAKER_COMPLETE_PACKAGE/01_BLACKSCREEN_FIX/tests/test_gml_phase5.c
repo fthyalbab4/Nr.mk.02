@@ -179,12 +179,40 @@ static void test_dnd_action_conditionals(void) {
     puts("test_dnd_action_conditionals PASS");
 }
 
+
+static void test_gm82_core_math_extensions(void) {
+    /* floorto, ceilto, roundto, roundto_unbiased, approach_angle_biased */
+    assert(fabs(gml_floorto(15.7, 5.0) - 15.0) < 0.0001);
+    assert(fabs(gml_ceilto(15.2, 5.0) - 20.0) < 0.0001);
+    assert(fabs(gml_roundto(17.4, 5.0) - 15.0) < 0.0001);
+    assert(fabs(gml_roundto(17.6, 5.0) - 20.0) < 0.0001);
+    assert(fabs(gml_roundto_unbiased(12.5, 5.0) - 15.0) < 0.0001);
+
+    double a = gml_approach_angle_biased(10.0, 50.0, 5.0, 1.0);
+    assert(fabs(a - 15.0) < 0.0001);
+
+    gm82_runtime rt;
+    memset(&rt, 0, sizeof(rt));
+    double res = 0;
+    assert(gm82_gml_eval_expr(&rt, NULL, "floorto(14.8, 4)", &res));
+    assert(fabs(res - 12.0) < 0.0001);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "ceilto(12.1, 4)", &res));
+    assert(fabs(res - 16.0) < 0.0001);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(14.9, 4)", &res));
+    assert(fabs(res - 16.0) < 0.0001);
+
+    puts("test_gm82_core_math_extensions PASS");
+}
+
 int main(void) {
     puts("=== Testing Phase 5 GML Expansion (Strings & Collision Shapes & Math & DnD) ===");
     test_string_expansions();
     test_collision_shapes();
     test_math_builtins_and_eval();
     test_dnd_action_conditionals();
+    test_gm82_core_math_extensions();
     puts("GML_PHASE5_TEST_PASS");
     return 0;
 }

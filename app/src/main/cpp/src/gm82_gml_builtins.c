@@ -5006,3 +5006,36 @@ void gml_draw_background_part(double bg, double left, double top, double width, 
         }
     }
 }
+
+
+/* GM82 Core Math Built-in Extensions (ported from source/unpacked/gm82core-main) */
+double gml_floorto(double val, double to) {
+    if (to == 0.0) return val;
+    return floor(val / to) * to;
+}
+
+double gml_ceilto(double val, double to) {
+    if (to == 0.0) return val;
+    return ceil(val / to) * to;
+}
+
+double gml_roundto(double val, double to) {
+    if (to == 0.0) return val;
+    return round(val / to) * to;
+}
+
+double gml_roundto_unbiased(double val, double to) {
+    if (to == 0.0) return val;
+    return floor(val / to + 0.5) * to;
+}
+
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias) {
+    if (step < 0.0) step = -step;
+    double d = fmod(ang2 - ang1 + 540.0, 360.0) - 180.0;
+    if (fabs(fabs(d) - 180.0) < fabs(bias)) {
+        double sign_bias = (bias > 0.0) ? 1.0 : ((bias < 0.0) ? -1.0 : 0.0);
+        return gml_modwrap(ang1 + fmin(fabs(d), step) * sign_bias, 0.0, 360.0);
+    }
+    if (d > 0.0) return fmod(ang1 + fmin(d, step), 360.0);
+    return fmod(360.0 - fmod(360.0 - (ang1 + fmax(-step, d)), 360.0), 360.0);
+}
