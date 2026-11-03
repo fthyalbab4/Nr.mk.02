@@ -4684,6 +4684,99 @@ double gml_move_towards_fixed(double tx, double ty, double sp) {
     return use_sp;
 }
 
+double gml_move_towards_gravity(double xto, double yto, double grav) {
+    if (!g_self) return 0.0;
+    if (grav == 0.0) {
+        g_self->direction = gml_point_direction(g_self->x, g_self->y, xto, yto);
+        g_self->speed = 1.0;
+        double rad = g_self->direction * M_PI / 180.0;
+        g_self->hspeed = cos(rad) * g_self->speed;
+        g_self->vspeed = -sin(rad) * g_self->speed;
+        return 1.0;
+    }
+    g_self->gravity = grav;
+    double dx = xto - g_self->x;
+    double dy = yto - g_self->y;
+    if (dx == 0.0) {
+        if (dy < 0.0) {
+            g_self->vspeed = -sqrt(dy * -2.0 / grav) * grav - grav / 2.0;
+            g_self->hspeed = 0.0;
+            g_self->speed = fabs(g_self->vspeed);
+            g_self->direction = g_self->vspeed < 0 ? 90.0 : 270.0;
+        }
+    } else {
+        double ang = (atan2(-dy, dx) + (90.0 * M_PI / 180.0)) / 2.0;
+        double term = 2.0 * (dy + tan(ang) * dx) / grav;
+        if (term > 0.0) {
+            double denom = cos(ang) * sqrt(term);
+            if (denom != 0.0) {
+                g_self->speed = dx / denom;
+                g_self->direction = ang * 180.0 / M_PI;
+                double rad = g_self->direction * M_PI / 180.0;
+                g_self->hspeed = cos(rad) * g_self->speed;
+                g_self->vspeed = -sin(rad) * g_self->speed;
+            }
+        }
+    }
+    return 1.0;
+}
+
+double gml_move_towards_jump(double xto, double yto, double hspeed_limit, double vsp, double grav) {
+    if (!g_self) return -1.0;
+    double v_sp = vsp - grav;
+    if (grav == 0.0) {
+        double t = floor((yto - g_self->y) / v_sp);
+        if (t <= 0.0) return -1.0;
+        g_self->hspeed = (xto - g_self->x) / t;
+        g_self->vspeed = v_sp;
+        g_self->speed = sqrt(g_self->hspeed * g_self->hspeed + g_self->vspeed * g_self->vspeed);
+        return t;
+    }
+    if ((grav > 0 && v_sp > 0) || (grav < 0 && v_sp < 0)) {
+        if ((yto - g_self->y > 0 && v_sp < 0) || (yto - g_self->y < 0 && v_sp > 0))
+            return -1.0;
+    } else {
+        double t_peak = fabs(v_sp / grav);
+        double peak = g_self->y + v_sp * t_peak + 0.5 * grav * t_peak * t_peak;
+        if ((grav > 0 && (yto - peak) < 0) || (grav < 0 && (yto - peak) > 0))
+            return -2.0;
+    }
+    double sg = grav > 0 ? 1.0 : -1.0;
+    double disc = v_sp * v_sp - 2.0 * grav * (g_self->y - yto);
+    if (disc < 0.0) return -2.0;
+    double time_f = floor((-v_sp + sg * sqrt(disc)) / grav);
+    if (time_f <= 0.0) {
+        g_self->hspeed = 0.0;
+    } else {
+        double hsp = (xto - g_self->x) / time_f;
+        if (hspeed_limit > 0.0 && fabs(hsp) > hspeed_limit) return -3.0;
+        g_self->hspeed = hsp;
+    }
+    g_self->vspeed = v_sp;
+    g_self->gravity = grav;
+    g_self->speed = sqrt(g_self->hspeed * g_self->hspeed + g_self->vspeed * g_self->vspeed);
+    return time_f - 1.0 > 1.0 ? time_f - 1.0 : 1.0;
+}
+
+double gml_instance_create_depth_moving_ext(double x, double y, double depth, double obj,
+                                           double sp, double dir, double addh, double addv,
+                                           double grav, double gravdir) {
+    if (!g_rt) return -1.0;
+    gm82_instance *inst = gm82_runtime_instance_create(g_rt, (int32_t)obj, x, y);
+    if (!inst) return -1.0;
+    inst->depth = (int32_t)depth;
+    double rad = dir * M_PI / 180.0;
+    double h = cos(rad) * sp + addh;
+    double v = -sin(rad) * sp + addv;
+    inst->speed = sqrt(h * h + v * v);
+    inst->direction = atan2(-v, h) * 180.0 / M_PI;
+    inst->hspeed = h;
+    inst->vspeed = v;
+    inst->gravity = grav;
+    inst->gravity_direction = gravdir;
+    return (double)inst->id;
+}
+
 double gml_esign(double val, double defv) {
     if (val > 0) return 1.0;
     if (val < 0) return -1.0;

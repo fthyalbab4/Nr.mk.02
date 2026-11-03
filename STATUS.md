@@ -12,6 +12,7 @@
 - [x] Event loop order (Begin Step, Step, End Step, Collision, Draw Pre/Main/Post)
 - [x] Built-in variables & GML functions (Math, Strings, DS Structures, Surfaces, Geometry)
 - [x] Extended DnD Action Execution (`action_bounce`, `action_wrap`, `action_if_empty`, `action_if_dice`, `action_if_collision`, `action_if_variable`, `action_sprite_set`)
+- [x] GM82Core additions (`move_towards_gravity`, `move_towards_jump`, `instance_create_depth_moving_ext`)
 - [x] Self-parenting loop safety in event dispatcher
 - [x] 3-way C mirror tree synchronization (0 diffs across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
 
