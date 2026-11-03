@@ -154879,6 +154879,15 @@ button, input, textarea, select {
             e.preventDefault();
             cards[cards.length - 1].focus();
           }
+        } else if (e.key === "PageDown" || e.key === "PageUp") {
+          const cards = Array.from(grid.querySelectorAll(".gmk-cloud-card"));
+          const currentIndex = cards.indexOf(card);
+          if (currentIndex !== -1 && cards.length > 0) {
+            e.preventDefault();
+            const step = e.key === "PageDown" ? 10 : -10;
+            const targetIndex = Math.max(0, Math.min(cards.length - 1, currentIndex + step));
+            cards[targetIndex].focus();
+          }
         }
       };
 
