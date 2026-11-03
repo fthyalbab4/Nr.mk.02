@@ -6,6 +6,7 @@ This file distinguishes work that was executed in this checkout from work that s
 
 - The host engine suite passes **27 C executables**, including the previously omitted `test_gml_phase5`, `test_gml_vm_advanced`, and `test_phase1` tests; it also runs the four bundled GMK sample pipeline.
 - Reference/security contracts pass **12 Python tests**. They check the hardened WebView/network settings, absence of PEM private-key markers in bundled HTML, and the reduced JavaScript bridge surface.
+- Implemented and verified reverse-engineered GameMaker 8.2 core math and angle built-ins (`floorto`, `ceilto`, `roundto`, `roundto_unbiased`, `approach_angle_biased`) ported from `source/unpacked/gm82core-main/` across C engine runtime, evaluation dispatcher, and test suites (`test_gml_phase5`).
 - `action_if_variable` now uses a single `(left value, opcode, right value)` DnD contract in both execution paths, with equality and all six comparison operators covered by regression tests.
 - Buffer operations reject negative and non-finite offsets; relative negative seeks work without unsigned wraparound.
 - The GMZ importer accepts normal directory entries and rejects traversal, oversized entries, excessive extraction, and malformed local ZIP headers. The dedicated host test covers a valid directory archive plus oversize and traversal rejections.

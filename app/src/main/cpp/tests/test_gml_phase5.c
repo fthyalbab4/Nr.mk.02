@@ -118,6 +118,29 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "lerp_angle(350, 10, 0.5)", &val));
     assert(fabs(val - 0.0) < 1e-6);
 
+    assert(fabs(gml_floorto(15.7, 5.0) - 15.0) < 1e-6);
+    assert(fabs(gml_ceilto(15.1, 5.0) - 20.0) < 1e-6);
+    assert(fabs(gml_roundto(12.0, 5.0) - 10.0) < 1e-6);
+    assert(fabs(gml_roundto(13.0, 5.0) - 15.0) < 1e-6);
+    assert(fabs(gml_roundto_unbiased(12.5, 5.0) - 15.0) < 1e-6);
+    assert(fabs(gml_approach_angle_biased(0.0, 180.0, 10.0, 1.0) - 10.0) < 1e-6);
+    assert(fabs(gml_approach_angle_biased(0.0, 180.0, 10.0, -1.0) - 350.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "floorto(33, 16)", &val));
+    assert(fabs(val - 32.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "ceilto(33, 16)", &val));
+    assert(fabs(val - 48.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(35, 16)", &val));
+    assert(fabs(val - 32.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(41, 16)", &val));
+    assert(fabs(val - 48.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "approach_angle_biased(0, 180, 15, -1)", &val));
+    assert(fabs(val - 345.0) < 1e-6);
+
     puts("test_math_builtins_and_eval PASS");
 }
 
