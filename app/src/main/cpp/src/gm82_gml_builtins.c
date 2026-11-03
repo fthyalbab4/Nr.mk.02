@@ -3914,6 +3914,118 @@ double gml_approach_angle(double ang1, double ang2, double step) {
     return (diff > 0) ? (ang1 + step) : (ang1 - step);
 }
 
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias) {
+    double d = fmod(ang2 - ang1 + 540.0, 360.0) - 180.0;
+    if (fabs(fabs(d) - 180.0) < fabs(bias)) {
+        double s = (bias > 0.0) ? 1.0 : ((bias < 0.0) ? -1.0 : bias);
+        return gml_angle_abs(ang1 + (fabs(d) < step ? fabs(d) : step) * s);
+    }
+    if (d > 0.0) return fmod(ang1 + (d < step ? d : step), 360.0);
+    double step_lim = (-step > d) ? -step : d;
+    return fmod(360.0 - fmod(360.0 - (ang1 + step_lim), 360.0), 360.0);
+}
+
+double gml_in_range(double val, double vmin, double vmax) {
+    return (val >= vmin && val <= vmax) ? 1.0 : 0.0;
+}
+
+double gml_saturate(double val) {
+    if (val < 0.0) return 0.0;
+    if (val > 1.0) return 1.0;
+    return val;
+}
+
+double gml_unlerp(double a, double b, double val) {
+    if (fabs(b - a) < 1e-9) return 0.0;
+    return (val - a) / (b - a);
+}
+
+double gml_unclerp(double a, double b, double val) {
+    if (fabs(b - a) < 1e-9) return 0.0;
+    double t = (val - a) / (b - a);
+    if (t < 0.0) return 0.0;
+    if (t > 1.0) return 1.0;
+    return t;
+}
+
+double gml_floorto(double val, double to) {
+    if (fabs(to) < 1e-9) return val;
+    return floor(val / to) * to;
+}
+
+double gml_ceilto(double val, double to) {
+    if (fabs(to) < 1e-9) return val;
+    return ceil(val / to) * to;
+}
+
+double gml_roundto(double val, double to) {
+    if (fabs(to) < 1e-9) return val;
+    return round(val / to) * to;
+}
+
+double gml_secant(double ang) {
+    double c = cos(ang);
+    if (fabs(c) < 1e-9) return 0.0;
+    return 1.0 / c;
+}
+
+double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment) {
+    double ua = 0.0, ub = 0.0;
+    double ux = x2 - x1;
+    double uy = y2 - y1;
+    double vx = x4 - x3;
+    double vy = y4 - y3;
+    double wx = x1 - x3;
+    double wy = y1 - y3;
+    double ud = vy * ux - vx * uy;
+    if (ud != 0.0) {
+        ua = (vx * wy - vy * wx) / ud;
+        if (segment >= 0.5) {
+            ub = (ux * wy - uy * wx) / ud;
+            if (ua < 0.0 || ua > 1.0 || ub < 0.0 || ub > 1.0) ua = 0.0;
+        }
+    }
+    return ua;
+}
+
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double lsq = dx * dx + dy * dy;
+    if (lsq < 1e-9) return 0.0;
+    double t = (dx * (px - x1) + dy * (py - y1)) / lsq;
+    if (segment > 0.5) {
+        if (t < 0.0) t = 0.0;
+        if (t > 1.0) t = 1.0;
+    }
+    return t;
+}
+
+double gml_point_direction_pitch(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double horiz_dist = hypot(x2 - x1, y2 - y1);
+    return gml_point_direction(0.0, z1, horiz_dist, z2);
+}
+
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double dot = gml_dot_product_3d_normalized(x1, y1, z1, x2, y2, z2);
+    if (dot > 1.0) dot = 1.0;
+    if (dot < -1.0) dot = -1.0;
+    return gml_darccos(dot);
+}
+
+double gml_lengthdir_zx(double len, double dir, double dirz) {
+    return len * gml_dcos(dirz) * gml_dcos(dir);
+}
+
+double gml_lengthdir_zy(double len, double dir, double dirz) {
+    return -len * gml_dcos(dirz) * gml_dsin(dir);
+}
+
+double gml_lengthdir_zz(double len, double dir, double dirz) {
+    (void)dir;
+    return -len * gml_dsin(dirz);
+}
+
 double gml_box_distance(double length, double dir) {
     double rad = dir * 3.14159265358979323846 / 180.0;
     double c = fabs(cos(rad));

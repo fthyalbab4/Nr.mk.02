@@ -490,15 +490,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = 0;
         return true;
     }
-    /* function call? collect up to 8 args */
+    /* function call? collect up to 16 args */
     if (match(p, '(')) {
-        double args[8] = {0,0,0,0,0,0,0,0};
+        double args[16] = {0};
         int nargs = 0;
         p->str_mask = 0;
         memset(p->str_args, 0, sizeof(p->str_args));
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 8) return false;
+                if (nargs >= 16) return false;
                 skip_ws(p);
                 if (peek(p) == '"' || peek(p) == '\'') {
                     char quote = (char)peek(p);
@@ -649,6 +649,59 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "approach_angle") == 0) {
             *out = gml_approach_angle(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "approach_angle_biased") == 0) {
+            *out = gml_approach_angle_biased(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0); return true;
+        }
+        if (strcmp(id, "in_range") == 0) {
+            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "saturate") == 0) {
+            *out = gml_saturate(arg); return true;
+        }
+        if (strcmp(id, "unlerp") == 0) {
+            *out = gml_unlerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "unclerp") == 0) {
+            *out = gml_unclerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "secant") == 0) {
+            *out = gml_secant(arg); return true;
+        }
+        if (strcmp(id, "lines_intersect") == 0) {
+            *out = gml_lines_intersect(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0,
+                                       nargs >= 8 ? args[7] : 0, nargs >= 9 ? args[8] : 0); return true;
+        }
+        if (strcmp(id, "point_line_lerp") == 0) {
+            *out = gml_point_line_lerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                      nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0); return true;
+        }
+        if (strcmp(id, "point_direction_pitch") == 0) {
+            *out = gml_point_direction_pitch(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
+                                            nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
+        }
+        if (strcmp(id, "angle_difference_3d") == 0) {
+            *out = gml_angle_difference_3d(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
+                                          nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
+        }
+        if (strcmp(id, "lengthdir_zx") == 0) {
+            *out = gml_lengthdir_zx(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "lengthdir_zy") == 0) {
+            *out = gml_lengthdir_zy(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "lengthdir_zz") == 0) {
+            *out = gml_lengthdir_zz(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "box_distance") == 0) {
             *out = gml_box_distance(arg, nargs >= 2 ? args[1] : 0); return true;

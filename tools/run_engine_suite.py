@@ -15,6 +15,7 @@ TESTS = [
     ("test_gml_lexer", "app/src/main/cpp/tests/test_gml_lexer.c"),
     ("test_gml_comprehensive", "app/src/main/cpp/tests/test_gml_comprehensive.c"),
     ("test_gml_parser", "app/src/main/cpp/tests/test_gml_parser.c"),
+    ("test_gm82_core_math_expansion", "app/src/main/cpp/tests/test_gm82_core_math_expansion.c"),
     ("test_gml_phase5", "app/src/main/cpp/tests/test_gml_phase5.c"),
     ("test_gml_vm_advanced", "app/src/main/cpp/tests/test_gml_vm_advanced.c"),
     ("test_phase1", "app/src/main/cpp/tests/test_phase1.c"),
