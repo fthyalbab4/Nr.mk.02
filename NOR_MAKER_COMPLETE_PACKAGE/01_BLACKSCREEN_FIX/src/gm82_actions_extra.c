@@ -298,14 +298,19 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         return not_flag ? !coll : coll;
     }
     if (strcmp(name, "action_if_variable") == 0) {
-        double val1 = (argc >= 1) ? (double)args[0] : 0.0;
+        /* Keep the fallback aligned with gm82_actions.c: lhs, opcode, rhs. */
+        double lhs = (argc >= 1) ? (double)args[0] : 0.0;
         int op = (argc >= 2) ? args[1] : 0;
-        double val2 = (argc >= 3) ? (double)args[2] : 0.0;
-        int res = 0;
-        if (op == 0) res = (val1 == val2);
-        else if (op == 1) res = (val1 < val2);
-        else if (op == 2) res = (val1 > val2);
-        return res;
+        double rhs = (argc >= 3) ? (double)args[2] : 0.0;
+        switch (op) {
+            case 0: case 3: return lhs == rhs;
+            case 1: return lhs < rhs;
+            case 2: return lhs <= rhs;
+            case 4: return lhs != rhs;
+            case 5: return lhs >= rhs;
+            case 6: return lhs > rhs;
+            default: return 0;
+        }
     }
     if (strcmp(name, "action_effect") == 0) {
         return 1;

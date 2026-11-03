@@ -672,6 +672,8 @@ double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
 
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
+
 #ifdef __cplusplus
 }
 #endif
