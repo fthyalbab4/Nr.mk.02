@@ -193,6 +193,12 @@ static gml_ast *parse_binary_expr(gml_lexer *l, int min_prec) {
         gml_op gop = GML_T_NONE;
         int prec = 0;
 
+        /* Leave compound assignment (+=, -=, *=, /=, %=) for the
+         * assignment layer below; it is not a binary expression. */
+        if ((op == '+' || op == '-' || op == '*' || op == '/' || op == '%') &&
+            l->pos + 1 < l->len && l->src[l->pos + 1] == '=') {
+            break;
+        }
         if (op == '+' || op == '-') { gop = (op == '+') ? GML_T_PLUS : GML_T_MINUS; prec = 10; }
         else if (op == '*' || op == '/') { gop = (op == '*') ? GML_T_STAR : GML_T_SLASH; prec = 20; }
         else if (op == '%') { gop = GML_T_PERCENT; prec = 20; }
@@ -231,14 +237,32 @@ static gml_ast *parse_expression(gml_lexer *l) {
     if (!lhs) return NULL;
 
     skip_space_comments(l);
-    if (l->pos < l->len && l->src[l->pos] == '=') {
-        /* Assignment */
+    char compound = 0;
+    if (l->pos + 1 < l->len &&
+        (l->src[l->pos] == '+' || l->src[l->pos] == '-' ||
+         l->src[l->pos] == '*' || l->src[l->pos] == '/' ||
+         l->src[l->pos] == '%') && l->src[l->pos + 1] == '=') {
+        compound = l->src[l->pos];
+        l->pos += 2;
+    } else if (l->pos < l->len && l->src[l->pos] == '=') {
         l->pos++;
+    } else {
+        return lhs;
+    }
+
+    /* Assignment and compound assignment share the same AST shape. */
+    {
+        gml_ast *target = lhs;
         gml_ast *rhs = parse_expression(l);
         gml_ast *assign = ast_new(GML_AST_ASSIGN);
         if (assign) {
-            assign->left = lhs;
+            assign->left = target;
             assign->right = rhs;
+            assign->op = compound == '+' ? GML_T_PLUS :
+                         compound == '-' ? GML_T_MINUS :
+                         compound == '*' ? GML_T_STAR :
+                         compound == '/' ? GML_T_SLASH :
+                         compound == '%' ? GML_T_PERCENT : GML_T_NONE;
             return assign;
         }
     }
