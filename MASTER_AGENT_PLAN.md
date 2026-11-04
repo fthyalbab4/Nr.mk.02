@@ -9,21 +9,14 @@
 ## P0 — مكتمل ✅
 - actions + `gml_set_other` + host pipeline **ok=4 fail=0**
 
-## سد الفجوات على host — طبّق الآن
-
-### خيار 1 (محلي)
-```bash
-python3 tools/apply_actions_gapfill.py
-python3 tools/apply_keydown_bridge.py
-git add -A && git commit -m "apply host gapfill + keyDown" && git push
-```
-
-### خيار 2 (GitHub Actions)
-Actions → **apply-host-gaps** → Run workflow
-
-يغلق:
-- 17 DnD نادر (step_towards/avoid, draw_*, timeline_*, cd_*, …)
-- `NorNative.keyDown/keyUp` في MainActivity
+## فجوات host — مُغلقة على main ✅
+| بند | إثبات |
+|-----|--------|
+| 17 DnD نادر | `action_step_towards` في `gm82_actions_extra.c` (app + BSF + backup) |
+| `NorNative.keyDown/keyUp` | في `MainActivity.java` → `nativeRuntimeKey` |
+| bitmask | `precise_mask_overlap` داخل `gml_place_meeting` |
+| with() edges | `tests/test_with_edges.c` |
+| workflow | `apply-host-gaps` success (commit `8ccfae87`) |
 
 ## موقوف على جهاز فقط
 `docs/DEVICE_BLOCKED.md` — U2 playtest/logcat، U3 NDK جهاز، U5 OpenSLES
@@ -31,5 +24,5 @@ Actions → **apply-host-gaps** → Run workflow
 ## خارج النطاق
 U4 REA/DLL/GEX (Windows)
 
-**is_100 (P0 + host gaps scripts): true**  
+**is_100 (P0 + host gaps): true**  
 **is_100 (جهاز): false حتى playtest**
