@@ -1,13 +1,17 @@
-# GAPS_HONEST — verified status (2026-11-04)
+# GAPS_HONEST — verified status
 
-## Host verified / closable
-- Core GML builtins, eval, actions, collisions (AABB + precise mask), events ordering, instance system, most ds_*, string/math, buffer, GMZ importer, Android assembleDebug succeeds for all ABIs.
-- Remaining rare stubs (draw_*_extra, ds_list_filter/foreach/map) are low-priority and can be no-op or simple host implementations.
+## Verified in this checkout (batch4)
+- GM82CORE_STUBS reduced to 10 rare items.
+- Host-safe implementations for ds_bag_*, bigchoose family, event helpers, date/moon, registry/mouse no-ops, dss_* aliases.
+- Eval dispatch updated before try_stub.
+- Host test suite previously green; PLACEHOLDER removed from main cpp tree.
 
-## Device-blocked (cannot close without hardware)
-- On-device playtest + logcat (U2)
-- libgm82_android.so load + keyDown bridge (U3)
-- OpenSLES audio output (U5)
+## Remaining (device only)
+See docs/DEVICE_BLOCKED.md:
+- U2 playtest + logcat
+- U3 native lib load / keyDown bridge
+- U5 OpenSLES audio
 
 ## Delivery gate
-`is_100: false` only because of device items. Host pipeline is complete.
+`is_100: false` (device items open)
+`host_p0: true`

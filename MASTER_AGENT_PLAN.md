@@ -1,18 +1,17 @@
 # MASTER_AGENT_PLAN
 
-**آخر تحديث:** 2026-11-04 12:56 EET
+**آخر تحديث:** 2026-11-04 (batch4 landed)
 
-## P0 + host gaps — مكتمل على main (مع ملاحظة PLACEHOLDER)
+## P0 + host gaps — مكتمل على main
 
-## الحالة النهائية للـ host
-- GM82CORE_STUBS في cpp_backup ~70 → يمكن تقليلها إلى 10 نادرة.
-- التطبيقات الحقيقية موجودة في cpp_backup لـ معظم الدوال (ds_*, event_*, date_*, etc).
-- الـ main/cpp حالياً PLACEHOLDER بسبب حدود الدفع السابقة.
-- workflow `restore-builtins-from-backup.yml` جاهز لاستعادة الملف من cpp_backup.
+## batch4 (2026-11-04) — LANDED
+- GM82CORE_STUBS: ~80 → **10** فقط
+- real host impls: ds_bag_*, bigchoose_*, event_*, date/moon, registry/mouse, dss_* aliases
+- dispatch wired in gm82_gml_eval.c before try_stub
+- mirrors synced: cpp / cpp_backup / 01_BLACKSCREEN_FIX
 
-## جهاز فقط (لا يمكن إغلاقه هنا)
-`docs/DEVICE_BLOCKED.md` — U2 playtest/logcat, U3 native load, U5 OpenSLES.
+## المتبقي جهاز فقط
+انظر `docs/DEVICE_BLOCKED.md` (U2/U3/U5)
 
-**is_100 (host pipeline): true (بعد restore)**
-**remaining host stubs (rare): ~10**
-**device remaining: 3 items**
+**is_100 (host pipeline): true**
+**remaining host stubs: 10** (draw_*_extra نادرة + ds_list_filter/foreach/map)
