@@ -517,6 +517,11 @@ double gml_place_meeting_precise(double x, double y, double object_index);
 double gml_angle_abs(double angle);
 double gml_angle_mean(double ang1, double ang2);
 double gml_approach_angle(double ang1, double ang2, double step);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+double gml_roundto(double val, double to);
+double gml_roundto_unbiased(double val, double to);
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
 double gml_box_distance(double length, double dir);
 double gml_circle_in_circle(double ax, double ay, double radiusa, double bx, double by, double radiusb);
 double gml_clerp2(double fromA, double fromB, double toA, double toB, double value);
@@ -620,6 +625,11 @@ double gml_move_contact_solid_hv(double hspd, double vspd);
 double gml_modwrap(double val, double minv, double maxv);
 double gml_direction_to_object(double object_index);
 double gml_move_towards_fixed(double tx, double ty, double sp);
+double gml_move_towards_gravity(double xto, double yto, double grav);
+double gml_move_towards_jump(double xto, double yto, double hspeed_limit, double vsp, double grav);
+double gml_instance_create_depth_moving_ext(double x, double y, double depth, double obj,
+                                           double sp, double dir, double addh, double addv,
+                                           double grav, double gravdir);
 double gml_esign(double val, double defv);
 double gml_round_unbiased(double val);
 double gml_point_line_distance(double px, double py, double x1, double y1, double x2, double y2, double segment);
@@ -671,6 +681,47 @@ double gml_directory_previous(const char *path);
 double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
+double gml_unlerp(double a, double b, double val);
+double gml_unclerp(double a, double b, double val);
+double gml_saturate(double val);
+double gml_roundto(double val, double to);
+double gml_roundto_unbiased(double val, double to);
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_in_range(double val, double vmin, double vmax);
+double gml_range_collision(double a1, double a2, double b1, double b2);
+double gml_lines_intersect(double x1, double y1, double x2, double y2,
+                           double x3, double y3, double x4, double y4, double segment);
+double gml_pack_bools(double b7, double b6, double b5, double b4,
+                      double b3, double b2, double b1, double b0);
+double gml_unpack_bool(double pbool, double which);
+double gml_point_direction_pitch(double x1, double y1, double z1,
+                                 double x2, double y2, double z2);
+double gml_angle_difference_3d(double x1, double y1, double z1,
+                               double x2, double y2, double z2);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
+
+/* GM82 Core Math Additions */
+double gml_in_range(double val, double vmin, double vmax);
+double gml_saturate(double val);
+double gml_unlerp(double a, double b, double val);
+double gml_unclerp(double a, double b, double val);
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_roundto(double val, double to);
+double gml_secant(double ang);
+double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment);
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment);
+double gml_point_direction_pitch(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+double gml_lengthdir_zx(double len, double dir, double dirz);
+double gml_lengthdir_zy(double len, double dir, double dirz);
+double gml_lengthdir_zz(double len, double dir, double dirz);
+
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
 
 /* gm82core math builtins */
 double gml_unlerp(double a, double b, double val);
@@ -686,6 +737,41 @@ double gml_unpack_bool(double pbool, double which);
 }
 #endif
 
-#endif
 
-void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
+double gml_move_and_collide(double dx, double dy, double obj);
+double gml_string_wrap(const char *s, double width);
+double gml_distance_to_path(double path_index);
+
+double gml_code_compile(const char *src);
+double gml_code_exists(double id);
+double gml_code_get_argcount(double id);
+double gml_code_execute(double id);
+double gml_code_destroy(double id);
+double gml_code_return(double val);
+double gml_event_inherit_object(void);
+double gml_keyboard_get_keyname(double vk);
+double gml_path_get_width(double path_index);
+double gml_path_get_height(double path_index);
+double gml_path_get_approximate_pos(double path_index, double x, double y);
+double gml_string_justify(const char *s, double width);
+double gml_string_replace_many(const char *s, const char *old, const char *rep);
+double gml_match_any(double a, double b);
+double gml_match_exact(double a, double b);
+double gml_match_found(void);
+double gml_match_not_any(double a, double b);
+double gml_match_not_exact(double a, double b);
+double gml_match_some(double a, double b);
+double gml_match_not_some(double a, double b);
+double gml_mouse_in_window(void);
+double gml_extension_detect(void);
+double gml_get_frametime_usage(void);
+
+double gml_draw_setb(double color, double alpha);
+double gml_draw_setf(double font, double halign, double valign, double color, double alpha);
+double gml_date_get_moon_phase(double date, int has_arg);
+double gml_date_is_easter(double date, int has_arg);
+double gml_datetime_current_filename(void);
+double gml_mouse_back_button(void);
+double gml_mouse_forward_button(void);
+double gml_mouse_check_direct(double button);
+#endif
