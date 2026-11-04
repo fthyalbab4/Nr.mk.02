@@ -5458,3 +5458,4 @@ double gml_approach_angle_biased(double ang1, double ang2, double step, double b
     if (diff > 0.0) return ang1 + step * (1.0 + bias);
     return ang1 - step * (1.0 - bias);
 }
+PLACEHOLDER_WILL_REPLACE3

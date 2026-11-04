@@ -3193,3 +3193,4 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
     }
     return ok;
 }
+PLACEHOLDER_WILL_REPLACE4
