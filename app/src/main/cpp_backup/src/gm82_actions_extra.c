@@ -15,7 +15,7 @@
 int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char *name,
                               const int32_t *args, int argc,
                               const char str_args[][128], int str_argc) {
-    if (!rt || !self || !name) return 0;
+    if (!rt || !self || !name) return -1;
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
 
@@ -69,13 +69,14 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         }
 
         switch (op) {
-            case 0: return (val1 == val2) ? 1 : 0; /* equal */
-            case 1: return (val1 < val2) ? 1 : 0;  /* less */
-            case 2: return (val1 > val2) ? 1 : 0;  /* greater */
-            case 3: return (val1 <= val2) ? 1 : 0; /* less or equal */
-            case 4: return (val1 >= val2) ? 1 : 0; /* greater or equal */
-            case 5: return (val1 != val2) ? 1 : 0; /* not equal */
-            default: return (val1 == val2) ? 1 : 0;
+            case 0: return val1 == val2; /* legacy equality */
+            case 1: return val1 < val2;
+            case 2: return val1 <= val2;
+            case 3: return val1 == val2;
+            case 4: return val1 != val2;
+            case 5: return val1 >= val2;
+            case 6: return val1 > val2;
+            default: return 0;
         }
     }
 
@@ -533,88 +534,5 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         /* Resource replacement stub - safe no-op */
         return 1;
     }
-
-    /* ---- close open DnD names (host-safe; 2026-11-04) ---- */
-    if (strcmp(name, "action_step_towards") == 0) {
-        double tx = (argc >= 1) ? (double)args[0] : self->x;
-        double ty = (argc >= 2) ? (double)args[1] : self->y;
-        double sp = (argc >= 3) ? (double)args[2] : 1.0;
-        if (sp < 0) sp = -sp;
-        gml_move_towards_point(tx, ty, sp);
-        self->x += self->hspeed;
-        self->y += self->vspeed;
-        return 1;
-    }
-    if (strcmp(name, "action_step_avoid") == 0) {
-        double tx = (argc >= 1) ? (double)args[0] : self->x;
-        double ty = (argc >= 2) ? (double)args[1] : self->y;
-        double sp = (argc >= 3) ? (double)args[2] : 1.0;
-        if (sp < 0) sp = -sp;
-        double nx = self->x + (tx > self->x ? sp : (tx < self->x ? -sp : 0));
-        double ny = self->y + (ty > self->y ? sp : (ty < self->y ? -sp : 0));
-        if (gml_place_free(nx, ny)) {
-            gml_move_towards_point(tx, ty, sp);
-        } else {
-            gml_move_towards_point(tx, ty, sp * 0.5);
-        }
-        self->x += self->hspeed;
-        self->y += self->vspeed;
-        return 1;
-    }
-    if (strcmp(name, "action_draw_background") == 0) {
-        double bg = (argc >= 1) ? (double)args[0] : 0;
-        double x = (argc >= 2) ? (double)args[1] : 0;
-        double y = (argc >= 3) ? (double)args[2] : 0;
-        gml_draw_background(bg, x, y);
-        return 1;
-    }
-    if (strcmp(name, "action_draw_ellipse") == 0) {
-        double x1 = (argc >= 1) ? (double)args[0] : self->x;
-        double y1 = (argc >= 2) ? (double)args[1] : self->y;
-        double x2 = (argc >= 3) ? (double)args[2] : self->x + 16;
-        double y2 = (argc >= 4) ? (double)args[3] : self->y + 16;
-        double outline = (argc >= 5) ? (double)args[4] : 0;
-        gml_draw_ellipse(x1, y1, x2, y2, outline);
-        return 1;
-    }
-    if (strcmp(name, "action_show_info") == 0 ||
-        strcmp(name, "action_show_video") == 0 ||
-        strcmp(name, "action_webpage") == 0 ||
-        strcmp(name, "action_snapshot") == 0 ||
-        strcmp(name, "action_part_system") == 0) {
-        return 1;
-    }
-    if (strcmp(name, "action_cd_play") == 0 ||
-        strcmp(name, "action_cd_stop") == 0 ||
-        strcmp(name, "action_cd_pause") == 0 ||
-        strcmp(name, "action_cd_resume") == 0) {
-        return 1;
-    }
-    if (strcmp(name, "action_start_timeline") == 0 ||
-        strcmp(name, "action_timeline_set") == 0) {
-        int idx = (argc >= 1) ? args[0] : 0;
-        self->timeline_index = idx;
-        self->timeline_position = (argc >= 2) ? (double)args[1] : 0.0;
-        self->timeline_running = 1;
-        if (self->timeline_speed <= 0) self->timeline_speed = 1.0;
-        return 1;
-    }
-    if (strcmp(name, "action_timeline_position") == 0) {
-        self->timeline_position = (argc >= 1) ? (double)args[0] : 0.0;
-        return 1;
-    }
-    if (strcmp(name, "action_timeline_speed") == 0) {
-        self->timeline_speed = (argc >= 1) ? (double)args[0] : 1.0;
-        return 1;
-    }
-    if (strcmp(name, "action_timeline_pause") == 0) {
-        self->timeline_running = 0;
-        return 1;
-    }
-    if (strcmp(name, "action_timeline_resume") == 0) {
-        self->timeline_running = 1;
-        return 1;
-    }
-
-    return 0;
+    return -1;
 }

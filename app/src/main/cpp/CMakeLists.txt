@@ -15,6 +15,9 @@ file(GLOB GM82_SOURCES CONFIGURE_DEPENDS
     gml_vm.c
 )
 
+# The full event dispatcher is restored in gm82_events.c; exclude legacy stubs.
+list(FILTER GM82_SOURCES EXCLUDE REGEX "/gm82_events_stubs\\.c$")
+
 add_library(
     gm82_android
     SHARED

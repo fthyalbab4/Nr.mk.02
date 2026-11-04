@@ -436,26 +436,6 @@ void gm82_events_fire_keyboard_all(gm82_runtime *rt) {
                             gm82_gml_eval_block(rt, inst, ev->code_snippet);
                         }
                     }
-                } else if (ev->main_type == GM82_EV_KEYPRESS) { /* Key press */
-                    if (ev->event_numb > 0 && gml_keyboard_check_pressed((double)ev->event_numb)) {
-                        fired = true;
-                        if (ev->action_name0[0])
-                            gm82_action_execute_named(rt, inst, ev->action_name0);
-                        if (ev->code_snippet && ev->code_snippet[0]) {
-                            gm82_gml_set_self(inst);
-                            gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                        }
-                    }
-                } else if (ev->main_type == GM82_EV_KEYRELEASE) { /* Key release */
-                    if (ev->event_numb > 0 && gml_keyboard_check_released((double)ev->event_numb)) {
-                        fired = true;
-                        if (ev->action_name0[0])
-                            gm82_action_execute_named(rt, inst, ev->action_name0);
-                        if (ev->code_snippet && ev->code_snippet[0]) {
-                            gm82_gml_set_self(inst);
-                            gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                        }
-                    }
                 }
             }
             if (fired) break;

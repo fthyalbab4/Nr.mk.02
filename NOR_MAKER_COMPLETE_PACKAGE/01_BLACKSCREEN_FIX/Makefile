@@ -2,7 +2,7 @@ CC ?= gcc
 CFLAGS ?= -Wall -Wextra -Iinclude -O2
 LDFLAGS ?= -lz -lm
 
-SRC = $(wildcard src/*.c) gml_vm.c
+SRC = $(filter-out src/gm82_events_stubs.c,$(wildcard src/*.c)) gml_vm.c
 OBJ = $(SRC:.c=.o)
 TEST_SRCS = $(filter-out tests/reference_fixture_runner.c,$(wildcard tests/*.c))
 TEST_BINS = $(TEST_SRCS:.c=)
