@@ -1,1 +1,20 @@
-see next
+name: apply-core-stubs-batch4
+on:
+  workflow_dispatch:
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply batch4 stub close
+        run: |
+          python3 tools/apply_core_stubs_batch4.py
+          git config user.name "batch4-bot"
+          git config user.email "batch4@users.noreply.github.com"
+          git add -A
+          git status
+          git diff --cached --stat
+          git commit -m "batch4: close GM82CORE_STUBS ~80->10, real host impls, eval dispatch, mirrors" || echo "nothing to commit"
+          git push origin HEAD
