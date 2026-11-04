@@ -1,4 +1,3 @@
-/* with() edge cases: all/self/noone + destroy mid-with snapshot safety */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,13 +10,14 @@
 int main(void) {
     gm82_runtime rt;
     gm82_runtime_init(&rt);
-    gm82_decoded_object_list objs;
-    memset(&objs, 0, sizeof(objs));
-    objs.count = 2;
-    strncpy(objs.items[0].name, "obj_a", sizeof(objs.items[0].name) - 1);
-    objs.items[0].parent_index = -1;
-    strncpy(objs.items[1].name, "obj_b", sizeof(objs.items[1].name) - 1);
-    objs.items[1].parent_index = -1;
+    gm82_decoded_object obj_arr[2];
+    memset(obj_arr, 0, sizeof(obj_arr));
+    strncpy(obj_arr[0].name, "obj_a", sizeof(obj_arr[0].name) - 1);
+    obj_arr[0].parent_index = -1;
+    strncpy(obj_arr[1].name, "obj_b", sizeof(obj_arr[1].name) - 1);
+    obj_arr[1].parent_index = -1;
+    gm82_decoded_object_list objs = { .items = obj_arr, .count = 2 };
+
     gm82_decoded_sprite_list sprites; memset(&sprites, 0, sizeof(sprites));
     gm82_decoded_background_list bgs; memset(&bgs, 0, sizeof(bgs));
     gm82_decoded_room_list rooms; memset(&rooms, 0, sizeof(rooms));
