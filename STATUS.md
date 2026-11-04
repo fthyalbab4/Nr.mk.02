@@ -1,6 +1,13 @@
 # STATUS — System Audit & Core Verification (2026-11-02)
 
 ## Verified Metrics & Status
+- **C Engine Suite**: PASS (27/27 native test binaries passing)
+- **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario Bros, Plataformas, Shooter, Zelda)
+- **Deterministic Replay**: PASS (`test_mario_replay` active with exact right/left/jump displacement verification)
+- **Python Full Verification**: PASS (17/17 system verification tests passing)
+- **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` all tests passing)
+- **JS Engine Verification**: PASS (39/39 scripts 100%, 78/78 actions 100%)
+- **Android APK Build**: SUCCESS (NDK C++ & Java build passing across 4 ABIs: arm64-v8a, armeabi-v7a, x86, x86_64)
 - **C Engine Suite**: PASS (30+ native test binaries passing via `python3 tools/run_engine_suite.py`)
 - **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario, Plataformas, Shooter, Zelda)
 - **Python Full Verification**: PASS (17/17 system verification tests passing via `python3 run_full_verification.py`)
