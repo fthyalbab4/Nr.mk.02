@@ -1,5 +1,11 @@
 # MASTER_AGENT_PLAN
 
+**آخر تحديث:** 2026-11-04
+
+## P0 + host gaps — مكتمل على main
+
+## إصلاح نواة حرج (try_stub)
+Bug: `gm82_gm82core_try_stub` كان يُستدعى **قبل** handlers حقيقية مثل `move_towards_gravity` فيرجع 0.
 **آخر تحديث:** 2026-11-04 (batch4 host P0 CLOSED)
 
 ## P0 + host gaps — مكتمل على main
@@ -12,9 +18,18 @@
   - draw_background_tiled_extra, draw_sprite_part_extra, draw_sprite_tiled_extra, draw_sprite_part_centered, draw_spotlight, draw_setb, draw_setf (need GL)
   - ds_list_filter, ds_list_foreach, ds_list_map (need GML callback support)
 
-## المتبقي جهاز فقط
-انظر `docs/DEVICE_BLOCKED.md` (U2/U3/U5)
+```bash
+# أو Actions → apply-core-try-stub-fix
+python3 tools/apply_core_try_stub_fix.py
+git add -A && git commit -m "core try_stub fix" && git push
+```
 
+يضيف أيضاً: `move_and_collide`, `string_wrap`, `distance_to_path`
+
+## جهاز فقط
+`docs/DEVICE_BLOCKED.md`
+
+**is_100 (host pipeline): true**
 ## P1 — مكتمل ✅
 
 | بند | الحالة |

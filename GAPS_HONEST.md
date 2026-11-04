@@ -1,5 +1,13 @@
 # GAPS_HONEST
 
+This file distinguishes work that was executed in this checkout from work that still needs a device, credentials, or a wider compatibility implementation. It is not a parity percentage and does not claim full GM8.2 compatibility.
+
+## Verified in this checkout
+
+- The host engine suite passes **27 C executables**, including the previously omitted `test_gml_phase5`, `test_gml_vm_advanced`, and `test_phase1` tests; it also runs the four bundled GMK sample pipeline.
+- Reference/security contracts pass **12 Python tests**. They check the hardened WebView/network settings, absence of PEM private-key markers in bundled HTML, and the reduced JavaScript bridge surface.
+- `action_if_variable` now uses a single `(left value, opcode, right value)` DnD contract in both execution paths, with equality and all six comparison operators covered by regression tests.
+- Buffer operations reject negative and non-finite offsets; relative negative seeks work without unsigned wraparound.
 ## Verified / landed (batch4 final — HOST P0 CLOSED)
 - Host implementations for ds_bag_*, bigchoose family, event helpers, date/moon, registry/mouse no-ops, dss_* aliases in `gm82_batch4_extras.c`.
 - Linker wrap intercepts try_stub for batch4 names.
@@ -30,6 +38,10 @@
 - **Cloud GMK integrity:** downloads are TLS-only, host-restricted, size-limited, and redirects are revalidated. The bundled catalog still needs immutable revision pins and per-file SHA-256 verification before its remote content can be treated as reproducible.
 - **Complete GameMaker compatibility:** Windows-only components, full GMX resource-schema fidelity, exhaustive GML syntax/runtime coverage, precise collisions, and hardware audio parity remain broader product work.
 - **Full hostile-project isolation:** the bridge surface was reduced and preview content is no longer same-origin with the Studio parent. A separate bridge-free preview WebView or origin-scoped message API should still be used before treating arbitrary project JavaScript as hostile content.
+
+## Delivery gate
+
+`is_100: false`
 ## Device only
 See docs/DEVICE_BLOCKED.md (U2 playtest, U3 native load, U5 OpenSLES).
 
