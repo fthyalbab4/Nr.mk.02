@@ -5092,6 +5092,94 @@ double gml_distance_to_path(double path_index) {
 }
 
 
+
+/* ---- batch3 gm82core implementations ---- */
+double gml_draw_setb(double color, double alpha) {
+    gml_draw_set_color(color);
+    gml_draw_set_alpha(alpha);
+    return 0.0;
+}
+
+double gml_draw_setf(double font, double halign, double valign, double color, double alpha) {
+    gml_draw_set_font(font);
+    gml_draw_set_halign(halign);
+    gml_draw_set_valign(valign);
+    gml_draw_set_color(color);
+    gml_draw_set_alpha(alpha);
+    return 0.0;
+}
+
+double gml_date_get_moon_phase(double date, int has_arg) {
+    double dt = has_arg ? date : gml_date_current_datetime();
+    double y = gml_date_get_year(dt);
+    double m = gml_date_get_month(dt);
+    double d = gml_date_get_day(dt);
+    if (m < 3.0) {
+        y -= 1.0;
+        m += 12.0;
+    }
+    m += 1.0;
+    d += 365.25 * y;
+    d += 30.6 * m;
+    double phase = d - 694039.09;
+    phase /= 29.5305882;
+    double dummy;
+    double fr = modf(phase, &dummy);
+    if (fr < 0.0) fr += 1.0;
+    return fr;
+}
+
+double gml_date_is_easter(double date, int has_arg) {
+    double y, m, d;
+    if (has_arg) {
+        y = gml_date_get_year(date);
+        m = gml_date_get_month(date);
+        d = gml_date_get_day(date);
+    } else {
+        y = gml_current_year();
+        m = gml_current_month();
+        d = gml_current_day();
+    }
+    int iy = (int)y;
+    int im = (int)m;
+    int id = (int)d;
+    int C = iy / 100;
+    int G = iy % 19;
+    int H = (C - C / 4 - (8 * C + 13) / 25 + 19 * G + 15) % 30;
+    int I = H - (H / 28) * (1 - (29 / (H + 1)) * ((21 - G) / 11));
+    int J = (iy + iy / 4 + I + 2 - C + C / 4) % 7;
+    int L = I - J;
+    int e_month = 3 + (L + 40) / 44;
+    int e_day = L + 28 - 31 * (e_month / 4);
+    return (id == e_day && im == e_month) ? 1.0 : 0.0;
+}
+
+double gml_datetime_current_filename(void) {
+    double dt = gml_date_current_datetime();
+    int day = (int)gml_date_get_day(dt);
+    int mon = (int)gml_date_get_month(dt);
+    int yr = (int)gml_date_get_year(dt);
+    int hr = (int)gml_date_get_hour(dt);
+    int mn = (int)gml_date_get_minute(dt);
+    int sc = (int)gml_date_get_second(dt);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%02d-%02d-%04d_%02d.%02d.%02d", day, mon, yr, hr, mn, sc);
+    gm82_gml_set_last_string(buf);
+    return 0.0;
+}
+
+double gml_mouse_back_button(void) {
+    return 0.0;
+}
+
+double gml_mouse_forward_button(void) {
+    return 0.0;
+}
+
+double gml_mouse_check_direct(double button) {
+    return gml_mouse_check_button(button);
+}
+
 /* ---- batch2 core stubs -> real host implementations ---- */
 #define NOR_CODE_MAX 64
 static char *g_nor_codes[NOR_CODE_MAX];
@@ -5209,7 +5297,7 @@ double gml_extension_detect(void) { return 0.0; }
 double gml_get_frametime_usage(void) { return 0.0; }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "file_find_list", "font_add_file", "font_add_winui", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "registry_read_dword", "registry_read_sz", "registry_write_dword", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "draw_background_tiled_extra", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "file_find_list", "font_add_file", "font_add_winui", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "message_default", "registry_read_dword", "registry_read_sz", "registry_write_dword", "tile_add_ext", "tile_find_anywhere"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {

@@ -728,6 +728,15 @@ double gml_match_not_some(double a, double b);
 double gml_mouse_in_window(void);
 double gml_extension_detect(void);
 double gml_get_frametime_usage(void);
+
+double gml_draw_setb(double color, double alpha);
+double gml_draw_setf(double font, double halign, double valign, double color, double alpha);
+double gml_date_get_moon_phase(double date, int has_arg);
+double gml_date_is_easter(double date, int has_arg);
+double gml_datetime_current_filename(void);
+double gml_mouse_back_button(void);
+double gml_mouse_forward_button(void);
+double gml_mouse_check_direct(double button);
 #endif
 
 void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
