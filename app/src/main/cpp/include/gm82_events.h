@@ -83,6 +83,7 @@ void gm82_events_fire_mouse_all(gm82_runtime *rt);
 void gm82_events_fire_other(gm82_runtime *rt, gm82_instance *inst, int other_index);
 void gm82_events_fire_other_all(gm82_runtime *rt, int other_index);
 void gm82_events_fire_user(gm82_runtime *rt, gm82_instance *inst, int user_index);
+void gm82_events_fire_perform(gm82_runtime *rt, gm82_instance *inst, int main_type, int event_numb);
 void gm82_events_fire_outside_all(gm82_runtime *rt);
 void gm82_events_fire_boundary_all(gm82_runtime *rt);
 void gm82_events_fire_animation_end_all(gm82_runtime *rt);

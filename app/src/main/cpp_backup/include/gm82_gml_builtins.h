@@ -696,6 +696,21 @@ double gml_angle_difference_3d(double x1, double y1, double z1,
                                double x2, double y2, double z2);
 double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
 
+double gml_match_found(void);
+double gml_match_some(const char *pattern, const char *str);
+double gml_match_any(const char *pattern, const char *str);
+double gml_match_not_any(const char *pattern, const char *str);
+double gml_match_not_some(const char *pattern, const char *str);
+double gml_match_exact(const char *pattern, const char *str);
+double gml_match_not_exact(const char *pattern, const char *str);
+
+double gml_event_perform(double ev_type, double ev_numb);
+double gml_event_beginstep(void);
+double gml_event_step(void);
+double gml_event_endstep(void);
+double gml_event_draw(void);
+double gml_event_alarm(double numb);
+
 #ifdef __cplusplus
 }
 #endif

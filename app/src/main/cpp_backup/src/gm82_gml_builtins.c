@@ -1,3 +1,4 @@
+#include "gm82_events.h"
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <time.h>
@@ -4963,6 +4964,193 @@ double gml_pick(double x){ return x; }
 double gml_unpick(double x){ return x; }
 double gml_date_get_timestamp(void){ return (double)time(NULL); }
 
+static double g_gm82core_match_result = 0.0;
+
+double gml_match_found(void) {
+    return g_gm82core_match_result;
+}
+
+double gml_match_some(const char *pattern, const char *str) {
+    static char out[4096];
+    out[0] = 0;
+    g_gm82core_match_result = 0.0;
+    if (!str || !pattern || !str[0]) {
+        gm82_gml_set_last_string("");
+        return 0.0;
+    }
+    int len = (int)strlen(str);
+    int p = len;
+    while (p > 0 && strchr(pattern, str[p - 1]) != NULL) {
+        p--;
+    }
+    if (p < len) {
+        g_gm82core_match_result = 1.0;
+        int copy_len = p < (int)sizeof(out) - 1 ? p : (int)sizeof(out) - 1;
+        memcpy(out, str, (size_t)copy_len);
+        out[copy_len] = 0;
+        gm82_gml_set_last_string(out);
+        return (double)copy_len;
+    }
+    g_gm82core_match_result = 0.0;
+    gm82_gml_set_last_string("");
+    return 0.0;
+}
+
+double gml_match_any(const char *pattern, const char *str) {
+    static char out[4096];
+    out[0] = 0;
+    g_gm82core_match_result = 1.0;
+    if (!str || !str[0]) {
+        gm82_gml_set_last_string("");
+        return 0.0;
+    }
+    if (!pattern) {
+        gm82_gml_set_last_string(str);
+        return (double)strlen(str);
+    }
+    int p = (int)strlen(str);
+    while (p > 0 && strchr(pattern, str[p - 1]) != NULL) {
+        p--;
+    }
+    int copy_len = p < (int)sizeof(out) - 1 ? p : (int)sizeof(out) - 1;
+    memcpy(out, str, (size_t)copy_len);
+    out[copy_len] = 0;
+    gm82_gml_set_last_string(out);
+    return (double)copy_len;
+}
+
+double gml_match_not_any(const char *pattern, const char *str) {
+    static char out[4096];
+    out[0] = 0;
+    g_gm82core_match_result = 1.0;
+    if (!str || !str[0]) {
+        gm82_gml_set_last_string("");
+        return 0.0;
+    }
+    if (!pattern) {
+        gm82_gml_set_last_string(str);
+        return (double)strlen(str);
+    }
+    int p = (int)strlen(str);
+    while (p > 0 && strchr(pattern, str[p - 1]) == NULL) {
+        p--;
+    }
+    int copy_len = p < (int)sizeof(out) - 1 ? p : (int)sizeof(out) - 1;
+    memcpy(out, str, (size_t)copy_len);
+    out[copy_len] = 0;
+    gm82_gml_set_last_string(out);
+    return (double)copy_len;
+}
+
+double gml_match_not_some(const char *pattern, const char *str) {
+    g_gm82core_match_result = 0.0;
+    if (!str || !str[0]) {
+        gm82_gml_set_last_string("");
+        return 0.0;
+    }
+    if (!pattern) {
+        g_gm82core_match_result = 1.0;
+        gm82_gml_set_last_string(str);
+        return (double)strlen(str);
+    }
+    int len = (int)strlen(str);
+    int p = len;
+    while (p > 0 && strchr(pattern, str[p - 1]) == NULL) {
+        p--;
+    }
+    if (p < len) {
+        g_gm82core_match_result = 1.0;
+        gm82_gml_set_last_string(str);
+        return (double)len;
+    }
+    g_gm82core_match_result = 0.0;
+    gm82_gml_set_last_string("");
+    return 0.0;
+}
+
+double gml_match_exact(const char *pattern, const char *str) {
+    static char out[4096];
+    out[0] = 0;
+    g_gm82core_match_result = 0.0;
+    if (!str || !pattern || !str[0] || !pattern[0]) {
+        gm82_gml_set_last_string("");
+        return 0.0;
+    }
+    int len = (int)strlen(str);
+    int sublen = (int)strlen(pattern);
+    if (len >= sublen && strcmp(str + len - sublen, pattern) == 0) {
+        g_gm82core_match_result = 1.0;
+        int rem = len - sublen;
+        int copy_len = rem < (int)sizeof(out) - 1 ? rem : (int)sizeof(out) - 1;
+        memcpy(out, str, (size_t)copy_len);
+        out[copy_len] = 0;
+        gm82_gml_set_last_string(out);
+        return (double)copy_len;
+    }
+    g_gm82core_match_result = 0.0;
+    gm82_gml_set_last_string("");
+    return 0.0;
+}
+
+double gml_match_not_exact(const char *pattern, const char *str) {
+    g_gm82core_match_result = 0.0;
+    if (!str || !str[0]) {
+        gm82_gml_set_last_string("");
+        return 0.0;
+    }
+    if (!pattern || !pattern[0]) {
+        g_gm82core_match_result = 1.0;
+        gm82_gml_set_last_string(str);
+        return (double)strlen(str);
+    }
+    int len = (int)strlen(str);
+    int sublen = (int)strlen(pattern);
+    if (len < sublen || strcmp(str + len - sublen, pattern) != 0) {
+        g_gm82core_match_result = 1.0;
+        gm82_gml_set_last_string(str);
+        return (double)len;
+    }
+    g_gm82core_match_result = 0.0;
+    gm82_gml_set_last_string("");
+    return 0.0;
+}
+
+double gml_event_perform(double ev_type, double ev_numb) {
+    if (!g_rt || !g_self) return 0.0;
+    gm82_events_fire_perform(g_rt, g_self, (int)ev_type, (int)ev_numb);
+    return 1.0;
+}
+
+double gml_event_beginstep(void) {
+    if (!g_rt || !g_self) return 0.0;
+    gm82_events_fire_perform(g_rt, g_self, GM82_EV_STEP, GM82_STEP_BEGIN);
+    return 1.0;
+}
+
+double gml_event_step(void) {
+    if (!g_rt || !g_self) return 0.0;
+    gm82_events_fire_perform(g_rt, g_self, GM82_EV_STEP, GM82_STEP_NORMAL);
+    return 1.0;
+}
+
+double gml_event_endstep(void) {
+    if (!g_rt || !g_self) return 0.0;
+    gm82_events_fire_perform(g_rt, g_self, GM82_EV_STEP, GM82_STEP_END);
+    return 1.0;
+}
+
+double gml_event_draw(void) {
+    if (!g_rt || !g_self) return 0.0;
+    gm82_events_fire_perform(g_rt, g_self, GM82_EV_DRAW, 0);
+    return 1.0;
+}
+
+double gml_event_alarm(double numb) {
+    if (!g_rt || !g_self) return 0.0;
+    gm82_events_fire_perform(g_rt, g_self, GM82_EV_ALARM, (int)numb);
+    return 1.0;
+}
+
 /* APIs promoted by gm82_gml_eval.c. Keep real host implementations here so
  * every test executable links the same built-in surface. */
 double gml_window_has_focus(void) { return 0.0; }
@@ -5059,7 +5247,7 @@ double gml_timeline_find_name(const char *name) {
 }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_inherit_object", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {

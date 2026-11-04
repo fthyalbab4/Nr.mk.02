@@ -758,6 +758,20 @@ void gm82_events_fire_user(gm82_runtime *rt, gm82_instance *inst, int user_index
     gm82_events_fire_other(rt, inst, GM82_OTHER_USER0 + user_index);
 }
 
+void gm82_events_fire_perform(gm82_runtime *rt, gm82_instance *inst, int main_type, int event_numb) {
+    if (!rt || !inst || !inst->alive) return;
+    gm82_gml_set_runtime(rt);
+    if (main_type == GM82_EV_ALARM) {
+        gm82_events_fire_alarm(rt, inst, event_numb);
+    } else if (main_type == GM82_EV_OTHER) {
+        gm82_events_fire_other(rt, inst, event_numb);
+    } else if (main_type == GM82_EV_DRAW) {
+        fire_object_ev(rt, inst, GM82_EV_DRAW, event_numb);
+    } else {
+        fire_object_ev(rt, inst, main_type, event_numb);
+    }
+}
+
 void gm82_events_fire_outside_all(gm82_runtime *rt) {
     if (!rt) return;
     gm82_instance *snapshot[GM82_MAX_INSTANCES];
