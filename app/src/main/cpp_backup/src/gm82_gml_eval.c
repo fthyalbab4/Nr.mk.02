@@ -1277,8 +1277,6 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_string_trim(s); return true;
         }
 
-        if (gm82_gm82core_try_stub(id, out)) return true;
-
         if (strcmp(id, "file_text_writelf") == 0) {
             *out = gml_file_text_writelf((p->str_mask & 1) ? p->str_args[0] : "",
                                          (p->str_mask & 2) ? p->str_args[1] : "");
@@ -2596,6 +2594,20 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "window_get_caption") == 0) { (void)gml_window_get_caption(); *out = 0; return true; }
         if (strcmp(id, "window_has_focus") == 0) { *out = gml_window_has_focus(); return true; }
         if (strcmp(id, "url_open") == 0) { *out = gml_url_open((p->str_mask & 1) ? p->str_args[0] : ""); return true; }
+
+        if (strcmp(id, "move_and_collide") == 0) {
+            *out = gml_move_and_collide(nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:-1);
+            return true;
+        }
+        if (strcmp(id, "string_wrap") == 0) {
+            *out = gml_string_wrap((p->str_mask & 1) ? p->str_args[0] : "", nargs>=2?args[1]:256);
+            return true;
+        }
+        if (strcmp(id, "distance_to_path") == 0) {
+            *out = gml_distance_to_path(nargs>=1?args[0]:0);
+            return true;
+        }
+        if (gm82_gm82core_try_stub(id, out)) return true;
 
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);
         return false;

@@ -700,6 +700,10 @@ double gml_approach_angle_biased(double ang1, double ang2, double step, double b
 }
 #endif
 
+
+double gml_move_and_collide(double dx, double dy, double obj);
+double gml_string_wrap(const char *s, double width);
+double gml_distance_to_path(double path_index);
 #endif
 
 void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
