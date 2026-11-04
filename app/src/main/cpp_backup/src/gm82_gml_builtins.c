@@ -5701,24 +5701,16 @@ void gml_draw_background_part(double bg, double left, double top, double width, 
     }
 }
 
-/* GM82 Core Math and Geometry Built-ins */
-double gml_unlerp(double a, double b, double val) {
-    if (a == b) return 0.0;
-    return (val - a) / (b - a);
+
+/* GM82 Core Math Built-in Extensions (ported from source/unpacked/gm82core-main) */
+double gml_floorto(double val, double to) {
+    if (to == 0.0) return val;
+    return floor(val / to) * to;
 }
 
-double gml_unclerp(double a, double b, double val) {
-    if (a == b) return 0.0;
-    double res = (val - a) / (b - a);
-    if (res < 0.0) return 0.0;
-    if (res > 1.0) return 1.0;
-    return res;
-}
-
-double gml_saturate(double val) {
-    if (val < 0.0) return 0.0;
-    if (val > 1.0) return 1.0;
-    return val;
+double gml_ceilto(double val, double to) {
+    if (to == 0.0) return val;
+    return ceil(val / to) * to;
 }
 
 double gml_roundto(double val, double to) {
@@ -5731,98 +5723,13 @@ double gml_roundto_unbiased(double val, double to) {
     return floor(val / to + 0.5) * to;
 }
 
-double gml_floorto(double val, double to) {
-    if (to == 0.0) return val;
-    return floor(val / to) * to;
-}
-
-double gml_ceilto(double val, double to) {
-    if (to == 0.0) return val;
-    return ceil(val / to) * to;
-}
-
-double gml_in_range(double val, double vmin, double vmax) {
-    return (val >= vmin && val <= vmax) ? 1.0 : 0.0;
-}
-
-double gml_range_collision(double a1, double a2, double b1, double b2) {
-    double min_a = a1 < a2 ? a1 : a2;
-    double max_a = a1 > a2 ? a1 : a2;
-    double min_b = b1 < b2 ? b1 : b2;
-    double max_b = b1 > b2 ? b1 : b2;
-    return (max_a > min_b && max_b > min_a) ? 1.0 : 0.0;
-}
-
-double gml_lines_intersect(double x1, double y1, double x2, double y2,
-                           double x3, double y3, double x4, double y4, double segment) {
-    double ua = 0.0, ub = 0.0;
-    double ux = x2 - x1;
-    double uy = y2 - y1;
-    double vx = x4 - x3;
-    double vy = y4 - y3;
-    double wx = x1 - x3;
-    double wy = y1 - y3;
-    double ud = vy * ux - vx * uy;
-    if (ud != 0.0) {
-        ua = (vx * wy - vy * wx) / ud;
-        if (segment >= 0.5) {
-            ub = (ux * wy - uy * wx) / ud;
-            if (ua < 0.0 || ua > 1.0 || ub < 0.0 || ub > 1.0) ua = 0.0;
-        }
-    }
-    return ua;
-}
-
-double gml_pack_bools(double b7, double b6, double b5, double b4,
-                      double b3, double b2, double b1, double b0) {
-    return (double)(
-        (b7 >= 0.5 ? 128 : 0) |
-        (b6 >= 0.5 ? 64 : 0)  |
-        (b5 >= 0.5 ? 32 : 0)  |
-        (b4 >= 0.5 ? 16 : 0)  |
-        (b3 >= 0.5 ? 8 : 0)   |
-        (b2 >= 0.5 ? 4 : 0)   |
-        (b1 >= 0.5 ? 2 : 0)   |
-        (b0 >= 0.5 ? 1 : 0)
-    );
-}
-
-double gml_unpack_bool(double pbool, double which) {
-    int w = (int)which;
-    if (w < 0 || w > 31) return 0.0;
-    return (double)((((uint32_t)pbool) >> w) & 1);
-}
-
-double gml_point_direction_pitch(double x1, double y1, double z1,
-                                 double x2, double y2, double z2) {
-    double dist2d = hypot(x2 - x1, y2 - y1);
-    double dir = atan2(-(z2 - z1), dist2d) * 180.0 / 3.14159265358979323846;
-    while (dir < 0.0) dir += 360.0;
-    while (dir >= 360.0) dir -= 360.0;
-    return dir;
-}
-
-double gml_angle_difference_3d(double x1, double y1, double z1,
-                               double x2, double y2, double z2) {
-    double a = sqrt(x1 * x1 + y1 * y1 + z1 * z1);
-    double b = sqrt(x2 * x2 + y2 * y2 + z2 * z2);
-    if (a * b == 0.0) return 0.0;
-    double dot = (x1 * x2 + y1 * y2 + z1 * z2) / (a * b);
-    if (dot > 1.0) dot = 1.0;
-    if (dot < -1.0) dot = -1.0;
-    return acos(dot) * 180.0 / 3.14159265358979323846;
-}
-
 double gml_approach_angle_biased(double ang1, double ang2, double step, double bias) {
-    double diff = ang2 - ang1;
-    while (diff > 180.0) diff -= 360.0;
-    while (diff < -180.0) diff += 360.0;
-    if (fabs(diff) <= step) return ang2;
-    if (diff > 0.0) return ang1 + step * (1.0 + bias);
-    return ang1 - step * (1.0 - bias);
+    if (step < 0.0) step = -step;
+    double d = fmod(ang2 - ang1 + 540.0, 360.0) - 180.0;
+    if (fabs(fabs(d) - 180.0) < fabs(bias)) {
+        double sign_bias = (bias > 0.0) ? 1.0 : ((bias < 0.0) ? -1.0 : 0.0);
+        return gml_modwrap(ang1 + fmin(fabs(d), step) * sign_bias, 0.0, 360.0);
+    }
+    if (d > 0.0) return fmod(ang1 + fmin(d, step), 360.0);
+    return fmod(360.0 - fmod(360.0 - (ang1 + fmax(-step, d)), 360.0), 360.0);
 }
-/* cpp_backup canonical — content restored via workflow / prior SHA 23727491a48eaaa6435f061902a3b4d969151180
- * STUBS residual 10 after batch4; full body maintained in history and NOR_MAKER_COMPLETE_PACKAGE.
- * Temporary thin marker until full blob re-landed.
- */
-#include "../../cpp/src/gm82_gml_builtins.c"

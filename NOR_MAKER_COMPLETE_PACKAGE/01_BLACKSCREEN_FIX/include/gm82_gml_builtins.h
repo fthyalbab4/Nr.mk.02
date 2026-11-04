@@ -755,6 +755,14 @@ double gml_unpack_bool(double pbool, double which);
 #endif
 
 
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_roundto(double val, double to);
+double gml_roundto_unbiased(double val, double to);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+
+#endif
+
 double gml_move_and_collide(double dx, double dy, double obj);
 double gml_string_wrap(const char *s, double width);
 double gml_distance_to_path(double path_index);
