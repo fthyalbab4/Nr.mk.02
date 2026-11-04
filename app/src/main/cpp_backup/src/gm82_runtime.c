@@ -245,8 +245,14 @@ bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index) {
             const char *on = rt->objects->items[src->object_index].name;
             if (!on || !on[0]) continue;
         }
+        /* Assign the room instance ID before Create event dispatch. Create
+         * handlers may queue instance_destroy(); queuing the generated ID and
+         * replacing it afterward leaves the room instance alive indefinitely. */
+        int32_t saved_next_id = rt->next_id;
+        if (src->id > 0) rt->next_id = src->id;
         gm82_instance *inst = gm82_runtime_instance_create(rt, src->object_index, (double)src->x, (double)src->y);
-        if (inst && src->id > 0) inst->id = src->id;
+        rt->next_id = saved_next_id;
+
         /* Instance Creation Code from room (after Create event) */
         if (inst && src->creation_code && src->creation_code[0]) {
             gm82_gml_set_runtime(rt);

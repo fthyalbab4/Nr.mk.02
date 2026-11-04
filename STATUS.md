@@ -15,8 +15,11 @@
 - [x] GM82Core additions (`move_towards_gravity`, `move_towards_jump`, `instance_create_depth_moving_ext`)
 - [x] Self-parenting loop safety in event dispatcher
 - [x] 3-way C mirror tree synchronization (0 diffs across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
+- [x] GML AST & Bytecode Compiler Engine sync (`gm82_gml_parser`, `gm82_gml_ast_exec`, `gm82_gml_bytecode`, `gml_frontend`)
+- [x] P1 Keyboard Input Bridge (`keyDown`, `keyUp`, `key` exposed via `StudioNativeBridge` to `nativeRuntimeKey`)
 
 ## GM82 Core Math Expansion & Parity (2026-11-03)
-- [x] Ported native GM82 math & geometry functions from gm82core-main (`unlerp`, `unclerp`, `saturate`, `roundto`, `roundto_unbiased`, `floorto`, `ceilto`, `in_range`, `range_collision`, `lines_intersect`, `pack_bools`, `unpack_bool`, `point_direction_pitch`, `angle_difference_3d`, `approach_angle_biased`).
+- [x] Ported native GM82 math & geometry functions from gm82core-main (`unlerp`, `unclerp`, `saturate`, `roundto`, `roundto_unbiased`, `floorto`, `ceilto`, `in_range`, `range_collision`, `lines_intersect`, `pack_bools`, `unpack_bool`, `point_direction_pitch`, `angle_difference_3d`, `approach_angle_biased`, `point_line_lerp`, `lengthdir_zx`, `lengthdir_zy`, `lengthdir_zz`).
 - [x] Expanded GML expression parser function argument capacity to 16 arguments to seamlessly support 9-argument geometric operations (`lines_intersect`).
+- [x] Enhanced `outside_room` builtin to dynamically measure instance bounding box boundaries against active room dimensions.
 - [x] Maintained 0 diff across all 3 C core mirror trees (`app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`).

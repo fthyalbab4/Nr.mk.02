@@ -5370,3 +5370,8 @@ double gml_approach_angle_biased(double ang1, double ang2, double step, double b
     if (diff > 0.0) return ang1 + step * (1.0 + bias);
     return ang1 - step * (1.0 - bias);
 }
+/* batch4 bridge: compile the maintained backup / package tree.
+ * Host P0 closed via gm82_batch4_extras.c + --wrap=gm82_gm82core_try_stub.
+ * Residual STUBS: 10 (draw extras + ds_list callback ops).
+ */
+#include "../../cpp_backup/src/gm82_gml_builtins.c"
