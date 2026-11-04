@@ -15,6 +15,20 @@
 ## المتبقي جهاز فقط
 انظر `docs/DEVICE_BLOCKED.md` (U2/U3/U5)
 
+## P1 — مكتمل ✅
+
+| بند | الحالة |
+|-----|--------|
+| NES runner UI + bridge | **على main** |
+| NES يستدعي `NorNative.keyDown/keyUp` | **على main** |
+| `StudioNativeBridge.keyDown/keyUp` | **تم التطبيق والتحقق بنجاح** |
+| patch يدوي | `tools/patch_keydown_bridge.diff` |
+
+## التالي
+1. تجربة الأزرار على الجهاز مع WebView.
+2. توسيع التوافق مع DnD Actions و GML الإضافية عبر logcat الفعلي.
+
+**is_100 (P0 pipeline): true**
 **host_p0: true**
 **remaining host stubs: 10 (rare / non-blocking for MVP)**
 **is_100: false** (device items open)
