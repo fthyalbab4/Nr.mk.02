@@ -15,7 +15,7 @@
 int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char *name,
                               const int32_t *args, int argc,
                               const char str_args[][128], int str_argc) {
-    if (!rt || !self || !name) return 0;
+    if (!rt || !self || !name) return -1;
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
 
@@ -69,13 +69,14 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         }
 
         switch (op) {
-            case 0: return (val1 == val2) ? 1 : 0; /* equal */
-            case 1: return (val1 < val2) ? 1 : 0;  /* less */
-            case 2: return (val1 > val2) ? 1 : 0;  /* greater */
-            case 3: return (val1 <= val2) ? 1 : 0; /* less or equal */
-            case 4: return (val1 >= val2) ? 1 : 0; /* greater or equal */
-            case 5: return (val1 != val2) ? 1 : 0; /* not equal */
-            default: return (val1 == val2) ? 1 : 0;
+            case 0: return val1 == val2; /* legacy equality */
+            case 1: return val1 < val2;
+            case 2: return val1 <= val2;
+            case 3: return val1 == val2;
+            case 4: return val1 != val2;
+            case 5: return val1 >= val2;
+            case 6: return val1 > val2;
+            default: return 0;
         }
     }
 
@@ -533,5 +534,5 @@ int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, const char 
         /* Resource replacement stub - safe no-op */
         return 1;
     }
-    return 0;
+    return -1;
 }
