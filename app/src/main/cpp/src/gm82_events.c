@@ -314,3 +314,8 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
         }
     }
 }
+
+int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
+    (void)data; (void)size;
+    return 0;
+}

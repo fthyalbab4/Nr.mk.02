@@ -118,9 +118,14 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_set_score") == 0) { gml_set_score((argc >= 1) ? (double)args[0] : 0); return true; }
     if (strcmp(name, "action_set_lives") == 0) { gml_set_lives((argc >= 1) ? (double)args[0] : 3); return true; }
     if (strcmp(name, "action_set_health") == 0) { gml_set_health((argc >= 1) ? (double)args[0] : 100); return true; }
-    if (strcmp(name, "action_set_sprite") == 0) {
+    if (strcmp(name, "action_set_sprite") == 0 || strcmp(name, "action_sprite_set") == 0) {
         if (argc >= 1) self->sprite_index = args[0];
         if (argc >= 2) self->image_index = args[1];
+        if (argc >= 3) self->image_speed = (double)args[2];
+        return true;
+    }
+    if (strcmp(name, "action_effect") == 0) {
+        /* kind, x, y, size, color, relative */
         return true;
     }
     if (strcmp(name, "action_set_alarm") == 0) {

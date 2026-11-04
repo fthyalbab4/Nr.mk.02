@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "gm82_jni.h"
 #include "gm82_int_read.h"
 
@@ -28,7 +29,7 @@ int main(void) {
     assert(resolve_path(sample, resolved, sizeof(resolved)));
     assert(gm82_native_init(640, 480));
     assert(!gm82_native_load_game("missing-native-frame-test.gmk", error, (int)sizeof(error)));
-    assert(gm82_native_load_game(sample, error, (int)sizeof(error)));
+    assert(gm82_native_load_game(resolved, error, (int)sizeof(error)));
     assert(gm82_native_is_running());
 
     int width = 0, height = 0;
@@ -42,7 +43,7 @@ int main(void) {
     gm82_native_key_up(39);
     frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
-    assert(gm82_native_load_game(sample, error, (int)sizeof(error)));
+    assert(gm82_native_load_game(resolved, error, (int)sizeof(error)));
     frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
     gm82_native_shutdown();

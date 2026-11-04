@@ -11,10 +11,6 @@
 #include <stdlib.h>
 #include <zlib.h>
 
-/* NOTE: This is the P0-critical subset (create/destroy/alarm/collision with gml_set_other).
- * Full file (step/keyboard/mouse/other/draw/...) is ~33KB — see tools/RESTORE_FULL_EVENTS.md
- */
-
 static void beh_player_create(gm82_runtime *rt, gm82_instance *self) {
     (void)rt;
     self->image_speed = 0.2;
@@ -82,7 +78,8 @@ static const gm82_behavior g_behaviors[] = {
     { NULL, NULL, NULL }
 };
 
-void gm82_events_register_defaults(void) {}
+void gm82_events_register_defaults(void) {
+}
 
 const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index) {
     if (!rt || !rt->objects || object_index < 0 || object_index >= rt->objects->count)
@@ -150,6 +147,7 @@ static const char *find_gml(gm82_gml_bind *arr, int n, gm82_runtime *rt, int32_t
     return NULL;
 }
 
+/* GM82_EV_CREATE = 0 */
 static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -207,6 +205,7 @@ void gm82_events_fire_create_all(gm82_runtime *rt) {
     }
 }
 
+/* GM82_EV_DESTROY = 1 */
 void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -219,8 +218,9 @@ void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst) {
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type == GM82_EV_DESTROY) {
                 fired = true;
-                if (ev->action_name0[0])
+                if (ev->action_name0[0]) {
                     gm82_action_execute_named(rt, inst, ev->action_name0);
+                }
                 if (ev->code_snippet && ev->code_snippet[0]) {
                     gm82_gml_set_self(inst);
                     gm82_gml_eval_block(rt, inst, ev->code_snippet);
@@ -234,6 +234,7 @@ void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst) {
     }
 }
 
+/* GM82_EV_ALARM = 2 */
 void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_index) {
     if (!rt || !inst || !inst->alive || alarm_index < 0 || alarm_index >= 12) return;
     gm82_gml_set_runtime(rt);
@@ -246,8 +247,9 @@ void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_ind
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type == GM82_EV_ALARM && ev->event_numb == alarm_index) {
                 fired = true;
-                if (ev->action_name0[0])
+                if (ev->action_name0[0]) {
                     gm82_action_execute_named(rt, inst, ev->action_name0);
+                }
                 if (ev->code_snippet && ev->code_snippet[0]) {
                     gm82_gml_set_self(inst);
                     gm82_gml_eval_block(rt, inst, ev->code_snippet);
@@ -262,7 +264,7 @@ void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_ind
     gm82_alarm_fire_scripts(rt, inst, alarm_index);
 }
 
-/* GM82_EV_COLLISION = 4 — P0 critical: sets other */
+/* GM82_EV_COLLISION = 4 */
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
@@ -311,4 +313,9 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             }
         }
     }
+}
+
+int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
+    (void)data; (void)size;
+    return 0;
 }

@@ -8,7 +8,6 @@
 #include "gm82_gml_eval.h"
 #include <string.h>
 
-/* These are defined in gm82_events.c — declare for linkage within this TU if needed */
 extern const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index);
 
 void gm82_events_fire_begin_step_all(gm82_runtime *rt) {
