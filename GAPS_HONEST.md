@@ -32,6 +32,7 @@ This file distinguishes work that was executed in this checkout from work that s
 
 ## Not verified here
 
+- **Android APK/NDK build verification:** VERIFIED in this environment. NDK 25.2.9519653 and CMake 3.22.1 installed under `/opt/android-sdk`. `./gradlew assembleDebug` builds cleanly generating `app/build/outputs/apk/debug/app-debug.apk` across arm64-v8a, armeabi-v7a, x86, and x86_64.
 - **Android APK/NDK build verification:** verified in this checkout; `./gradlew assembleDebug` successfully compiles and packages all ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) generating `app/build/outputs/apk/debug/app-debug.apk` using NDK 25.2.9519653 and CMake 3.22.1.
 - **Android on-device instrumentation and behavior:** on-device instrumentation tests, physical touch input replay, and live hardware display rendering remain unverified pending a connected physical Android device/emulator.
 - **Release signing:** a replacement upload identity was generated outside the repository and CI configuration was added, but repository Actions secrets still require an owner/administrator because the current integration received HTTP 403 when attempting to write them.

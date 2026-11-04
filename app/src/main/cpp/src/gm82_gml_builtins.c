@@ -462,6 +462,59 @@ void gml_draw_sprite(double sprite, double x, double y) {
     }
 }
 
+/* gm82core math builtins implementation */
+double gml_unlerp(double a, double b, double val) {
+    if (b == a) return 0.0;
+    return (val - a) / (b - a);
+}
+
+double gml_unclerp(double a, double b, double val) {
+    if (b == a) return 0.0;
+    double r = (val - a) / (b - a);
+    if (r < 0.0) return 0.0;
+    if (r > 1.0) return 1.0;
+    return r;
+}
+
+double gml_roundto(double val, double to) {
+    if (to == 0.0) return val;
+    return round(val / to) * to;
+}
+
+double gml_roundto_unbiased(double val, double to) {
+    if (to == 0.0) return val;
+    return floor(val / to + 0.5) * to;
+}
+
+double gml_floorto(double val, double to) {
+    if (to == 0.0) return val;
+    return floor(val / to) * to;
+}
+
+double gml_ceilto(double val, double to) {
+    if (to == 0.0) return val;
+    return ceil(val / to) * to;
+}
+
+double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0) {
+    return (double)(
+        (b7 >= 0.5 ? 128 : 0)
+      + (b6 >= 0.5 ? 64 : 0)
+      + (b5 >= 0.5 ? 32 : 0)
+      + (b4 >= 0.5 ? 16 : 0)
+      + (b3 >= 0.5 ? 8 : 0)
+      + (b2 >= 0.5 ? 4 : 0)
+      + (b1 >= 0.5 ? 2 : 0)
+      + (b0 >= 0.5 ? 1 : 0)
+    );
+}
+
+double gml_unpack_bool(double pbool, double which) {
+    uint8_t byte = (uint8_t)pbool;
+    uint8_t shift = (uint8_t)which;
+    return (double)((byte & (1 << shift)) ? 1.0 : 0.0);
+}
+
 void gml_draw_self(void) {
     if (!g_self) return;
     gml_draw_sprite_ext((double)g_self->sprite_index, (double)g_self->image_index,

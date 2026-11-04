@@ -619,6 +619,40 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "lerproach") == 0) {
             *out = gml_lerproach(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
         }
+        if (strcmp(id, "unlerp") == 0) {
+            *out = gml_unlerp(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "unclerp") == 0) {
+            *out = gml_unclerp(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "roundto_unbiased") == 0) {
+            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "pack_bools") == 0) {
+            *out = gml_pack_bools(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0,
+                nargs >= 7 ? args[6] : 0.0,
+                nargs >= 8 ? args[7] : 0.0
+            );
+            return true;
+        }
+        if (strcmp(id, "unpack_bool") == 0) {
+            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0.0); return true;
+        }
 
         if (strcmp(id, "hypot") == 0) {
             *out = gml_hypot(arg, nargs >= 2 ? args[1] : 0); return true;

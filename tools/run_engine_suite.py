@@ -31,6 +31,7 @@ TESTS = [
     ("test_gml_string_repeat", "app/src/main/cpp/tests/test_gml_string_repeat.c"),
     ("test_nr01_compat_apis", "app/src/main/cpp/tests/test_nr01_compat_apis.c"),
     ("test_native_frame_api", "app/src/main/cpp/tests/test_native_frame_api.c"),
+    ("test_gm82core_math", "app/src/main/cpp/tests/test_gm82core_math.c"),
     ("test_gm82_text_project", "app/src/main/cpp/tests/test_gm82_text_project.c"),
     ("test_gm82_text_runtime", "app/src/main/cpp/tests/test_gm82_text_runtime.c"),
     # Imported from the friend's Full Core package; compiled against the current modular core.
