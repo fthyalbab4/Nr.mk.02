@@ -12,6 +12,7 @@
 
 - The host engine suite passes **27 C executables**, including the previously omitted `test_gml_phase5`, `test_gml_vm_advanced`, and `test_phase1` tests; it also runs the four bundled GMK sample pipeline.
 - Reference/security contracts pass **12 Python tests**. They check the hardened WebView/network settings, absence of PEM private-key markers in bundled HTML, and the reduced JavaScript bridge surface.
+- Tri-mirror synchronization across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, and `app/src/main/cpp_backup` is verified at 100% (0 diffs), covering the native GML AST parser, compound assignment, and bytecode compiler components.
 - `action_if_variable` now uses a single `(left value, opcode, right value)` DnD contract in both execution paths, with equality and all six comparison operators covered by regression tests.
 - Buffer operations reject negative and non-finite offsets; relative negative seeks work without unsigned wraparound.
 - Extended GM82 math builtins (`point_line_lerp`, `lengthdir_zx`, `lengthdir_zy`, `lengthdir_zz`) ported and verified against `gm82core-main` reference; `outside_room` evaluates bounding boxes with active room dimension constraints.

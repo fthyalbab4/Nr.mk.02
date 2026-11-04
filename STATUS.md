@@ -15,6 +15,7 @@
 - [x] GM82Core additions (`move_towards_gravity`, `move_towards_jump`, `instance_create_depth_moving_ext`)
 - [x] Self-parenting loop safety in event dispatcher
 - [x] 3-way C mirror tree synchronization (0 diffs across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
+- [x] GML AST & Bytecode Compiler Engine sync (`gm82_gml_parser`, `gm82_gml_ast_exec`, `gm82_gml_bytecode`, `gml_frontend`)
 - [x] P1 Keyboard Input Bridge (`keyDown`, `keyUp`, `key` exposed via `StudioNativeBridge` to `nativeRuntimeKey`)
 
 ## GM82 Core Math Expansion & Parity (2026-11-03)
