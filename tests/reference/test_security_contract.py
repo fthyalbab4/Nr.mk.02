@@ -29,6 +29,13 @@ class SecurityContractTests(unittest.TestCase):
         self.assertIn("isWithinDirectory(archive, stagingRoot)", ACTIVITY)
         self.assertIn("target.getCanonicalPath().equals(importsRoot.getCanonicalPath())", ACTIVITY)
 
+    def test_keyboard_input_bridge_methods_present(self):
+        for method in ("keyDown", "keyUp", "key"):
+            self.assertRegex(ACTIVITY, r"@JavascriptInterface public \S+\s+" + method + r"\(")
+        self.assertIn("nativeRuntimeKey(vk, true)", ACTIVITY)
+        self.assertIn("nativeRuntimeKey(vk, false)", ACTIVITY)
+        self.assertIn("nativeRuntimeKey(vk, down)", ACTIVITY)
+
     def test_advertised_import_bridges_have_implementations(self):
         for method in ("gmkResourceManifestBase64", "importGmkSnapshotBase64", "pickGm82Folder", "pickGmxGmzFolder"):
             self.assertRegex(ACTIVITY, r"@JavascriptInterface public \S+\s+" + method + r"\(")

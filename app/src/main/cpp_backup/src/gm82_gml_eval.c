@@ -17,7 +17,7 @@ typedef struct {
     gm82_runtime *rt;
     gm82_instance *self;
     char err[128];
-    char str_args[8][256];
+    char str_args[16][256];
     int str_mask;
 } gml_parser;
 
@@ -490,15 +490,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = 0;
         return true;
     }
-    /* function call? collect up to 8 args */
+    /* function call? collect up to 16 args */
     if (match(p, '(')) {
-        double args[8] = {0,0,0,0,0,0,0,0};
+        double args[16] = {0};
         int nargs = 0;
         p->str_mask = 0;
         memset(p->str_args, 0, sizeof(p->str_args));
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 8) return false;
+                if (nargs >= 16) return false;
                 skip_ws(p);
                 if (peek(p) == '"' || peek(p) == '\'') {
                     char quote = (char)peek(p);
@@ -619,6 +619,40 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "lerproach") == 0) {
             *out = gml_lerproach(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
         }
+        if (strcmp(id, "unlerp") == 0) {
+            *out = gml_unlerp(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "unclerp") == 0) {
+            *out = gml_unclerp(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "roundto_unbiased") == 0) {
+            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "pack_bools") == 0) {
+            *out = gml_pack_bools(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0,
+                nargs >= 7 ? args[6] : 0.0,
+                nargs >= 8 ? args[7] : 0.0
+            );
+            return true;
+        }
+        if (strcmp(id, "unpack_bool") == 0) {
+            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0.0); return true;
+        }
 
         if (strcmp(id, "hypot") == 0) {
             *out = gml_hypot(arg, nargs >= 2 ? args[1] : 0); return true;
@@ -650,8 +684,93 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "approach_angle") == 0) {
             *out = gml_approach_angle(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
+        if (strcmp(id, "approach_angle_biased") == 0) {
+            *out = gml_approach_angle_biased(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0); return true;
+        }
+        if (strcmp(id, "in_range") == 0) {
+            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "saturate") == 0) {
+            *out = gml_saturate(arg); return true;
+        }
+        if (strcmp(id, "unlerp") == 0) {
+            *out = gml_unlerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "unclerp") == 0) {
+            *out = gml_unclerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "secant") == 0) {
+            *out = gml_secant(arg); return true;
+        }
+        if (strcmp(id, "lines_intersect") == 0) {
+            *out = gml_lines_intersect(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0,
+                                       nargs >= 8 ? args[7] : 0, nargs >= 9 ? args[8] : 0); return true;
+        }
+        if (strcmp(id, "point_line_lerp") == 0) {
+            *out = gml_point_line_lerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                      nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0); return true;
+        }
+        if (strcmp(id, "point_direction_pitch") == 0) {
+            *out = gml_point_direction_pitch(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
+                                            nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
+        }
+        if (strcmp(id, "angle_difference_3d") == 0) {
+            *out = gml_angle_difference_3d(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
+                                          nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
+        }
+        if (strcmp(id, "lengthdir_zx") == 0) {
+            *out = gml_lengthdir_zx(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "lengthdir_zy") == 0) {
+            *out = gml_lengthdir_zy(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "lengthdir_zz") == 0) {
+            *out = gml_lengthdir_zz(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1); return true;
+        }
+        if (strcmp(id, "roundto_unbiased") == 0) {
+            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1); return true;
+        }
+        if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1); return true;
+        }
         if (strcmp(id, "box_distance") == 0) {
             *out = gml_box_distance(arg, nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "in_range") == 0) {
+            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "lines_intersect") == 0) {
+            *out = gml_lines_intersect(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0,
+                                       nargs >= 8 ? args[7] : 0, nargs >= 9 ? args[8] : 1); return true;
+        }
+        if (strcmp(id, "pack_bools") == 0) {
+            *out = gml_pack_bools(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                  nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0, nargs >= 8 ? args[7] : 0); return true;
+        }
+        if (strcmp(id, "unpack_bool") == 0) {
+            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "pivot_pos_x") == 0) {
+            *out = gml_pivot_pos_x(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "pivot_pos_y") == 0) {
+            *out = gml_pivot_pos_y(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "circle_in_circle") == 0) {
             *out = gml_circle_in_circle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
@@ -1144,6 +1263,89 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "invlerp") == 0) {
             *out = gml_invlerp(arg, nargs >= 2 ? args[1] : 1, nargs >= 3 ? args[2] : 0); return true;
         }
+        if (strcmp(id, "unlerp") == 0) {
+            *out = gml_unlerp(arg, nargs >= 2 ? args[1] : 1.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "unclerp") == 0) {
+            *out = gml_unclerp(arg, nargs >= 2 ? args[1] : 1.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "saturate") == 0) {
+            *out = gml_saturate(arg); return true;
+        }
+        if (strcmp(id, "roundto") == 0) {
+            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "roundto_unbiased") == 0) {
+            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "floorto") == 0) {
+            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "ceilto") == 0) {
+            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
+        }
+        if (strcmp(id, "in_range") == 0) {
+            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
+        }
+        if (strcmp(id, "range_collision") == 0) {
+            *out = gml_range_collision(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0, nargs >= 4 ? args[3] : 0.0); return true;
+        }
+        if (strcmp(id, "lines_intersect") == 0) {
+            *out = gml_lines_intersect(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0,
+                nargs >= 7 ? args[6] : 0.0,
+                nargs >= 8 ? args[7] : 0.0,
+                nargs >= 9 ? args[8] : 1.0
+            ); return true;
+        }
+        if (strcmp(id, "pack_bools") == 0) {
+            *out = gml_pack_bools(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0,
+                nargs >= 7 ? args[6] : 0.0,
+                nargs >= 8 ? args[7] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "unpack_bool") == 0) {
+            *out = gml_unpack_bool(arg, nargs >= 2 ? args[1] : 0.0); return true;
+        }
+        if (strcmp(id, "point_direction_pitch") == 0) {
+            *out = gml_point_direction_pitch(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "angle_difference_3d") == 0) {
+            *out = gml_angle_difference_3d(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "approach_angle_biased") == 0) {
+            *out = gml_approach_angle_biased(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0
+            ); return true;
+        }
         if (strcmp(id, "gauss") == 0) {
             *out = gml_gauss(arg, nargs >= 2 ? args[1] : 1); return true;
         }
@@ -1193,8 +1395,6 @@ static bool parse_primary(gml_parser *p, double *out) {
             const char *s = (p->str_mask & 1) ? p->str_args[0] : "";
             *out = gml_string_trim(s); return true;
         }
-
-        if (gm82_gm82core_try_stub(id, out)) return true;
 
         if (strcmp(id, "file_text_writelf") == 0) {
             *out = gml_file_text_writelf((p->str_mask & 1) ? p->str_args[0] : "",
@@ -1263,6 +1463,23 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "path_ease") == 0) { *out = gml_path_ease(arg, nargs>=2?args[1]:0); return true; }
         if (strcmp(id, "object_other_is_child_of") == 0) { *out = gml_object_other_is_child_of(arg); return true; }
         if (strcmp(id, "instance_create_moving_ext") == 0) { *out = gml_instance_create_moving_ext(args[0],args[1],args[2],args[3],args[4], nargs>=6?args[5]:0, nargs>=7?args[6]:270); return true; }
+        if (strcmp(id, "instance_create_depth_moving_ext") == 0) {
+            *out = gml_instance_create_depth_moving_ext(
+                nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0, nargs>=4?args[3]:0,
+                nargs>=5?args[4]:0, nargs>=6?args[5]:0, nargs>=7?args[6]:0, nargs>=8?args[7]:0,
+                nargs>=9?args[8]:0, nargs>=10?args[9]:270);
+            return true;
+        }
+        if (strcmp(id, "move_towards_gravity") == 0) {
+            *out = gml_move_towards_gravity(nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0);
+            return true;
+        }
+        if (strcmp(id, "move_towards_jump") == 0) {
+            *out = gml_move_towards_jump(
+                nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0,
+                nargs>=4?args[3]:0, nargs>=5?args[4]:0);
+            return true;
+        }
         if (strcmp(id, "instance_some") == 0) { *out = gml_instance_some(arg); return true; }
         if (strcmp(id, "filename_remove_ext") == 0) { *out = gml_filename_remove_ext((p->str_mask&1)?p->str_args[0]:""); return true; }
         if (strcmp(id, "string_ord_at") == 0) { *out = gml_string_ord_at((p->str_mask&1)?p->str_args[0]:"", nargs>=2?args[1]:1); return true; }
@@ -1537,8 +1754,41 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "instance_place") == 0) {
             *out = gml_instance_place(args[0], args[1], args[2]); return true;
         }
+        if (strcmp(id, "instance_place_list") == 0) {
+            *out = gml_instance_place_list(args[0], args[1], args[2]); return true;
+        }
         if (strcmp(id, "instance_position") == 0) {
             *out = gml_instance_position(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "instance_position_list") == 0) {
+            *out = gml_instance_position_list(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "path_get_point_x") == 0) {
+            *out = gml_path_get_point_x(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "path_get_point_y") == 0) {
+            *out = gml_path_get_point_y(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "path_get_point_speed") == 0) {
+            *out = gml_path_get_point_speed(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "path_get_closed") == 0) {
+            *out = gml_path_get_closed(arg); return true;
+        }
+        if (strcmp(id, "path_get_length") == 0) {
+            *out = gml_path_get_length(arg); return true;
+        }
+        if (strcmp(id, "path_get_width") == 0) {
+            *out = gml_path_get_width(arg); return true;
+        }
+        if (strcmp(id, "path_get_height") == 0) {
+            *out = gml_path_get_height(arg); return true;
+        }
+        if (strcmp(id, "path_add_point") == 0) {
+            *out = gml_path_add_point_ext(args[0], args[1], args[2], nargs >= 4 ? args[3] : 100.0); return true;
+        }
+        if (strcmp(id, "path_clear_points") == 0) {
+            *out = gml_path_clear_points(arg); return true;
         }
         if (strcmp(id, "move_contact_solid") == 0) {
             *out = gml_move_contact_solid(arg, nargs >= 2 ? args[1] : 1000); return true;
@@ -2496,6 +2746,96 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "window_get_caption") == 0) { (void)gml_window_get_caption(); *out = 0; return true; }
         if (strcmp(id, "window_has_focus") == 0) { *out = gml_window_has_focus(); return true; }
         if (strcmp(id, "url_open") == 0) { *out = gml_url_open((p->str_mask & 1) ? p->str_args[0] : ""); return true; }
+
+        if (strcmp(id, "move_and_collide") == 0) {
+            *out = gml_move_and_collide(nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:-1);
+            return true;
+        }
+        if (strcmp(id, "string_wrap") == 0) {
+            *out = gml_string_wrap((p->str_mask & 1) ? p->str_args[0] : "", nargs>=2?args[1]:256);
+            return true;
+        }
+        if (strcmp(id, "distance_to_path") == 0) {
+            *out = gml_distance_to_path(nargs>=1?args[0]:0);
+            return true;
+        }
+        if (strcmp(id, "draw_setb") == 0) {
+            *out = gml_draw_setb(arg, nargs >= 2 ? args[1] : 1.0);
+            return true;
+        }
+        if (strcmp(id, "draw_setf") == 0) {
+            *out = gml_draw_setf(arg,
+                                 nargs >= 2 ? args[1] : 0.0,
+                                 nargs >= 3 ? args[2] : 0.0,
+                                 nargs >= 4 ? args[3] : 0.0,
+                                 nargs >= 5 ? args[4] : 1.0);
+            return true;
+        }
+        if (strcmp(id, "date_get_moon_phase") == 0) {
+            *out = gml_date_get_moon_phase(arg, nargs >= 1);
+            return true;
+        }
+        if (strcmp(id, "date_is_easter") == 0) {
+            *out = gml_date_is_easter(arg, nargs >= 1);
+            return true;
+        }
+        if (strcmp(id, "datetime_current_filename") == 0) {
+            *out = gml_datetime_current_filename();
+            return true;
+        }
+        if (strcmp(id, "mouse_back_button") == 0) {
+            *out = gml_mouse_back_button();
+            return true;
+        }
+        if (strcmp(id, "mouse_forward_button") == 0) {
+            *out = gml_mouse_forward_button();
+            return true;
+        }
+        if (strcmp(id, "mouse_check_direct") == 0) {
+            *out = gml_mouse_check_direct(arg);
+            return true;
+        }
+        if (strcmp(id, "code_compile") == 0) {
+            *out = gml_code_compile((p->str_mask & 1) ? p->str_args[0] : "");
+            return true;
+        }
+        if (strcmp(id, "code_execute") == 0) { *out = gml_code_execute(arg); return true; }
+        if (strcmp(id, "code_exists") == 0) { *out = gml_code_exists(arg); return true; }
+        if (strcmp(id, "code_destroy") == 0) { *out = gml_code_destroy(arg); return true; }
+        if (strcmp(id, "code_get_argcount") == 0) { *out = gml_code_get_argcount(arg); return true; }
+        if (strcmp(id, "code_return") == 0) { *out = gml_code_return(arg); return true; }
+        if (strcmp(id, "event_inherit_object") == 0) { *out = gml_event_inherit_object(); return true; }
+        if (strcmp(id, "keyboard_get_keyname") == 0) { *out = gml_keyboard_get_keyname(arg); return true; }
+        if (strcmp(id, "path_get_width") == 0) { *out = gml_path_get_width(arg); return true; }
+        if (strcmp(id, "path_get_height") == 0) { *out = gml_path_get_height(arg); return true; }
+        if (strcmp(id, "path_get_approximate_pos") == 0) {
+            *out = gml_path_get_approximate_pos(arg, nargs>=2?args[1]:0, nargs>=3?args[2]:0);
+            return true;
+        }
+        if (strcmp(id, "string_justify") == 0) {
+            *out = gml_string_justify((p->str_mask & 1) ? p->str_args[0] : "", nargs>=2?args[1]:0);
+            return true;
+        }
+        if (strcmp(id, "string_replace_many") == 0) {
+            *out = gml_string_replace_many(
+                (p->str_mask & 1) ? p->str_args[0] : "",
+                (p->str_mask & 2) ? p->str_args[1] : "",
+                (p->str_mask & 4) ? p->str_args[2] : "");
+            return true;
+        }
+        if (strcmp(id, "match_any") == 0 || strcmp(id, "match_some") == 0) {
+            *out = gml_match_any(arg, nargs>=2?args[1]:0); return true;
+        }
+        if (strcmp(id, "match_exact") == 0) { *out = gml_match_exact(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "match_found") == 0) { *out = gml_match_found(); return true; }
+        if (strcmp(id, "match_not_any") == 0 || strcmp(id, "match_not_some") == 0) {
+            *out = gml_match_not_any(arg, nargs>=2?args[1]:0); return true;
+        }
+        if (strcmp(id, "match_not_exact") == 0) { *out = gml_match_not_exact(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "mouse_in_window") == 0) { *out = gml_mouse_in_window(); return true; }
+        if (strcmp(id, "extension_detect") == 0) { *out = gml_extension_detect(); return true; }
+        if (strcmp(id, "get_frametime_usage") == 0) { *out = gml_get_frametime_usage(); return true; }
+        if (gm82_gm82core_try_stub(id, out)) return true;
 
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);
         return false;

@@ -1,8 +1,8 @@
 # تقرير الهندسة المعمارية والتطابق السلوكي (NOR Engine / OS Parity Report)
 
-**التاريخ:** 2026-11-03
-**المشروع:** NOR Maker (NOR Engine/OS) — Embedded GameMaker 8.2 Runner & Native Mobile Architecture
-**المرجع:** `source/` (GM82 Official Source & Extensions Mirror) و `REPORTING_RULES.md`
+**التاريخ:** 2026-11-04
+**المشروع:** NOR Maker (NOR Engine/OS) — Android & Host GameMaker 8.2 Runner Architecture
+**المرجع:** `source/` (GM82 Official Source & Extensions Mirror: 28 Extension Archives) و `REPORTING_RULES.md`
 
 ---
 
@@ -71,6 +71,8 @@
 3. **AST / Direct Execution:**
    - تحويل الأفعال الجاهزة إلى تمثيل وسيط مباشر يضمن سرعة تنفيذ تضاهي سرعة الأكواد البرمجية الأصلية (Native C Speed).
    - **Edge Cases المشمولة:** ترتيب وسائط DnD الخاصة بـ `action_if_variable` (0: ==, 1: <, 2: <=, 3: ==, 4: !=, 5: >=, 6: >) وتنفيذ أفعال الـ Sleep و Game Save/Load بأمان.
+
+---
 
 ---
 
