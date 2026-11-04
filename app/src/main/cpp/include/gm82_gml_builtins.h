@@ -703,6 +703,26 @@ double gml_approach_angle_biased(double ang1, double ang2, double step, double b
 
 void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
 
+/* GM82 Core Math Additions */
+double gml_in_range(double val, double vmin, double vmax);
+double gml_saturate(double val);
+double gml_unlerp(double a, double b, double val);
+double gml_unclerp(double a, double b, double val);
+double gml_floorto(double val, double to);
+double gml_ceilto(double val, double to);
+double gml_roundto(double val, double to);
+double gml_secant(double ang);
+double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment);
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment);
+double gml_point_direction_pitch(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2);
+double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+double gml_lengthdir_zx(double len, double dir, double dirz);
+double gml_lengthdir_zy(double len, double dir, double dirz);
+double gml_lengthdir_zz(double len, double dir, double dirz);
+
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
+
 #ifdef __cplusplus
 }
 #endif
