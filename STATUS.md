@@ -14,3 +14,4 @@
 - [x] Extended DnD Action Execution (`action_bounce`, `action_wrap`, `action_if_empty`, `action_if_dice`, `action_if_collision`, `action_if_variable`, `action_sprite_set`)
 - [x] Self-parenting loop safety in event dispatcher
 - [x] 3-way C mirror tree synchronization (0 diffs across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
+- [x] GML AST & Bytecode Compiler Engine sync (`gm82_gml_parser`, `gm82_gml_ast_exec`, `gm82_gml_bytecode`, `gml_frontend`)
