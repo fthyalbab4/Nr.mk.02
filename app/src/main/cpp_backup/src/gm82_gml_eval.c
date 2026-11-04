@@ -244,6 +244,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "depth") == 0) { *out = s ? (double)s->depth : 0; return true; }
     if (strcmp(name, "visible") == 0) { *out = s ? (double)s->visible : 1; return true; }
     if (strcmp(name, "persistent") == 0) { *out = s ? (double)s->persistent : 0; return true; }
+    if (strcmp(name, "on_ground") == 0 || strcmp(name, "grounded") == 0) { *out = s ? (double)s->on_ground : 0; return true; }
+    if (strcmp(name, "on_ceiling") == 0) { *out = s ? (double)s->on_ceiling : 0; return true; }
+    if (strcmp(name, "hit_left") == 0) { *out = s ? (double)s->hit_left : 0; return true; }
+    if (strcmp(name, "hit_right") == 0) { *out = s ? (double)s->hit_right : 0; return true; }
     if (strcmp(name, "view_xview") == 0) { *out = p->rt ? (double)p->rt->view_x : 0; return true; }
     if (strcmp(name, "view_yview") == 0) { *out = p->rt ? (double)p->rt->view_y : 0; return true; }
     if (strcmp(name, "view_wview") == 0) { *out = p->rt ? (double)p->rt->view_w : 640; return true; }
@@ -2468,7 +2472,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             const char *a = (p->str_mask & 1) ? p->str_args[0] : "";
             const char *b = (p->str_mask & 2) ? p->str_args[1] : "";
             char tmp[256];
-            snprintf(tmp, sizeof(tmp), "%s%s", a, b);
+            snprintf(tmp, sizeof(tmp), "%.127s%.127s", a, b);
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }

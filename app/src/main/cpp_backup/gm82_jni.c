@@ -109,6 +109,7 @@ typedef struct {
 
 /* --- Global Native State --- */
 static int g_runtime_active = 0;
+static int g_runtime_initialized = 0;
 static int g_current_room = 0;
 static int g_room_w = 640;
 static int g_room_h = 480;
@@ -221,11 +222,14 @@ static char *g_token_ctx = NULL;
 /* --- Native Runtime Lifecycle --- */
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeCreate(JNIEnv *env, jclass clazz, jint width, jint height) {
+    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
+    g_runtime_initialized = 0;
     g_runtime_active = 1;
     g_room_w = width > 0 ? width : 640;
     g_room_h = height > 0 ? height : 480;
     g_instance_count = 0;
     gm82_runtime_init(&g_engine_rt);
+    g_runtime_initialized = 1;
     g_engine_rt.room_width = g_room_w;
     g_engine_rt.room_height = g_room_h;
     g_engine_rt.running = 1;
@@ -237,6 +241,8 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeCreate(JNIEnv *env, jclas
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeDestroy(JNIEnv *env, jclass clazz) {
+    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
+    g_runtime_initialized = 0;
     free_native_bitmaps(); free_native_scripts();
     g_runtime_active = 0;
     g_instance_count = 0;
@@ -1031,6 +1037,9 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     jbyte *data = (*env)->GetByteArrayElements(env, bytes, NULL);
     if (!data) return (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"memory_error\"}");
 
+    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
+    g_runtime_initialized = 0;
+
     if (g_engine_loaded) {
         gm82_decoded_sprite_list_free(&g_engine_sprites);
         gm82_decoded_background_list_free(&g_engine_bgs);
@@ -1068,6 +1077,7 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     (*env)->ReleaseByteArrayElements(env, bytes, data, JNI_ABORT);
 
     gm82_runtime_init(&g_engine_rt);
+    g_runtime_initialized = 1;
     gm82_runtime_bind_assets(&g_engine_rt,
         &g_engine_objs,
         &g_engine_sprites,

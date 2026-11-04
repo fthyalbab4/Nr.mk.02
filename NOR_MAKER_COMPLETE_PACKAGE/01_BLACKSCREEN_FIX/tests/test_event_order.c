@@ -1,5 +1,7 @@
 #include "gm82_runtime.h"
 #include "gm82_events.h"
+#include "gm82_gml_eval.h"
+#include "gm82_gml_builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -113,11 +115,49 @@ static void test_depth_sorting_order(void) {
     printf("  Depth sorting order test PASS\n");
 }
 
+static void test_collision_context_and_with(void) {
+    printf("Testing collision self/other context and with() snapshot...\n");
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    rt.running = 1;
+    gm82_decoded_object_list objects;
+    gm82_decoded_object_list_init(&objects);
+    objects.count = 2;
+    objects.items = (gm82_decoded_object *)calloc(2, sizeof(gm82_decoded_object));
+    snprintf(objects.items[0].name, sizeof(objects.items[0].name), "obj_mario");
+    snprintf(objects.items[1].name, sizeof(objects.items[1].name), "obj_goomba");
+    objects.items[0].event_count = 1;
+    objects.items[0].events[0].main_type = GM82_EV_COLLISION;
+    objects.items[0].events[0].event_numb = 1;
+    const char *collision_code = "other.x += 5; x += other.id - self.id;";
+    size_t collision_code_len = strlen(collision_code) + 1;
+    objects.items[0].events[0].code_snippet = (char *)malloc(collision_code_len);
+    assert(objects.items[0].events[0].code_snippet != NULL);
+    memcpy(objects.items[0].events[0].code_snippet, collision_code, collision_code_len);
+    gm82_runtime_bind_assets(&rt, &objects, NULL, NULL, NULL, NULL);
+    gm82_instance *mario = gm82_runtime_instance_create(&rt, 0, 10, 10);
+    gm82_instance *goomba = gm82_runtime_instance_create(&rt, 1, 20, 20);
+    assert(mario && goomba);
+    gm82_gml_set_other(mario);
+    double goomba_x = goomba->x;
+    gm82_events_fire_collision(&rt, mario, goomba);
+    assert(goomba->x == goomba_x + 5.0);
+    assert(mario->x == 10.0 + (double)(goomba->id - mario->id));
+    assert(gm82_gml_get_other() == mario);
+    assert(gm82_gml_eval_stmt(&rt, mario, "with (1) { x += 3; }") == true);
+    assert(goomba->x == goomba_x + 8.0);
+    assert(gm82_gml_get_self() == mario);
+    gm82_decoded_object_list_free(&objects);
+    gm82_runtime_cleanup(&rt);
+    printf("  Collision context and with() test PASS\n");
+}
+
 int main(void) {
     printf("=== RUNNING EVENT ORDER AND LIFECYCLE TESTS ===\n");
     test_event_loop_order();
     test_instance_pool_midframe_lifecycle();
     test_depth_sorting_order();
+    test_collision_context_and_with();
     printf("ALL_EVENT_ORDER_TESTS_PASS\n");
     return 0;
 }

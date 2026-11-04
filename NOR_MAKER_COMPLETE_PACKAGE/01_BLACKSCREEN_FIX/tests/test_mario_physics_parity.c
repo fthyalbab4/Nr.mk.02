@@ -76,7 +76,21 @@ int main(void) {
     /* Player should hit floor solid top and vspeed set to 0 */
     assert(player->y <= 200.0);
     assert(player->vspeed == 0.0);
+    assert(player->on_ground == 1);
     printf("  [PASS] Solid collision floor landing: y=%.2f, vspeed=%.2f\n", player->y, player->vspeed);
+
+    printf("Testing ceiling and wall contact state...\n");
+    player->x = 100.0; player->y = 200.0; player->vspeed = -10.0;
+    floor->x = 100.0; floor->y = 180.0;
+    gm82_runtime_step(&rt);
+    assert(player->on_ceiling == 1);
+    assert(player->vspeed == 0.0);
+    floor->x = 130.0; floor->y = 220.0;
+    player->x = 100.0; player->y = 220.0; player->hspeed = 40.0; player->vspeed = 0.0;
+    gm82_runtime_step(&rt);
+    assert(player->hit_right == 1);
+    assert(player->hspeed == 0.0);
+    printf("  [PASS] Axis-separated ceiling/wall resolution\n");
 
     free(objs.items);
     printf("ALL_MARIO_PHYSICS_PARITY_TESTS_PASS\n");
