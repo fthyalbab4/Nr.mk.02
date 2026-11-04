@@ -1,0 +1,18 @@
+name: apply-core-stubs-batch3
+on:
+  workflow_dispatch:
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply core stubs batch3
+        run: |
+          python3 tools/apply_core_stubs_batch3.py
+          git config user.name "nor-bot"
+          git config user.email "nor-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "core: clear GM82CORE stubs batch3 (ds_bag/ds_list/bigchoose/events)"
+          git push
