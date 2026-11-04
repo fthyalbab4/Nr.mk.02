@@ -106,8 +106,7 @@ typedef enum {
     GM82_BC_JUMP_IF_FALSE,
     GM82_BC_REPEAT_INIT,
     GM82_BC_REPEAT_NEXT,
-    GM82_BC_RETURN,
-    GM82_BC_REPEAT_BREAK
+    GM82_BC_RETURN
 } gm82_gml_bc_opcode;
 
 typedef struct {
