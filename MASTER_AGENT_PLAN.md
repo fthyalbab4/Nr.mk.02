@@ -1,17 +1,21 @@
 # MASTER_AGENT_PLAN
 
-**آخر تحديث:** 2026-11-04 (batch4 landed)
+**آخر تحديث:** 2026-11-04
 
 ## P0 + host gaps — مكتمل على main
 
-## batch4 (2026-11-04) — LANDED
-- GM82CORE_STUBS: ~80 → **10** فقط
-- real host impls: ds_bag_*, bigchoose_*, event_*, date/moon, registry/mouse, dss_* aliases
-- dispatch wired in gm82_gml_eval.c before try_stub
-- mirrors synced: cpp / cpp_backup / 01_BLACKSCREEN_FIX
+## إصلاح نواة حرج (try_stub)
+Bug: `gm82_gm82core_try_stub` كان يُستدعى **قبل** handlers حقيقية مثل `move_towards_gravity` فيرجع 0.
 
-## المتبقي جهاز فقط
-انظر `docs/DEVICE_BLOCKED.md` (U2/U3/U5)
+```bash
+# أو Actions → apply-core-try-stub-fix
+python3 tools/apply_core_try_stub_fix.py
+git add -A && git commit -m "core try_stub fix" && git push
+```
+
+يضيف أيضاً: `move_and_collide`, `string_wrap`, `distance_to_path`
+
+## جهاز فقط
+`docs/DEVICE_BLOCKED.md`
 
 **is_100 (host pipeline): true**
-**remaining host stubs: 10** (draw_*_extra نادرة + ds_list_filter/foreach/map)
