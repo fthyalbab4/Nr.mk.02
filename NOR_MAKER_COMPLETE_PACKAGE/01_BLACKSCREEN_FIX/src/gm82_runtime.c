@@ -178,7 +178,11 @@ void gm82_runtime_flush_destroy_queue(gm82_runtime *rt) {
 
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst) {
     if (!inst || !inst->alive) return;
-    if (rt && rt->frame_phase >= 1 && rt->frame_phase <= 7) {
+    /* GameMaker defers instance destruction until the current event phase is
+       complete.  This is important for Step/Draw: event code may destroy an
+       instance while the active snapshot is still being traversed. */
+    if (rt && rt->frame_phase >= GM82_PHASE_BEGIN_STEP &&
+        rt->frame_phase <= GM82_PHASE_POST_DRAW) {
         if (rt->destroy_queue_count < GM82_MAX_INSTANCES) {
             int dup = 0;
             for (int i = 0; i < rt->destroy_queue_count; i++)
@@ -383,10 +387,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
         rt->instances[i].hit_right = 0;
     }
 
-    rt->frame_phase = 1;
+    rt->frame_phase = GM82_PHASE_BEGIN_STEP;
     gm82_events_fire_begin_step_all(rt);
-    rt->frame_phase = 2;
 
+    rt->frame_phase = GM82_PHASE_ALARM;
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -399,19 +403,26 @@ void gm82_runtime_step(gm82_runtime *rt) {
                     gm82_events_fire_alarm(rt, inst, a);
                     if (rt->actions && inst->alive)
                         gm82_actions_fire_alarm(rt, inst, rt->actions, a);
-                    if (rt->current_room != room_before) return;
+                    if (rt->current_room != room_before) {
+                        /* A room transition aborts the rest of this frame,
+                           but must not leave the runtime stuck in Alarm. */
+                        rt->frame_phase = GM82_PHASE_IDLE;
+                        return;
+                    }
                 }
             }
         }
     }
 
+    rt->frame_phase = GM82_PHASE_INPUT;
     gm82_events_fire_keyboard_all(rt);
     gm82_events_fire_keypress_all(rt);
     gm82_events_fire_keyrelease_all(rt);
     gm82_events_fire_mouse_all(rt);
-    rt->frame_phase = 3;
+    rt->frame_phase = GM82_PHASE_STEP;
     gm82_events_fire_step_all(rt);
 
+    rt->frame_phase = GM82_PHASE_MOTION_COLLISION;
     const int n_move = rt->instance_count;
     for (int i = 0; i < n_move; i++) {
         gm82_instance *inst = &rt->instances[i];
@@ -553,12 +564,13 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    rt->frame_phase = GM82_PHASE_END_STEP;
     gm82_events_fire_end_step_all(rt);
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
     gm82_events_fire_animation_end_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
-    rt->frame_phase = 0;
+    rt->frame_phase = GM82_PHASE_IDLE;
 }
 
 static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int sh, int dx, int dy) {
