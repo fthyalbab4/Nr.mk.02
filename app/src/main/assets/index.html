@@ -98018,7 +98018,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                     srcDoc: content,
                     className: "w-full h-full border-none select-none z-10",
                     title: "Game Engine",
-                    sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
+                    sandbox: "allow-scripts allow-modals allow-pointer-lock",
                     tabIndex: 0
                   }),
                   /* CRT Scanlines */
@@ -154878,6 +154878,15 @@ button, input, textarea, select {
           if (cards.length > 0) {
             e.preventDefault();
             cards[cards.length - 1].focus();
+          }
+        } else if (e.key === "PageDown" || e.key === "PageUp") {
+          const cards = Array.from(grid.querySelectorAll(".gmk-cloud-card"));
+          const currentIndex = cards.indexOf(card);
+          if (currentIndex !== -1 && cards.length > 0) {
+            e.preventDefault();
+            const step = e.key === "PageDown" ? 10 : -10;
+            const targetIndex = Math.max(0, Math.min(cards.length - 1, currentIndex + step));
+            cards[targetIndex].focus();
           }
         }
       };

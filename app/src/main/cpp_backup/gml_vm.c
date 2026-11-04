@@ -642,6 +642,21 @@ static gml_value eval(gml_vm *vm, const gml_ast *n) {
         }
         case GML_AST_ASSIGN: {
             gml_value r = eval(vm, n->right);
+            if (n->op != GML_T_NONE) {
+                gml_value current = eval(vm, n->left);
+                double x = num(current), y = num(r), z = x;
+                switch (n->op) {
+                    case GML_T_PLUS: z = x + y; break;
+                    case GML_T_MINUS: z = x - y; break;
+                    case GML_T_STAR: z = x * y; break;
+                    case GML_T_SLASH: z = y == 0.0 ? 0.0 : x / y; break;
+                    case GML_T_PERCENT: z = fmod(x, y); break;
+                    default: break;
+                }
+                gml_value_free(&r);
+                r = gml_value_real(z);
+                gml_value_free(&current);
+            }
             if (n->left && n->left->kind == GML_AST_NAME) {
                 gml_vm_set(vm, n->left->text, r);
             } else if (n->left && n->left->kind == GML_AST_MEMBER && n->left->left && n->left->left->kind == GML_AST_NAME && !strcmp(n->left->left->text, "self")) {

@@ -163,6 +163,7 @@ static gm82_gml_ast *unary(gm82_gml_parser *p) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *n = node(GM82_AST_UNARY, &t); if (!n) return NULL;
         n->text = word_not ? copy_text("!") : copy_text(gm82_gml_token_kind_name(t.kind));
         n->a = unary(p); if (!n->a) { gm82_gml_ast_free(n); return NULL; } return n;
+        n->text = copy_text(word_not ? "!" : gm82_gml_token_kind_name(t.kind)); n->a = unary(p); if (!n->a) { gm82_gml_ast_free(n); return NULL; } return n;
     }
     return primary(p);
 }
@@ -198,6 +199,8 @@ static gm82_gml_ast *logic(gm82_gml_parser *p) {
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
         n->text = is_and ? copy_text("&&") : copy_text("||");
         n->a = left; n->b = right; left = n;
+        const char *op_repr = (t.kind == GM82_TOK_IDENTIFIER) ? (!strcmp(t.text, "and") ? "&&" : "||") : gm82_gml_token_kind_name(t.kind);
+        n->text = copy_text(op_repr); n->a = left; n->b = right; left = n;
     }
     return left;
 }
