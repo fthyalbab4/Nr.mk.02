@@ -1,0 +1,17 @@
+name: apply-stubs-shrink
+on:
+  workflow_dispatch:
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: apply shrink
+        run: python3 tools/apply_stubs_shrink.py
+      - name: commit
+        run: |
+          git config user.name "batch4-bot"
+          git config user.email "bot@normaker.local"
+          git add -A
+          git diff --cached --quiet || git commit -m "batch4: shrink GM82CORE_STUBS to residual 10"
+          git push

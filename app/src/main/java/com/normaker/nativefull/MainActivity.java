@@ -1066,6 +1066,10 @@ public class MainActivity extends Activity {
             });
         }
         @JavascriptInterface public void step(float delta) { synchronized (nativeLock) { nativeRuntimeStep(delta); drainNativeSoundCommands(); } }
+        /** Inject keyboard state from WebView / NES on-screen controls (vk = Windows VK code). */
+        @JavascriptInterface public void keyDown(int vk) { synchronized (nativeLock) { nativeRuntimeKey(vk, true); } }
+        @JavascriptInterface public void keyUp(int vk) { synchronized (nativeLock) { nativeRuntimeKey(vk, false); } }
+        @JavascriptInterface public void key(int vk, boolean down) { synchronized (nativeLock) { nativeRuntimeKey(vk, down); } }
         @JavascriptInterface public boolean registerSound(int soundId, String path) { return registerSoundResource(soundId, path); }
         @JavascriptInterface public void clearSounds() { clearSoundResources(); }
         @JavascriptInterface public String snapshot() { synchronized (nativeLock) { return nativeRuntimeSnapshotJson(); } }

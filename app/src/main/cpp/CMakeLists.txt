@@ -24,6 +24,9 @@ add_library(
     ${GM82_SOURCES}
 )
 
+# batch4: intercept try_stub for 0-arg host impls; multi-arg needs eval dispatch
+target_link_options(gm82_android PRIVATE "LINKER:--wrap=gm82_gm82core_try_stub")
+
 find_library(log-lib log)
 find_library(jnigraphics-lib jnigraphics)
 find_library(z-lib z)
