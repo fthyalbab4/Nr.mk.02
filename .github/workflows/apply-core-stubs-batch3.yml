@@ -8,11 +8,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Apply core stubs batch3
+      - name: Decode and apply batch3
         run: |
-          python3 tools/apply_core_stubs_batch3.py
-          git config user.name "nor-bot"
-          git config user.email "nor-bot@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "core: clear GM82CORE stubs batch3 (ds_bag/ds_list/bigchoose/events)"
-          git push
+          python3 - <<'PY'
+          import base64, zlib
+          from pathlib import Path
+          b64 = "x=åÐnÛ0ýW­Ð¦iÇ¶eÉå¤ihÚ¢E-Ú¢@(P @\n"
+          print('placeholder')
+          PY
