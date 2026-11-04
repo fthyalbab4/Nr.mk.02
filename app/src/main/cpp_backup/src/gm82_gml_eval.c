@@ -2607,6 +2607,46 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_distance_to_path(nargs>=1?args[0]:0);
             return true;
         }
+        if (strcmp(id, "code_compile") == 0) {
+            *out = gml_code_compile((p->str_mask & 1) ? p->str_args[0] : "");
+            return true;
+        }
+        if (strcmp(id, "code_execute") == 0) { *out = gml_code_execute(arg); return true; }
+        if (strcmp(id, "code_exists") == 0) { *out = gml_code_exists(arg); return true; }
+        if (strcmp(id, "code_destroy") == 0) { *out = gml_code_destroy(arg); return true; }
+        if (strcmp(id, "code_get_argcount") == 0) { *out = gml_code_get_argcount(arg); return true; }
+        if (strcmp(id, "code_return") == 0) { *out = gml_code_return(arg); return true; }
+        if (strcmp(id, "event_inherit_object") == 0) { *out = gml_event_inherit_object(); return true; }
+        if (strcmp(id, "keyboard_get_keyname") == 0) { *out = gml_keyboard_get_keyname(arg); return true; }
+        if (strcmp(id, "path_get_width") == 0) { *out = gml_path_get_width(arg); return true; }
+        if (strcmp(id, "path_get_height") == 0) { *out = gml_path_get_height(arg); return true; }
+        if (strcmp(id, "path_get_approximate_pos") == 0) {
+            *out = gml_path_get_approximate_pos(arg, nargs>=2?args[1]:0, nargs>=3?args[2]:0);
+            return true;
+        }
+        if (strcmp(id, "string_justify") == 0) {
+            *out = gml_string_justify((p->str_mask & 1) ? p->str_args[0] : "", nargs>=2?args[1]:0);
+            return true;
+        }
+        if (strcmp(id, "string_replace_many") == 0) {
+            *out = gml_string_replace_many(
+                (p->str_mask & 1) ? p->str_args[0] : "",
+                (p->str_mask & 2) ? p->str_args[1] : "",
+                (p->str_mask & 4) ? p->str_args[2] : "");
+            return true;
+        }
+        if (strcmp(id, "match_any") == 0 || strcmp(id, "match_some") == 0) {
+            *out = gml_match_any(arg, nargs>=2?args[1]:0); return true;
+        }
+        if (strcmp(id, "match_exact") == 0) { *out = gml_match_exact(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "match_found") == 0) { *out = gml_match_found(); return true; }
+        if (strcmp(id, "match_not_any") == 0 || strcmp(id, "match_not_some") == 0) {
+            *out = gml_match_not_any(arg, nargs>=2?args[1]:0); return true;
+        }
+        if (strcmp(id, "match_not_exact") == 0) { *out = gml_match_not_exact(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "mouse_in_window") == 0) { *out = gml_mouse_in_window(); return true; }
+        if (strcmp(id, "extension_detect") == 0) { *out = gml_extension_detect(); return true; }
+        if (strcmp(id, "get_frametime_usage") == 0) { *out = gml_get_frametime_usage(); return true; }
         if (gm82_gm82core_try_stub(id, out)) return true;
 
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);

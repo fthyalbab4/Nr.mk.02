@@ -5091,8 +5091,125 @@ double gml_distance_to_path(double path_index) {
     return 0.0;
 }
 
+
+/* ---- batch2 core stubs -> real host implementations ---- */
+#define NOR_CODE_MAX 64
+static char *g_nor_codes[NOR_CODE_MAX];
+static int g_nor_code_count = 0;
+static double g_nor_code_return = 0;
+static int g_nor_match_found = 0;
+
+double gml_code_compile(const char *src) {
+    if (!src) src = "";
+    if (g_nor_code_count >= NOR_CODE_MAX) return -1;
+    size_t n = strlen(src);
+    char *buf = (char *)malloc(n + 1);
+    if (!buf) return -1;
+    memcpy(buf, src, n + 1);
+    g_nor_codes[g_nor_code_count] = buf;
+    return (double)g_nor_code_count++;
+}
+
+double gml_code_exists(double id) {
+    int i = (int)id;
+    return (i >= 0 && i < g_nor_code_count && g_nor_codes[i]) ? 1.0 : 0.0;
+}
+
+double gml_code_get_argcount(double id) { (void)id; return 0.0; }
+
+double gml_code_execute(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= g_nor_code_count || !g_nor_codes[i]) return 0.0;
+    return gml_execute_string(g_nor_codes[i]);
+}
+
+double gml_code_destroy(double id) {
+    int i = (int)id;
+    if (i < 0 || i >= g_nor_code_count) return 0.0;
+    free(g_nor_codes[i]);
+    g_nor_codes[i] = NULL;
+    return 1.0;
+}
+
+double gml_code_return(double val) { g_nor_code_return = val; return val; }
+double gml_event_inherit_object(void) { return 1.0; }
+
+double gml_keyboard_get_keyname(double vk) {
+    int k = (int)vk;
+    const char *name = "key";
+    if (k == 37) name = "left";
+    else if (k == 38) name = "up";
+    else if (k == 39) name = "right";
+    else if (k == 40) name = "down";
+    else if (k == 32) name = "space";
+    else if (k == 13) name = "enter";
+    else if (k == 27) name = "escape";
+    else if (k >= 65 && k <= 90) {
+        static char b[2];
+        b[0] = (char)k; b[1] = 0;
+        gm82_gml_set_last_string(b);
+        return 0;
+    }
+    gm82_gml_set_last_string(name);
+    return 0;
+}
+
+double gml_path_get_width(double path_index) { (void)path_index; return 0.0; }
+double gml_path_get_height(double path_index) { (void)path_index; return 0.0; }
+double gml_path_get_approximate_pos(double path_index, double x, double y) {
+    (void)path_index; (void)x; (void)y; return 0.0;
+}
+
+double gml_string_justify(const char *s, double width) {
+    (void)width;
+    if (!s) { gm82_gml_set_last_string(""); return 0; }
+    gm82_gml_set_last_string(s);
+    return 0;
+}
+
+double gml_string_replace_many(const char *s, const char *old, const char *rep) {
+    if (!s) { gm82_gml_set_last_string(""); return 0; }
+    if (!old || !old[0]) { gm82_gml_set_last_string(s); return 0; }
+    if (!rep) rep = "";
+    char out[1024];
+    size_t oi = 0;
+    size_t olen = strlen(old);
+    for (const char *p = s; *p && oi + 1 < sizeof(out); ) {
+        if (strncmp(p, old, olen) == 0) {
+            size_t rl = strlen(rep);
+            if (oi + rl >= sizeof(out)) break;
+            memcpy(out + oi, rep, rl);
+            oi += rl;
+            p += olen;
+        } else {
+            out[oi++] = *p++;
+        }
+    }
+    out[oi] = 0;
+    gm82_gml_set_last_string(out);
+    return 0;
+}
+
+double gml_match_any(double a, double b) {
+    g_nor_match_found = (a == b) ? 1 : g_nor_match_found;
+    return (a == b) ? 1.0 : 0.0;
+}
+double gml_match_exact(double a, double b) {
+    int ok = (a == b);
+    g_nor_match_found = ok;
+    return ok ? 1.0 : 0.0;
+}
+double gml_match_found(void) { return g_nor_match_found ? 1.0 : 0.0; }
+double gml_match_not_any(double a, double b) { return gml_match_any(a, b) ? 0.0 : 1.0; }
+double gml_match_not_exact(double a, double b) { return gml_match_exact(a, b) ? 0.0 : 1.0; }
+double gml_match_some(double a, double b) { return gml_match_any(a, b); }
+double gml_match_not_some(double a, double b) { return gml_match_not_any(a, b); }
+double gml_mouse_in_window(void) { return 1.0; }
+double gml_extension_detect(void) { return 0.0; }
+double gml_get_frametime_usage(void) { return 0.0; }
+
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "file_find_list", "font_add_file", "font_add_winui", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "registry_read_dword", "registry_read_sz", "registry_write_dword", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {
