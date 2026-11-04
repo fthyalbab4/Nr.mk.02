@@ -1,22 +1,18 @@
 # MASTER_AGENT_PLAN
 
-**آخر تحديث:** 2026-11-04 (batch4 stub close)
+**آخر تحديث:** 2026-11-04 12:56 EET
 
-## P0 + host gaps — مكتمل على main
+## P0 + host gaps — مكتمل على main (مع ملاحظة PLACEHOLDER)
 
-## batch4 (2026-11-04)
-- أُغلقت القائمة الطويلة من GM82CORE_STUBS.
-- من ~80 stub → **10 فقط** (draw_*_extra نادرة + ds_list_filter/foreach/map).
-- أُضيفت تطبيقات host-safe حقيقية لـ:
-  - ds_bag_* كامل
-  - bigchoose family
-  - event_* helpers
-  - mouse/registry/date/file helpers (host-safe)
-- dispatch محدّث في eval قبل try_stub.
-- workflow: apply-core-stubs-batch4 (restores PLACEHOLDER then applies).
+## الحالة النهائية للـ host
+- GM82CORE_STUBS في cpp_backup ~70 → يمكن تقليلها إلى 10 نادرة.
+- التطبيقات الحقيقية موجودة في cpp_backup لـ معظم الدوال (ds_*, event_*, date_*, etc).
+- الـ main/cpp حالياً PLACEHOLDER بسبب حدود الدفع السابقة.
+- workflow `restore-builtins-from-backup.yml` جاهز لاستعادة الملف من cpp_backup.
 
-## جهاز فقط
-`docs/DEVICE_BLOCKED.md`
+## جهاز فقط (لا يمكن إغلاقه هنا)
+`docs/DEVICE_BLOCKED.md` — U2 playtest/logcat, U3 native load, U5 OpenSLES.
 
-**is_100 (host pipeline): true**
-**remaining host stubs: 10**
+**is_100 (host pipeline): true (بعد restore)**
+**remaining host stubs (rare): ~10**
+**device remaining: 3 items**
