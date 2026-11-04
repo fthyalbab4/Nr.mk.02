@@ -1754,8 +1754,41 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "instance_place") == 0) {
             *out = gml_instance_place(args[0], args[1], args[2]); return true;
         }
+        if (strcmp(id, "instance_place_list") == 0) {
+            *out = gml_instance_place_list(args[0], args[1], args[2]); return true;
+        }
         if (strcmp(id, "instance_position") == 0) {
             *out = gml_instance_position(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "instance_position_list") == 0) {
+            *out = gml_instance_position_list(args[0], args[1], args[2]); return true;
+        }
+        if (strcmp(id, "path_get_point_x") == 0) {
+            *out = gml_path_get_point_x(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "path_get_point_y") == 0) {
+            *out = gml_path_get_point_y(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "path_get_point_speed") == 0) {
+            *out = gml_path_get_point_speed(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "path_get_closed") == 0) {
+            *out = gml_path_get_closed(arg); return true;
+        }
+        if (strcmp(id, "path_get_length") == 0) {
+            *out = gml_path_get_length(arg); return true;
+        }
+        if (strcmp(id, "path_get_width") == 0) {
+            *out = gml_path_get_width(arg); return true;
+        }
+        if (strcmp(id, "path_get_height") == 0) {
+            *out = gml_path_get_height(arg); return true;
+        }
+        if (strcmp(id, "path_add_point") == 0) {
+            *out = gml_path_add_point_ext(args[0], args[1], args[2], nargs >= 4 ? args[3] : 100.0); return true;
+        }
+        if (strcmp(id, "path_clear_points") == 0) {
+            *out = gml_path_clear_points(arg); return true;
         }
         if (strcmp(id, "move_contact_solid") == 0) {
             *out = gml_move_contact_solid(arg, nargs >= 2 ? args[1] : 1000); return true;

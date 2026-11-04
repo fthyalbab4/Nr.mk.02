@@ -67,6 +67,8 @@ double gml_string_digits(const char *src, char *dst, size_t max_len);
 double gml_place_meeting(double x, double y, double object_index);
 double gml_position_meeting(double x, double y, double object_index);
 double gml_instance_place(double x, double y, double object_index); /* returns id or -4 */
+double gml_instance_place_list(double x, double y, double object_index);
+double gml_instance_position_list(double x, double y, double object_index);
 
 /* ---- Drawing (records to soft framebuffer if set) ---- */
 void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h);
@@ -353,6 +355,15 @@ void gm82_path_bind(gm82_path_list *paths);
 double gml_path_start(double path_index, double speed, double end_action, double absolute);
 double gml_path_end(void);
 double gml_path_get_number(double ind);
+double gml_path_get_point_x(double ind, double n);
+double gml_path_get_point_y(double ind, double n);
+double gml_path_get_point_speed(double ind, double n);
+double gml_path_get_closed(double ind);
+double gml_path_get_length(double ind);
+double gml_path_get_width(double ind);
+double gml_path_get_height(double ind);
+double gml_path_add_point_ext(double ind, double x, double y, double speed);
+double gml_path_clear_points(double ind);
 void gm82_path_step_instance(gm82_instance *inst);
 void gm82_timeline_bind(gm82_timeline_list *tls);
 double gml_timeline_start(double timeline_index, double position, double step, double direction);

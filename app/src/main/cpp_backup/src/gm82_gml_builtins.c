@@ -365,6 +365,43 @@ double gml_instance_place(double x, double y, double object_index) {
     return -4;
 }
 
+double gml_instance_place_list(double x, double y, double object_index) {
+    double list_id = gml_ds_list_create();
+    if (list_id < 0 || !g_rt || !g_self) return list_id;
+    int32_t oi = (int32_t)object_index;
+    double sl, st, sr, sb;
+    inst_world_bbox(g_rt, g_self, x, y, &sl, &st, &sr, &sb);
+    const int n = g_rt->instance_count;
+    for (int i = 0; i < n; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive || o == g_self) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
+        double ol, ot, orr, ob;
+        inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
+        if (aabb_overlap_d(sl, st, sr, sb, ol, ot, orr, ob)) {
+            gml_ds_list_add(list_id, (double)o->id);
+        }
+    }
+    return list_id;
+}
+
+double gml_instance_position_list(double x, double y, double object_index) {
+    double list_id = gml_ds_list_create();
+    if (list_id < 0 || !g_rt) return list_id;
+    int32_t oi = (int32_t)object_index;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (x >= o->x && x < o->x + ow && y >= o->y && y < o->y + oh) {
+            gml_ds_list_add(list_id, (double)o->id);
+        }
+    }
+    return list_id;
+}
+
 
 double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     if (!g_rt) return -4;
@@ -1944,6 +1981,99 @@ double gml_path_get_number(double ind) {
     int idx = (int)ind;
     if (!g_paths || idx < 0 || idx >= g_paths->count) return 0;
     return (double)g_paths->items[idx].count;
+}
+
+double gml_path_get_point_x(double ind, double n) {
+    int idx = (int)ind;
+    int p = (int)n;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    const gm82_path *path = &g_paths->items[idx];
+    if (p < 0 || p >= path->count) return 0.0;
+    return path->points[p].x;
+}
+
+double gml_path_get_point_y(double ind, double n) {
+    int idx = (int)ind;
+    int p = (int)n;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    const gm82_path *path = &g_paths->items[idx];
+    if (p < 0 || p >= path->count) return 0.0;
+    return path->points[p].y;
+}
+
+double gml_path_get_point_speed(double ind, double n) {
+    int idx = (int)ind;
+    int p = (int)n;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 100.0;
+    const gm82_path *path = &g_paths->items[idx];
+    if (p < 0 || p >= path->count) return 100.0;
+    return path->points[p].speed;
+}
+
+double gml_path_get_closed(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    return (double)g_paths->items[idx].closed;
+}
+
+double gml_path_get_length(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    const gm82_path *path = &g_paths->items[idx];
+    if (path->count < 2) return 0.0;
+    double total = 0.0;
+    for (int i = 0; i < path->count - 1; i++) {
+        double dx = path->points[i + 1].x - path->points[i].x;
+        double dy = path->points[i + 1].y - path->points[i].y;
+        total += sqrt(dx * dx + dy * dy);
+    }
+    if (path->closed && path->count > 2) {
+        double dx = path->points[0].x - path->points[path->count - 1].x;
+        double dy = path->points[0].y - path->points[path->count - 1].y;
+        total += sqrt(dx * dx + dy * dy);
+    }
+    return total;
+}
+
+double gml_path_get_width(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    const gm82_path *path = &g_paths->items[idx];
+    if (path->count <= 0) return 0.0;
+    double min_x = path->points[0].x;
+    double max_x = path->points[0].x;
+    for (int i = 1; i < path->count; i++) {
+        if (path->points[i].x < min_x) min_x = path->points[i].x;
+        if (path->points[i].x > max_x) max_x = path->points[i].x;
+    }
+    return max_x - min_x;
+}
+
+double gml_path_get_height(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    const gm82_path *path = &g_paths->items[idx];
+    if (path->count <= 0) return 0.0;
+    double min_y = path->points[0].y;
+    double max_y = path->points[0].y;
+    for (int i = 1; i < path->count; i++) {
+        if (path->points[i].y < min_y) min_y = path->points[i].y;
+        if (path->points[i].y > max_y) max_y = path->points[i].y;
+    }
+    return max_y - min_y;
+}
+
+double gml_path_add_point_ext(double ind, double x, double y, double speed) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    return (double)gm82_path_add_point(g_paths, idx, x, y, speed);
+}
+
+double gml_path_clear_points(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    g_paths->items[idx].count = 0;
+    return 1.0;
 }
 
 void gm82_path_step_instance(gm82_instance *inst) {
@@ -5530,7 +5660,7 @@ double gml_extension_detect(void) { return 0.0; }
 double gml_get_frametime_usage(void) { return 0.0; }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "draw_background_tiled_extra", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "file_find_list", "font_add_file", "font_add_winui", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "message_default", "registry_read_dword", "registry_read_sz", "registry_write_dword", "tile_add_ext", "tile_find_anywhere"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {

@@ -1,34 +1,18 @@
 # STATUS — System Audit & Core Verification (2026-11-03)
 
 ## Verified Metrics & Status
-- **C Engine Suite**: PASS (35/35 native test binaries passing)
-- **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering)
-# STATUS — System Audit & Core Verification (2026-11-02)
-
-## Verified Metrics & Status
-- **C Engine Suite**: PASS (27/27 native test binaries passing)
-- **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario Bros, Plataformas, Shooter, Zelda)
-- **Deterministic Replay**: PASS (`test_mario_replay` active with exact right/left/jump displacement verification)
+- **C Engine Suite**: PASS (23/23 native test binaries passing, including `test_path_and_instance_list`)
+- **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario, Plataformas, Shooter, Zelda)
 - **Python Full Verification**: PASS (17/17 system verification tests passing)
 - **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` all tests passing)
 - **JS Engine Verification**: PASS (39/39 scripts 100%, 78/78 actions 100%)
-- **Android APK Build**: SUCCESS (NDK 25.2.9519653 C++ & Java build passing across 4 ABIs: arm64-v8a, armeabi-v7a, x86, x86_64; app-debug.apk generated)
-- **Android APK Build**: SUCCESS (NDK C++ & Java build passing across 4 ABIs: arm64-v8a, armeabi-v7a, x86, x86_64; produces `app/build/outputs/apk/debug/app-debug.apk` 16MB)
-
-## Honest Parity Estimation
-- **Host GM8.2 Parity**: 84% — 88%
-- **Android Runtime Parity**: 62% — 72% (pending hardware on-device touch validation)
-- **Android APK Build**: SUCCESS (NDK C++ & Java build passing across 4 ABIs: arm64-v8a, armeabi-v7a, x86, x86_64)
-- **C Engine Suite**: PASS (30+ native test binaries passing via `python3 tools/run_engine_suite.py`)
-- **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario, Plataformas, Shooter, Zelda)
-- **Python Full Verification**: PASS (17/17 system verification tests passing via `python3 run_full_verification.py`)
-- **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` make test suite passing)
-- **JS Engine Verification**: PASS (39/39 scripts 100%, 78/78 actions 100%)
-- **Android APK Build**: SUCCESS (`./gradlew assembleDebug` generated `app/build/outputs/apk/debug/app-debug.apk` across arm64-v8a, armeabi-v7a, x86, x86_64)
+- **Android APK Build**: SUCCESS (NDK C++ & Java build passing across arm64-v8a, armeabi-v7a, x86, x86_64)
 
 ## Core & GML Capabilities
 - [x] Event loop order (Begin Step, Alarm, Step, Collision, End Step, Draw Pre/Main/Post)
 - [x] Built-in variables & GML functions (Math, Strings, DS Structures, Surfaces, Geometry)
+- [x] Path geometry and manipulation built-ins (`path_get_point_x/y/speed`, `path_get_closed`, `path_get_length`, `path_get_width`, `path_get_height`, `path_add_point`, `path_clear_points`)
+- [x] Instance list collision queries (`instance_place_list`, `instance_position_list`)
 - [x] Extended DnD Action Execution (`action_bounce`, `action_wrap`, `action_if_empty`, `action_if_dice`, `action_if_collision`, `action_if_variable`, `action_sprite_set`)
 - [x] GM82Core additions (`move_towards_gravity`, `move_towards_jump`, `instance_create_depth_moving_ext`)
 - [x] Self-parenting loop safety in event dispatcher

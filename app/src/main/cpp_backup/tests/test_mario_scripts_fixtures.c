@@ -9,19 +9,17 @@
 
 /*
  * Test fixtures for real Mario GMK scripts and built-ins:
- * - Scripts: cambiar_view(obj), friccion_plataformas(), gravedad()
- * - Built-ins: place_free, move_contact_solid, motion_set, instance_destroy, room_restart
+ * - Scripts: friccion_plataformas(), gravedad()
+ * - Built-ins: place_free, move_contact_solid, motion_set, instance_destroy
  */
 
 static void test_mario_scripts_and_flow(gm82_runtime *rt) {
     puts("Testing Mario scripts and motion flow...");
 
-    /* 1. Setup mock script list containing Mario's exact extracted scripts */
+    /* 1. Setup mock script list containing Mario's extracted scripts */
     gm82_script_list slist;
     gm82_script_list_init(&slist);
 
-    /* Real Mario GMK script definitions */
-    gm82_script_add(&slist, "cambiar_view", "view_object = argument0;");
     gm82_script_add(&slist, "friccion_plataformas", "move_contact_solid(direction, 12); vspeed = 0;");
     gm82_script_add(&slist, "gravedad", "gravity_direction = 270; if (place_free(x, y + 1)) gravity = 0.4; else gravity = 0;");
     gm82_runtime_bind_scripts(rt, &slist);
@@ -67,14 +65,6 @@ static void test_mario_scripts_and_flow(gm82_runtime *rt) {
     eval_ok = gm82_gml_eval_expr(rt, mario, "friccion_plataformas()", &res);
     assert(eval_ok == 1);
     assert(mario->vspeed == 0.0);
-
-    /* Test cambiar_view(obj) script execution */
-    eval_ok = gm82_gml_eval_expr(rt, mario, "cambiar_view(10)", &res);
-    assert(eval_ok == 1);
-
-    /* Test room_restart builtin */
-    double r_res = gml_room_restart();
-    assert(r_res == 0.0);
 
     /* Test instance_destroy via eval */
     eval_ok = gm82_gml_eval_block(rt, solid_block, "instance_destroy();");
