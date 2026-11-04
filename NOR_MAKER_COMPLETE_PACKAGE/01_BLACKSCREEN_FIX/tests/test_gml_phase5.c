@@ -118,6 +118,30 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "lerp_angle(350, 10, 0.5)", &val));
     assert(fabs(val - 0.0) < 1e-6);
 
+    assert(gml_in_range(5.0, 0.0, 10.0) == 1.0);
+    assert(gml_in_range(15.0, 0.0, 10.0) == 0.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "in_range(5, 0, 10)", &val) && val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "in_range(15, 0, 10)", &val) && val == 0.0);
+
+    assert(gml_range_collision(0, 10, 5, 15) == 1.0);
+    assert(gml_range_collision(0, 5, 10, 15) == 0.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "range_collision(0, 10, 5, 15)", &val) && val == 1.0);
+
+    double packed = gml_pack_bools(0, 0, 0, 0, 0, 0, 1, 1);
+    assert(packed == 3.0);
+    assert(gml_unpack_bool(packed, 0) == 1.0);
+    assert(gml_unpack_bool(packed, 1) == 1.0);
+    assert(gml_unpack_bool(packed, 2) == 0.0);
+
+    double pt_lerp = gml_point_line_lerp(50, 0, 0, 0, 100, 0, 1);
+    assert(fabs(pt_lerp - 0.5) < 1e-6);
+
+    double inter = gml_lines_intersect(0, 0, 100, 100, 0, 100, 100, 0, 1);
+    assert(inter > 0.0);
+
+    double diff3d = gml_angle_difference_3d(1, 0, 0, 0, 1, 0);
+    assert(fabs(diff3d - 90.0) < 1e-3);
+
     puts("test_math_builtins_and_eval PASS");
 }
 

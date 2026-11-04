@@ -17,7 +17,7 @@ typedef struct {
     gm82_runtime *rt;
     gm82_instance *self;
     char err[128];
-    char str_args[8][256];
+    char str_args[16][256];
     int str_mask;
 } gml_parser;
 
@@ -486,15 +486,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = 0;
         return true;
     }
-    /* function call? collect up to 8 args */
+    /* function call? collect up to 16 args */
     if (match(p, '(')) {
-        double args[8] = {0,0,0,0,0,0,0,0};
+        double args[16] = {0};
         int nargs = 0;
         p->str_mask = 0;
         memset(p->str_args, 0, sizeof(p->str_args));
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 8) return false;
+                if (nargs >= 16) return false;
                 skip_ws(p);
                 if (peek(p) == '"' || peek(p) == '\'') {
                     char quote = (char)peek(p);
@@ -651,6 +651,36 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "circle_in_circle") == 0) {
             *out = gml_circle_in_circle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "in_range") == 0) {
+            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "range_collision") == 0) {
+            *out = gml_range_collision(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0); return true;
+        }
+        if (strcmp(id, "pack_bools") == 0) {
+            *out = gml_pack_bools(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                  nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0, nargs >= 8 ? args[7] : 0);
+            return true;
+        }
+        if (strcmp(id, "unpack_bool") == 0) {
+            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "point_line_lerp") == 0) {
+            *out = gml_point_line_lerp(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 1);
+            return true;
+        }
+        if (strcmp(id, "lines_intersect") == 0) {
+            *out = gml_lines_intersect(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0, nargs >= 8 ? args[7] : 0,
+                                       nargs >= 9 ? args[8] : 1.0);
+            return true;
+        }
+        if (strcmp(id, "angle_difference_3d") == 0) {
+            *out = gml_angle_difference_3d(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
+                                           nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0);
+            return true;
         }
         if (strcmp(id, "clerp2") == 0) {
             *out = gml_clerp2(args[0], args[1], args[2], args[3], args[4]); return true;
@@ -2366,6 +2396,20 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "string_copy") == 0) {
             char tmp[256];
             gml_string_copy((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 1, nargs >= 3 ? args[2] : 0, tmp, sizeof(tmp));
+            snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
+            p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
+        }
+        if (strcmp(id, "string_replace_many") == 0) {
+            char tmp[256];
+            const char *src = (p->str_mask & 1) ? p->str_args[0] : "";
+            const char *w1 = (p->str_mask & 2) ? p->str_args[1] : "";
+            const char *r1 = (p->str_mask & 4) ? p->str_args[2] : "";
+            gml_string_replace_all(src, w1, r1, tmp, sizeof(tmp));
+            if ((p->str_mask & 8) && (p->str_mask & 16)) {
+                char tmp2[256];
+                gml_string_replace_all(tmp, p->str_args[3], p->str_args[4], tmp2, sizeof(tmp2));
+                snprintf(tmp, sizeof(tmp), "%s", tmp2);
+            }
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }

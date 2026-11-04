@@ -76,7 +76,7 @@ static int count_asset_dirs(const char *root, const char *group) {
     d = opendir(path);
     if (!d) return 0;
     while ((ent = readdir(d)) != NULL) {
-        char child[1200];
+        char child[1400];
         if (ent->d_name[0] == '.') continue;
         snprintf(child, sizeof(child), "%s/%s", path, ent->d_name);
         if (is_dir(child)) ++count;

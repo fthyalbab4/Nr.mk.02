@@ -4884,6 +4884,73 @@ double gml_ds_map_set(double id, double key, double value) {
     return gml_ds_map_add(id, key, value);
 }
 
+double gml_in_range(double val, double vmin, double vmax) {
+    return (val >= vmin && val <= vmax) ? 1.0 : 0.0;
+}
+
+double gml_range_collision(double a1, double a2, double b1, double b2) {
+    double max_a = a1 > a2 ? a1 : a2;
+    double min_a = a1 < a2 ? a1 : a2;
+    double max_b = b1 > b2 ? b1 : b2;
+    double min_b = b1 < b2 ? b1 : b2;
+    return (max_a > min_b && max_b > min_a) ? 1.0 : 0.0;
+}
+
+double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0) {
+    uint8_t res = (b7 >= 0.5 ? 128 : 0) |
+                  (b6 >= 0.5 ? 64 : 0) |
+                  (b5 >= 0.5 ? 32 : 0) |
+                  (b4 >= 0.5 ? 16 : 0) |
+                  (b3 >= 0.5 ? 8 : 0) |
+                  (b2 >= 0.5 ? 4 : 0) |
+                  (b1 >= 0.5 ? 2 : 0) |
+                  (b0 >= 0.5 ? 1 : 0);
+    return (double)res;
+}
+
+double gml_unpack_bool(double pbool, double which) {
+    uint8_t b = (uint8_t)pbool;
+    uint8_t w = (uint8_t)which;
+    return (w < 8 && (b & (1 << w))) ? 1.0 : 0.0;
+}
+
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double len_sq = dx * dx + dy * dy;
+    if (len_sq == 0.0) return 0.0;
+    double t = (dx * (px - x1) + dy * (py - y1)) / len_sq;
+    if (segment > 0.5) {
+        if (t < 0.0) t = 0.0;
+        if (t > 1.0) t = 1.0;
+    }
+    return t;
+}
+
+double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment) {
+    double ux = x2 - x1;
+    double uy = y2 - y1;
+    double vx = x4 - x3;
+    double vy = y4 - y3;
+    double wx = x1 - x3;
+    double wy = y1 - y3;
+    double ud = vy * ux - vx * uy;
+    if (ud == 0.0) return 0.0;
+    double ua = (vx * wy - vy * wx) / ud;
+    if (segment >= 0.5) {
+        double ub = (ux * wy - uy * wx) / ud;
+        if (ua < 0.0 || ua > 1.0 || ub < 0.0 || ub > 1.0) return 0.0;
+    }
+    return ua;
+}
+
+double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2) {
+    double d = gml_dot_product_3d_normalized(x1, y1, z1, x2, y2, z2);
+    if (d > 1.0) d = 1.0;
+    if (d < -1.0) d = -1.0;
+    return acos(d) * (180.0 / 3.14159265358979323846);
+}
+
 double gml_instance_create_depth(double x, double y, double depth,
                                  double object_index) {
     if (!g_rt || !isfinite(x) || !isfinite(y) || !isfinite(depth) ||
@@ -4956,7 +5023,7 @@ double gml_timeline_find_name(const char *name) {
 }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {

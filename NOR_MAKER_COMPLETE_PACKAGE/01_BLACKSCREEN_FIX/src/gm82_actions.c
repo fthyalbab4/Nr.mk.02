@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_gml_eval.h"
 #include "gm82_sound_runtime.h"
 #include <stdlib.h>
 #include <string.h>
@@ -18,19 +19,6 @@ static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
 }
 
-/* Studio/Web contract: 1 <, 2 <=, 3 ==, 4 !=, 5 >=, 6 >. */
-static int compare_action_values(double lhs, double rhs, int op) {
-    switch (op) {
-        case 1: return lhs < rhs;
-        case 2: return lhs <= rhs;
-        case 3: return lhs == rhs;
-        case 4: return lhs != rhs;
-        case 5: return lhs >= rhs;
-        case 6: return lhs > rhs;
-        case 0: return lhs == rhs; /* explicit legacy equality */
-        default: return 0;
-    }
-}
 
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol = 0;
@@ -88,7 +76,7 @@ static void add_action(gm82_object_actions *oa, int etype, int enumb, const char
     if (str_args && str_argc > 0) {
         int n = str_argc > 4 ? 4 : str_argc;
         for (int i = 0; i < n; i++)
-            strncpy(a->str_args[i], str_args[i], sizeof(a->str_args[i]) - 1);
+            snprintf(a->str_args[i], sizeof(a->str_args[i]), "%.127s", str_args[i]);
         a->str_argc = n;
     }
     if (name) strncpy(a->name, name, sizeof(a->name) - 1);
@@ -509,11 +497,20 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         return hit ? true : false;
     }
     if (strcmp(name, "action_if_variable") == 0) {
-        /* Canonical args: value, compare, op. */
-        double cur = (argc >= 1) ? (double)args[0] : 0.0;
-        double thr = (argc >= 2) ? (double)args[1] : 0.0;
-        int op = (argc >= 3) ? args[2] : 0;
-        return compare_action_values(cur, thr, op) ? true : false;
+        double v1 = 0.0, v2 = 0.0;
+        if (str_argc >= 1 && str_args[0][0]) gm82_gml_eval_expr(rt, self, str_args[0], &v1);
+        else if (argc >= 1) v1 = (double)args[0];
+        int op = (argc >= 2) ? args[1] : 0;
+        if (str_argc >= 2 && str_args[1][0]) gm82_gml_eval_expr(rt, self, str_args[1], &v2);
+        else if (argc >= 3) v2 = (double)args[2];
+        switch (op) {
+            case 1: return v1 < v2;
+            case 2: return v1 > v2;
+            case 3: return v1 <= v2;
+            case 4: return v1 >= v2;
+            case 5: return v1 != v2;
+            default: return v1 == v2;
+        }
     }
     if (strcmp(name, "action_if_mouse") == 0) {
         int btn = (argc >= 1) ? args[0] : 0;
