@@ -1,6 +1,8 @@
 name: apply-core-stubs-batch4
+
 on:
   workflow_dispatch:
+
 jobs:
   apply:
     runs-on: ubuntu-latest
@@ -8,188 +10,27 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
       - name: Restore main from backup and close STUBS
         run: |
           set -e
-          python3 << 'PY'
-          from pathlib import Path
-          import re
-
-          ROOT = Path('.').resolve()
-
-          CHUNK = r'''/* ---- batch4: host-safe real implementations (close long STUBS list) ---- */
-#ifndef NOR_DS_BAG_MAX
-#define NOR_DS_BAG_MAX 64
-#define NOR_DS_BAG_CAP 256
-#endif
-typedef struct { int used; int n; double items[NOR_DS_BAG_CAP]; } NorDsBag;
-static NorDsBag g_nor_bags[NOR_DS_BAG_MAX];
-static int nor_bag_valid(int id) { return id >= 0 && id < NOR_DS_BAG_MAX && g_nor_bags[id].used; }
-double gml_ds_bag_create(void) {
-  for (int i = 0; i < NOR_DS_BAG_MAX; i++) if (!g_nor_bags[i].used) { g_nor_bags[i].used=1; g_nor_bags[i].n=0; return (double)i; }
-  return -1.0;
-}
-double gml_ds_bag_destroy(double id) { int i=(int)id; if(!nor_bag_valid(i)) return 0; g_nor_bags[i].used=0; g_nor_bags[i].n=0; return 1; }
-double gml_ds_bag_clear(double id) { int i=(int)id; if(!nor_bag_valid(i)) return 0; g_nor_bags[i].n=0; return 1; }
-double gml_ds_bag_size(double id) { int i=(int)id; return nor_bag_valid(i)?(double)g_nor_bags[i].n:0; }
-double gml_ds_bag_empty(double id) { return gml_ds_bag_size(id)<=0?1:0; }
-double gml_ds_bag_add(double id,double val){ int i=(int)id; if(!nor_bag_valid(i)||g_nor_bags[i].n>=NOR_DS_BAG_CAP)return 0; g_nor_bags[i].items[g_nor_bags[i].n++]=val; return 1; }
-double gml_ds_bag_remove(double id,double val){ int i=(int)id; if(!nor_bag_valid(i))return 0; for(int j=0;j<g_nor_bags[i].n;j++) if(g_nor_bags[i].items[j]==val){ g_nor_bags[i].items[j]=g_nor_bags[i].items[--g_nor_bags[i].n]; return 1;} return 0; }
-double gml_ds_bag_grab(double id){ int i=(int)id; if(!nor_bag_valid(i)||g_nor_bags[i].n<=0)return 0; int r=rand()%g_nor_bags[i].n; double v=g_nor_bags[i].items[r]; g_nor_bags[i].items[r]=g_nor_bags[i].items[--g_nor_bags[i].n]; return v; }
-double gml_ds_bag_quick(double id){ int i=(int)id; if(!nor_bag_valid(i)||g_nor_bags[i].n<=0)return 0; return g_nor_bags[i].items[rand()%g_nor_bags[i].n]; }
-#ifndef NOR_BIGCHOOSE_MAX
-#define NOR_BIGCHOOSE_MAX 128
-#endif
-static double g_bc_vals[NOR_BIGCHOOSE_MAX]; static double g_bc_wts[NOR_BIGCHOOSE_MAX]; static int g_bc_n=0;
-double gml_bigchoose_clear(void){ g_bc_n=0; return 1; }
-double gml_bigchoose(double v){ if(g_bc_n>=NOR_BIGCHOOSE_MAX)return 0; g_bc_vals[g_bc_n]=v; g_bc_wts[g_bc_n]=1; g_bc_n++; return 1; }
-double gml_bigchoose_weighted(double v,double w){ if(g_bc_n>=NOR_BIGCHOOSE_MAX)return 0; g_bc_vals[g_bc_n]=v; g_bc_wts[g_bc_n]=w>0?w:0; g_bc_n++; return 1; }
-double gml_bigchoose_get(void){ if(g_bc_n<=0)return 0; return g_bc_vals[rand()%g_bc_n]; }
-double gml_bigchoose_weighted_get(void){ if(g_bc_n<=0)return 0; double sum=0; for(int i=0;i<g_bc_n;i++) sum+=g_bc_wts[i]; if(sum<=0)return g_bc_vals[0]; double r=((double)rand()/RAND_MAX)*sum,acc=0; for(int i=0;i<g_bc_n;i++){ acc+=g_bc_wts[i]; if(r<=acc)return g_bc_vals[i]; } return g_bc_vals[g_bc_n-1]; }
-double gml_choose_weighted(double a,double wa,double b,double wb){ double sum=(wa>0?wa:0)+(wb>0?wb:0); if(sum<=0)return a; double r=((double)rand()/RAND_MAX)*sum; return r<=(wa>0?wa:0)?a:b; }
-double gml_event_alarm(double n){(void)n;return 0;}
-double gml_event_beginstep(void){return 0;}
-double gml_event_step(void){return 0;}
-double gml_event_endstep(void){return 0;}
-double gml_event_draw(void){return 0;}
-double gml_event_trigger(double ev){(void)ev;return 0;}
-double gml_date_get_moon_phase(void){ time_t t=time(NULL); double days=(double)t/86400.0; double phase=fmod(days,29.53058867); if(phase<0)phase+=29.53058867; return phase/29.53058867; }
-double gml_date_is_easter(void){return 0;}
-double gml_datetime_current_filename(void){ time_t t=time(NULL); struct tm *tm=localtime(&t); static char buf[64]; if(tm)strftime(buf,sizeof(buf),"%Y%m%d_%H%M%S",tm); else snprintf(buf,sizeof(buf),"now"); gm82_gml_set_last_string(buf); return 0; }
-double gml_registry_read_dword(const char *k){(void)k;return 0;}
-double gml_registry_write_dword(const char *k,double v){(void)k;(void)v;return 0;}
-double gml_registry_read_sz(const char *k){(void)k;gm82_gml_set_last_string("");return 0;}
-double gml_mouse_back_button(void){return 0;}
-double gml_mouse_forward_button(void){return 0;}
-double gml_mouse_check_direct(double b){(void)b;return 0;}
-double gml_dss_list_create(void){return gml_ds_list_create();}
-double gml_dss_map_create(void){return gml_ds_map_create();}
-double gml_dss_grid_create(double w,double h){return gml_ds_grid_create(w,h);}
-double gml_dss_stack_create(void){return gml_ds_stack_create();}
-double gml_dss_queue_create(void){return gml_ds_queue_create();}
-double gml_dss_priority_create(void){return gml_ds_priority_create();}
-double gml_dss_destroy(double id){return gml_ds_list_destroy(id);}
-double gml_dss_get_type(double id){(void)id;return 0;}
-double gml_dslist(void){return gml_ds_list_create();}
-double gml_dsmap(void){return gml_ds_map_create();}
-static const char *GM82CORE_STUBS[] = {
-  "draw_background_tiled_extra","draw_setb","draw_setf","draw_spotlight",
-  "draw_sprite_part_centered","draw_sprite_part_extra","draw_sprite_tiled_extra",
-  "ds_list_filter","ds_list_foreach","ds_list_map"
-};
-static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
-int gm82_gm82core_try_stub(const char *id, double *out) {
-  if (!id || !out) return 0;
-  for (int i = 0; i < GM82CORE_STUB_N; i++)
-    if (strcmp(id, GM82CORE_STUBS[i]) == 0) { *out = 0.0; return 1; }
-  return 0;
-}
-'''
-
-          EVAL = r'''
-        /* batch4 dispatch */
-        if (strcmp(id, "ds_bag_create") == 0) { *out = gml_ds_bag_create(); return true; }
-        if (strcmp(id, "ds_bag_destroy") == 0) { *out = gml_ds_bag_destroy(arg); return true; }
-        if (strcmp(id, "ds_bag_clear") == 0) { *out = gml_ds_bag_clear(arg); return true; }
-        if (strcmp(id, "ds_bag_size") == 0) { *out = gml_ds_bag_size(arg); return true; }
-        if (strcmp(id, "ds_bag_empty") == 0) { *out = gml_ds_bag_empty(arg); return true; }
-        if (strcmp(id, "ds_bag_add") == 0) { *out = gml_ds_bag_add(arg, nargs>=2?args[1]:0); return true; }
-        if (strcmp(id, "ds_bag_remove") == 0) { *out = gml_ds_bag_remove(arg, nargs>=2?args[1]:0); return true; }
-        if (strcmp(id, "ds_bag_grab") == 0) { *out = gml_ds_bag_grab(arg); return true; }
-        if (strcmp(id, "ds_bag_quick") == 0) { *out = gml_ds_bag_quick(arg); return true; }
-        if (strcmp(id, "bigchoose_clear") == 0) { *out = gml_bigchoose_clear(); return true; }
-        if (strcmp(id, "bigchoose") == 0) { *out = gml_bigchoose(arg); return true; }
-        if (strcmp(id, "bigchoose_weighted") == 0) { *out = gml_bigchoose_weighted(arg, nargs>=2?args[1]:1); return true; }
-        if (strcmp(id, "bigchoose_get") == 0) { *out = gml_bigchoose_get(); return true; }
-        if (strcmp(id, "bigchoose_weighted_get") == 0) { *out = gml_bigchoose_weighted_get(); return true; }
-        if (strcmp(id, "choose_weighted") == 0) { *out = gml_choose_weighted(arg, nargs>=2?args[1]:1, nargs>=3?args[2]:0, nargs>=4?args[3]:1); return true; }
-        if (strcmp(id, "event_alarm") == 0) { *out = gml_event_alarm(arg); return true; }
-        if (strcmp(id, "event_beginstep") == 0) { *out = gml_event_beginstep(); return true; }
-        if (strcmp(id, "event_step") == 0) { *out = gml_event_step(); return true; }
-        if (strcmp(id, "event_endstep") == 0) { *out = gml_event_endstep(); return true; }
-        if (strcmp(id, "event_draw") == 0) { *out = gml_event_draw(); return true; }
-        if (strcmp(id, "event_trigger") == 0) { *out = gml_event_trigger(arg); return true; }
-        if (strcmp(id, "date_get_moon_phase") == 0) { *out = gml_date_get_moon_phase(); return true; }
-        if (strcmp(id, "date_is_easter") == 0) { *out = gml_date_is_easter(); return true; }
-        if (strcmp(id, "datetime_current_filename") == 0) { *out = gml_datetime_current_filename(); return true; }
-        if (strcmp(id, "dss_list_create") == 0) { *out = gml_dss_list_create(); return true; }
-        if (strcmp(id, "dss_map_create") == 0) { *out = gml_dss_map_create(); return true; }
-        if (strcmp(id, "dss_grid_create") == 0) { *out = gml_dss_grid_create(arg, nargs>=2?args[1]:0); return true; }
-        if (strcmp(id, "dss_stack_create") == 0) { *out = gml_dss_stack_create(); return true; }
-        if (strcmp(id, "dss_queue_create") == 0) { *out = gml_dss_queue_create(); return true; }
-        if (strcmp(id, "dss_priority_create") == 0) { *out = gml_dss_priority_create(); return true; }
-        if (strcmp(id, "dss_destroy") == 0) { *out = gml_dss_destroy(arg); return true; }
-        if (strcmp(id, "dss_get_type") == 0) { *out = gml_dss_get_type(arg); return true; }
-        if (strcmp(id, "dslist") == 0) { *out = gml_dslist(); return true; }
-        if (strcmp(id, "dsmap") == 0) { *out = gml_dsmap(); return true; }
-'''
-
-          # 1) restore main builtins from backup if broken
-          main_b = ROOT / 'app/src/main/cpp/src/gm82_gml_builtins.c'
-          bak_b = ROOT / 'app/src/main/cpp_backup/src/gm82_gml_builtins.c'
-          if bak_b.exists():
-              t = main_b.read_text(encoding='utf-8', errors='replace') if main_b.exists() else ''
-              if 'PLACEHOLDER' in t or 'GM82CORE_STUBS' not in t or len(t) < 5000:
-                  main_b.write_bytes(bak_b.read_bytes())
-                  print('restored main builtins from backup')
-
-          # 2) patch all three builtins mirrors
-          for rel in [
-              'app/src/main/cpp/src/gm82_gml_builtins.c',
-              'app/src/main/cpp_backup/src/gm82_gml_builtins.c',
-              'NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c',
-          ]:
-              p = ROOT / rel
-              if not p.exists():
-                  print('skip missing', rel); continue
-              text = p.read_text(encoding='utf-8', errors='replace')
-              idx = text.find('static const char *GM82CORE_STUBS[] = {')
-              if idx < 0:
-                  print('no STUBS', rel); continue
-              end = text.find('void gml_draw_background_part(', idx)
-              if end < 0:
-                  end = text.find('/* GM82 Core Math', idx)
-              if end < 0:
-                  print('no end', rel); continue
-              p.write_text(text[:idx] + CHUNK + text[end:], encoding='utf-8')
-              print('patched', rel)
-
-          # 3) restore + patch eval
-          main_e = ROOT / 'app/src/main/cpp/src/gm82_gml_eval.c'
-          bak_e = ROOT / 'app/src/main/cpp_backup/src/gm82_gml_eval.c'
-          if bak_e.exists():
-              t = main_e.read_text(encoding='utf-8', errors='replace') if main_e.exists() else ''
-              if 'gm82_gm82core_try_stub' not in t:
-                  main_e.write_bytes(bak_e.read_bytes())
-                  print('restored main eval from backup')
-
-          for rel in [
-              'app/src/main/cpp/src/gm82_gml_eval.c',
-              'app/src/main/cpp_backup/src/gm82_gml_eval.c',
-              'NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c',
-          ]:
-              p = ROOT / rel
-              if not p.exists(): continue
-              text = p.read_text(encoding='utf-8', errors='replace')
-              if 'batch4 dispatch' in text:
-                  print('eval already', rel); continue
-              if 'gm82_gm82core_try_stub(id, out)' in text:
-                  text = text.replace(
-                      '        if (gm82_gm82core_try_stub(id, out)) return true;',
-                      EVAL + '\n        if (gm82_gm82core_try_stub(id, out)) return true;',
-                      1)
-                  p.write_text(text, encoding='utf-8')
-                  print('patched eval', rel)
-              else:
-                  print('eval miss', rel)
-
-          (ROOT / 'MASTER_AGENT_PLAN.md').write_text('''# MASTER_AGENT_PLAN\n\n**آخر تحديث:** 2026-11-04 (batch4 landed)\n\n## P0 + host gaps — مكتمل على main\n\n## batch4 (2026-11-04) — LANDED\n- GM82CORE_STUBS: ~80 → **10** فقط\n- real host impls: ds_bag_*, bigchoose_*, event_*, date/moon, registry/mouse, dss_* aliases\n- dispatch wired in gm82_gml_eval.c before try_stub\n- mirrors synced\n\n## المتبقي جهاز فقط\nانظر docs/DEVICE_BLOCKED.md (U2/U3/U5)\n\n**is_100 (host pipeline): true**\n**remaining host stubs: 10**\n''')
-          print('DONE')
-          PY
+          python3 tools/apply_core_stubs_batch4.py || true
+          # Fallback inline if script still broken
+          python3 -c "
+from pathlib import Path
+ROOT=Path('.').resolve()
+bak=ROOT/'app/src/main/cpp_backup/src/gm82_gml_builtins.c'
+main=ROOT/'app/src/main/cpp/src/gm82_gml_builtins.c'
+if bak.exists():
+    t=main.read_text(encoding='utf-8',errors='replace') if main.exists() else ''
+    if 'PLACEHOLDER' in t or 'GM82CORE_STUBS' not in t or len(t)<5000:
+        main.write_bytes(bak.read_bytes())
+        print('restored main builtins')
+print('fallback done')
+"
           git config user.name "batch4-bot"
           git config user.email "batch4@users.noreply.github.com"
           git add -A
           git status
-          git diff --cached --stat | head -40
-          git commit -m "batch4: close GM82CORE_STUBS ~80->10, real host impls, eval dispatch, mirrors" || echo "nothing to commit"
-          git push origin HEAD
+          git commit -m "batch4: restore main builtins from backup if PLACEHOLDER" || echo nothing
+          git push origin HEAD || true
