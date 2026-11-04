@@ -2607,6 +2607,42 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_distance_to_path(nargs>=1?args[0]:0);
             return true;
         }
+        if (strcmp(id, "draw_setb") == 0) {
+            *out = gml_draw_setb(arg, nargs >= 2 ? args[1] : 1.0);
+            return true;
+        }
+        if (strcmp(id, "draw_setf") == 0) {
+            *out = gml_draw_setf(arg,
+                                 nargs >= 2 ? args[1] : 0.0,
+                                 nargs >= 3 ? args[2] : 0.0,
+                                 nargs >= 4 ? args[3] : 0.0,
+                                 nargs >= 5 ? args[4] : 1.0);
+            return true;
+        }
+        if (strcmp(id, "date_get_moon_phase") == 0) {
+            *out = gml_date_get_moon_phase(arg, nargs >= 1);
+            return true;
+        }
+        if (strcmp(id, "date_is_easter") == 0) {
+            *out = gml_date_is_easter(arg, nargs >= 1);
+            return true;
+        }
+        if (strcmp(id, "datetime_current_filename") == 0) {
+            *out = gml_datetime_current_filename();
+            return true;
+        }
+        if (strcmp(id, "mouse_back_button") == 0) {
+            *out = gml_mouse_back_button();
+            return true;
+        }
+        if (strcmp(id, "mouse_forward_button") == 0) {
+            *out = gml_mouse_forward_button();
+            return true;
+        }
+        if (strcmp(id, "mouse_check_direct") == 0) {
+            *out = gml_mouse_check_direct(arg);
+            return true;
+        }
         if (strcmp(id, "code_compile") == 0) {
             *out = gml_code_compile((p->str_mask & 1) ? p->str_args[0] : "");
             return true;
