@@ -696,6 +696,8 @@ double gml_angle_difference_3d(double x1, double y1, double z1,
                                double x2, double y2, double z2);
 double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
 
+void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
+
 #ifdef __cplusplus
 }
 #endif
