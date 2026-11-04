@@ -128,12 +128,20 @@ int main(int argc, char **argv) {
     gml_game_save("test_save.dat");
     gml_set_score(0.0); gml_set_lives(1.0); gml_set_health(10.0);
     gml_game_load("test_save.dat");
-    if (gml_get_score() == 1234.0 && gml_get_lives() == 5.0 && gml_get_health() == 80.0)
+    int save_ok = 0;
+    if (gml_get_score() == 1234.0 && gml_get_lives() == 5.0 && gml_get_health() == 80.0) {
         printf("SAVE_LOAD_TEST ok\n");
-    else
+        save_ok = 1;
+    } else {
         printf("SAVE_LOAD_TEST fail\n");
-    printf("PIPELINE_OK\n");
-    return 0;
+    }
+    if (ns > 0 && no > 0 && nr > 0 && draw_ok && lit > 0 && save_ok) {
+        printf("PIPELINE_OK\n");
+        return 0;
+    }
+    fprintf(stderr, "PIPELINE_FAIL sprites=%d objects=%d rooms=%d draw=%d lit=%d save=%d\n",
+            ns, no, nr, draw_ok, lit, save_ok);
+    return 1;
 }
 C
 
@@ -165,3 +173,7 @@ for gmk in "$SAMPLES"/*.gmk; do
   fi
 done
 echo "SUMMARY ok=$ok fail=$fail" | tee -a "$OUT"
+if (( fail > 0 || ok == 0 )); then
+  echo "HOST_PIPELINE_FAIL ok=$ok fail=$fail" >&2
+  exit 1
+fi

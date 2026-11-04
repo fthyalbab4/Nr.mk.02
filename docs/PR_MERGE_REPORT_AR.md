@@ -1,6 +1,6 @@
-# تقرير دمج طلبات السحب — 27 أكتوبر 2026
+# تقرير دمج PRs وتحديث main — 3 نوفمبر 2026
 
-المستودع المستهدف: [fthyalbab4/Nr.mk.02](https://github.com/fthyalbab4/Nr.mk.02). جرى إعداد فرع تكامل محلي مبني على `origin/main`، وضمّ رؤوس PRs الأربعة المفتوحة وقت الفحص. رؤوس PRs أصبحت ضمن تاريخ الفرع، مع حل التعارضات يدويًا عبر Git CLI بدل اختيار نسخة كاملة آليًا.
+المستودع المستهدف: [fthyalbab4/Nr.mk.02](https://github.com/fthyalbab4/Nr.mk.02). تم التعامل سابقًا مع PRs #232 و#234 و#235 و#237 وحُفظت نسخ العمل السابقة في Git stash. أساس هذه الجولة هو `origin/main` عند `64733049aa8685d3083cc082914b317c88f581bf`؛ الفرع المحلي `integrate/latest-main-20261102` يطبق الإصلاحات انتقائيًا بعد مراجعتها، دون force-push أو الكتابة مباشرة على `main`.
 
 ## طلبات السحب التي عولجت
 
@@ -11,19 +11,22 @@
 | #235 | الاحتفاظ بتأكيدات الاختبارات الصارمة وrunner الموجود؛ لم تُقبل تغييرات تضعف assertions أو تحذف runner، ولم تُعتمد تقارير نجاح غير منفذة محليًا. |
 | #237 | نقل فحص حدود لوحة المفاتيح الذي يرفض NaN وInfinity والقيم خارج المجال قبل تحويلها إلى عدد صحيح. استُبعد ملف Gradle lock، وتعريفات runtime المكررة، وسلوك `action_if_sound` الذي قد يعطي نتيجة خاطئة عند غياب الوسيط. |
 
-## حسم التعارضات والمتابعة
+## حسم التعارضات في آخر تحديث
 
-أُبقيت تعريفات runtime الأصلية عند وجود نسخ مكررة من الدوال؛ أُزيلت فقط الحراسة المكررة في نسخة الحزمة. أُوحّدت الملفات المتأثرة في المرايا الثلاث: `app/src/main/cpp` و`app/src/main/cpp_backup` و`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`، بما فيها evaluator وbuiltins وinput وactions وevents وJNI bridge واختبار `test_full_suite.c`.
+- حُفظت dispatchers Create/Alarm/Collision من main، وأُعيدت handlers الأحداث المفقودة فقط إلى `gm82_events.c` بدل استبدال الملف بنسخة قديمة كاملة.
+- أُخرج `gm82_events_stubs.c` من Android CMake target ومن Makefile الحزمة، مع إبقاء الملف مصدرًا اختياريًا فقط، حتى لا تطغى stubs على dispatcher الحقيقي.
+- وُحّد عقد tri-state لأكشنات DnD؛ false الشرط لا يُسجل كـ`UNMAPPED_ACTION` ولا ينفذ الإجراءات التابعة. أُضيف alias `action_sprite_set` إلى dispatcher.
+- أُعيدت إصلاحات renderer/runtime إلى main الأحدث: RGBA compositing وalpha، Pre-Draw بعد clear/background، حواجز overflow، وفضّ solid collision متناظر. لم تُمسح تغييرات main الخاصة بالكاميرا أو depth أو إنشاء الأحداث.
+- تزامنت ملفات `.c/.h` كاملة من النواة النشطة إلى `cpp_backup` وحزمة C؛ `tools/verify_core_mirrors.py` يثبت تطابق 53 ملفًا في `src` و49 header في `include` لكل نسخة، ويستثني ملفات `.o` المولدة.
+- يشغل `.github/workflows/android-build.yml` اختبارات Python/security، وفحص المرايا، وsuite النواة وحزمة C، ثم بناء Debug APK على runner متوافق.
 
-أُضيفت اختبارات regression لصيغتي `modwrap`، ولـ`string_starts_with` و`string_ends_with` عبر evaluator. كما حُميت التحويلات العددية في `direction_to_object` و`instance_create_depth` وبعض دوال السلاسل من القيم غير المنتهية أو خارج النطاق. لا تُعلن واجهتا التركيز وفتح URL نجاحًا وهميًا؛ فتح URL والتركيز الفعلي ما زالا يحتاجان adapter خاصًا بالمنصة.
+## نتائج التحقق المحلية
 
-## نتائج التحقق
+- `python3 tools/run_engine_suite.py`: `ENGINE_TESTS_PASS=34/34`؛ host pipeline **4/4** عينات `ok=4 fail=0`، مع اختبار loop-control bytecode.
+- `bash tools/run_host_pipeline.sh`: لكل عينة decode ناجح، `DRAW ok=1`، `SAVE_LOAD_TEST ok`؛ المجموع `ok=4 fail=0`.
+- `python3 -m unittest discover -s tests/reference -p 'test_*.py' -v`: **12/12**، exit code 0؛ `python3 tools/verify_core_mirrors.py`: نجاح `src` و`include` في كلتا المرآتين.
+- `make -B -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test`: **26 executables**، exit code 0 بعد مزامنة parser/bytecode.
+- `./gradlew --no-daemon assembleDebug`: **BUILD SUCCESSFUL** بعد تحديث loop-control؛ APK يضم ABIs الأربعة والأرشيف اجتاز `unzip -t`. SHA-256: `45e3f8f1031fa17afba33ad59a39e96ced2ce037446ad57851ddb9ec69a88dd2`.
+- YAML workflows و`git diff --check` و`bash -n`: ناجحة.
 
-- `python3 tools/run_engine_suite.py`: نجحت الاختبارات الـ18، وانتهى host pipeline بنتيجة `ok=4 fail=0` للعينات الأربع.
-- `make test` داخل `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`: انتهى بنجاح صريح `PACKAGE_MAKE_TEST_PASS`.
-- `git diff --check`: ناجح.
-- تطابقت بصمات الملفات المتأثرة بين المرايا الثلاث بعد المزامنة.
-
-## ما لم يثبت بعد
-
-لم يُبنَ APK ولم يُختبر التطبيق على جهاز Android في هذه الجولة. كما أن نجاح اختبارات المضيف لا يثبت تكافؤًا كاملًا بنسبة 100% مع نسخة Windows Portable؛ هذا يحتاج مجموعة اختبارات مرجعية أوسع ومقارنة سلوكية على Windows. وتظل الوظائف التي تعتمد على خصائص المنصة، ومنها فتح الروابط والتركيز، غير مكتملة حتى توفير adapter واختبارها على الجهاز.
+APK الناتج Debug قابل للتثبيت للاختبار، وليس Release production. لا يتوفر جهاز Android فعلي لهذه الجولة، لذلك لم يُختبر import → edit → run → export. تزامن ملفات المصدر في المرايا مثبت؛ لكن مزامنة موارد Studio الكاملة إلى renderer الأصلي وsemantic round-trip لـGMK/GMX/GMZ ما زالا غير مثبتين. لا توجد نسبة parity إجمالية أو ادعاء 100%.

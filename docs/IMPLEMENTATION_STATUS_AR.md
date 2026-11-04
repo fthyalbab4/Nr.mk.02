@@ -1,41 +1,42 @@
-# تقرير تنفيذ المشروع الموحد — 24 أكتوبر 2026
+# تقرير تنفيذ المشروع الموحد — 3 نوفمبر 2026
 
-## القرار المعماري
+## قرار الدمج
 
-`Nr.mk.02` هو جذر مشروع التطبيق والنواة. لم يعد الناتج النهائي يضم نسخًا كاملة من `Nor-maker-8.2` أو `NM.Maker.0..1.0` كمجلدات مستقلة. أُبقيت مستودعات المرجع خارج شجرة المشروع لاستخدامها في المقارنة، ونُقلت التغييرات المنتقاة فقط إلى المسارات الأصلية واختُبرت محليًا. النسخ التي جرت مراجعتها: `Nr.mk.02@2dc7a80`، `Nor-maker-8.2@4a4d4e1`، و`NM.Maker.0..1.0@5f12909`.
+`Nr.mk.02` هو جذر التطبيق والنواة النشطة. نقطة الأساس `origin/main` عند `64733049`; العمل المحلي على `integrate/latest-main-20261102` يحافظ على main ويضيف الإصلاحات والترحيلات دون دمج المستودعات الثلاثة كمشروعات متجاورة. لم يُستخدم force-push أو تُكتب تغييرات على `main`؛ سترفع النتيجة على فرع تكامل منفصل.
 
-## دمج التطبيق الفعلي
+## ما أصبح موحدًا فعليًا
 
-- أصبح `app/src/main/java/com/normaker/nativefull/MainActivity.java` نقطة تشغيل واحدة: يحمّل Studio من `file:///android_asset/www/index.html` ويعرض مشغل JNI الأصلي داخل النشاط نفسه بدل بدء شاشة اللاعب المنفصلة تلقائيًا.
-- يتيح WebView منتقي الملفات، ويرسل ملف GMK المحدد إلى محلل Studio. يمرر النشاط الملفات الثنائية المدعومة كذلك إلى `nativeImportGmkSnapshot`؛ لا يُعرض زر اللاعب الأصلي كجاهز إلا إذا أعاد المحرك نتيجة `complete:true`. يعود المستخدم من اللاعب إلى المحرر داخل النشاط نفسه.
-- يسجل جسر `NorNative` عمليات الموارد والغرفة والـinstances المتاحة في JNI. عند تصدير NOR JSON، يكتب الملف إلى `Downloads/NOR Maker` على Android 10+، وإلى مجلد Downloads الخاص بالتطبيق على الإصدارات الأقدم.
-- أُضيف إعداد Gradle `externalNativeBuild` ليستعمل `app/src/main/cpp/CMakeLists.txt` وNDK `25.2.9519653`، وتُستبعد `.so` القديمة من `jniLibs` حتى لا تحجب بناء المصدر. واستُبدل تحميل Three.js من CDN بملف r128 محلي مع نسخة ترخيصه.
-- لا يحقن التطبيق native tick جانبيًا داخل iframe؛ معاينة Studio JavaScript واللاعب C الأصلي مساران مختلفان عمدًا حاليًا، وزر اللاعب يشغّل لقطة GMK الثنائية الأصلية لا كل تعديلات المحرر.
-- أضيفت اختبارات C fixtures للـtyped frontend وتدقيق ثابت لعقد نقطة تشغيل Android/JNI.
+`MainActivity` نقطة تشغيل واحدة تستضيف Studio في WebView والمشغّل الأصلي عبر JNI. يوجد جسر لاستيراد الملفات/التصدير وتشغيل بيانات GMK المدعومة؛ معاينة Studio JavaScript وتعديلات المحرر ليست حتى الآن حالة runtime أصلية متزامنة بالكامل.
 
-## تغييرات parser والاختبارات
+استُعيد dispatcher الأحداث مع الحفاظ على handlers الموجودة في main، واستُبعد `gm82_events_stubs.c` من قوائم البناء. نتيجة DnD تميز الشرط false عن الأكشن غير المعروف، مع تخطي الأوامر التابعة عند فشل الشرط. أُضيف alias `action_sprite_set`. يضمن `tools/verify_core_mirrors.py` تطابق ملفات `.c/.h` بين المصدر النشط و`cpp_backup` وحزمة C؛ ملفات object المولدة مستثناة.
 
-أُضيف دعم تزايدي للجمل والـblocks في `app/src/main/cpp/src/gml_frontend.c` دون استبدال parser أو VM الأساسيين: `if/else`, `while`, `do/until`, `for`, `repeat`, `break`, و`continue`. توجد ثماني fixtures snapshots للـtyped GML subset، واختبارات للمحول الذي يحول `fnames` إلى metadata افتراضيًا بحالة `unverified`.
+حسّن renderer تركيب RGBA للـsprites والخلفيات والبلاطات، واحترام alpha/blend من instance، وترتيب depth/camera، وترتيب Pre-Draw بعد clear/background. أضيفت حواجز overflow لحجم framebuffer؛ كما أصبح حل التصادم solid متناظرًا عند تحريك instance غير solid. هذه الإصلاحات لا تثبت pixel-perfect parity، وتبقى solid collision العامة أوسع من الاختبارات الحالية.
 
-## التحقق
+يوفر GML parser/AST/bytecode الآن `break/continue` لأقرب حلقة في `while`, `do-until`, `repeat`, و`for`، بما في ذلك تنظيف عداد repeat واختبارات nested loops. تُرفض أوامر التحكم خارج الحلقة؛ `with` ما زال compatibility fallback والـgrammar ليست كاملة.
 
-الاختبارات التي يجب إعادة تشغيلها من جذر المشروع:
+يشغل `.github/workflows/android-build.yml` اختبارات Python/security، وفحص المرايا، وsuite النواة وحزمة C، ثم يبني Debug APK على runner يدعم Android SDK/NDK.
 
-```bash
-python3 tools/run_reference_fixtures.py
-python3 -m unittest discover -s tests/reference -p 'test_*.py' -v
-python3 tools/run_engine_suite.py
-git diff --check
-```
+## التحقق الذي أُعيد تشغيله
 
-آخر نتيجة: fixtures `8/8`، اختبارات وحدات Python `6/6`، native executables `10/10`، host pipeline `4/4`، و`git diff --check` ناجح. ترجمة Java يدويًا مقابل `android.jar` API 34 نجحت. ثُبّت SDK 34/NDK 25.2 وحاولنا `assembleDebug`، لكن `cmake` و`aapt2` المضمّنين بالـSDK هما x86_64 ولا يعملان على sandbox aarch64؛ ففشل Gradle قبل إنشاء APK. لم يُختبر اختيار الملفات/MediaStore/المحرك على جهاز Android. لا تُعرض نتيجة javac كأنها بناء APK أو اختبار جهاز.
+| الأمر | النتيجة |
+|---|---|
+| `python3 tools/run_engine_suite.py` | `ENGINE_TESTS_PASS=34/34`؛ host pipeline للألعاب الأربع `ok=4 fail=0`. |
+| `bash tools/run_host_pipeline.sh` | 4/4؛ لكل عينة `DRAW ok=1` و`SAVE_LOAD_TEST ok`. |
+| `make -B -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX test` | 26 test executables؛ exit code 0 بعد مزامنة parser/bytecode. |
+| `./gradlew --no-daemon assembleDebug` | `BUILD SUCCESSFUL` بعد تغييرات loop-control؛ APK يضم `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`. |
+| `unzip -t app/build/outputs/apk/debug/app-debug.apk` | الأرشيف سليم؛ SHA-256: `45e3f8f1031fa17afba33ad59a39e96ced2ce037446ad57851ddb9ec69a88dd2`. |
+| Python/security contracts | 12/12؛ exit code 0. |
+| `python3 tools/verify_core_mirrors.py` | 53 ملف source و49 header متطابقة في كل مرآة؛ نجاح. |
+| YAML workflow و`git diff --check` و`bash -n` | ناجحة. |
 
-## ما بقي
+حجم APK الناتج نحو 16 MB؛ هذا **Debug** قابل للتثبيت للاختبار وليس Release موقّعًا للنشر التجاري. لم يُختبر على جهاز Android فعلي في هذه الجولة.
 
-1. بناء Debug/Release على host يدعم أدوات SDK/NDK، ثم اختبار import → edit → run → export على جهاز Android فعلي.
-2. اختبار Android لمحدد الملفات وMediaStore، وتأكيد صلاحيات URI عبر إصدارات WebView مختلفة.
-3. دعم استيراد مجلد GM82 النصي عبر Storage Access Framework، وربط موارد Studio الثنائية (صور/صوت) بالنواة بدل metadata فقط.
-4. تنفيذ وتدقيق GMK/GMX/GMZ semantic round-trip، مع corpus حقيقي وwriter يقبله GameMaker.
-5. سد فجوات GML/objects/events/actions والاختبارات السلوكية مقابل نسخة Windows.
+## فجوات باقية
 
-واجهة موحدة تعني نقطة دخول ومشروع تطبيق واحد؛ لا تعني أن كل ميزات الاستوديو والمحرك native أصبحت متكافئة. نسبة **100%** أو parity كاملة غير مثبتة. ملفات Windows التنفيذية ليست مصدر تنفيذ Android، ويجب حل الملكية/الترخيص للمكونات الخارجية قبل النشر.
+- اختبار تثبيت وتشغيل على جهاز Android حقيقي: import → edit → run → export، مع اختبار SAF وMediaStore وملفات URI.
+- توصيل مزامنة موارد Studio (خصوصًا الصور والصوت وتعديلات المستخدم) إلى C renderer/runtime.
+- round-trip دلالي كامل لـGMK/GMX/GMZ/GM82 على corpus حقيقي وبمقارنة فتح الملفات في GameMaker.
+- توسيع GML grammar وbuilt-ins/actions/events وcollision parity؛ اختبارات host الحالية لا تغطي كل سلوك Windows Portable.
+- تنفيذ adapters لفتح الروابط والتركيز وإدارة النوافذ واختبارها على Android، ومراجعة تراخيص المكونات الخارجية قبل النشر.
+
+لا يثبت نجاح 34 حالة محرك أو بناء APK تكافؤًا كاملًا. لا تُعلن نسبة إجمالية أو 100% حتى توجد مقارنة سلوكية قابلة لإعادة الإنتاج على corpus Windows واختبارات جهاز Android.
