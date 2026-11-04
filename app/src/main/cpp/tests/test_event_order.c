@@ -43,6 +43,39 @@ static void test_event_loop_order(void) {
     printf("  Event loop sequence order test PASS\n");
 }
 
+static void test_destroy_is_deferred_during_draw(void) {
+    printf("Testing deferred destruction during Draw...\n");
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    rt.running = 1;
+
+    gm82_decoded_object_list objects;
+    gm82_decoded_object_list_init(&objects);
+    objects.count = 1;
+    objects.items = (gm82_decoded_object *)calloc(1, sizeof(gm82_decoded_object));
+    assert(objects.items != NULL);
+    snprintf(objects.items[0].name, sizeof(objects.items[0].name), "obj_draw_destroy");
+    objects.items[0].sprite_index = -1;
+    objects.items[0].event_count = 1;
+    objects.items[0].events[0].main_type = GM82_EV_DRAW;
+    objects.items[0].events[0].event_numb = 0;
+    objects.items[0].events[0].code_snippet = strdup("instance_destroy();");
+    assert(objects.items[0].events[0].code_snippet != NULL);
+    gm82_runtime_bind_assets(&rt, &objects, NULL, NULL, NULL, NULL);
+
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 8.0, 8.0);
+    assert(inst != NULL && inst->alive == 1);
+    uint8_t buffer[16 * 16 * 4];
+    assert(gm82_runtime_draw(&rt, buffer, 16, 16));
+    assert(rt.frame_phase == GM82_PHASE_IDLE);
+    assert(inst->alive == 0);
+    assert(rt.destroy_queue_count == 0);
+
+    gm82_decoded_object_list_free(&objects);
+    gm82_runtime_cleanup(&rt);
+    printf("  Deferred Draw destruction test PASS\n");
+}
+
 static void test_instance_pool_midframe_lifecycle(void) {
     printf("Testing mid-frame instance creation and destruction pool safety...\n");
     gm82_runtime rt;
@@ -155,6 +188,7 @@ static void test_collision_context_and_with(void) {
 int main(void) {
     printf("=== RUNNING EVENT ORDER AND LIFECYCLE TESTS ===\n");
     test_event_loop_order();
+    test_destroy_is_deferred_during_draw();
     test_instance_pool_midframe_lifecycle();
     test_depth_sorting_order();
     test_collision_context_and_with();

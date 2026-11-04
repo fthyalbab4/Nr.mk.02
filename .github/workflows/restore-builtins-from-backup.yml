@@ -1,0 +1,21 @@
+name: restore-builtins-from-backup
+on:
+  workflow_dispatch:
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore from cpp_backup
+        run: |
+          cp -f app/src/main/cpp_backup/src/gm82_gml_builtins.c app/src/main/cpp/src/gm82_gml_builtins.c
+          cp -f app/src/main/cpp_backup/src/gm82_gml_eval.c app/src/main/cpp/src/gm82_gml_eval.c || true
+          echo "Restored builtins from backup"
+          grep -c "PLACEHOLDER" app/src/main/cpp/src/gm82_gml_builtins.c || echo "no PLACEHOLDER"
+      - name: Commit
+        run: |
+          git config user.name "fthyalbab4"
+          git config user.email "fthyalbab4@gmail.com"
+          git add app/src/main/cpp/src/gm82_gml_builtins.c
+          git commit -m "restore: gm82_gml_builtins.c from cpp_backup (remove PLACEHOLDER)" || echo "no change"
+          git push
