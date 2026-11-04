@@ -561,8 +561,8 @@ public class MainActivity extends Activity {
             if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
             final boolean gm82Folder = requestCode == GM82_FOLDER_REQUEST;
             final Uri treeUri = data.getData();
-            final int grantFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            try { getContentResolver().takePersistableUriPermission(treeUri, grantFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION); }
+            final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+            try { getContentResolver().takePersistableUriPermission(treeUri, takeFlags); }
             catch (Exception ignored) { /* transient access is still sufficient for this copy */ }
             try {
                 importExecutor.execute(() -> {
@@ -1066,6 +1066,10 @@ public class MainActivity extends Activity {
             });
         }
         @JavascriptInterface public void step(float delta) { synchronized (nativeLock) { nativeRuntimeStep(delta); drainNativeSoundCommands(); } }
+        /** Inject keyboard state from WebView / NES on-screen controls (vk = Windows VK code). */
+        @JavascriptInterface public void keyDown(int vk) { synchronized (nativeLock) { nativeRuntimeKey(vk, true); } }
+        @JavascriptInterface public void keyUp(int vk) { synchronized (nativeLock) { nativeRuntimeKey(vk, false); } }
+        @JavascriptInterface public void key(int vk, boolean down) { synchronized (nativeLock) { nativeRuntimeKey(vk, down); } }
         @JavascriptInterface public boolean registerSound(int soundId, String path) { return registerSoundResource(soundId, path); }
         @JavascriptInterface public void clearSounds() { clearSoundResources(); }
         @JavascriptInterface public String snapshot() { synchronized (nativeLock) { return nativeRuntimeSnapshotJson(); } }
@@ -1167,7 +1171,12 @@ public class MainActivity extends Activity {
                         continue;
                     }
                     if (status < 200 || status >= 300) return "";
-                    long declared = connection.getContentLengthLong();
+                    long declared = -1;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                        declared = connection.getContentLengthLong();
+                    } else {
+                        declared = (long) connection.getContentLength();
+                    }
                     if (declared > MAX_GMK_BYTES) return "";
                     try (InputStream in = connection.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.max(8192L, declared))) {
                         byte[] chunk = new byte[64 * 1024];
