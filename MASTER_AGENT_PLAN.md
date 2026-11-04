@@ -9,25 +9,27 @@
 ## P0 — مكتمل ✅
 - actions + `gml_set_other` + host pipeline **ok=4 fail=0**
 
-## أُغلق على host (تطبيق من جهازك إن لزم)
+## سد الفجوات على host — طبّق الآن
+
+### خيار 1 (محلي)
 ```bash
-python3 tools/apply_actions_gapfill.py   # 17 DnD نادر
-python3 tools/apply_keydown_bridge.py    # NorNative.keyDown/keyUp
+python3 tools/apply_actions_gapfill.py
+python3 tools/apply_keydown_bridge.py
 git add -A && git commit -m "apply host gapfill + keyDown" && git push
 ```
 
-| بند | ملف |
-|-----|-----|
-| UNMAPPED نادر | `tools/apply_actions_gapfill.py` |
-| bitmask | موصول في `gml_place_meeting` |
-| with() edges | `app/src/main/cpp/tests/test_with_edges.c` |
-| keyDown | `tools/apply_keydown_bridge.py` |
+### خيار 2 (GitHub Actions)
+Actions → **apply-host-gaps** → Run workflow
 
-## موقوف على جهاز
-`docs/DEVICE_BLOCKED.md` — U2/U3/U5
+يغلق:
+- 17 DnD نادر (step_towards/avoid, draw_*, timeline_*, cd_*, …)
+- `NorNative.keyDown/keyUp` في MainActivity
 
-## U4 REA/DLL/GEX
-خارج نطاق Android host.
+## موقوف على جهاز فقط
+`docs/DEVICE_BLOCKED.md` — U2 playtest/logcat، U3 NDK جهاز، U5 OpenSLES
 
-**is_100 (P0 pipeline): true**  
-**is_100 (GM + جهاز): false**
+## خارج النطاق
+U4 REA/DLL/GEX (Windows)
+
+**is_100 (P0 + host gaps scripts): true**  
+**is_100 (جهاز): false حتى playtest**
