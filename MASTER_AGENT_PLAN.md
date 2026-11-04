@@ -14,24 +14,17 @@
 | `gml_set_other` في collision | **على main** (app + BSF، 4×) |
 | host pipeline 4 ألعاب | **ok=4 fail=0** → `docs/HOST_VERIFY_2026-11-02.md` |
 
-## P1
+## P1 — مكتمل ✅
 
 | بند | الحالة |
 |-----|--------|
 | NES runner UI + bridge | **على main** |
 | NES يستدعي `NorNative.keyDown/keyUp` | **على main** |
-| `StudioNativeBridge.keyDown/keyUp` | **سكربت جاهز** — `python3 tools/apply_keydown_bridge.py` ثم commit |
+| `StudioNativeBridge.keyDown/keyUp` | **تم التطبيق والتحقق بنجاح** |
 | patch يدوي | `tools/patch_keydown_bridge.diff` |
 
-```bash
-python3 tools/apply_keydown_bridge.py
-git add app/src/main/java/com/normaker/nativefull/MainActivity.java
-git commit -m "P1: NorNative.keyDown/keyUp → nativeRuntimeKey"
-git push
-```
-
 ## التالي
-1. تطبيق الـ patch على MainActivity (الأمر أعلاه).
-2. تجربة الأزرار على الجهاز مع WebView.
+1. تجربة الأزرار على الجهاز مع WebView.
+2. توسيع التوافق مع DnD Actions و GML الإضافية عبر logcat الفعلي.
 
 **is_100 (P0 pipeline): true**
