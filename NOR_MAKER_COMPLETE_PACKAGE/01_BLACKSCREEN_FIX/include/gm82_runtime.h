@@ -59,6 +59,12 @@ typedef struct {
     int32_t persistent;
     int32_t alive;
     int32_t create_fired;
+    /* Per-frame contact state; reset before movement and set by the
+       axis-separated solid collision resolver. */
+    int32_t on_ground;
+    int32_t on_ceiling;
+    int32_t hit_left;
+    int32_t hit_right;
     int32_t alarms[12];
     int32_t path_index;
     double  path_position;

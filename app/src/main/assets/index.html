@@ -98018,7 +98018,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                     srcDoc: content,
                     className: "w-full h-full border-none select-none z-10",
                     title: "Game Engine",
-                    sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
+                    sandbox: "allow-scripts allow-modals allow-pointer-lock",
                     tabIndex: 0
                   }),
                   /* CRT Scanlines */
@@ -127793,6 +127793,37 @@ const App = () => {
       else delete window.__norGmxGmzPicked;
     };
   }, []);
+  reactExports.useEffect(() => {
+    const native = window.NorNative;
+    if (!native || typeof native.pickGmxGmzFolder !== "function") return;
+    const previous = window.__norGmxGmzFolderPicked;
+    window.__norGmxGmzFolderPicked = async (folderPath) => {
+      try {
+        if (!folderPath || typeof native.readGmxGmzFiles !== "function") throw new Error("Native GMX folder bridge غير متاح");
+        const payload = JSON.parse(native.readGmxGmzFiles(folderPath) || "{}");
+        const files = (payload.files || []).map((item) => ({
+          name: item.name,
+          webkitRelativePath: item.webkitRelativePath || item.name,
+          type: item.type || "application/octet-stream",
+          dataUrl: item.dataUrl,
+          text: async () => {
+            const raw = atob(String(item.dataUrl || "").split(",")[1] || "");
+            const bytes = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+            return new TextDecoder("utf-8").decode(bytes);
+          }
+        }));
+        const result = await convertGmxFolderToNor(files);
+        applyImportedGmxResult(result);
+      } catch (err2) {
+        console.error("Android GMX folder import error:", err2);
+        window.alert("فشل استيراد مجلد GMX: " + ((err2 == null ? void 0 : err2.message) || String(err2)));
+      }
+    };
+    return () => {
+      if (previous) window.__norGmxGmzFolderPicked = previous;
+      else delete window.__norGmxGmzFolderPicked;
+    };
+  }, []);
   const requestNativeGmxGmzImport = () => {
     const native = window.NorNative;
     if (native && typeof native.pickGmxGmz === "function") native.pickGmxGmz();
@@ -148343,8 +148374,12 @@ SHA-256-Digest: ${entryHash}\r
     certSfContent += wrapManifestText(sfEntry);
   }
   zip.file("META-INF/CERT.SF", certSfContent);
-  const privateKey = forge.pki.privateKeyFromPem(customPrivateKeyPem || PRIVATE_KEY_PEM);
-  const cert = forge.pki.certificateFromPem(customCertificatePem || CERTIFICATE_PEM);
+  if (typeof customPrivateKeyPem !== "string" || typeof customCertificatePem !== "string" ||
+      !customPrivateKeyPem.includes("PRIVATE KEY") || !customCertificatePem.includes("CERTIFICATE")) {
+    throw new Error("APK signing requires a user-supplied private key and matching certificate; no signing identity is bundled.");
+  }
+  const privateKey = forge.pki.privateKeyFromPem(customPrivateKeyPem);
+  const cert = forge.pki.certificateFromPem(customCertificatePem);
   const p72 = forge.pkcs7.createSignedData();
   p72.content = forge.util.createBuffer(certSfContent, "utf8");
   p72.addCertificate(cert);
