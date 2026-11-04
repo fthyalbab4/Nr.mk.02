@@ -118,6 +118,31 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "lerp_angle(350, 10, 0.5)", &val));
     assert(fabs(val - 0.0) < 1e-6);
 
+    /* GM82 Core Math Tests */
+    assert(gml_in_range(5.0, 1.0, 10.0) == 1.0);
+    assert(gml_in_range(0.0, 1.0, 10.0) == 0.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "in_range(7, 0, 10)", &val));
+    assert(val == 1.0);
+
+    /* Line intersection */
+    double intersect_hit = gml_lines_intersect(0, 5, 10, 5, 5, 0, 5, 10, 1.0);
+    assert(intersect_hit > 0.0);
+    double intersect_miss = gml_lines_intersect(0, 0, 10, 0, 0, 5, 10, 5, 1.0);
+    assert(intersect_miss == 0.0);
+
+    /* Pack / unpack bools */
+    double packed = gml_pack_bools(1, 0, 1, 0, 0, 0, 1, 1);
+    assert(packed == (128 + 32 + 2 + 1));
+    assert(gml_unpack_bool(packed, 7) == 1.0);
+    assert(gml_unpack_bool(packed, 6) == 0.0);
+    assert(gml_unpack_bool(packed, 0) == 1.0);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "unpack_bool(pack_bools(1,0,0,0,0,0,0,0), 7)", &val));
+    assert(val == 1.0);
+
+    /* Pivot pos */
+    assert(fabs(gml_pivot_pos_x(10.0, 0.0, 0.0) - 10.0) < 1e-4);
+
     puts("test_math_builtins_and_eval PASS");
 }
 

@@ -49,3 +49,7 @@
 ## 2026-10-29 - Home & End Boundary Keyboard Navigation for Card Grids
 **Learning:** In extensive interactive card grids (such as catalog overlays containing dozens or hundreds of items), directional arrow keys alone require numerous keypresses to navigate between distant items. Adding `Home` (jump to first card) and `End` (jump to last card) key listeners on grid card elements enables instant boundary jumping for keyboard and screen-reader users.
 **Action:** Always bind `Home` and `End` key listeners on interactive grid card focus targets to shift focus directly to the grid's first (`querySelector('.card')`) or last (`querySelectorAll('.card')`) child element.
+
+## 2026-11-02 - PageUp & PageDown Chunked Keyboard Navigation for Catalog Grids
+**Learning:** While single-step arrow keys and boundary `Home`/`End` keys allow stepping and jump-to-ends in large catalog grids, traversing multi-dozen item collections without intermediate chunk jumping forces users to hold arrow keys or tab extensively. Adding standard `PageDown` (+10 cards) and `PageUp` (-10 cards) key listeners clamped to grid boundaries allows keyboard users to paginate smoothly through dense catalogs.
+**Action:** Always bind `PageDown` and `PageUp` key listeners on interactive catalog card elements to jump forward or backward by a logical batch size (e.g., 10 cards) while preventing default document scrolling.
