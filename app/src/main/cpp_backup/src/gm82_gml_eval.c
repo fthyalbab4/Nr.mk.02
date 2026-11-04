@@ -751,6 +751,27 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "box_distance") == 0) {
             *out = gml_box_distance(arg, nargs >= 2 ? args[1] : 0); return true;
         }
+        if (strcmp(id, "in_range") == 0) {
+            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "lines_intersect") == 0) {
+            *out = gml_lines_intersect(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0,
+                                       nargs >= 8 ? args[7] : 0, nargs >= 9 ? args[8] : 1); return true;
+        }
+        if (strcmp(id, "pack_bools") == 0) {
+            *out = gml_pack_bools(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
+                                  nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0, nargs >= 8 ? args[7] : 0); return true;
+        }
+        if (strcmp(id, "unpack_bool") == 0) {
+            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0); return true;
+        }
+        if (strcmp(id, "pivot_pos_x") == 0) {
+            *out = gml_pivot_pos_x(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "pivot_pos_y") == 0) {
+            *out = gml_pivot_pos_y(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
         if (strcmp(id, "circle_in_circle") == 0) {
             *out = gml_circle_in_circle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
         }

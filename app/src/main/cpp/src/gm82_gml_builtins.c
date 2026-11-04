@@ -4113,6 +4113,48 @@ double gml_box_distance(double length, double dir) {
     return (m > 0.00001) ? (length / m) : length;
 }
 
+double gml_in_range(double val, double vmin, double vmax) {
+    return (val >= vmin && val <= vmax) ? 1.0 : 0.0;
+}
+
+double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment) {
+    double ua = 0.0;
+    double ux = x2 - x1;
+    double uy = y2 - y1;
+    double vx = x4 - x3;
+    double vy = y4 - y3;
+    double wx = x1 - x3;
+    double wy = y1 - y3;
+    double ud = vy * ux - vx * uy;
+    if (ud != 0.0) {
+        ua = (vx * wy - vy * wx) / ud;
+        if (segment >= 0.5) {
+            double ub = (ux * wy - uy * wx) / ud;
+            if (ua < 0.0 || ua > 1.0 || ub < 0.0 || ub > 1.0) ua = 0.0;
+        }
+    }
+    return ua;
+}
+
+double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0) {
+    return (double)(
+        (b7 >= 0.5 ? 128 : 0) +
+        (b6 >= 0.5 ? 64 : 0) +
+        (b5 >= 0.5 ? 32 : 0) +
+        (b4 >= 0.5 ? 16 : 0) +
+        (b3 >= 0.5 ? 8 : 0) +
+        (b2 >= 0.5 ? 4 : 0) +
+        (b1 >= 0.5 ? 2 : 0) +
+        (b0 >= 0.5 ? 1 : 0)
+    );
+}
+
+double gml_unpack_bool(double pbool, double which) {
+    uint8_t b = (uint8_t)pbool;
+    uint8_t w = (uint8_t)which;
+    return (double)((b & (1 << w)) ? 1 : 0);
+}
+
 double gml_circle_in_circle(double ax, double ay, double radiusa, double bx, double by, double radiusb) {
     double dx = ax - bx;
     double dy = ay - by;
