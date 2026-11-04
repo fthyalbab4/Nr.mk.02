@@ -140,6 +140,49 @@ static void test_math_builtins_and_eval(void) {
 
     assert(gm82_gml_eval_expr(&rt, NULL, "approach_angle_biased(0, 180, 15, -1)", &val));
     assert(fabs(val - 345.0) < 1e-6);
+    /* New GM82 Math additions */
+    assert(fabs(gml_unlerp(10.0, 20.0, 15.0) - 0.5) < 1e-6);
+    assert(fabs(gml_unclerp(0.0, 100.0, 150.0) - 1.0) < 1e-6);
+    assert(fabs(gml_unclerp(0.0, 100.0, -50.0) - 0.0) < 1e-6);
+    assert(fabs(gml_saturate(1.5) - 1.0) < 1e-6);
+    assert(fabs(gml_saturate(-0.5) - 0.0) < 1e-6);
+    assert(fabs(gml_roundto(16.0, 10.0) - 20.0) < 1e-6);
+    assert(fabs(gml_roundto(14.0, 10.0) - 10.0) < 1e-6);
+    assert(fabs(gml_roundto_unbiased(15.0, 10.0) - 20.0) < 1e-6);
+    assert(fabs(gml_floorto(16.0, 10.0) - 10.0) < 1e-6);
+    assert(fabs(gml_ceilto(14.0, 10.0) - 20.0) < 1e-6);
+    assert(gml_in_range(5.0, 1.0, 10.0) == 1.0);
+    assert(gml_in_range(15.0, 1.0, 10.0) == 0.0);
+    assert(gml_range_collision(0.0, 10.0, 5.0, 15.0) == 1.0);
+    assert(gml_range_collision(0.0, 10.0, 20.0, 30.0) == 0.0);
+    assert(gml_lines_intersect(0.0, 0.0, 10.0, 10.0, 0.0, 10.0, 10.0, 0.0, 1.0) > 0.0);
+    assert(gml_lines_intersect(0.0, 0.0, 1.0, 1.0, 10.0, 0.0, 10.0, 10.0, 1.0) == 0.0);
+    assert(gml_pack_bools(0, 0, 0, 0, 0, 0, 1, 1) == 3.0);
+    assert(gml_unpack_bool(3.0, 0.0) == 1.0);
+    assert(gml_unpack_bool(3.0, 1.0) == 1.0);
+    assert(gml_unpack_bool(3.0, 2.0) == 0.0);
+
+    /* Test evaluation of new built-ins through GML expression evaluator */
+    assert(gm82_gml_eval_expr(&rt, NULL, "unlerp(10, 20, 15)", &val));
+    assert(fabs(val - 0.5) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "unclerp(0, 100, 200)", &val));
+    assert(fabs(val - 1.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "saturate(0.7)", &val));
+    assert(fabs(val - 0.7) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(17, 5)", &val));
+    assert(fabs(val - 15.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "floorto(17, 5)", &val));
+    assert(fabs(val - 15.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "ceilto(17, 5)", &val));
+    assert(fabs(val - 20.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "in_range(7, 5, 10)", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "range_collision(0, 5, 3, 8)", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "pack_bools(0, 0, 0, 0, 0, 0, 0, 1)", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "unpack_bool(1, 0)", &val));
+    assert(val == 1.0);
 
     puts("test_math_builtins_and_eval PASS");
 }

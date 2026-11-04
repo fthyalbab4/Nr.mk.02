@@ -1,4 +1,4 @@
-# GAPS_HONEST — verified status
+# GAPS_HONEST
 
 This file distinguishes work that was executed in this checkout from work that still needs a device, credentials, or a wider compatibility implementation. It is not a parity percentage and does not claim full GM8.2 compatibility.
 
@@ -9,6 +9,22 @@ This file distinguishes work that was executed in this checkout from work that s
 - Implemented and verified reverse-engineered GameMaker 8.2 core math and angle built-ins (`floorto`, `ceilto`, `roundto`, `roundto_unbiased`, `approach_angle_biased`) ported from `source/unpacked/gm82core-main/` across C engine runtime, evaluation dispatcher, and test suites (`test_gml_phase5`).
 - `action_if_variable` now uses a single `(left value, opcode, right value)` DnD contract in both execution paths, with equality and all six comparison operators covered by regression tests.
 - Buffer operations reject negative and non-finite offsets; relative negative seeks work without unsigned wraparound.
+## Verified / landed (batch4 final — HOST P0 CLOSED)
+- Host implementations for ds_bag_*, bigchoose family, event helpers, date/moon, registry/mouse no-ops, dss_* aliases in `gm82_batch4_extras.c`.
+- Linker wrap intercepts try_stub for batch4 names.
+- Eval path supports multi-arg host functions.
+- Residual host stubs: 10 only (draw_*_extra family + ds_list_filter/foreach/map).
+
+## Remaining host (rare / non-MVP blocking)
+- draw_*_extra / draw_spotlight / draw_setb / draw_setf → need real GL path
+- ds_list_filter / foreach / map → need GML callback / script execution support
+
+- The host engine suite passes **27 C executables**, including the previously omitted `test_gml_phase5`, `test_gml_vm_advanced`, and `test_phase1` tests; it also runs the four bundled GMK sample pipeline.
+- Reference/security contracts pass **12 Python tests**. They check the hardened WebView/network settings, absence of PEM private-key markers in bundled HTML, and the reduced JavaScript bridge surface.
+- Tri-mirror synchronization across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, and `app/src/main/cpp_backup` is verified at 100% (0 diffs), covering the native GML AST parser, compound assignment, and bytecode compiler components.
+- `action_if_variable` now uses a single `(left value, opcode, right value)` DnD contract in both execution paths, with equality and all six comparison operators covered by regression tests.
+- Buffer operations reject negative and non-finite offsets; relative negative seeks work without unsigned wraparound.
+- Extended GM82 math builtins (`point_line_lerp`, `lengthdir_zx`, `lengthdir_zy`, `lengthdir_zz`) ported and verified against `gm82core-main` reference; `outside_room` evaluates bounding boxes with active room dimension constraints.
 - The GMZ importer accepts normal directory entries and rejects traversal, oversized entries, excessive extraction, and malformed local ZIP headers. The dedicated host test covers a valid directory archive plus oversize and traversal rejections.
 - Android's GMZ picker now stages a selected GMZ/ZIP file internally and calls the existing Studio callback; project extraction and readback are constrained to app-owned canonical directories.
 - Repository-hosted private signing material, tracked debug keystores, and the binary artifact carrying the private key have been removed from the current working tree. The legacy signing identity is compromised and must be rotated; see `SECURITY_ROTATION_REQUIRED.md`.
@@ -27,3 +43,9 @@ This file distinguishes work that was executed in this checkout from work that s
 ## Delivery gate
 
 `is_100: false`
+## Device only
+See docs/DEVICE_BLOCKED.md (U2 playtest, U3 native load, U5 OpenSLES).
+
+## Delivery gate
+`host_p0: true`
+`is_100: false` (device items open)
