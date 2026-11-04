@@ -4119,56 +4119,6 @@ double gml_saturate(double val) {
     return val;
 }
 
-double gml_unlerp(double a, double b, double val) {
-    if (fabs(b - a) < 1e-9) return 0.0;
-    return (val - a) / (b - a);
-}
-
-double gml_unclerp(double a, double b, double val) {
-    if (fabs(b - a) < 1e-9) return 0.0;
-    double t = (val - a) / (b - a);
-    if (t < 0.0) return 0.0;
-    if (t > 1.0) return 1.0;
-    return t;
-}
-
-double gml_floorto(double val, double to) {
-    if (fabs(to) < 1e-9) return val;
-    if (step < 0) step = -step;
-    double d = fmod(ang2 - ang1 + 540.0, 360.0) - 180.0;
-    if (fabs(fabs(d) - 180.0) < fabs(bias)) {
-        double sgn = (bias > 0.0) ? 1.0 : ((bias < 0.0) ? -1.0 : 0.0);
-        return gml_modwrap(ang1 + fmin(fabs(d), step) * sgn, 0.0, 360.0);
-    }
-    if (d > 0.0) return fmod(ang1 + fmin(d, step), 360.0);
-    return fmod(360.0 - fmod(360.0 - (ang1 + fmax(-step, d)), 360.0), 360.0);
-}
-
-double gml_roundto(double val, double to) {
-    if (to == 0.0) return val;
-    return round(val / to) * to;
-}
-
-double gml_roundto_unbiased(double val, double to) {
-    if (to == 0.0) return val;
-    return floor(val / to + 0.5) * to;
-}
-
-double gml_floorto(double val, double to) {
-    if (to == 0.0) return val;
-    return floor(val / to) * to;
-}
-
-double gml_ceilto(double val, double to) {
-    if (fabs(to) < 1e-9) return val;
-    return ceil(val / to) * to;
-}
-
-double gml_roundto(double val, double to) {
-    if (fabs(to) < 1e-9) return val;
-    return round(val / to) * to;
-}
-
 double gml_secant(double ang) {
     double c = cos(ang);
     if (fabs(c) < 1e-9) return 0.0;
@@ -4232,58 +4182,12 @@ double gml_lengthdir_zz(double len, double dir, double dirz) {
     return -len * gml_dsin(dirz);
 }
 
-    if (to == 0.0) return val;
-    return ceil(val / to) * to;
-}
-
 double gml_box_distance(double length, double dir) {
     double rad = dir * 3.14159265358979323846 / 180.0;
     double c = fabs(cos(rad));
     double s = fabs(sin(rad));
     double m = c > s ? c : s;
     return (m > 0.00001) ? (length / m) : length;
-}
-
-double gml_in_range(double val, double vmin, double vmax) {
-    return (val >= vmin && val <= vmax) ? 1.0 : 0.0;
-}
-
-double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment) {
-    double ua = 0.0;
-    double ux = x2 - x1;
-    double uy = y2 - y1;
-    double vx = x4 - x3;
-    double vy = y4 - y3;
-    double wx = x1 - x3;
-    double wy = y1 - y3;
-    double ud = vy * ux - vx * uy;
-    if (ud != 0.0) {
-        ua = (vx * wy - vy * wx) / ud;
-        if (segment >= 0.5) {
-            double ub = (ux * wy - uy * wx) / ud;
-            if (ua < 0.0 || ua > 1.0 || ub < 0.0 || ub > 1.0) ua = 0.0;
-        }
-    }
-    return ua;
-}
-
-double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0) {
-    return (double)(
-        (b7 >= 0.5 ? 128 : 0) +
-        (b6 >= 0.5 ? 64 : 0) +
-        (b5 >= 0.5 ? 32 : 0) +
-        (b4 >= 0.5 ? 16 : 0) +
-        (b3 >= 0.5 ? 8 : 0) +
-        (b2 >= 0.5 ? 4 : 0) +
-        (b1 >= 0.5 ? 2 : 0) +
-        (b0 >= 0.5 ? 1 : 0)
-    );
-}
-
-double gml_unpack_bool(double pbool, double which) {
-    uint8_t b = (uint8_t)pbool;
-    uint8_t w = (uint8_t)which;
-    return (double)((b & (1 << w)) ? 1 : 0);
 }
 
 double gml_circle_in_circle(double ax, double ay, double radiusa, double bx, double by, double radiusb) {
@@ -5329,6 +5233,11 @@ double gml_date_get_timestamp(void){ return (double)time(NULL); }
 
 /* APIs promoted by gm82_gml_eval.c. Keep real host implementations here so
  * every test executable links the same built-in surface. */
+double gml_range_collision(double a1, double a2, double b1, double b2) {
+    double amin = a1 < a2 ? a1 : a2, amax = a1 > a2 ? a1 : a2;
+    double bmin = b1 < b2 ? b1 : b2, bmax = b1 > b2 ? b1 : b2;
+    return (amax >= bmin && bmax >= amin) ? 1.0 : 0.0;
+}
 double gml_window_has_focus(void) { return 0.0; }
 
 double gml_url_open(const char *url) {
@@ -5606,8 +5515,6 @@ double gml_keyboard_get_keyname(double vk) {
     return 0;
 }
 
-double gml_path_get_width(double path_index) { (void)path_index; return 0.0; }
-double gml_path_get_height(double path_index) { (void)path_index; return 0.0; }
 double gml_path_get_approximate_pos(double path_index, double x, double y) {
     (void)path_index; (void)x; (void)y; return 0.0;
 }
@@ -5709,37 +5616,4 @@ void gml_draw_background_part(double bg, double left, double top, double width, 
             d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
         }
     }
-}
-
-
-/* GM82 Core Math Built-in Extensions (ported from source/unpacked/gm82core-main) */
-double gml_floorto(double val, double to) {
-    if (to == 0.0) return val;
-    return floor(val / to) * to;
-}
-
-double gml_ceilto(double val, double to) {
-    if (to == 0.0) return val;
-    return ceil(val / to) * to;
-}
-
-double gml_roundto(double val, double to) {
-    if (to == 0.0) return val;
-    return round(val / to) * to;
-}
-
-double gml_roundto_unbiased(double val, double to) {
-    if (to == 0.0) return val;
-    return floor(val / to + 0.5) * to;
-}
-
-double gml_approach_angle_biased(double ang1, double ang2, double step, double bias) {
-    if (step < 0.0) step = -step;
-    double d = fmod(ang2 - ang1 + 540.0, 360.0) - 180.0;
-    if (fabs(fabs(d) - 180.0) < fabs(bias)) {
-        double sign_bias = (bias > 0.0) ? 1.0 : ((bias < 0.0) ? -1.0 : 0.0);
-        return gml_modwrap(ang1 + fmin(fabs(d), step) * sign_bias, 0.0, 360.0);
-    }
-    if (d > 0.0) return fmod(ang1 + fmin(d, step), 360.0);
-    return fmod(360.0 - fmod(360.0 - (ang1 + fmax(-step, d)), 360.0), 360.0);
 }

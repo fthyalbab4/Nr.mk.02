@@ -1,6 +1,6 @@
 /* gm82_batch4_extras.c — host implementations for remaining GM82CORE stubs
  * Closes host P0 gaps: ds_bag_*, bigchoose_*, event_*, date_*, dss_*, registry/mouse no-ops.
- * Linked via src/*.c glob. Provides __wrap_gm82_gm82core_try_stub for 0-arg intercept.
+ * Linked via the source-file glob. Provides __wrap_gm82_gm82core_try_stub for 0-arg intercept.
  */
 #include <string.h>
 #include <stdlib.h>
@@ -123,7 +123,7 @@ double gml_event_draw(void) { return 0; }
 double gml_event_trigger(double n) { (void)n; return 0; }
 
 /* ---- date helpers ---- */
-double gml_date_get_moon_phase(void) {
+double batch4_date_get_moon_phase(void) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     if (!tm) return 0;
@@ -131,8 +131,8 @@ double gml_date_get_moon_phase(void) {
     double phase = fmod((double)doy, 29.530588) / 29.530588;
     return phase;
 }
-double gml_date_is_easter(void) { return 0; }
-double gml_datetime_current_filename(void) { return (double)time(NULL); }
+double batch4_date_is_easter(void) { return 0; }
+double batch4_datetime_current_filename(void) { return (double)time(NULL); }
 
 /* ---- dss_* aliases ---- */
 double gml_dss_list_create(void) { return gml_ds_bag_create(); }
@@ -150,11 +150,11 @@ double gml_dsmap(void) { return gml_ds_bag_create(); }
 double gml_registry_read_dword(void) { return 0; }
 double gml_registry_read_sz(void) { return 0; }
 double gml_registry_write_dword(void) { return 0; }
-double gml_mouse_back_button(void) { return 0; }
-double gml_mouse_forward_button(void) { return 0; }
-double gml_mouse_check_direct(void) { return 0; }
-double gml_mouse_in_window(void) { return 1; }
-double gml_window_has_focus(void) { return 1; }
+double batch4_mouse_back_button(void) { return 0; }
+double batch4_mouse_forward_button(void) { return 0; }
+double batch4_mouse_check_direct(void) { return 0; }
+double batch4_mouse_in_window(void) { return 1; }
+double batch4_window_has_focus(void) { return 1; }
 double gml_message_default(void) { return 0; }
 double gml_execute_program_silent(void) { return 0; }
 double gml_execute_program_async(void) { return 0; }
@@ -189,8 +189,8 @@ double gml_draw_sprite_part_extra(void) { return 0; }
 double gml_draw_sprite_tiled_extra(void) { return 0; }
 double gml_draw_sprite_part_centered(void) { return 0; }
 double gml_draw_spotlight(void) { return 0; }
-double gml_draw_setb(void) { return 0; }
-double gml_draw_setf(void) { return 0; }
+double batch4_draw_setb(void) { return 0; }
+double batch4_draw_setf(void) { return 0; }
 
 /* ds_list_filter / foreach / map need GML callback — residual */
 double gml_ds_list_filter(void) { return 0; }
@@ -198,7 +198,7 @@ double gml_ds_list_foreach(void) { return 0; }
 double gml_ds_list_map(void) { return 0; }
 
 /* ---- wrap try_stub ---- */
-extern int __real_gm82_gm82core_try_stub(const char *id, double *out);
+extern int __real_gm82_gm82core_try_stub(const char *id, double *out) __attribute__((weak));
 
 int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     if (!id || !out) return 0;
@@ -210,9 +210,9 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("event_step", gml_event_step);
     H0("event_endstep", gml_event_endstep);
     H0("event_draw", gml_event_draw);
-    H0("date_get_moon_phase", gml_date_get_moon_phase);
-    H0("date_is_easter", gml_date_is_easter);
-    H0("datetime_current_filename", gml_datetime_current_filename);
+    H0("date_get_moon_phase", batch4_date_get_moon_phase);
+    H0("date_is_easter", batch4_date_is_easter);
+    H0("datetime_current_filename", batch4_datetime_current_filename);
     H0("dss_list_create", gml_dss_list_create);
     H0("dss_map_create", gml_dss_map_create);
     H0("dss_stack_create", gml_dss_stack_create);
@@ -221,11 +221,11 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("dslist", gml_dslist);
     H0("dsmap", gml_dsmap);
     H0("ds_bag_create", gml_ds_bag_create);
-    H0("mouse_back_button", gml_mouse_back_button);
-    H0("mouse_forward_button", gml_mouse_forward_button);
-    H0("mouse_check_direct", gml_mouse_check_direct);
-    H0("mouse_in_window", gml_mouse_in_window);
-    H0("window_has_focus", gml_window_has_focus);
+    H0("mouse_back_button", batch4_mouse_back_button);
+    H0("mouse_forward_button", batch4_mouse_forward_button);
+    H0("mouse_check_direct", batch4_mouse_check_direct);
+    H0("mouse_in_window", batch4_mouse_in_window);
+    H0("window_has_focus", batch4_window_has_focus);
     H0("message_default", gml_message_default);
     H0("execute_program_silent", gml_execute_program_silent);
     H0("execute_program_async", gml_execute_program_async);
@@ -261,12 +261,13 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("draw_sprite_tiled_extra", gml_draw_sprite_tiled_extra);
     H0("draw_sprite_part_centered", gml_draw_sprite_part_centered);
     H0("draw_spotlight", gml_draw_spotlight);
-    H0("draw_setb", gml_draw_setb);
-    H0("draw_setf", gml_draw_setf);
+    H0("draw_setb", batch4_draw_setb);
+    H0("draw_setf", batch4_draw_setf);
     H0("ds_list_filter", gml_ds_list_filter);
     H0("ds_list_foreach", gml_ds_list_foreach);
     H0("ds_list_map", gml_ds_list_map);
-    return __real_gm82_gm82core_try_stub(id, out);
+    if (__real_gm82_gm82core_try_stub) return __real_gm82_gm82core_try_stub(id, out);
+    return 0;
 }
 
 #ifdef __cplusplus
