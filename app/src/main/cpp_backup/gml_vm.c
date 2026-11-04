@@ -373,6 +373,38 @@ static gml_value call(gml_vm *vm, const gml_ast *n) {
     } else if (!strcmp(n->text, "approach") && c == 3) {
         double cur = num(a[0]), target = num(a[1]), amount = num(a[2]);
         r = gml_value_real(cur < target ? (cur + amount > target ? target : cur + amount) : (cur - amount < target ? target : cur - amount));
+    } else if (!strcmp(n->text, "approach_angle_biased") && c == 4) {
+        r = gml_value_real(gml_approach_angle_biased(num(a[0]), num(a[1]), num(a[2]), num(a[3])));
+    } else if (!strcmp(n->text, "in_range") && c == 3) {
+        r = gml_value_real(gml_in_range(num(a[0]), num(a[1]), num(a[2])));
+    } else if (!strcmp(n->text, "saturate") && c == 1) {
+        r = gml_value_real(gml_saturate(num(a[0])));
+    } else if (!strcmp(n->text, "unlerp") && c == 3) {
+        r = gml_value_real(gml_unlerp(num(a[0]), num(a[1]), num(a[2])));
+    } else if (!strcmp(n->text, "unclerp") && c == 3) {
+        r = gml_value_real(gml_unclerp(num(a[0]), num(a[1]), num(a[2])));
+    } else if (!strcmp(n->text, "floorto") && c == 2) {
+        r = gml_value_real(gml_floorto(num(a[0]), num(a[1])));
+    } else if (!strcmp(n->text, "ceilto") && c == 2) {
+        r = gml_value_real(gml_ceilto(num(a[0]), num(a[1])));
+    } else if (!strcmp(n->text, "roundto") && c == 2) {
+        r = gml_value_real(gml_roundto(num(a[0]), num(a[1])));
+    } else if (!strcmp(n->text, "secant") && c == 1) {
+        r = gml_value_real(gml_secant(num(a[0])));
+    } else if (!strcmp(n->text, "lines_intersect") && c == 9) {
+        r = gml_value_real(gml_lines_intersect(num(a[0]), num(a[1]), num(a[2]), num(a[3]), num(a[4]), num(a[5]), num(a[6]), num(a[7]), num(a[8])));
+    } else if (!strcmp(n->text, "point_line_lerp") && c == 7) {
+        r = gml_value_real(gml_point_line_lerp(num(a[0]), num(a[1]), num(a[2]), num(a[3]), num(a[4]), num(a[5]), num(a[6])));
+    } else if (!strcmp(n->text, "point_direction_pitch") && c == 6) {
+        r = gml_value_real(gml_point_direction_pitch(num(a[0]), num(a[1]), num(a[2]), num(a[3]), num(a[4]), num(a[5])));
+    } else if (!strcmp(n->text, "angle_difference_3d") && c == 6) {
+        r = gml_value_real(gml_angle_difference_3d(num(a[0]), num(a[1]), num(a[2]), num(a[3]), num(a[4]), num(a[5])));
+    } else if (!strcmp(n->text, "lengthdir_zx") && c == 3) {
+        r = gml_value_real(gml_lengthdir_zx(num(a[0]), num(a[1]), num(a[2])));
+    } else if (!strcmp(n->text, "lengthdir_zy") && c == 3) {
+        r = gml_value_real(gml_lengthdir_zy(num(a[0]), num(a[1]), num(a[2])));
+    } else if (!strcmp(n->text, "lengthdir_zz") && c == 3) {
+        r = gml_value_real(gml_lengthdir_zz(num(a[0]), num(a[1]), num(a[2])));
     } else if (!strcmp(n->text, "make_color_rgb") && c == 3) {
         long red = (long)num(a[0]) & 0xFF, green = (long)num(a[1]) & 0xFF, blue = (long)num(a[2]) & 0xFF;
         r = gml_value_real((double)(red | (green << 8) | (blue << 16)));
@@ -642,6 +674,21 @@ static gml_value eval(gml_vm *vm, const gml_ast *n) {
         }
         case GML_AST_ASSIGN: {
             gml_value r = eval(vm, n->right);
+            if (n->op != GML_T_NONE) {
+                gml_value current = eval(vm, n->left);
+                double x = num(current), y = num(r), z = x;
+                switch (n->op) {
+                    case GML_T_PLUS: z = x + y; break;
+                    case GML_T_MINUS: z = x - y; break;
+                    case GML_T_STAR: z = x * y; break;
+                    case GML_T_SLASH: z = y == 0.0 ? 0.0 : x / y; break;
+                    case GML_T_PERCENT: z = fmod(x, y); break;
+                    default: break;
+                }
+                gml_value_free(&r);
+                r = gml_value_real(z);
+                gml_value_free(&current);
+            }
             if (n->left && n->left->kind == GML_AST_NAME) {
                 gml_vm_set(vm, n->left->text, r);
             } else if (n->left && n->left->kind == GML_AST_MEMBER && n->left->left && n->left->left->kind == GML_AST_NAME && !strcmp(n->left->left->text, "self")) {
