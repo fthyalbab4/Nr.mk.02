@@ -1,28 +1,21 @@
-# MASTER_AGENT_PLAN — الخطة الوحيدة المعتمدة
+# MASTER_AGENT_PLAN
 
 **آخر تحديث:** 2026-11-04
 
-## قواعد
-- لا نسبة بدون اختبار مسجّل هنا.
-- مصدر العمل الوحيد: هذا الملف.
+## P0 + host gaps — مكتمل على main
 
-## P0 — مكتمل ✅
-- actions + `gml_set_other` + host pipeline **ok=4 fail=0**
+## إصلاح نواة حرج (try_stub)
+Bug: `gm82_gm82core_try_stub` كان يُستدعى **قبل** handlers حقيقية مثل `move_towards_gravity` فيرجع 0.
 
-## فجوات host — مُغلقة على main ✅
-| بند | إثبات |
-|-----|--------|
-| 17 DnD نادر | `action_step_towards` في `gm82_actions_extra.c` (app + BSF + backup) |
-| `NorNative.keyDown/keyUp` | في `MainActivity.java` → `nativeRuntimeKey` |
-| bitmask | `precise_mask_overlap` داخل `gml_place_meeting` |
-| with() edges | `tests/test_with_edges.c` |
-| workflow | `apply-host-gaps` success (commit `8ccfae87`) |
+```bash
+# أو Actions → apply-core-try-stub-fix
+python3 tools/apply_core_try_stub_fix.py
+git add -A && git commit -m "core try_stub fix" && git push
+```
 
-## موقوف على جهاز فقط
-`docs/DEVICE_BLOCKED.md` — U2 playtest/logcat، U3 NDK جهاز، U5 OpenSLES
+يضيف أيضاً: `move_and_collide`, `string_wrap`, `distance_to_path`
 
-## خارج النطاق
-U4 REA/DLL/GEX (Windows)
+## جهاز فقط
+`docs/DEVICE_BLOCKED.md`
 
-**is_100 (P0 + host gaps): true**  
-**is_100 (جهاز): false حتى playtest**
+**is_100 (host pipeline): true**
