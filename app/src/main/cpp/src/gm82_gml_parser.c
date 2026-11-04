@@ -190,7 +190,10 @@ static gm82_gml_ast *logic(gm82_gml_parser *p) {
     while (p->current.kind == GM82_TOK_AND || p->current.kind == GM82_TOK_OR ||
            (p->current.kind == GM82_TOK_IDENTIFIER &&
             (!strcmp(p->current.text, "and") || !strcmp(p->current.text, "or")))) {
-        gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = compare(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
+        gm82_gml_token t = p->current;
+        bool is_and = (t.kind == GM82_TOK_AND || (t.kind == GM82_TOK_IDENTIFIER && !strcmp(t.text, "and")));
+        advance(p);
+        gm82_gml_ast *right = compare(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
         const char *op_str = (t.kind == GM82_TOK_IDENTIFIER) ? (!strcmp(t.text, "and") ? "&&" : "||") : gm82_gml_token_kind_name(t.kind);
         n->text = copy_text(op_str); n->a = left; n->b = right; left = n;

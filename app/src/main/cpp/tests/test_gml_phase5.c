@@ -118,6 +118,72 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "lerp_angle(350, 10, 0.5)", &val));
     assert(fabs(val - 0.0) < 1e-6);
 
+    assert(fabs(gml_floorto(15.7, 5.0) - 15.0) < 1e-6);
+    assert(fabs(gml_ceilto(15.1, 5.0) - 20.0) < 1e-6);
+    assert(fabs(gml_roundto(12.0, 5.0) - 10.0) < 1e-6);
+    assert(fabs(gml_roundto(13.0, 5.0) - 15.0) < 1e-6);
+    assert(fabs(gml_roundto_unbiased(12.5, 5.0) - 15.0) < 1e-6);
+    assert(fabs(gml_approach_angle_biased(0.0, 180.0, 10.0, 1.0) - 10.0) < 1e-6);
+    assert(fabs(gml_approach_angle_biased(0.0, 180.0, 10.0, -1.0) - 350.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "floorto(33, 16)", &val));
+    assert(fabs(val - 32.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "ceilto(33, 16)", &val));
+    assert(fabs(val - 48.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(35, 16)", &val));
+    assert(fabs(val - 32.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(41, 16)", &val));
+    assert(fabs(val - 48.0) < 1e-6);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "approach_angle_biased(0, 180, 15, -1)", &val));
+    assert(fabs(val - 345.0) < 1e-6);
+    /* New GM82 Math additions */
+    assert(fabs(gml_unlerp(10.0, 20.0, 15.0) - 0.5) < 1e-6);
+    assert(fabs(gml_unclerp(0.0, 100.0, 150.0) - 1.0) < 1e-6);
+    assert(fabs(gml_unclerp(0.0, 100.0, -50.0) - 0.0) < 1e-6);
+    assert(fabs(gml_saturate(1.5) - 1.0) < 1e-6);
+    assert(fabs(gml_saturate(-0.5) - 0.0) < 1e-6);
+    assert(fabs(gml_roundto(16.0, 10.0) - 20.0) < 1e-6);
+    assert(fabs(gml_roundto(14.0, 10.0) - 10.0) < 1e-6);
+    assert(fabs(gml_roundto_unbiased(15.0, 10.0) - 20.0) < 1e-6);
+    assert(fabs(gml_floorto(16.0, 10.0) - 10.0) < 1e-6);
+    assert(fabs(gml_ceilto(14.0, 10.0) - 20.0) < 1e-6);
+    assert(gml_in_range(5.0, 1.0, 10.0) == 1.0);
+    assert(gml_in_range(15.0, 1.0, 10.0) == 0.0);
+    assert(gml_range_collision(0.0, 10.0, 5.0, 15.0) == 1.0);
+    assert(gml_range_collision(0.0, 10.0, 20.0, 30.0) == 0.0);
+    assert(gml_lines_intersect(0.0, 0.0, 10.0, 10.0, 0.0, 10.0, 10.0, 0.0, 1.0) > 0.0);
+    assert(gml_lines_intersect(0.0, 0.0, 1.0, 1.0, 10.0, 0.0, 10.0, 10.0, 1.0) == 0.0);
+    assert(gml_pack_bools(0, 0, 0, 0, 0, 0, 1, 1) == 3.0);
+    assert(gml_unpack_bool(3.0, 0.0) == 1.0);
+    assert(gml_unpack_bool(3.0, 1.0) == 1.0);
+    assert(gml_unpack_bool(3.0, 2.0) == 0.0);
+
+    /* Test evaluation of new built-ins through GML expression evaluator */
+    assert(gm82_gml_eval_expr(&rt, NULL, "unlerp(10, 20, 15)", &val));
+    assert(fabs(val - 0.5) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "unclerp(0, 100, 200)", &val));
+    assert(fabs(val - 1.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "saturate(0.7)", &val));
+    assert(fabs(val - 0.7) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(17, 5)", &val));
+    assert(fabs(val - 15.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "floorto(17, 5)", &val));
+    assert(fabs(val - 15.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "ceilto(17, 5)", &val));
+    assert(fabs(val - 20.0) < 1e-6);
+    assert(gm82_gml_eval_expr(&rt, NULL, "in_range(7, 5, 10)", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "range_collision(0, 5, 3, 8)", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "pack_bools(0, 0, 0, 0, 0, 0, 0, 1)", &val));
+    assert(val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "unpack_bool(1, 0)", &val));
+    assert(val == 1.0);
+
     puts("test_math_builtins_and_eval PASS");
 }
 
@@ -179,12 +245,40 @@ static void test_dnd_action_conditionals(void) {
     puts("test_dnd_action_conditionals PASS");
 }
 
+
+static void test_gm82_core_math_extensions(void) {
+    /* floorto, ceilto, roundto, roundto_unbiased, approach_angle_biased */
+    assert(fabs(gml_floorto(15.7, 5.0) - 15.0) < 0.0001);
+    assert(fabs(gml_ceilto(15.2, 5.0) - 20.0) < 0.0001);
+    assert(fabs(gml_roundto(17.4, 5.0) - 15.0) < 0.0001);
+    assert(fabs(gml_roundto(17.6, 5.0) - 20.0) < 0.0001);
+    assert(fabs(gml_roundto_unbiased(12.5, 5.0) - 15.0) < 0.0001);
+
+    double a = gml_approach_angle_biased(10.0, 50.0, 5.0, 1.0);
+    assert(fabs(a - 15.0) < 0.0001);
+
+    gm82_runtime rt;
+    memset(&rt, 0, sizeof(rt));
+    double res = 0;
+    assert(gm82_gml_eval_expr(&rt, NULL, "floorto(14.8, 4)", &res));
+    assert(fabs(res - 12.0) < 0.0001);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "ceilto(12.1, 4)", &res));
+    assert(fabs(res - 16.0) < 0.0001);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "roundto(14.9, 4)", &res));
+    assert(fabs(res - 16.0) < 0.0001);
+
+    puts("test_gm82_core_math_extensions PASS");
+}
+
 int main(void) {
     puts("=== Testing Phase 5 GML Expansion (Strings & Collision Shapes & Math & DnD) ===");
     test_string_expansions();
     test_collision_shapes();
     test_math_builtins_and_eval();
     test_dnd_action_conditionals();
+    test_gm82_core_math_extensions();
     puts("GML_PHASE5_TEST_PASS");
     return 0;
 }
