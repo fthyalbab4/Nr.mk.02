@@ -291,6 +291,80 @@ static void update_speed_from_dir(gm82_instance *inst) {
     inst->vspeed = -sin(rad) * inst->speed;
 }
 
+typedef struct {
+    double left, top, right, bottom;
+} gm82_collision_box;
+
+static gm82_collision_box instance_collision_box(const gm82_runtime *rt,
+                                                  const gm82_instance *inst) {
+    gm82_collision_box box = {inst->x, inst->y, inst->x + 16.0, inst->y + 16.0};
+    int32_t w = 16, h = 16, ox = 0, oy = 0;
+    if (rt && rt->sprites && inst->sprite_index >= 0 &&
+        inst->sprite_index < rt->sprites->count) {
+        const gm82_decoded_frame *frame = &rt->sprites->frames[inst->sprite_index];
+        w = frame->width; h = frame->height;
+        ox = frame->origin_x; oy = frame->origin_y;
+    }
+    double sx = inst->image_xscale != 0.0 ? inst->image_xscale : 1.0;
+    double sy = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
+    w = (int32_t)(w * sx); h = (int32_t)(h * sy);
+    ox = (int32_t)(ox * sx); oy = (int32_t)(oy * sy);
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+    box.left = inst->x - ox; box.top = inst->y - oy;
+    box.right = box.left + w; box.bottom = box.top + h;
+    return box;
+}
+
+static void resolve_solid_contact(gm82_runtime *rt, gm82_instance *moving,
+                                  const gm82_instance *solid) {
+    if (!rt || !moving || !solid || !moving->alive || !solid->alive) return;
+    gm82_collision_box now = instance_collision_box(rt, moving);
+    gm82_collision_box old = now;
+    double old_x = moving->xprevious, old_y = moving->yprevious;
+    double saved_x = moving->x, saved_y = moving->y;
+    moving->x = old_x; moving->y = old_y;
+    old = instance_collision_box(rt, moving);
+    moving->x = saved_x; moving->y = saved_y;
+    gm82_collision_box wall = instance_collision_box(rt, solid);
+    int vertical = 0;
+    if (old.bottom <= wall.top && now.bottom > wall.top && moving->vspeed >= 0.0) {
+        moving->y += wall.top - now.bottom;
+        moving->vspeed = 0.0;
+        moving->on_ground = 1;
+        vertical = 1;
+    } else if (old.top >= wall.bottom && now.top < wall.bottom && moving->vspeed <= 0.0) {
+        moving->y += wall.bottom - now.top;
+        moving->vspeed = 0.0;
+        moving->on_ceiling = 1;
+        vertical = 1;
+    }
+    if (vertical) return;
+    if (old.right <= wall.left && now.right > wall.left && moving->hspeed >= 0.0) {
+        moving->x += wall.left - now.right;
+        moving->hspeed = 0.0;
+        moving->hit_right = 1;
+    } else if (old.left >= wall.right && now.left < wall.right && moving->hspeed <= 0.0) {
+        moving->x += wall.right - now.left;
+        moving->hspeed = 0.0;
+        moving->hit_left = 1;
+    } else {
+        /* Corner/teleport fallback: constrain the smaller penetration axis,
+           rather than rewinding both coordinates and losing valid motion. */
+        double px = fmin(fabs(now.right - wall.left), fabs(wall.right - now.left));
+        double py = fmin(fabs(now.bottom - wall.top), fabs(wall.bottom - now.top));
+        if (py <= px) {
+            moving->y = moving->yprevious;
+            moving->vspeed = 0.0;
+            if (moving->y <= wall.top) moving->on_ground = 1;
+            else moving->on_ceiling = 1;
+        } else {
+            moving->x = moving->xprevious;
+            moving->hspeed = 0.0;
+        }
+    }
+}
+
 void gm82_runtime_step(gm82_runtime *rt) {
     if (!rt || !rt->running) return;
     rt->frame++;
@@ -303,6 +377,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
         if (!rt->instances[i].alive) continue;
         rt->instances[i].xprevious = rt->instances[i].x;
         rt->instances[i].yprevious = rt->instances[i].y;
+        rt->instances[i].on_ground = 0;
+        rt->instances[i].on_ceiling = 0;
+        rt->instances[i].hit_left = 0;
+        rt->instances[i].hit_right = 0;
     }
 
     rt->frame_phase = 1;
@@ -398,7 +476,8 @@ void gm82_runtime_step(gm82_runtime *rt) {
             double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
             sw = (int32_t)(sw * xs); sh = (int32_t)(sh * ys);
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
-            if (sw < 1) sw = 1; if (sh < 1) sh = 1;
+            if (sw < 1) sw = 1;
+            if (sh < 1) sh = 1;
             double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
             int cx0 = (int)(ax1 / CELL) - 1, cy0 = (int)(ay1 / CELL) - 1;
             int cx1 = (int)(ax2 / CELL) + 1, cy1 = (int)(ay2 / CELL) + 1;
@@ -419,19 +498,14 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         double oys = other->image_yscale != 0.0 ? other->image_yscale : 1.0;
                         ow = (int32_t)(ow * oxs); oh = (int32_t)(oh * oys);
                         oox = (int32_t)(oox * oxs); ooy = (int32_t)(ooy * oys);
-                        if (ow < 1) ow = 1; if (oh < 1) oh = 1;
+                        if (ow < 1) ow = 1;
+                        if (oh < 1) oh = 1;
                         double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
                         if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
                         gm82_events_fire_collision(rt, inst, other);
                         if (inst->alive && other->alive) gm82_events_fire_collision(rt, other, inst);
-                        if (other->solid) {
-                            inst->x = inst->xprevious; inst->y = inst->yprevious;
-                            if (inst->hspeed != 0) inst->hspeed = 0;
-                            if (inst->vspeed != 0) inst->vspeed = 0;
-                        }
-                        if (inst->solid && !other->solid) {
-                            other->x = other->xprevious; other->y = other->yprevious;
-                        }
+                        if (other->solid) resolve_solid_contact(rt, inst, other);
+                        if (inst->solid && !other->solid) resolve_solid_contact(rt, other, inst);
                     }
                 }
             }

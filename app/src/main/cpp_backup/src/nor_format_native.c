@@ -360,6 +360,10 @@ double nor_export_gmx_semantic_native(const char *source_dir, const char *output
     return count >= 0 ? 1.0 : 0.0;
 }
 
+#define NOR_GMZ_MAX_ENTRIES 2048u
+#define NOR_GMZ_MAX_ENTRY_BYTES (32u * 1024u * 1024u)
+#define NOR_GMZ_MAX_EXTRACTED_BYTES (96u * 1024u * 1024u)
+
 static int zip_safe_name_native(const char *name) {
     if (!name || !*name || name[0] == '/' || strstr(name, "..") != NULL) return 0;
     return 1;
@@ -380,17 +384,27 @@ double nor_import_gmx_gmz_native(const char *path, const char *output_dir) {
     }
     if (!found) { free(data); return 0.0; }
     uint16_t count = zip_read_u16_native(data + eocd + 10); uint32_t central_size = zip_read_u32_native(data + eocd + 12); uint32_t central_off = zip_read_u32_native(data + eocd + 16);
-    if ((uint64_t)central_off + central_size > total || !mkdir_p_native(output_dir)) { free(data); return 0.0; }
+    if (count > NOR_GMZ_MAX_ENTRIES || (uint64_t)central_off + central_size > total || !mkdir_p_native(output_dir)) { free(data); return 0.0; }
     size_t pos = central_off; int extracted = 0;
+    uint64_t extracted_bytes = 0;
     for (uint16_t i = 0; i < count; ++i) {
         if (pos + 46 > total || zip_read_u32_native(data + pos) != 0x02014b50u) { free(data); return 0.0; }
         uint16_t method = zip_read_u16_native(data + pos + 10); uint32_t csize = zip_read_u32_native(data + pos + 20); uint32_t usize = zip_read_u32_native(data + pos + 24);
         uint16_t nlen = zip_read_u16_native(data + pos + 28); uint16_t xlen = zip_read_u16_native(data + pos + 30); uint16_t clen = zip_read_u16_native(data + pos + 32); uint32_t local = zip_read_u32_native(data + pos + 42);
-        if (pos + 46u + nlen + xlen + clen > total || nlen >= 1024 || (method != 0 && method != 8) || (uint64_t)local + 30 > total) { free(data); return 0.0; }
+        if (pos + 46u + nlen + xlen + clen > total || nlen >= 1024 || (method != 0 && method != 8) ||
+            (uint64_t)local + 30 > total || zip_read_u32_native(data + local) != 0x04034b50u) { free(data); return 0.0; }
         char name[1024]; memcpy(name, data + pos + 46, nlen); name[nlen] = 0;
         if (!zip_safe_name_native(name)) { free(data); return 0.0; }
         uint16_t ln = zip_read_u16_native(data + local + 26); uint16_t lx = zip_read_u16_native(data + local + 28); uint64_t payload = (uint64_t)local + 30 + ln + lx;
-        if (payload + csize > total || usize > 64u * 1024u * 1024u) { free(data); return 0.0; }
+        if (payload + csize > total || usize > NOR_GMZ_MAX_ENTRY_BYTES || extracted_bytes + (uint64_t)usize > NOR_GMZ_MAX_EXTRACTED_BYTES) { free(data); return 0.0; }
+        char outpath[3072]; int pn = snprintf(outpath, sizeof(outpath), "%s/%s", output_dir, name);
+        if (pn < 0 || (size_t)pn >= sizeof(outpath)) { free(data); return 0.0; }
+        /* ZIP writers commonly emit directory entries. They carry no payload and must not be fopen()'d as files. */
+        if (nlen > 0 && name[nlen - 1] == '/') {
+            if (csize != 0 || usize != 0 || !mkdir_p_native(outpath)) { free(data); return 0.0; }
+            ++extracted; pos += 46u + nlen + xlen + clen; continue;
+        }
+        extracted_bytes += (uint64_t)usize;
         unsigned char *decoded = NULL;
         if (method == 0) {
             if (csize != usize) { free(data); return 0.0; }
@@ -401,7 +415,6 @@ double nor_import_gmx_gmz_native(const char *path, const char *output_dir) {
             if (!decoded) { free(data); return 0.0; }
             if (!zip_inflate_raw_native(data + payload, csize, decoded, usize)) { free(decoded); free(data); return 0.0; }
         }
-        char outpath[3072]; int pn = snprintf(outpath, sizeof(outpath), "%s/%s", output_dir, name); if (pn < 0 || (size_t)pn >= sizeof(outpath)) { free(decoded); free(data); return 0.0; }
         char *slash = strrchr(outpath, '/'); if (slash) { *slash = 0; mkdir_p_native(outpath); *slash = '/'; }
         FILE *out = fopen(outpath, "wb"); if (!out || (usize && fwrite(decoded, 1, usize, out) != usize)) { if (out) fclose(out); free(decoded); free(data); return 0.0; }
         free(decoded);
