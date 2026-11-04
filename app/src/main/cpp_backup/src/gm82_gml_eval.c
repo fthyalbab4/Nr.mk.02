@@ -751,6 +751,7 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "lengthdir_zz") == 0) {
             *out = gml_lengthdir_zz(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
+        }
         if (strcmp(id, "roundto") == 0) {
             *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1); return true;
         }
@@ -3276,6 +3277,14 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     }
 
     skip_ws(&p);
+    /* Standalone zero-argument lifecycle calls are statements, not assignments.
+       Handle this explicitly before the generic assignment fallback. */
+    if (strcmp(id, "instance_destroy") == 0 && peek(&p) == '(') {
+        gm82_gml_set_runtime(rt);
+        gm82_gml_set_self(self);
+        gml_instance_destroy();
+        return true;
+    }
     int array_idx = -1;
     if (peek(&p) == '[') {
         getc_(&p);

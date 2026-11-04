@@ -750,18 +750,11 @@ double gml_ceilto(double val, double to);
 double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0);
 double gml_unpack_bool(double pbool, double which);
 
-#ifdef __cplusplus
-}
-#endif
-
-
 double gml_floorto(double val, double to);
 double gml_ceilto(double val, double to);
 double gml_roundto(double val, double to);
 double gml_roundto_unbiased(double val, double to);
 double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
-
-#endif
 
 double gml_move_and_collide(double dx, double dy, double obj);
 double gml_string_wrap(const char *s, double width);
@@ -799,4 +792,8 @@ double gml_datetime_current_filename(void);
 double gml_mouse_back_button(void);
 double gml_mouse_forward_button(void);
 double gml_mouse_check_direct(double button);
+#ifdef __cplusplus
+}
+#endif
+
 #endif
