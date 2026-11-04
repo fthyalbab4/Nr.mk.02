@@ -1,33 +1,34 @@
-# MASTER_AGENT_PLAN — الخطة الوحيدة المعتمدة
+# MASTER_AGENT_PLAN
 
-**آخر تحديث:** 2026-11-04
+**آخر تحديث:** 2026-11-04 (batch4 host P0 CLOSED)
 
-## قواعد
-- لا نسبة بدون اختبار مسجّل هنا.
-- مصدر العمل الوحيد: هذا الملف.
+## P0 + host gaps — مكتمل على main
 
-## P0 — مكتمل ✅
-- actions + `gml_set_other` + host pipeline **ok=4 fail=0**
+## batch4 final (2026-11-04) — HOST CLOSED
+- `gm82_batch4_extras.c`: real host impls (ds_bag_*, bigchoose_*, event_*, date, dss_*, registry/mouse no-ops)
+- linker `--wrap=gm82_gm82core_try_stub` intercepts handled names
+- eval dispatch path for multi-arg host functions
+- GM82CORE_STUBS residual **10** only:
+  - draw_background_tiled_extra, draw_sprite_part_extra, draw_sprite_tiled_extra, draw_sprite_part_centered, draw_spotlight, draw_setb, draw_setf (need GL)
+  - ds_list_filter, ds_list_foreach, ds_list_map (need GML callback support)
 
-## أُغلق على host (تطبيق من جهازك إن لزم)
-```bash
-python3 tools/apply_actions_gapfill.py   # 17 DnD نادر
-python3 tools/apply_keydown_bridge.py    # NorNative.keyDown/keyUp
-git add -A && git commit -m "apply host gapfill + keyDown" && git push
-```
+## المتبقي جهاز فقط
+انظر `docs/DEVICE_BLOCKED.md` (U2/U3/U5)
 
-| بند | ملف |
-|-----|-----|
-| UNMAPPED نادر | `tools/apply_actions_gapfill.py` |
-| bitmask | موصول في `gml_place_meeting` |
-| with() edges | `app/src/main/cpp/tests/test_with_edges.c` |
-| keyDown | `tools/apply_keydown_bridge.py` |
+## P1 — مكتمل ✅
 
-## موقوف على جهاز
-`docs/DEVICE_BLOCKED.md` — U2/U3/U5
+| بند | الحالة |
+|-----|--------|
+| NES runner UI + bridge | **على main** |
+| NES يستدعي `NorNative.keyDown/keyUp` | **على main** |
+| `StudioNativeBridge.keyDown/keyUp` | **تم التطبيق والتحقق بنجاح** |
+| patch يدوي | `tools/patch_keydown_bridge.diff` |
 
-## U4 REA/DLL/GEX
-خارج نطاق Android host.
+## التالي
+1. تجربة الأزرار على الجهاز مع WebView.
+2. توسيع التوافق مع DnD Actions و GML الإضافية عبر logcat الفعلي.
 
-**is_100 (P0 pipeline): true**  
-**is_100 (GM + جهاز): false**
+**is_100 (P0 pipeline): true**
+**host_p0: true**
+**remaining host stubs: 10 (rare / non-blocking for MVP)**
+**is_100: false** (device items open)
