@@ -36547,6 +36547,7 @@ const createEngineHTML = (projectData) => {
     };
     window.file_drag_count = () => _gm82_dragged_files.length;
     window.file_drag_name = (idx) => _gm82_dragged_files[idx] || "";
+    window.file_drag_clear = () => { _gm82_dragged_files.length = 0; return 0; };
 
     // --- GM82Alpha: Window Transparency & Chromakey ---
     window.window_set_alphablend = (enable, alpha = 1.0) => {
