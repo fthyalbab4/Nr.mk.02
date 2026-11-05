@@ -53,3 +53,7 @@
 ## 2026-11-02 - PageUp & PageDown Chunked Keyboard Navigation for Catalog Grids
 **Learning:** While single-step arrow keys and boundary `Home`/`End` keys allow stepping and jump-to-ends in large catalog grids, traversing multi-dozen item collections without intermediate chunk jumping forces users to hold arrow keys or tab extensively. Adding standard `PageDown` (+10 cards) and `PageUp` (-10 cards) key listeners clamped to grid boundaries allows keyboard users to paginate smoothly through dense catalogs.
 **Action:** Always bind `PageDown` and `PageUp` key listeners on interactive catalog card elements to jump forward or backward by a logical batch size (e.g., 10 cards) while preventing default document scrolling.
+
+## 2026-11-04 - Bidirectional Keyboard Return Flow for Modal Catalog Filters
+**Learning:** In interactive catalog modals where users navigate down into dense result grids, keyboard users have no direct way to return focus to upper search and filtering inputs without repeated `Shift+Tab` cycles or scrolling back up. Binding `Escape` on focused grid cards to return focus to the search bar (with `stopPropagation` to avoid prematurely closing the modal) and binding `ArrowUp` on the search input to jump to the category select creates an intuitive, bidirectional loop across filter controls and catalog items.
+**Action:** Intercept `Escape` on interactive catalog card items to safely refocus the search input, and bind `ArrowUp` on the search input to step focus back into prior filter dropdown controls.

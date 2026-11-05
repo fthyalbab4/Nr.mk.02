@@ -749,8 +749,13 @@ static gml_value eval(gml_vm *vm, const gml_ast *n) {
             switch (n->op) {
                 case GML_T_PLUS:
                     if (a.kind == GML_V_STRING || b.kind == GML_V_STRING) {
-                        const char *as = a.kind == GML_V_STRING ? (a.string ? a.string : "") : "";
-                        const char *bs = b.kind == GML_V_STRING ? (b.string ? b.string : "") : "";
+                        char number_a[64], number_b[64];
+                        const char *as = a.kind == GML_V_STRING
+                            ? (a.string ? a.string : "")
+                            : (snprintf(number_a, sizeof(number_a), "%g", x), number_a);
+                        const char *bs = b.kind == GML_V_STRING
+                            ? (b.string ? b.string : "")
+                            : (snprintf(number_b, sizeof(number_b), "%g", y), number_b);
                         size_t na = strlen(as), nb = strlen(bs);
                         char *joined = malloc(na + nb + 1);
                         if (joined) {

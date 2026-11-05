@@ -46,6 +46,21 @@ def main() -> int:
         canonical = CANONICAL / subdir
         for mirror in MIRRORS:
             errors.extend(verify_pair(canonical, mirror / subdir))
+    # Some shared core files (notably gml_vm.c) live at each tree's root rather
+    # than under src/; compare those too, while leaving build files target-specific.
+    for mirror in MIRRORS:
+        errors.extend(verify_pair(CANONICAL, mirror))
+    regression_test = CANONICAL / "tests/test_gml_vm_execution.c"
+    for mirror in MIRRORS:
+        mirror_test = mirror / "tests/test_gml_vm_execution.c"
+        if not regression_test.is_file():
+            errors.append(f"{regression_test}: missing shared VM regression test")
+        elif not mirror_test.is_file():
+            errors.append(f"{mirror_test}: missing shared VM regression test")
+        elif regression_test.read_bytes() != mirror_test.read_bytes():
+            errors.append(f"{mirror_test}: content differs for test_gml_vm_execution.c")
+        else:
+            print(f"CORE_MIRROR_TEST_OK {mirror_test.relative_to(ROOT)}")
     if errors:
         for error in errors:
             print(f"CORE_MIRROR_ERROR {error}", file=sys.stderr)

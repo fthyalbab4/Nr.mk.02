@@ -4,7 +4,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CPP="$ROOT/app/src/main/cpp"
 SRC="$CPP/src"
 INC="$CPP/include"
-SAMPLES="$ROOT/app/src/main/assets/www/samples"
+SAMPLES="${NORMAKER_SAMPLES_DIR:-$ROOT/app/src/main/assets/www/samples}"
+EXPECTED_SAMPLES=(mario_bros.gmk plataformas.gmk shooter.gmk zelda.gmk)
 mkdir -p "$ROOT/build_host"
 
 cat > "$ROOT/build_host/opensles_stub.c" << 'STUB'
@@ -163,17 +164,33 @@ gcc -O2 -I"$INC" -I"$CPP" -o "$ROOT/build_host/pipeline_min" \
 OUT="$ROOT/build_host/pipeline_results.txt"
 : > "$OUT"
 ok=0; fail=0
-for gmk in "$SAMPLES"/*.gmk; do
-  [[ -f "$gmk" ]] || continue
+log="$ROOT/build_host/current_pipeline_output.txt"
+for sample in "${EXPECTED_SAMPLES[@]}"; do
+  gmk="$SAMPLES/$sample"
+  if [[ ! -f "$gmk" ]]; then
+    echo "MISSING_SAMPLE $gmk" | tee -a "$OUT"
+    fail=$((fail+1))
+    continue
+  fi
   echo "=== $gmk ===" | tee -a "$OUT"
-  if "$ROOT/build_host/pipeline_min" "$gmk" 30 2>&1 | tee -a "$OUT" | grep -q PIPELINE_OK; then
-    ok=$((ok+1))
+  if "$ROOT/build_host/pipeline_min" "$gmk" 30 >"$log" 2>&1; then
+    cat "$log" | tee -a "$OUT"
+    if grep -Fxq "PIPELINE_OK" "$log"; then
+      ok=$((ok+1))
+    else
+      echo "PIPELINE_MARKER_MISSING $sample" | tee -a "$OUT"
+      fail=$((fail+1))
+    fi
   else
+    status=$?
+    cat "$log" | tee -a "$OUT"
+    echo "PIPELINE_EXIT_FAIL $sample exit=$status" | tee -a "$OUT"
     fail=$((fail+1))
   fi
 done
-echo "SUMMARY ok=$ok fail=$fail" | tee -a "$OUT"
-if (( fail > 0 || ok == 0 )); then
-  echo "HOST_PIPELINE_FAIL ok=$ok fail=$fail" >&2
+expected=${#EXPECTED_SAMPLES[@]}
+echo "SUMMARY expected=$expected ok=$ok fail=$fail" | tee -a "$OUT"
+if (( fail > 0 || ok != expected )); then
+  echo "HOST_PIPELINE_FAIL expected=$expected ok=$ok fail=$fail" >&2
   exit 1
 fi

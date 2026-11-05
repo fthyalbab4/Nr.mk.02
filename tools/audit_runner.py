@@ -74,6 +74,7 @@ def main():
     print("=========================================================")
     total_suites = len(results)
     passed_suites = sum(1 for v in results.values() if v)
+    builtins_ok = matched_fns == total_fns
 
     for suite, pass_status in results.items():
         st = "PASS" if pass_status else "FAIL"
@@ -82,10 +83,12 @@ def main():
     print(f"\n  Suite Pass Rate: {passed_suites}/{total_suites} ({passed_suites/total_suites*100:.1f}%)")
     print(f"  GM82 Target Functions: {matched_fns}/{total_fns} ({matched_fns/total_fns*100:.1f}%)")
 
-    if passed_suites == total_suites:
+    if passed_suites == total_suites and builtins_ok:
         print("\nAll host audit checks passed successfully.")
         sys.exit(0)
     else:
+        if not builtins_ok:
+            print("\nOne or more required GM82 built-ins are missing.")
         print("\nOne or more audit checks failed.")
         sys.exit(1)
 
