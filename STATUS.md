@@ -1,12 +1,12 @@
-# STATUS — System Audit & Core Verification (2026-11-03)
+# STATUS — System Audit & Core Verification (2026-11-05)
 
 ## Verified Metrics & Status
-- **C Engine Suite**: PASS (23/23 native test binaries passing, including `test_path_and_instance_list`)
+- **C Engine Suite**: PASS (38/38 native test binaries passing, including `test_with_edges`, `test_runtime_rendering_collision`, `test_path_and_instance_list`)
 - **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario, Plataformas, Shooter, Zelda)
 - **Python Full Verification**: PASS (17/17 system verification tests passing)
-- **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` all tests passing)
+- **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` all 28 target tests passing cleanly)
 - **JS Engine Verification**: PASS (39/39 scripts passing, 78/78 actions passing)
-- **Android APK Build**: SUCCESS (NDK C++ & Java build passing across arm64-v8a, armeabi-v7a, x86, x86_64)
+- **Android APK Build**: SUCCESS (NDK 25.2.9519653 + CMake 3.22.1 passing across arm64-v8a, armeabi-v7a, x86, x86_64; `app/build/outputs/apk/debug/app-debug.apk` built)
 
 ## Core & GML Capabilities
 - [x] Event loop order (Begin Step, Alarm, Step, Collision, End Step, Draw Pre/Main/Post)

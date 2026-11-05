@@ -1,6 +1,6 @@
 /* Deterministic replay for the real mario_bros.gmk sample. It intentionally
  * selects obj_minimario (the live player), not obj_minimario_pierde or the
- * transition object, then exercises right, left, and jump input. */
+ * transition object, and records the plan's 160-frame idle/walk/jump scenario. */
 #include "gm82_sprite_decode.h"
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
@@ -36,6 +36,30 @@ static int resolve_path(const char *path, char *out, size_t out_sz) {
     if (f) { fclose(f); return 1; }
     snprintf(out, out_sz, "%s", path);
     return 0;
+}
+
+static void check_replay_state(const gm82_runtime *rt, int player_index) {
+    assert(rt != NULL);
+    assert(rt->current_room == 0);
+    assert(player_index >= 0 && player_index < rt->instance_count);
+    const gm82_instance *player = &rt->instances[player_index];
+    assert(player->alive);
+    assert(player->x >= 0.0 && player->x <= rt->room_width);
+    assert(player->y >= 0.0 && player->y < rt->room_height);
+}
+
+static void write_replay_trace(FILE *trace, int frame,
+                               const gm82_runtime *rt, int player_index) {
+    if (!trace) return;
+    const gm82_instance *player = &rt->instances[player_index];
+    fprintf(trace,
+            "{\"frame\":%d,\"room\":%d,\"mario\":{\"x\":%.3f,\"y\":%.3f,"
+            "\"hspeed\":%.3f,\"vspeed\":%.3f,\"on_ground\":%s,"
+            "\"sprite_index\":%d,\"image_index\":%.3f}}\n",
+            frame, rt->current_room, player->x, player->y,
+            player->hspeed, player->vspeed,
+            player->on_ground ? "true" : "false",
+            player->sprite_index, player->image_index);
 }
 
 int main(void) {
@@ -88,57 +112,67 @@ int main(void) {
     gm82_input_state input;
     gm82_input_init(&input);
     gm82_input_bind_global(&input);
+    const char *trace_path = getenv("NOR_MARIO_REPLAY_TRACE");
+    FILE *trace = trace_path && trace_path[0] ? fopen(trace_path, "w") : NULL;
+    if (trace_path && trace_path[0]) assert(trace != NULL);
     double x0 = rt.instances[player_index].x;
-    for (int frame = 0; frame < 30; ++frame) {
+    for (int frame = 0; frame < 60; ++frame) {
+        gm82_input_begin_frame(&input);
+        gm82_runtime_step(&rt);
+        check_replay_state(&rt, player_index);
+        write_replay_trace(trace, frame + 1, &rt, player_index);
+    }
+    double x_idle = rt.instances[player_index].x;
+    double y_idle = rt.instances[player_index].y;
+    printf("  replay frame=60 room=%d player=(%.1f,%.1f) grounded=%d\n",
+           rt.current_room, x_idle, y_idle, rt.instances[player_index].on_ground);
+
+    for (int frame = 60; frame < 100; ++frame) {
         gm82_input_begin_frame(&input);
         gm82_input_key_down(&input, 39); /* VK_RIGHT */
         gm82_runtime_step(&rt);
+        check_replay_state(&rt, player_index);
+        write_replay_trace(trace, frame + 1, &rt, player_index);
     }
     double x_right = rt.instances[player_index].x;
-    double dx_right = x_right - x0;
+    double dx_right = x_right - x_idle;
     assert(dx_right > 0.0);
+    printf("  replay frame=100 room=%d player=(%.1f,%.1f) dx=%.1f grounded=%d\n",
+           rt.current_room, rt.instances[player_index].x, rt.instances[player_index].y,
+           dx_right, rt.instances[player_index].on_ground);
     gm82_input_key_up(&input, 39);
-    for (int frame = 0; frame < 30; ++frame) {
-        gm82_input_begin_frame(&input);
-        gm82_input_key_down(&input, 37); /* VK_LEFT */
-        gm82_runtime_step(&rt);
-    }
-    double x_left = rt.instances[player_index].x;
-    double dx_left = x_left - x_right;
-    assert(dx_left < 0.0);
-    gm82_input_key_up(&input, 37);
-
-    /* Reset the room so the jump starts from a known grounded spawn rather
-       than from whatever platform/edge the walking replay reached. */
-    assert(gm82_runtime_goto_room(&rt, 0));
-    player_index = -1;
-    for (int i = 0; i < rt.instance_count; ++i) {
-        int oi = rt.instances[i].object_index;
-        if (rt.instances[i].alive && oi == live_player_object) { player_index = i; break; }
-    }
-    assert(player_index >= 0);
-    gm82_input_init(&input);
-    gm82_input_bind_global(&input);
-
-    /* Cover either classic jump binding (Up or Space) for one frame. */
     double y_before_jump = rt.instances[player_index].y;
     double y_min = y_before_jump;
-    for (int frame = 0; frame < 24; ++frame) {
+    /* Frame 101: cover either classic jump binding (Up or Space). */
+    gm82_input_begin_frame(&input);
+    gm82_input_key_down(&input, 38); /* VK_UP */
+    gm82_input_key_down(&input, 32); /* Space */
+    gm82_runtime_step(&rt);
+    check_replay_state(&rt, player_index);
+    write_replay_trace(trace, 101, &rt, player_index);
+    if (rt.instances[player_index].y < y_min) y_min = rt.instances[player_index].y;
+    printf("  replay frame=101 room=%d player=(%.1f,%.1f) grounded=%d\n",
+           rt.current_room, rt.instances[player_index].x, rt.instances[player_index].y,
+           rt.instances[player_index].on_ground);
+    for (int frame = 102; frame <= 160; ++frame) {
         gm82_input_begin_frame(&input);
-        if (frame == 0) {
-            gm82_input_key_down(&input, 38); /* VK_UP */
-            gm82_input_key_down(&input, 32); /* Space */
-        } else {
-            gm82_input_key_up(&input, 38);
-            gm82_input_key_up(&input, 32);
-        }
+        gm82_input_key_up(&input, 38);
+        gm82_input_key_up(&input, 32);
         gm82_runtime_step(&rt);
+        check_replay_state(&rt, player_index);
+        write_replay_trace(trace, frame, &rt, player_index);
         if (rt.instances[player_index].y < y_min) y_min = rt.instances[player_index].y;
     }
     assert(y_min < y_before_jump);
-    printf("  mario replay: object=%s right_dx=%.1f left_dx=%.1f jump_y=%.1f->%.1f\n",
+    assert(rt.instances[player_index].on_ground == 1);
+    if (trace) fclose(trace);
+    printf("  replay frame=160 room=%d player=(%.1f,%.1f) apex_y=%.1f grounded=%d\n",
+           rt.current_room, rt.instances[player_index].x, rt.instances[player_index].y,
+           y_min, rt.instances[player_index].on_ground);
+    printf("  mario replay: object=%s idle_delta=%.1f right_dx=%.1f jump_y=%.1f->%.1f final_grounded=%d\n",
            objects.items[rt.instances[player_index].object_index].name,
-           dx_right, dx_left, y_before_jump, y_min);
+           x_idle - x0, dx_right, y_before_jump, y_min,
+           rt.instances[player_index].on_ground);
 
     gm82_runtime_cleanup(&rt);
     gm82_sprite_group_list_free(&groups);
