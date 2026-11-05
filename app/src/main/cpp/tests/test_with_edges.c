@@ -12,7 +12,10 @@ int main(void) {
     gm82_runtime rt;
     gm82_runtime_init(&rt);
     gm82_decoded_object_list objs;
-    memset(&objs, 0, sizeof(objs));
+    gm82_decoded_object_list_init(&objs);
+    gm82_decoded_object obj_arr[2];
+    memset(obj_arr, 0, sizeof(obj_arr));
+    objs.items = obj_arr;
     objs.count = 2;
     strncpy(objs.items[0].name, "obj_a", sizeof(objs.items[0].name) - 1);
     objs.items[0].parent_index = -1;

@@ -492,6 +492,25 @@ static gml_value call(gml_vm *vm, const gml_ast *n) {
                 free(buf);
             }
         }
+    } else if (!strcmp(n->text, "string_hex") && c == 1) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%llX", (unsigned long long)num(a[0]));
+        r = gml_value_string(buf);
+    } else if (!strcmp(n->text, "real_hex") && c == 1) {
+        const char *str = text_of(a[0]);
+        while (*str == ' ' || *str == '\t' || *str == '$') str++;
+        if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) str += 2;
+        unsigned long long val = 0;
+        while (*str) {
+            char ch = *str++;
+            int digit = 0;
+            if (ch >= '0' && ch <= '9') digit = ch - '0';
+            else if (ch >= 'a' && ch <= 'f') digit = 10 + (ch - 'a');
+            else if (ch >= 'A' && ch <= 'F') digit = 10 + (ch - 'A');
+            else break;
+            val = (val << 4) | (unsigned long long)digit;
+        }
+        r = gml_value_real((double)val);
     } else if (!strcmp(n->text, "string_count") && c == 2) {
         const char *substr = text_of(a[0]);
         const char *str = text_of(a[1]);

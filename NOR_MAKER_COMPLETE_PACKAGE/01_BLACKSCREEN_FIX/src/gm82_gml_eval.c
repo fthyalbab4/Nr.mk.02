@@ -1227,6 +1227,37 @@ static bool parse_primary(gml_parser *p, double *out) {
                 nargs >= 4 ? args[3] : 0.0
             ); return true;
         }
+        if (strcmp(id, "perlin_noise") == 0) {
+            *out = gml_perlin_noise(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "path_get_width") == 0) {
+            *out = gml_path_get_width(arg); return true;
+        }
+        if (strcmp(id, "path_get_height") == 0) {
+            *out = gml_path_get_height(arg); return true;
+        }
+        if (strcmp(id, "path_get_point_x") == 0) {
+            *out = gml_path_get_point_x(arg, nargs >= 2 ? args[1] : 0.0); return true;
+        }
+        if (strcmp(id, "path_get_point_y") == 0) {
+            *out = gml_path_get_point_y(arg, nargs >= 2 ? args[1] : 0.0); return true;
+        }
+        if (strcmp(id, "path_get_point_speed") == 0) {
+            *out = gml_path_get_point_speed(arg, nargs >= 2 ? args[1] : 0.0); return true;
+        }
+        if (strcmp(id, "get_delta") == 0) {
+            *out = gml_get_delta(); return true;
+        }
+        if (strcmp(id, "real_hex") == 0) {
+            *out = gml_real_hex((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
+        if (strcmp(id, "string_hex") == 0) {
+            *out = gml_string_hex(arg); return true;
+        }
         if (strcmp(id, "gauss") == 0) {
             *out = gml_gauss(arg, nargs >= 2 ? args[1] : 1); return true;
         }

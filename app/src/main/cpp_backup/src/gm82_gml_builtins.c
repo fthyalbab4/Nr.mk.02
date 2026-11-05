@@ -1893,6 +1893,60 @@ double gml_path_get_number(double ind) {
     return (double)g_paths->items[idx].count;
 }
 
+double gml_path_get_point_x(double ind, double n) {
+    int idx = (int)ind;
+    int pt = (int)n;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    if (pt < 0 || pt >= g_paths->items[idx].count) return 0.0;
+    return g_paths->items[idx].points[pt].x;
+}
+
+double gml_path_get_point_y(double ind, double n) {
+    int idx = (int)ind;
+    int pt = (int)n;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    if (pt < 0 || pt >= g_paths->items[idx].count) return 0.0;
+    return g_paths->items[idx].points[pt].y;
+}
+
+double gml_path_get_point_speed(double ind, double n) {
+    int idx = (int)ind;
+    int pt = (int)n;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 100.0;
+    if (pt < 0 || pt >= g_paths->items[idx].count) return 100.0;
+    return g_paths->items[idx].points[pt].speed;
+}
+
+double gml_path_get_width(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    int count = g_paths->items[idx].count;
+    if (count <= 0) return 0.0;
+    double min_x = g_paths->items[idx].points[0].x;
+    double max_x = min_x;
+    for (int i = 1; i < count; i++) {
+        double px = g_paths->items[idx].points[i].x;
+        if (px < min_x) min_x = px;
+        if (px > max_x) max_x = px;
+    }
+    return max_x - min_x;
+}
+
+double gml_path_get_height(double ind) {
+    int idx = (int)ind;
+    if (!g_paths || idx < 0 || idx >= g_paths->count) return 0.0;
+    int count = g_paths->items[idx].count;
+    if (count <= 0) return 0.0;
+    double min_y = g_paths->items[idx].points[0].y;
+    double max_y = min_y;
+    for (int i = 1; i < count; i++) {
+        double py = g_paths->items[idx].points[i].y;
+        if (py < min_y) min_y = py;
+        if (py > max_y) max_y = py;
+    }
+    return max_y - min_y;
+}
+
 void gm82_path_step_instance(gm82_instance *inst) {
     if (!inst || !g_paths || inst->path_index < 0) return;
     if (inst->path_index >= g_paths->count) return;
@@ -5059,7 +5113,7 @@ double gml_timeline_find_name(const char *name) {
 }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "path_get_height", "path_get_width", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {
@@ -5219,4 +5273,111 @@ double gml_approach_angle_biased(double ang1, double ang2, double step, double b
     if (fabs(diff) <= step) return ang2;
     if (diff > 0.0) return ang1 + step * (1.0 + bias);
     return ang1 - step * (1.0 - bias);
+}
+
+/* GM82 Perlin noise implementation */
+static const int gm82_perlin_p[512] = {
+    151,160,137,91 ,90 ,15 ,131,13 ,201,95 ,96 ,53 ,194,233,7  ,225,140,36 ,103,
+    30 ,69 ,142,8  ,99 ,37 ,240,21 ,10 ,23 ,190,6  ,148,247,120,234,75 ,0  ,26 ,
+    197,62 ,94 ,252,219,203,117,35 ,11 ,32 ,57 ,177,33 ,88 ,237,149,56 ,87 ,174,
+    20 ,125,136,171,168,68 ,175,74 ,165,71 ,134,139,48 ,27 ,166,77 ,146,158,231,
+    83 ,111,229,122,60 ,211,133,230,220,105,92 ,41 ,55 ,46 ,245,40 ,244,102,143,
+    54 ,65 ,25 ,63 ,161,1  ,216,80 ,73 ,209,76 ,132,187,208,89 ,18 ,169,200,196,
+    135,130,116,188,159,86 ,164,100,109,198,173,186,3  ,64 ,52 ,217,226,250,124,
+    123,5  ,202,38 ,147,118,126,255,82 ,85 ,212,207,206,59 ,227,47 ,16 ,58 ,17 ,
+    182,189,28 ,42 ,223,183,170,213,119,248,152,2  ,44 ,154,163,70 ,221,153,101,
+    155,167,43 ,172,9  ,129,22 ,39 ,253,19 ,98 ,108,110,79 ,113,224,232,178,185,
+    112,104,218,246,97 ,228,251,34 ,242,193,238,210,144,12 ,191,179,162,241,81 ,
+    51 ,145,235,249,14 ,239,107,49 ,192,214,31 ,181,199,106,157,184,84 ,204,176,
+    115,121,50 ,45 ,127,4  ,150,254,138,236,205,93 ,222,114,67 ,29 ,24 ,72 ,243,
+    141,128,195,78 ,66 ,215,61 ,156,180,
+
+    151,160,137,91 ,90 ,15 ,131,13 ,201,95 ,96 ,53 ,194,233,7  ,225,140,36 ,103,
+    30 ,69 ,142,8  ,99 ,37 ,240,21 ,10 ,23 ,190,6  ,148,247,120,234,75 ,0  ,26 ,
+    197,62 ,94 ,252,219,203,117,35 ,11 ,32 ,57 ,177,33 ,88 ,237,149,56 ,87 ,174,
+    20 ,125,136,171,168,68 ,175,74 ,165,71 ,134,139,48 ,27 ,166,77 ,146,158,231,
+    83 ,111,229,122,60 ,211,133,230,220,105,92 ,41 ,55 ,46 ,245,40 ,244,102,143,
+    54 ,65 ,25 ,63 ,161,1  ,216,80 ,73 ,209,76 ,132,187,208,89 ,18 ,169,200,196,
+    135,130,116,188,159,86 ,164,100,109,198,173,186,3  ,64 ,52 ,217,226,250,124,
+    123,5  ,202,38 ,147,118,126,255,82 ,85 ,212,207,206,59 ,227,47 ,16 ,58 ,17 ,
+    182,189,28 ,42 ,223,183,170,213,119,248,152,2  ,44 ,154,163,70 ,221,153,101,
+    155,167,43 ,172,9  ,129,22 ,39 ,253,19 ,98 ,108,110,79 ,113,224,232,178,185,
+    112,104,218,246,97 ,228,251,34 ,242,193,238,210,144,12 ,191,179,162,241,81 ,
+    51 ,145,235,249,14 ,239,107,49 ,192,214,31 ,181,199,106,157,184,84 ,204,176,
+    115,121,50 ,45 ,127,4  ,150,254,138,236,205,93 ,222,114,67 ,29 ,24 ,72 ,243,
+    141,128,195,78 ,66 ,215,61 ,156,180
+};
+
+static inline double gm82_fade(double t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
+static inline double gm82_lerp(double t, double a, double b) { return a + t * (b - a); }
+static inline double gm82_grad(int hash, double x, double y, double z) {
+    int h = hash & 15;
+    double u = h < 8 ? x : y;
+    double v = h < 4 ? y : (h == 12 || h == 14) ? x : z;
+    return (((h & 1) == 0) ? u : -u) + (((h & 2) == 0) ? v : -v);
+}
+
+double gml_perlin_noise(double x, double y, double z) {
+    int X = (int)floor(x) & 255;
+    int Y = (int)floor(y) & 255;
+    int Z = (int)floor(z) & 255;
+    x -= floor(x);
+    y -= floor(y);
+    z -= floor(z);
+    double u = gm82_fade(x);
+    double v = gm82_fade(y);
+    double w = gm82_fade(z);
+    int A = gm82_perlin_p[X] + Y;
+    int AA = gm82_perlin_p[A] + Z;
+    int AB = gm82_perlin_p[A + 1] + Z;
+    int B = gm82_perlin_p[X + 1] + Y;
+    int BA = gm82_perlin_p[B] + Z;
+    int BB = gm82_perlin_p[B + 1] + Z;
+
+    return 0.5 + 0.5 *
+         gm82_lerp(w, gm82_lerp(v, gm82_lerp(u, gm82_grad(gm82_perlin_p[AA  ], x  , y  , z   ),
+                                                gm82_grad(gm82_perlin_p[BA  ], x-1, y  , z   )),
+                                   gm82_lerp(u, gm82_grad(gm82_perlin_p[AB  ], x  , y-1, z   ),
+                                                gm82_grad(gm82_perlin_p[BB  ], x-1, y-1, z   ))),
+                      gm82_lerp(v, gm82_lerp(u, gm82_grad(gm82_perlin_p[AA+1], x  , y  , z-1 ),
+                                                gm82_grad(gm82_perlin_p[BA+1], x-1, y  , z-1 )),
+                                   gm82_lerp(u, gm82_grad(gm82_perlin_p[AB+1], x  , y-1, z-1 ),
+                                                gm82_grad(gm82_perlin_p[BB+1], x-1, y-1, z-1 ))));
+}
+
+double gml_real_hex(const char *str) {
+    if (!str) return 0.0;
+    while (*str == ' ' || *str == '\t' || *str == '$') str++;
+    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) str += 2;
+    unsigned long long val = 0;
+    while (*str) {
+        char c = *str++;
+        int digit = 0;
+        if (c >= '0' && c <= '9') digit = c - '0';
+        else if (c >= 'a' && c <= 'f') digit = 10 + (c - 'a');
+        else if (c >= 'A' && c <= 'F') digit = 10 + (c - 'A');
+        else break;
+        val = (val << 4) | (unsigned long long)digit;
+    }
+    return (double)val;
+}
+
+double gml_string_hex(double num) {
+    static char buf[32];
+    unsigned long long val = (unsigned long long)num;
+    snprintf(buf, sizeof(buf), "%llX", val);
+    gm82_gml_set_last_string(buf);
+    return (double)strlen(buf);
+}
+
+double gml_get_delta(void) {
+    static double last_t = 0.0;
+    double now = gml_get_timer();
+    if (last_t == 0.0) {
+        last_t = now;
+        return 0.0;
+    }
+    double diff = now - last_t;
+    last_t = now;
+    return diff;
 }
