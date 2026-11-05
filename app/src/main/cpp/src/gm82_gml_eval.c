@@ -2853,7 +2853,10 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "get_frametime_usage") == 0) { *out = gml_get_frametime_usage(); return true; }
         if (gm82_gm82core_try_stub(id, out)) return true;
 
-        snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);
+        snprintf(p->err, sizeof(p->err), "unknown fn %s", id);
+        int inst_id = p->self ? p->self->id : -1;
+        int32_t frame_num = p->rt ? p->rt->frame : 0;
+        fprintf(stderr, "[GML_DIAGNOSTIC] unmapped function '%s' instance_id=%d frame=%d\n", id, inst_id, frame_num);
         return false;
     }
     return get_var(p, id, out);

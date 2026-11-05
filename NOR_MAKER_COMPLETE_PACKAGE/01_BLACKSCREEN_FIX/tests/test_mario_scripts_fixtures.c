@@ -160,6 +160,10 @@ static void test_mario_extended_builtins_matrix(gm82_runtime *rt) {
     assert(res == 1.0);
     rt->rooms = NULL;
 
+    /* 6. Verify diagnostic behavior for unmapped script/function */
+    int diag_eval = gm82_gml_eval_expr(rt, player, "unmapped_script_xyz()", &res);
+    assert(diag_eval == 0); /* Must fail without silent fallback */
+
     puts("PASS test_mario_extended_builtins_matrix");
 }
 

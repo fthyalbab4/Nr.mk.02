@@ -3689,7 +3689,12 @@ double gml_script_exists(double script_index) {
 double gml_script_execute(double script_index) {
     if (!g_scripts || !g_rt) return 0;
     int i = (int)script_index;
-    if (i < 0 || i >= g_scripts->count) return 0;
+    if (i < 0 || i >= g_scripts->count) {
+        int inst_id = g_self ? g_self->id : -1;
+        int32_t frame_num = g_rt ? g_rt->frame : 0;
+        fprintf(stderr, "[GML_DIAGNOSTIC] missing script index %d instance_id=%d frame=%d\n", i, inst_id, frame_num);
+        return 0;
+    }
     const char *code = g_scripts->items[i].code;
     if (!code || !code[0]) return 0;
     return (double)gm82_gml_eval_block(g_rt, g_self, code);
