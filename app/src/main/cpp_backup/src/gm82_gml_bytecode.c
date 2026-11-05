@@ -141,13 +141,17 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
             if (g_loop_depth <= 0) return false;
             loop_compile_context *ctx = &g_loop_contexts[g_loop_depth - 1];
             int jump = emit_code(bc, ctx->is_repeat ? GM82_BC_REPEAT_BREAK : GM82_BC_JUMP, NULL); if (jump < 0) return false;
-            if (ctx->break_count >= 64) return false; ctx->breaks[ctx->break_count++] = jump; return true;
+            if (ctx->break_count >= 64) return false;
+            ctx->breaks[ctx->break_count++] = jump;
+            return true;
         }
         case GM82_AST_CONTINUE: {
             if (g_loop_depth <= 0) return false;
             int jump = emit_code(bc, GM82_BC_JUMP, NULL); if (jump < 0) return false;
             loop_compile_context *ctx = &g_loop_contexts[g_loop_depth - 1];
-            if (ctx->continue_count >= 64) return false; ctx->continues[ctx->continue_count++] = jump; return true;
+            if (ctx->continue_count >= 64) return false;
+            ctx->continues[ctx->continue_count++] = jump;
+            return true;
         }
         case GM82_AST_RETURN:
             if (n->a && !source_of(n->a, source)) return false;
