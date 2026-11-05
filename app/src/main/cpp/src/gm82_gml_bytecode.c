@@ -1,14 +1,12 @@
 #include "gm82_gml_parser.h"
 #include "gm82_gml_eval.h"
-#include "gm82_gml_builtins.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define GM82_BC_MAX_STEPS 100000
 #define GM82_BC_SOURCE_MAX 8192
-#define GM82_BC_MAX_WITH_DEPTH 32
-#define GM82_BC_MAX_WITH_ITEMS 2048
 
 static bool reserve_code(gm82_gml_bytecode *bc) {
     if (bc->count < bc->capacity) return true;
@@ -31,59 +29,124 @@ static int emit_code(gm82_gml_bytecode *bc, gm82_gml_bc_opcode op, const char *s
 static bool source_of(const gm82_gml_ast *node, char *out) {
     return gm82_gml_ast_to_source(node, out, GM82_BC_SOURCE_MAX);
 }
-typedef struct {
-    int breaks[64];
-    int break_count;
-    int continues[64];
-    int continue_count;
+typedef struct loop_context loop_context;
+struct loop_context {
+    loop_context *parent;
+    int *breaks;
+    size_t break_count, break_capacity;
+    int *continues;
+    size_t continue_count, continue_capacity;
     bool is_repeat;
-} loop_compile_context;
-static loop_compile_context g_loop_contexts[32];
-static int g_loop_depth;
-static void patch_jumps(gm82_gml_bytecode *bc, int *jumps, int count, int target) {
-    for (int i = 0; i < count; i++) bc->code[jumps[i]].target = target;
-}
-static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc);
-static bool compile_list(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
-    for (; n; n = n->next) if (!compile_node(n, bc)) return false;
+};
+
+static bool add_fixup(int **items, size_t *count, size_t *capacity,
+                      int instruction, gm82_gml_bytecode *bc) {
+    if (*count == *capacity) {
+        size_t next = *capacity ? *capacity * 2 : 8;
+        if (next < *capacity || next > SIZE_MAX / sizeof(**items)) {
+            snprintf(bc->error, sizeof(bc->error), "loop fixup capacity overflow");
+            return false;
+        }
+        int *grown = (int *)realloc(*items, next * sizeof(**items));
+        if (!grown) {
+            snprintf(bc->error, sizeof(bc->error), "loop fixup allocation failed");
+            return false;
+        }
+        *items = grown; *capacity = next;
+    }
+    (*items)[(*count)++] = instruction;
     return true;
 }
-static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
+
+static void patch_loop(loop_context *loop, gm82_gml_bytecode *bc,
+                       int break_target, int continue_target) {
+    for (size_t i = 0; i < loop->break_count; i++)
+        bc->code[loop->breaks[i]].target = break_target;
+    for (size_t i = 0; i < loop->continue_count; i++)
+        bc->code[loop->continues[i]].target = continue_target;
+}
+
+static void free_loop(loop_context *loop) {
+    free(loop->breaks); free(loop->continues);
+}
+
+static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc,
+                         loop_context *loop);
+static bool compile_list(const gm82_gml_ast *n, gm82_gml_bytecode *bc,
+                         loop_context *loop) {
+    for (; n; n = n->next) if (!compile_node(n, bc, loop)) return false;
+    return true;
+}
+static bool emit_loop_control(const gm82_gml_ast *n, gm82_gml_bytecode *bc,
+                              loop_context *loop) {
+    if (!loop) {
+        snprintf(bc->error, sizeof(bc->error), "%s outside loop",
+                 n->kind == GM82_AST_BREAK ? "break" : "continue");
+        return false;
+    }
+    gm82_gml_bc_opcode opcode =
+        n->kind == GM82_AST_BREAK && loop->is_repeat ? GM82_BC_REPEAT_BREAK : GM82_BC_JUMP;
+    int jump = emit_code(bc, opcode, NULL);
+    if (jump < 0) return false;
+    if (n->kind == GM82_AST_BREAK)
+        return add_fixup(&loop->breaks, &loop->break_count, &loop->break_capacity, jump, bc);
+    return add_fixup(&loop->continues, &loop->continue_count, &loop->continue_capacity, jump, bc);
+}
+
+static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc,
+                         loop_context *loop) {
     if (!n) return true;
     char source[GM82_BC_SOURCE_MAX];
     switch (n->kind) {
-        case GM82_AST_BLOCK: return compile_list(n->a, bc);
+        case GM82_AST_BLOCK: return compile_list(n->a, bc, loop);
         case GM82_AST_EXPR_STMT:
             if (!source_of(n->a, source)) return false;
             return emit_code(bc, GM82_BC_EVAL_STMT, source) >= 0;
         case GM82_AST_IF: {
             if (!source_of(n->a, source)) return false;
-            int branch = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source); if (branch < 0) return false;
-            if (!compile_node(n->b, bc)) return false;
-            int finish = emit_code(bc, GM82_BC_JUMP, NULL); if (finish < 0) return false;
+            int branch = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source);
+            if (branch < 0 || !compile_node(n->b, bc, loop)) return false;
+            int finish = emit_code(bc, GM82_BC_JUMP, NULL);
+            if (finish < 0) return false;
             bc->code[branch].target = (int)bc->count;
-            if (!compile_node(n->c, bc)) return false;
+            if (!compile_node(n->c, bc, loop)) return false;
             bc->code[finish].target = (int)bc->count;
             return true;
         }
         case GM82_AST_WHILE: {
             int start = (int)bc->count;
             if (!source_of(n->a, source)) return false;
-            int exit = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source); if (exit < 0) return false;
-            if (g_loop_depth >= 32) return false;
-            loop_compile_context *ctx = &g_loop_contexts[g_loop_depth++]; memset(ctx, 0, sizeof(*ctx));
-            if (!compile_node(n->b, bc)) return false;
-            int back = emit_code(bc, GM82_BC_JUMP, NULL); if (back < 0) return false;
+            int exit = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source);
+            if (exit < 0) return false;
+            loop_context current = { .parent = loop };
+            if (!compile_node(n->b, bc, &current)) { free_loop(&current); return false; }
+            int back = emit_code(bc, GM82_BC_JUMP, NULL);
+            if (back < 0) { free_loop(&current); return false; }
             bc->code[back].target = start;
-            int finish = (int)bc->count; patch_jumps(bc, ctx->breaks, ctx->break_count, finish);
-            patch_jumps(bc, ctx->continues, ctx->continue_count, start); g_loop_depth--;
-            bc->code[exit].target = finish; return true;
+            int finish = (int)bc->count;
+            bc->code[exit].target = finish;
+            patch_loop(&current, bc, finish, start);
+            free_loop(&current);
+            return true;
+        }
+        case GM82_AST_DO_UNTIL: {
+            int start = (int)bc->count;
+            loop_context current = { .parent = loop };
+            if (!compile_node(n->a, bc, &current) || !source_of(n->b, source)) {
+                free_loop(&current); return false;
+            }
+            int condition = (int)bc->count;
+            int repeat = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source);
+            if (repeat < 0) { free_loop(&current); return false; }
+            bc->code[repeat].target = start;
+            int finish = (int)bc->count;
+            patch_loop(&current, bc, finish, condition);
+            free_loop(&current);
+            return true;
         }
         case GM82_AST_FOR: {
-            if (n->a) {
-                if (!source_of(n->a, source)) return false;
-                if (emit_code(bc, GM82_BC_EVAL_STMT, source) < 0) return false;
-            }
+            if (n->a && (!source_of(n->a, source) ||
+                         emit_code(bc, GM82_BC_EVAL_STMT, source) < 0)) return false;
             int start = (int)bc->count;
             int exit = -1;
             if (n->b) {
@@ -91,36 +154,20 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
                 exit = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source);
                 if (exit < 0) return false;
             }
-            if (g_loop_depth >= 32) return false;
-            loop_compile_context *ctx = &g_loop_contexts[g_loop_depth++]; memset(ctx, 0, sizeof(*ctx));
-            if (!compile_node(n->d, bc)) return false;
-            patch_jumps(bc, ctx->continues, ctx->continue_count, (int)bc->count);
-            if (n->c) {
-                if (!source_of(n->c, source)) return false;
-                if (emit_code(bc, GM82_BC_EVAL_STMT, source) < 0) return false;
+            loop_context current = { .parent = loop };
+            if (!compile_node(n->d, bc, &current)) { free_loop(&current); return false; }
+            int step = (int)bc->count;
+            if (n->c && (!source_of(n->c, source) ||
+                         emit_code(bc, GM82_BC_EVAL_STMT, source) < 0)) {
+                free_loop(&current); return false;
             }
             int back = emit_code(bc, GM82_BC_JUMP, NULL);
-            if (back < 0) return false;
+            if (back < 0) { free_loop(&current); return false; }
             bc->code[back].target = start;
-            int finish = (int)bc->count; patch_jumps(bc, ctx->breaks, ctx->break_count, finish);
-            if (exit >= 0) bc->code[exit].target = finish;
-            g_loop_depth--;
-            return true;
-        }
-        case GM82_AST_DO_UNTIL: {
-            int start = (int)bc->count;
-            if (g_loop_depth >= 32) return false;
-            loop_compile_context *ctx = &g_loop_contexts[g_loop_depth++]; memset(ctx, 0, sizeof(*ctx));
-            ctx->is_repeat = false;
-            if (!compile_node(n->a, bc)) return false;
-            if (!source_of(n->b, source)) return false;
-            int condition = emit_code(bc, GM82_BC_JUMP_IF_FALSE, source);
-            if (condition < 0) return false;
-            patch_jumps(bc, ctx->continues, ctx->continue_count, condition);
-            bc->code[condition].target = start;
             int finish = (int)bc->count;
-            patch_jumps(bc, ctx->breaks, ctx->break_count, finish);
-            g_loop_depth--;
+            if (exit >= 0) bc->code[exit].target = finish;
+            patch_loop(&current, bc, finish, step);
+            free_loop(&current);
             return true;
         }
         case GM82_AST_REPEAT: {
@@ -128,49 +175,23 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
             int init = emit_code(bc, GM82_BC_REPEAT_INIT, source);
             if (init < 0) return false;
             int body = (int)bc->count;
-            if (g_loop_depth >= 32) return false;
-            loop_compile_context *ctx = &g_loop_contexts[g_loop_depth++]; memset(ctx, 0, sizeof(*ctx));
-            ctx->is_repeat = true;
-            if (!compile_node(n->b, bc)) return false;
+            loop_context current = { .parent = loop, .is_repeat = true };
+            if (!compile_node(n->b, bc, &current)) { free_loop(&current); return false; }
             int next = emit_code(bc, GM82_BC_REPEAT_NEXT, NULL);
-            if (next < 0) return false;
+            if (next < 0) { free_loop(&current); return false; }
             bc->code[next].target = body;
-            patch_jumps(bc, ctx->continues, ctx->continue_count, next);
-            int finish = (int)bc->count; patch_jumps(bc, ctx->breaks, ctx->break_count, finish);
-            bc->code[init].target = finish; g_loop_depth--;
-            return true;
-        }
-        case GM82_AST_WITH: {
-            if (!source_of(n->a, source)) return false;
-            int begin = emit_code(bc, GM82_BC_WITH_BEGIN, source);
-            if (begin < 0) return false;
-            int body = (int)bc->count;
-            if (!compile_node(n->b, bc)) return false;
-            int next = emit_code(bc, GM82_BC_WITH_NEXT, NULL);
-            if (next < 0) return false;
-            bc->code[next].target = body;
-            bc->code[begin].target = (int)bc->count;
-            return true;
-        }
-        case GM82_AST_BREAK: {
-            if (g_loop_depth <= 0) return false;
-            loop_compile_context *ctx = &g_loop_contexts[g_loop_depth - 1];
-            int jump = emit_code(bc, ctx->is_repeat ? GM82_BC_REPEAT_BREAK : GM82_BC_JUMP, NULL); if (jump < 0) return false;
-            if (ctx->break_count >= 64) return false;
-            ctx->breaks[ctx->break_count++] = jump;
-            return true;
-        }
-        case GM82_AST_CONTINUE: {
-            if (g_loop_depth <= 0) return false;
-            int jump = emit_code(bc, GM82_BC_JUMP, NULL); if (jump < 0) return false;
-            loop_compile_context *ctx = &g_loop_contexts[g_loop_depth - 1];
-            if (ctx->continue_count >= 64) return false;
-            ctx->continues[ctx->continue_count++] = jump;
+            int finish = (int)bc->count;
+            bc->code[init].target = finish;
+            patch_loop(&current, bc, finish, next);
+            free_loop(&current);
             return true;
         }
         case GM82_AST_RETURN:
             if (n->a && !source_of(n->a, source)) return false;
             return emit_code(bc, GM82_BC_RETURN, n->a ? source : "0") >= 0;
+        case GM82_AST_BREAK:
+        case GM82_AST_CONTINUE:
+            return emit_loop_control(n, bc, loop);
         default:
             /* with remains an explicit compatibility instruction for now. */
             if (!source_of(n, source)) return false;
@@ -181,8 +202,10 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
 bool gm82_gml_compile_bytecode(const gm82_gml_ast *program, gm82_gml_bytecode *bc) {
     if (!program || !bc) return false;
     memset(bc, 0, sizeof(*bc));
-    g_loop_depth = 0;
-    if (!compile_node(program, bc)) { gm82_gml_bytecode_free(bc); return false; }
+    if (!compile_node(program, bc, NULL)) {
+        if (!bc->error[0]) snprintf(bc->error, sizeof(bc->error), "unsupported AST node or source expression");
+        gm82_gml_bytecode_free(bc); return false;
+    }
     if (emit_code(bc, GM82_BC_HALT, NULL) < 0) { gm82_gml_bytecode_free(bc); return false; }
     return true;
 }
@@ -192,48 +215,17 @@ void gm82_gml_bytecode_free(gm82_gml_bytecode *bc) {
     free(bc->code); memset(bc, 0, sizeof(*bc));
 }
 
-typedef struct {
-    int ids[GM82_BC_MAX_WITH_ITEMS];
-    int count;
-    int next;
-    gm82_instance *previous_self;
-    gm82_instance *previous_other;
-} bytecode_with_frame;
-
-static gm82_instance *find_alive_id(gm82_runtime *rt, int id) {
-    if (!rt) return NULL;
-    for (int i = 0; i < rt->instance_count; ++i) {
-        if (rt->instances[i].alive && rt->instances[i].id == id) return &rt->instances[i];
-    }
-    return NULL;
-}
-
-static void restore_with_frames(bytecode_with_frame *frames, int *depth,
-                                gm82_instance **self) {
-    while (*depth > 0) {
-        bytecode_with_frame *frame = &frames[*depth - 1];
-        *self = frame->previous_self;
-        gm82_gml_set_self(frame->previous_self);
-        gm82_gml_set_other(frame->previous_other);
-        --*depth;
-    }
-}
-
 bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82_gml_bytecode *bc, gm82_gml_exec_result *r) {
     if (!rt || !bc || !r) return false;
     memset(r, 0, sizeof(*r));
     int pc = 0; double value = 0;
     int repeat_counts[64];
     int repeat_depth = 0;
-    bytecode_with_frame with_frames[GM82_BC_MAX_WITH_DEPTH];
-    int with_depth = 0;
     while (pc >= 0 && (size_t)pc < bc->count) {
         if (++r->steps > GM82_BC_MAX_STEPS) return false;
         const gm82_gml_bc_instruction *ins = &bc->code[pc];
         switch (ins->opcode) {
-            case GM82_BC_HALT:
-                restore_with_frames(with_frames, &with_depth, &self);
-                return true;
+            case GM82_BC_HALT: return true;
             case GM82_BC_EVAL_STMT:
                 if (!gm82_gml_eval_stmt(rt, self, ins->source ? ins->source : "")) return false;
                 pc++; break;
@@ -257,70 +249,13 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
                 if (--repeat_counts[repeat_depth - 1] > 0) pc = ins->target;
                 else { repeat_depth--; pc++; }
                 break;
-            case GM82_BC_RETURN:
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
-                r->returned = true; r->return_value = value;
-                restore_with_frames(with_frames, &with_depth, &self);
-                return true;
             case GM82_BC_REPEAT_BREAK:
                 if (repeat_depth <= 0) return false;
-                repeat_depth--;
-                pc = ins->target;
+                repeat_depth--; pc = ins->target;
                 break;
-            case GM82_BC_WITH_BEGIN: {
-                if (with_depth >= GM82_BC_MAX_WITH_DEPTH) return false;
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "-4", &value)) return false;
-                bytecode_with_frame *frame = &with_frames[with_depth++];
-                memset(frame, 0, sizeof(*frame));
-                frame->previous_self = self;
-                frame->previous_other = gm82_gml_get_other();
-                gm82_gml_set_other(self);
-                int target = (int)value;
-                int limit = rt->instance_count;
-                if (limit < 0) limit = 0;
-                if (limit > GM82_BC_MAX_WITH_ITEMS) limit = GM82_BC_MAX_WITH_ITEMS;
-                for (int i = 0; i < limit; ++i) {
-                    gm82_instance *candidate = &rt->instances[i];
-                    bool match = false;
-                    if (!candidate->alive) continue;
-                    if (target == -3) match = true;
-                    else if (target == -1) match = candidate == frame->previous_self;
-                    else if (target == -2) match = frame->previous_other && candidate == frame->previous_other;
-                    else if (target != -4) match = gm82_instance_matches_object(rt, candidate, target);
-                    if (match && frame->count < GM82_BC_MAX_WITH_ITEMS) frame->ids[frame->count++] = candidate->id;
-                }
-                gm82_instance *first = frame->count > 0 ? find_alive_id(rt, frame->ids[0]) : NULL;
-                if (!first) {
-                    --with_depth;
-                    gm82_gml_set_self(frame->previous_self);
-                    gm82_gml_set_other(frame->previous_other);
-                    pc = ins->target;
-                } else {
-                    frame->next = 1;
-                    self = first;
-                    gm82_gml_set_self(self);
-                    pc++;
-                }
-                break;
-            }
-            case GM82_BC_WITH_NEXT: {
-                if (with_depth <= 0) return false;
-                bytecode_with_frame *frame = &with_frames[with_depth - 1];
-                gm82_instance *next = NULL;
-                while (frame->next < frame->count && !next) next = find_alive_id(rt, frame->ids[frame->next++]);
-                if (next) {
-                    self = next;
-                    gm82_gml_set_self(self);
-                    pc = ins->target;
-                } else {
-                    self = frame->previous_self;
-                    gm82_gml_set_self(frame->previous_self);
-                    gm82_gml_set_other(frame->previous_other);
-                    --with_depth;
-                    pc++;
-                }
-                break;
-            }
+            case GM82_BC_RETURN:
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                r->returned = true; r->return_value = value; return true;
             default: return false;
         }
     }
