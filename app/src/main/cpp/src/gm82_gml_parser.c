@@ -166,22 +166,27 @@ static gm82_gml_ast *unary(gm82_gml_parser *p) {
     return primary(p);
 }
 static const char *binary_operator_text(const gm82_gml_token *t) {
-    if (t && t->kind == GM82_TOK_IDENTIFIER) {
+    if (!t) return "";
+    if (t->kind == GM82_TOK_IDENTIFIER) {
         if (!strcmp(t->text, "and")) return " and ";
         if (!strcmp(t->text, "or")) return " or ";
     }
-    if (t && t->kind == GM82_TOK_PERCENT) return " % ";
-    if (t && (t->kind == GM82_TOK_STAR || t->kind == GM82_TOK_SLASH ||
-              t->kind == GM82_TOK_PLUS || t->kind == GM82_TOK_MINUS ||
-              t->kind == GM82_TOK_EQUAL || t->kind == GM82_TOK_NOT_EQUAL ||
-              t->kind == GM82_TOK_LESS || t->kind == GM82_TOK_LESS_EQUAL ||
-              t->kind == GM82_TOK_GREATER || t->kind == GM82_TOK_GREATER_EQUAL ||
-              t->kind == GM82_TOK_AND || t->kind == GM82_TOK_OR)) {
-        static char spaced[8];
-        snprintf(spaced, sizeof(spaced), " %s ", gm82_gml_token_kind_name(t->kind));
-        return spaced;
+    switch (t->kind) {
+        case GM82_TOK_PLUS: return " + ";
+        case GM82_TOK_MINUS: return " - ";
+        case GM82_TOK_STAR: return " * ";
+        case GM82_TOK_SLASH: return " / ";
+        case GM82_TOK_PERCENT: return " % ";
+        case GM82_TOK_EQUAL: return " == ";
+        case GM82_TOK_NOT_EQUAL: return " != ";
+        case GM82_TOK_LESS: return " < ";
+        case GM82_TOK_LESS_EQUAL: return " <= ";
+        case GM82_TOK_GREATER: return " > ";
+        case GM82_TOK_GREATER_EQUAL: return " >= ";
+        case GM82_TOK_AND: return " && ";
+        case GM82_TOK_OR: return " || ";
+        default: return gm82_gml_token_kind_name(t->kind);
     }
-    return t ? gm82_gml_token_kind_name(t->kind) : "";
 }
 static gm82_gml_ast *binary_level(gm82_gml_parser *p, gm82_gml_ast *(*sub)(gm82_gml_parser *), gm82_gml_token_kind k1, gm82_gml_token_kind k2) {
     gm82_gml_ast *left = sub(p); if (!left) return NULL;

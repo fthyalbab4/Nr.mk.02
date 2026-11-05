@@ -161,27 +161,68 @@ static gm82_gml_ast *unary(gm82_gml_parser *p) {
     bool word_not = p->current.kind == GM82_TOK_IDENTIFIER && strcmp(p->current.text, "not") == 0;
     if (p->current.kind == GM82_TOK_MINUS || p->current.kind == GM82_TOK_PLUS || p->current.kind == GM82_TOK_NOT || word_not) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *n = node(GM82_AST_UNARY, &t); if (!n) return NULL;
-        n->text = copy_text(gm82_gml_token_kind_name(t.kind)); n->a = unary(p); if (!n->a) { gm82_gml_ast_free(n); return NULL; } return n;
+        n->text = copy_text(word_not ? "not " : gm82_gml_token_kind_name(t.kind)); n->a = unary(p); if (!n->a) { gm82_gml_ast_free(n); return NULL; } return n;
     }
     return primary(p);
+}
+static const char *binary_operator_text(const gm82_gml_token *t) {
+    if (!t) return "";
+    if (t->kind == GM82_TOK_IDENTIFIER) {
+        if (!strcmp(t->text, "and")) return " and ";
+        if (!strcmp(t->text, "or")) return " or ";
+    }
+    switch (t->kind) {
+        case GM82_TOK_PLUS: return " + ";
+        case GM82_TOK_MINUS: return " - ";
+        case GM82_TOK_STAR: return " * ";
+        case GM82_TOK_SLASH: return " / ";
+        case GM82_TOK_PERCENT: return " % ";
+        case GM82_TOK_EQUAL: return " == ";
+        case GM82_TOK_NOT_EQUAL: return " != ";
+        case GM82_TOK_LESS: return " < ";
+        case GM82_TOK_LESS_EQUAL: return " <= ";
+        case GM82_TOK_GREATER: return " > ";
+        case GM82_TOK_GREATER_EQUAL: return " >= ";
+        case GM82_TOK_AND: return " && ";
+        case GM82_TOK_OR: return " || ";
+        default: return gm82_gml_token_kind_name(t->kind);
+    }
 }
 static gm82_gml_ast *binary_level(gm82_gml_parser *p, gm82_gml_ast *(*sub)(gm82_gml_parser *), gm82_gml_token_kind k1, gm82_gml_token_kind k2) {
     gm82_gml_ast *left = sub(p); if (!left) return NULL;
     while (p->current.kind == k1 || p->current.kind == k2) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = sub(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(gm82_gml_token_kind_name(t.kind)); n->a = left; n->b = right; left = n;
+        n->text = copy_text(binary_operator_text(&t)); n->a = left; n->b = right; left = n;
+        }
+    return left;
+}
+static gm82_gml_ast *mul(gm82_gml_parser *p) {
+    gm82_gml_ast *left = unary(p);
+    if (!left) return NULL;
+    while (p->current.kind == GM82_TOK_STAR ||
+           p->current.kind == GM82_TOK_SLASH ||
+           p->current.kind == GM82_TOK_PERCENT) {
+        gm82_gml_token t = p->current;
+        advance(p);
+        gm82_gml_ast *right = unary(p);
+        if (!right) { gm82_gml_ast_free(left); return NULL; }
+        gm82_gml_ast *n = node(GM82_AST_BINARY, &t);
+        if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
+        n->text = copy_text(binary_operator_text(&t));
+        n->a = left;
+        n->b = right;
+        left = n;
     }
     return left;
 }
-static gm82_gml_ast *mul(gm82_gml_parser *p) { return binary_level(p, unary, GM82_TOK_STAR, GM82_TOK_SLASH); }
 static gm82_gml_ast *add(gm82_gml_parser *p) { return binary_level(p, mul, GM82_TOK_PLUS, GM82_TOK_MINUS); }
 static gm82_gml_ast *compare(gm82_gml_parser *p) {
     gm82_gml_ast *left = add(p); if (!left) return NULL;
     while (p->current.kind >= GM82_TOK_EQUAL && p->current.kind <= GM82_TOK_GREATER_EQUAL) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = add(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(gm82_gml_token_kind_name(t.kind)); n->a = left; n->b = right; left = n;
+        n->text = copy_text(binary_operator_text(&t)); n->a = left; n->b = right; left = n;
     }
     return left;
 }
@@ -192,7 +233,7 @@ static gm82_gml_ast *logic(gm82_gml_parser *p) {
             (!strcmp(p->current.text, "and") || !strcmp(p->current.text, "or")))) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = compare(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(gm82_gml_token_kind_name(t.kind)); n->a = left; n->b = right; left = n;
+        n->text = copy_text(binary_operator_text(&t)); n->a = left; n->b = right; left = n;
     }
     return left;
 }

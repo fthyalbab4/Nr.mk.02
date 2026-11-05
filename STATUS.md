@@ -5,7 +5,7 @@
 - **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario, Plataformas, Shooter, Zelda)
 - **Python Full Verification**: PASS (17/17 system verification tests passing)
 - **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` all tests passing)
-- **JS Engine Verification**: PASS (39/39 scripts 100%, 78/78 actions 100%)
+- **JS Engine Verification**: PASS (39/39 scripts passing, 78/78 actions passing)
 - **Android APK Build**: SUCCESS (NDK C++ & Java build passing across arm64-v8a, armeabi-v7a, x86, x86_64)
 
 ## Core & GML Capabilities

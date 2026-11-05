@@ -62,7 +62,7 @@ static bool emit_node(source_buf *b, const gm82_gml_ast *n) {
         case GM82_AST_WHILE: return emit(b, "while (") && emit_node(b, n->a) && emit(b, ") ") && emit_node(b, n->b);
         case GM82_AST_DO_UNTIL: return emit(b, "do ") && emit_node(b, n->a) && emit(b, " until (") && emit_node(b, n->b) && emit(b, ");");
         case GM82_AST_REPEAT: return emit(b, "repeat (") && emit_node(b, n->a) && emit(b, ") ") && emit_node(b, n->b);
-        case GM82_AST_FOR: return emit(b, "for (") && emit_node(b, n->a) && emit_char(b, ';') && emit_node(b, n->b) && emit_char(b, ';') && emit_node(b, n->c) && emit(b, ") ") && emit_node(b, n->d);
+        case GM82_AST_FOR: return emit(b, "for (") && (!n->a || emit_node(b, n->a)) && emit_char(b, ';') && (!n->b || emit_node(b, n->b)) && emit_char(b, ';') && (!n->c || emit_node(b, n->c)) && emit(b, ") ") && emit_node(b, n->d);
         case GM82_AST_WITH: return emit(b, "with (") && emit_node(b, n->a) && emit(b, ") ") && emit_node(b, n->b);
         case GM82_AST_RETURN: return emit(b, "return") && (n->a ? (emit_char(b, ' ') && emit_node(b, n->a)) : true) && emit_char(b, ';');
         case GM82_AST_BREAK: return emit(b, "break;");
@@ -72,6 +72,7 @@ static bool emit_node(source_buf *b, const gm82_gml_ast *n) {
 }
 
 bool gm82_gml_ast_to_source(const gm82_gml_ast *n, char *out, size_t size) {
+    if (!out || size == 0) return false;
     source_buf b = { out, size, 0 }; out[0] = 0; return emit_node(&b, n);
 }
 static bool eval_bool(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *n, bool *value) {
@@ -113,7 +114,12 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
         }
         case GM82_AST_DO_UNTIL: {
             bool condition = false;
-            do { r->continued = false; if (!execute_node(rt, self, n->a, r)) return false; r->broke = false; if (!eval_bool(rt, self, n->b, &condition)) return false; } while (!condition && !r->returned);
+            do {
+                r->continued = false;
+                if (!execute_node(rt, self, n->a, r)) return false;
+                if (r->broke) { r->broke = false; return true; }
+                if (!eval_bool(rt, self, n->b, &condition)) return false;
+            } while (!condition && !r->returned);
             return true;
         }
         case GM82_AST_REPEAT: {
@@ -159,5 +165,6 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
 bool gm82_gml_execute_ast(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *program, gm82_gml_exec_result *result) {
     if (!rt || !program || !result) return false;
     memset(result, 0, sizeof(*result));
-    return execute_node(rt, self, program, result) && result->steps <= GM82_GML_EXEC_MAX_STEPS;
+    return execute_node(rt, self, program, result) && result->steps <= GM82_GML_EXEC_MAX_STEPS &&
+           !result->broke && !result->continued;
 }

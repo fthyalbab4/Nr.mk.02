@@ -143,7 +143,7 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
     if (strcmp(name, "direction") == 0) { *out = s ? s->direction : 0; return true; }
-    if (strcmp(name, "image_index") == 0) { *out = s ? (double)s->image_index : 0; return true; }
+    if (strcmp(name, "image_index") == 0) { *out = s ? s->image_index : 0; return true; }
     if (strcmp(name, "image_speed") == 0) { *out = s ? s->image_speed : 0; return true; }
     if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
     if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
@@ -361,7 +361,7 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "vspeed") == 0) { s->vspeed = v; return true; }
     if (strcmp(name, "speed") == 0) { s->speed = v; return true; }
     if (strcmp(name, "direction") == 0) { s->direction = v; return true; }
-    if (strcmp(name, "image_index") == 0) { s->image_index = (int32_t)v; return true; }
+    if (strcmp(name, "image_index") == 0) { s->image_index = v; return true; }
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
     if (strcmp(name, "image_xscale") == 0) { s->image_xscale = v; return true; }
     if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
