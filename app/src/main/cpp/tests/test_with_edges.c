@@ -14,6 +14,7 @@ int main(void) {
     gm82_decoded_object_list objs;
     memset(&objs, 0, sizeof(objs));
     objs.count = 2;
+    objs.items = calloc(2, sizeof(gm82_decoded_object));
     strncpy(objs.items[0].name, "obj_a", sizeof(objs.items[0].name) - 1);
     objs.items[0].parent_index = -1;
     strncpy(objs.items[1].name, "obj_b", sizeof(objs.items[1].name) - 1);
@@ -68,6 +69,7 @@ int main(void) {
     }
 
     gm82_gml_eval_block(&rt, self, "with (all) { instance_destroy(); }");
+    free(objs.items);
     printf("with_edges PASS\n");
     return 0;
 }

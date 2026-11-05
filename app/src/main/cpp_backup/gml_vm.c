@@ -336,6 +336,145 @@ static gml_value call(gml_vm *vm, const gml_ast *n) {
         if (hi < lo) { long t = lo; lo = hi; hi = t; }
         long range = hi - lo + 1;
         r = gml_value_real(range > 0 ? (double)(lo + (rand() % range)) : (double)lo);
+        } else if (!strcmp(n->text, "ds_bag_create")) {
+        r = gml_value_real(gml_ds_bag_create());
+    } else if (!strcmp(n->text, "ds_bag_destroy")) {
+        r = gml_value_real(gml_ds_bag_destroy(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_clear")) {
+        r = gml_value_real(gml_ds_bag_clear(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_size")) {
+        r = gml_value_real(gml_ds_bag_size(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_empty")) {
+        r = gml_value_real(gml_ds_bag_empty(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_add")) {
+        r = gml_value_real(gml_ds_bag_add(c >= 1 ? num(a[0]) : 0.0, c >= 2 ? num(a[1]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_remove")) {
+        r = gml_value_real(gml_ds_bag_remove(c >= 1 ? num(a[0]) : 0.0, c >= 2 ? num(a[1]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_grab")) {
+        r = gml_value_real(gml_ds_bag_grab(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "ds_bag_quick")) {
+        r = gml_value_real(gml_ds_bag_quick(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "bigchoose_clear")) {
+        r = gml_value_real(gml_bigchoose_clear());
+    } else if (!strcmp(n->text, "bigchoose")) {
+        r = gml_value_real(gml_bigchoose(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "bigchoose_weighted")) {
+        r = gml_value_real(gml_bigchoose_weighted(c >= 1 ? num(a[0]) : 0.0, c >= 2 ? num(a[1]) : 0.0));
+    } else if (!strcmp(n->text, "bigchoose_get")) {
+        r = gml_value_real(gml_bigchoose_get());
+    } else if (!strcmp(n->text, "bigchoose_weighted_get")) {
+        r = gml_value_real(gml_bigchoose_weighted_get());
+    } else if (!strcmp(n->text, "choose_weighted")) {
+        r = gml_value_real(gml_choose_weighted(c >= 1 ? num(a[0]) : 0.0, c >= 2 ? num(a[1]) : 0.0, c >= 3 ? num(a[2]) : 0.0, c >= 4 ? num(a[3]) : 0.0));
+    } else if (!strcmp(n->text, "event_alarm")) {
+        r = gml_value_real(gml_event_alarm(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "event_beginstep")) {
+        r = gml_value_real(gml_event_beginstep());
+    } else if (!strcmp(n->text, "event_step")) {
+        r = gml_value_real(gml_event_step());
+    } else if (!strcmp(n->text, "event_endstep")) {
+        r = gml_value_real(gml_event_endstep());
+    } else if (!strcmp(n->text, "event_draw")) {
+        r = gml_value_real(gml_event_draw());
+    } else if (!strcmp(n->text, "event_trigger")) {
+        r = gml_value_real(gml_event_trigger(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "dss_list_create")) {
+        r = gml_value_real(gml_dss_list_create());
+    } else if (!strcmp(n->text, "dss_map_create")) {
+        r = gml_value_real(gml_dss_map_create());
+    } else if (!strcmp(n->text, "dss_grid_create")) {
+        r = gml_value_real(gml_dss_grid_create(c >= 1 ? num(a[0]) : 0.0, c >= 2 ? num(a[1]) : 0.0));
+    } else if (!strcmp(n->text, "dss_stack_create")) {
+        r = gml_value_real(gml_dss_stack_create());
+    } else if (!strcmp(n->text, "dss_queue_create")) {
+        r = gml_value_real(gml_dss_queue_create());
+    } else if (!strcmp(n->text, "dss_priority_create")) {
+        r = gml_value_real(gml_dss_priority_create());
+    } else if (!strcmp(n->text, "dss_destroy")) {
+        r = gml_value_real(gml_dss_destroy(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "dss_get_type")) {
+        r = gml_value_real(gml_dss_get_type(c >= 1 ? num(a[0]) : 0.0));
+    } else if (!strcmp(n->text, "dslist")) {
+        r = gml_value_real(gml_dslist());
+    } else if (!strcmp(n->text, "dsmap")) {
+        r = gml_value_real(gml_dsmap());
+    } else if (!strcmp(n->text, "registry_read_dword")) {
+        r = gml_value_real(gml_registry_read_dword());
+    } else if (!strcmp(n->text, "registry_read_sz")) {
+        r = gml_value_real(gml_registry_read_sz());
+    } else if (!strcmp(n->text, "registry_write_dword")) {
+        r = gml_value_real(gml_registry_write_dword());
+    } else if (!strcmp(n->text, "message_default")) {
+        r = gml_value_real(gml_message_default());
+    } else if (!strcmp(n->text, "execute_program_silent")) {
+        r = gml_value_real(gml_execute_program_silent());
+    } else if (!strcmp(n->text, "execute_program_async")) {
+        r = gml_value_real(gml_execute_program_async());
+    } else if (!strcmp(n->text, "execute_program_async_result")) {
+        r = gml_value_real(gml_execute_program_async_result());
+    } else if (!strcmp(n->text, "get_open_filename_ext")) {
+        r = gml_value_real(gml_get_open_filename_ext());
+    } else if (!strcmp(n->text, "get_save_filename_ext")) {
+        r = gml_value_real(gml_get_save_filename_ext());
+    } else if (!strcmp(n->text, "file_find_list")) {
+        r = gml_value_real(gml_file_find_list());
+    } else if (!strcmp(n->text, "font_add_file")) {
+        r = gml_value_real(gml_font_add_file());
+    } else if (!strcmp(n->text, "font_add_winui")) {
+        r = gml_value_real(gml_font_add_winui());
+    } else if (!strcmp(n->text, "include_file_get_buffer")) {
+        r = gml_value_real(gml_include_file_get_buffer());
+    } else if (!strcmp(n->text, "instance_assign_groups")) {
+        r = gml_value_real(gml_instance_assign_groups());
+    } else if (!strcmp(n->text, "tile_add_ext")) {
+        r = gml_value_real(gml_tile_add_ext());
+    } else if (!strcmp(n->text, "tile_find_anywhere")) {
+        r = gml_value_real(gml_tile_find_anywhere());
+    } else if (!strcmp(n->text, "array_from_string")) {
+        r = gml_value_real(gml_array_from_string());
+    } else if (!strcmp(n->text, "global_array_from_string")) {
+        r = gml_value_real(gml_global_array_from_string());
+    } else if (!strcmp(n->text, "ds_grid_set_many")) {
+        r = gml_value_real(gml_ds_grid_set_many());
+    } else if (!strcmp(n->text, "ds_list_contains_ext")) {
+        r = gml_value_real(gml_ds_list_contains_ext());
+    } else if (!strcmp(n->text, "ds_list_equal")) {
+        r = gml_value_real(gml_ds_list_equal());
+    } else if (!strcmp(n->text, "ds_list_str")) {
+        r = gml_value_real(gml_ds_list_str());
+    } else if (!strcmp(n->text, "ds_list_union")) {
+        r = gml_value_real(gml_ds_list_union());
+    } else if (!strcmp(n->text, "ds_map_read_ini")) {
+        r = gml_value_real(gml_ds_map_read_ini());
+    } else if (!strcmp(n->text, "ds_map_read_ini_string")) {
+        r = gml_value_real(gml_ds_map_read_ini_string());
+    } else if (!strcmp(n->text, "ds_map_read_safe")) {
+        r = gml_value_real(gml_ds_map_read_safe());
+    } else if (!strcmp(n->text, "ds_map_set_many")) {
+        r = gml_value_real(gml_ds_map_set_many());
+    } else if (!strcmp(n->text, "ds_map_write_ini")) {
+        r = gml_value_real(gml_ds_map_write_ini());
+    } else if (!strcmp(n->text, "ds_map_write_ini_string")) {
+        r = gml_value_real(gml_ds_map_write_ini_string());
+    } else if (!strcmp(n->text, "ds_priority_add_many")) {
+        r = gml_value_real(gml_ds_priority_add_many());
+    } else if (!strcmp(n->text, "draw_background_tiled_extra")) {
+        r = gml_value_real(gml_draw_background_tiled_extra());
+    } else if (!strcmp(n->text, "draw_sprite_part_extra")) {
+        r = gml_value_real(gml_draw_sprite_part_extra());
+    } else if (!strcmp(n->text, "draw_sprite_tiled_extra")) {
+        r = gml_value_real(gml_draw_sprite_tiled_extra());
+    } else if (!strcmp(n->text, "draw_sprite_part_centered")) {
+        r = gml_value_real(gml_draw_sprite_part_centered());
+    } else if (!strcmp(n->text, "draw_spotlight")) {
+        r = gml_value_real(gml_draw_spotlight());
+    } else if (!strcmp(n->text, "ds_list_filter")) {
+        r = gml_value_real(gml_ds_list_filter());
+    } else if (!strcmp(n->text, "ds_list_foreach")) {
+        r = gml_value_real(gml_ds_list_foreach());
+    } else if (!strcmp(n->text, "ds_list_map")) {
+        r = gml_value_real(gml_ds_list_map());
+
     } else if (!strcmp(n->text, "choose") && c >= 1) {
         size_t pick = (size_t)(rand() % c);
         r = copyv(&a[pick]);
@@ -676,17 +815,34 @@ static gml_value eval(gml_vm *vm, const gml_ast *n) {
             gml_value r = eval(vm, n->right);
             if (n->op != GML_T_NONE) {
                 gml_value current = eval(vm, n->left);
-                double x = num(current), y = num(r), z = x;
-                switch (n->op) {
-                    case GML_T_PLUS: z = x + y; break;
-                    case GML_T_MINUS: z = x - y; break;
-                    case GML_T_STAR: z = x * y; break;
-                    case GML_T_SLASH: z = y == 0.0 ? 0.0 : x / y; break;
-                    case GML_T_PERCENT: z = fmod(x, y); break;
-                    default: break;
+                if (n->op == GML_T_PLUS && (current.kind == GML_V_STRING || r.kind == GML_V_STRING)) {
+                    char sc[64], sr[64];
+                    const char *s1 = current.kind == GML_V_STRING ? current.string : (snprintf(sc, sizeof(sc), "%g", num(current)), sc);
+                    const char *s2 = r.kind == GML_V_STRING ? r.string : (snprintf(sr, sizeof(sr), "%g", num(r)), sr);
+                    size_t l1 = s1 ? strlen(s1) : 0;
+                    size_t l2 = s2 ? strlen(s2) : 0;
+                    char *combined = malloc(l1 + l2 + 1);
+                    if (combined) {
+                        if (l1) memcpy(combined, s1, l1);
+                        if (l2) memcpy(combined + l1, s2, l2);
+                        combined[l1 + l2] = '\0';
+                        gml_value_free(&r);
+                        r = gml_value_string(combined);
+                        free(combined);
+                    }
+                } else {
+                    double x = num(current), y = num(r), z = x;
+                    switch (n->op) {
+                        case GML_T_PLUS: z = x + y; break;
+                        case GML_T_MINUS: z = x - y; break;
+                        case GML_T_STAR: z = x * y; break;
+                        case GML_T_SLASH: z = y == 0.0 ? 0.0 : x / y; break;
+                        case GML_T_PERCENT: z = fmod(x, y); break;
+                        default: break;
+                    }
+                    gml_value_free(&r);
+                    r = gml_value_real(z);
                 }
-                gml_value_free(&r);
-                r = gml_value_real(z);
                 gml_value_free(&current);
             }
             if (n->left && n->left->kind == GML_AST_NAME) {

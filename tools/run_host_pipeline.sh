@@ -158,7 +158,7 @@ gcc -O2 -I"$INC" -I"$CPP" -o "$ROOT/build_host/pipeline_min" \
   "$SRC/gm82_particles.c" "$SRC/gm82_mp_grid.c" \
   "$SRC/gm82_sound_runtime.c" "$SRC/gm82_soft_render.c" \
   "$SRC/gm82_sprite_decode.c" "$SRC/gm82_background_decode.c" \
-  "$SRC/gm82_object_room_decode.c" -lz -lm
+  "$SRC/gm82_object_room_decode.c" "$SRC/gm82_batch4_extras.c" -lz -lm
 
 OUT="$ROOT/build_host/pipeline_results.txt"
 : > "$OUT"

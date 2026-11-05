@@ -2,7 +2,7 @@
 
 - **Date**: 2026-11-02
 - **Baseline Git Tag**: `v0.1-native-gml-collision-baseline`
-- **Elapsed Test Time**: 80.70 seconds
+- **Elapsed Test Time**: 109.92 seconds
 - **Host Audit Status**: PASS
 - **Security & Reference Contracts Status**: PASS (12/12 passing)
 - **C Native Test Binaries**: 27 passing
@@ -43,12 +43,12 @@ All host audit checks passed successfully.
 
 ## Security Test Output Excerpt
 ```text
-port_or_general_code_api) ... ok
+t_bridge_methods_present) ... ok
 test_private_signing_key_is_not_shipped (test_security_contract.SecurityContractTests.test_private_signing_key_is_not_shipped) ... ok
 test_webview_and_network_are_restricted (test_security_contract.SecurityContractTests.test_webview_and_network_are_restricted) ... ok
 
 ----------------------------------------------------------------------
-Ran 12 tests in 1.750s
+Ran 13 tests in 1.645s
 
 OK
 ```

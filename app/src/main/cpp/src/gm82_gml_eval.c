@@ -2851,6 +2851,76 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "mouse_in_window") == 0) { *out = gml_mouse_in_window(); return true; }
         if (strcmp(id, "extension_detect") == 0) { *out = gml_extension_detect(); return true; }
         if (strcmp(id, "get_frametime_usage") == 0) { *out = gml_get_frametime_usage(); return true; }
+                if (strcmp(id, "ds_bag_create") == 0) { *out = gml_ds_bag_create(); return true; }
+        if (strcmp(id, "ds_bag_destroy") == 0) { *out = gml_ds_bag_destroy(arg); return true; }
+        if (strcmp(id, "ds_bag_clear") == 0) { *out = gml_ds_bag_clear(arg); return true; }
+        if (strcmp(id, "ds_bag_size") == 0) { *out = gml_ds_bag_size(arg); return true; }
+        if (strcmp(id, "ds_bag_empty") == 0) { *out = gml_ds_bag_empty(arg); return true; }
+        if (strcmp(id, "ds_bag_add") == 0) { *out = gml_ds_bag_add(arg, nargs >= 2 ? args[1] : 0); return true; }
+        if (strcmp(id, "ds_bag_remove") == 0) { *out = gml_ds_bag_remove(arg, nargs >= 2 ? args[1] : 0); return true; }
+        if (strcmp(id, "ds_bag_grab") == 0) { *out = gml_ds_bag_grab(arg); return true; }
+        if (strcmp(id, "ds_bag_quick") == 0) { *out = gml_ds_bag_quick(arg); return true; }
+        if (strcmp(id, "bigchoose_clear") == 0) { *out = gml_bigchoose_clear(); return true; }
+        if (strcmp(id, "bigchoose") == 0) { *out = gml_bigchoose(arg); return true; }
+        if (strcmp(id, "bigchoose_weighted") == 0) { *out = gml_bigchoose_weighted(arg, nargs >= 2 ? args[1] : 0); return true; }
+        if (strcmp(id, "bigchoose_get") == 0) { *out = gml_bigchoose_get(); return true; }
+        if (strcmp(id, "bigchoose_weighted_get") == 0) { *out = gml_bigchoose_weighted_get(); return true; }
+        if (strcmp(id, "choose_weighted") == 0) { *out = gml_choose_weighted(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0); return true; }
+        if (strcmp(id, "event_alarm") == 0) { *out = gml_event_alarm(arg); return true; }
+        if (strcmp(id, "event_beginstep") == 0) { *out = gml_event_beginstep(); return true; }
+        if (strcmp(id, "event_step") == 0) { *out = gml_event_step(); return true; }
+        if (strcmp(id, "event_endstep") == 0) { *out = gml_event_endstep(); return true; }
+        if (strcmp(id, "event_draw") == 0) { *out = gml_event_draw(); return true; }
+        if (strcmp(id, "event_trigger") == 0) { *out = gml_event_trigger(arg); return true; }
+        if (strcmp(id, "dss_list_create") == 0) { *out = gml_dss_list_create(); return true; }
+        if (strcmp(id, "dss_map_create") == 0) { *out = gml_dss_map_create(); return true; }
+        if (strcmp(id, "dss_grid_create") == 0) { *out = gml_dss_grid_create(arg, nargs >= 2 ? args[1] : 0); return true; }
+        if (strcmp(id, "dss_stack_create") == 0) { *out = gml_dss_stack_create(); return true; }
+        if (strcmp(id, "dss_queue_create") == 0) { *out = gml_dss_queue_create(); return true; }
+        if (strcmp(id, "dss_priority_create") == 0) { *out = gml_dss_priority_create(); return true; }
+        if (strcmp(id, "dss_destroy") == 0) { *out = gml_dss_destroy(arg); return true; }
+        if (strcmp(id, "dss_get_type") == 0) { *out = gml_dss_get_type(arg); return true; }
+        if (strcmp(id, "dslist") == 0) { *out = gml_dslist(); return true; }
+        if (strcmp(id, "dsmap") == 0) { *out = gml_dsmap(); return true; }
+        if (strcmp(id, "registry_read_dword") == 0) { *out = gml_registry_read_dword(); return true; }
+        if (strcmp(id, "registry_read_sz") == 0) { *out = gml_registry_read_sz(); return true; }
+        if (strcmp(id, "registry_write_dword") == 0) { *out = gml_registry_write_dword(); return true; }
+        if (strcmp(id, "message_default") == 0) { *out = gml_message_default(); return true; }
+        if (strcmp(id, "execute_program_silent") == 0) { *out = gml_execute_program_silent(); return true; }
+        if (strcmp(id, "execute_program_async") == 0) { *out = gml_execute_program_async(); return true; }
+        if (strcmp(id, "execute_program_async_result") == 0) { *out = gml_execute_program_async_result(); return true; }
+        if (strcmp(id, "get_open_filename_ext") == 0) { *out = gml_get_open_filename_ext(); return true; }
+        if (strcmp(id, "get_save_filename_ext") == 0) { *out = gml_get_save_filename_ext(); return true; }
+        if (strcmp(id, "file_find_list") == 0) { *out = gml_file_find_list(); return true; }
+        if (strcmp(id, "font_add_file") == 0) { *out = gml_font_add_file(); return true; }
+        if (strcmp(id, "font_add_winui") == 0) { *out = gml_font_add_winui(); return true; }
+        if (strcmp(id, "include_file_get_buffer") == 0) { *out = gml_include_file_get_buffer(); return true; }
+        if (strcmp(id, "instance_assign_groups") == 0) { *out = gml_instance_assign_groups(); return true; }
+        if (strcmp(id, "tile_add_ext") == 0) { *out = gml_tile_add_ext(); return true; }
+        if (strcmp(id, "tile_find_anywhere") == 0) { *out = gml_tile_find_anywhere(); return true; }
+        if (strcmp(id, "array_from_string") == 0) { *out = gml_array_from_string(); return true; }
+        if (strcmp(id, "global_array_from_string") == 0) { *out = gml_global_array_from_string(); return true; }
+        if (strcmp(id, "ds_grid_set_many") == 0) { *out = gml_ds_grid_set_many(); return true; }
+        if (strcmp(id, "ds_list_contains_ext") == 0) { *out = gml_ds_list_contains_ext(); return true; }
+        if (strcmp(id, "ds_list_equal") == 0) { *out = gml_ds_list_equal(); return true; }
+        if (strcmp(id, "ds_list_str") == 0) { *out = gml_ds_list_str(); return true; }
+        if (strcmp(id, "ds_list_union") == 0) { *out = gml_ds_list_union(); return true; }
+        if (strcmp(id, "ds_map_read_ini") == 0) { *out = gml_ds_map_read_ini(); return true; }
+        if (strcmp(id, "ds_map_read_ini_string") == 0) { *out = gml_ds_map_read_ini_string(); return true; }
+        if (strcmp(id, "ds_map_read_safe") == 0) { *out = gml_ds_map_read_safe(); return true; }
+        if (strcmp(id, "ds_map_set_many") == 0) { *out = gml_ds_map_set_many(); return true; }
+        if (strcmp(id, "ds_map_write_ini") == 0) { *out = gml_ds_map_write_ini(); return true; }
+        if (strcmp(id, "ds_map_write_ini_string") == 0) { *out = gml_ds_map_write_ini_string(); return true; }
+        if (strcmp(id, "ds_priority_add_many") == 0) { *out = gml_ds_priority_add_many(); return true; }
+        if (strcmp(id, "draw_background_tiled_extra") == 0) { *out = gml_draw_background_tiled_extra(); return true; }
+        if (strcmp(id, "draw_sprite_part_extra") == 0) { *out = gml_draw_sprite_part_extra(); return true; }
+        if (strcmp(id, "draw_sprite_tiled_extra") == 0) { *out = gml_draw_sprite_tiled_extra(); return true; }
+        if (strcmp(id, "draw_sprite_part_centered") == 0) { *out = gml_draw_sprite_part_centered(); return true; }
+        if (strcmp(id, "draw_spotlight") == 0) { *out = gml_draw_spotlight(); return true; }
+        if (strcmp(id, "ds_list_filter") == 0) { *out = gml_ds_list_filter(); return true; }
+        if (strcmp(id, "ds_list_foreach") == 0) { *out = gml_ds_list_foreach(); return true; }
+        if (strcmp(id, "ds_list_map") == 0) { *out = gml_ds_list_map(); return true; }
+
         if (gm82_gm82core_try_stub(id, out)) return true;
 
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);
