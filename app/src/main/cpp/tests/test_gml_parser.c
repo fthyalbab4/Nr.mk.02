@@ -194,6 +194,42 @@ static void test_bytecode_with_snapshot(void) {
     gm82_runtime_cleanup(&rt);
 }
 
+static void test_switch_control_flow(void) {
+    const char *source = "x = 0; switch (2) { case 1: x = 10; break; "
+                         "case 2: x = 20; case 3: x += 3; break; "
+                         "default: x = 99; } return x;";
+    gm82_gml_parser parser;
+    gm82_gml_parser_init(&parser, source);
+    gm82_gml_ast *root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    assert(root->a && root->a->next && root->a->next->kind == GM82_AST_SWITCH);
+    char serialized[1024];
+    assert(gm82_gml_ast_to_source(root, serialized, sizeof(serialized)));
+    assert(strstr(serialized, "switch") != NULL && strstr(serialized, "default") != NULL);
+
+    gm82_runtime ast_rt;
+    gm82_runtime_init(&ast_rt);
+    gm82_instance *ast_self = gm82_runtime_instance_create(&ast_rt, 0, 0, 0);
+    assert(ast_self != NULL);
+    gm82_gml_exec_result ast_result;
+    assert(gm82_gml_execute_ast(&ast_rt, ast_self, root, &ast_result));
+    assert(ast_result.returned && ast_result.return_value == 23.0);
+    gm82_runtime_cleanup(&ast_rt);
+
+    gm82_runtime bc_rt;
+    gm82_runtime_init(&bc_rt);
+    gm82_instance *bc_self = gm82_runtime_instance_create(&bc_rt, 0, 0, 0);
+    assert(bc_self != NULL);
+    gm82_gml_bytecode bytecode;
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    gm82_gml_exec_result bc_result;
+    assert(gm82_gml_execute_bytecode(&bc_rt, bc_self, &bytecode, &bc_result));
+    assert(bc_result.returned && bc_result.return_value == 23.0);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_runtime_cleanup(&bc_rt);
+    gm82_gml_ast_free(root);
+}
+
 int main(void) {
     test_lexer();
     test_parser();
@@ -202,6 +238,7 @@ int main(void) {
     test_ast_execution();
     test_do_until_control_flow();
     test_bytecode_with_snapshot();
+    test_switch_control_flow();
     puts("test_gml_parser PASS");
     return 0;
 }
