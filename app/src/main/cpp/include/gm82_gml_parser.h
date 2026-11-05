@@ -109,6 +109,7 @@ typedef enum {
     GM82_BC_RETURN,
     GM82_BC_REPEAT_BREAK,
     GM82_BC_WITH_BEGIN,
+    GM82_BC_WITH_BREAK,
     GM82_BC_WITH_NEXT
 } gm82_gml_bc_opcode;
 
