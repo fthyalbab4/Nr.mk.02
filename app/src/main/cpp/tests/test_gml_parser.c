@@ -99,7 +99,37 @@ static void test_ast_execution(void) {
     gm82_runtime_cleanup(&rt);
 }
 
+
+static void test_value_type_model(void) {
+    gm82_value v_real;
+    v_real.type = GM82_VALUE_REAL;
+    v_real.real_val = 42.5;
+    assert(v_real.type == GM82_VALUE_REAL);
+    assert(v_real.real_val == 42.5);
+
+    gm82_value v_str;
+    v_str.type = GM82_VALUE_STRING;
+    strncpy(v_str.string_val, "hello world", sizeof(v_str.string_val) - 1);
+    assert(v_str.type == GM82_VALUE_STRING);
+    assert(strcmp(v_str.string_val, "hello world") == 0);
+
+    gm82_value v_inst;
+    v_inst.type = GM82_VALUE_INSTANCE;
+    v_inst.ref_id = 100001;
+    assert(v_inst.type == GM82_VALUE_INSTANCE);
+    assert(v_inst.ref_id == 100001);
+
+    gm82_value v_res;
+    v_res.type = GM82_VALUE_RESOURCE;
+    v_res.ref_id = 5;
+    assert(v_res.type == GM82_VALUE_RESOURCE);
+    assert(v_res.ref_id == 5);
+
+    puts("test_value_type_model PASS");
+}
+
 int main(void) {
+    test_value_type_model();
     test_lexer();
     test_parser();
     test_rejection();

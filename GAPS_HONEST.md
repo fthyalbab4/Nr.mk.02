@@ -15,3 +15,10 @@ See docs/DEVICE_BLOCKED.md:
 ## Delivery gate
 `is_100: false` (device items open)
 `host_p0: true`
+
+## Baseline Phase 0 Lock & Verification (Tag: v0.1-native-gml-collision-baseline)
+- Host verification: 27 native C test binaries pass cleanly via Makefile and test suites.
+- Contract verification: 12 reference and security contract Python tests pass (100% OK).
+- Android build: Verified with Gradle 8.2.1, SDK 34, NDK 25.2.9519653, CMake 3.22.1 generating app-debug.apk across arm64-v8a, armeabi-v7a, x86, x86_64.
+- Mario Parity: Mario Bros GML & action parity matrix established in MARIO_FUNCTION_MATRIX.md with unit fixtures (test_mario_scripts_fixtures.c) and 160-frame deterministic physics replay.
+- Honest limitations: Physical Android device touch replay and on-device instrumentation tests remain pending physical device connection.

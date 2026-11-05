@@ -9,6 +9,22 @@
 extern "C" {
 #endif
 
+
+typedef enum {
+    GM82_VALUE_REAL = 0,
+    GM82_VALUE_STRING,
+    GM82_VALUE_INSTANCE,
+    GM82_VALUE_RESOURCE,
+    GM82_VALUE_UNDEFINED
+} gm82_value_type;
+
+typedef struct {
+    gm82_value_type type;
+    double real_val;
+    char string_val[256];
+    int32_t ref_id;
+} gm82_value;
+
 typedef enum {
     GM82_TOK_EOF = 0,
     GM82_TOK_NUMBER,

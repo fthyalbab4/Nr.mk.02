@@ -11,13 +11,18 @@
 int main(void) {
     gm82_runtime rt;
     gm82_runtime_init(&rt);
+    gm82_decoded_object obj_storage[2];
+    memset(obj_storage, 0, sizeof(obj_storage));
+    strncpy(obj_storage[0].name, "obj_a", sizeof(obj_storage[0].name) - 1);
+    obj_storage[0].parent_index = -1;
+    strncpy(obj_storage[1].name, "obj_b", sizeof(obj_storage[1].name) - 1);
+    obj_storage[1].parent_index = -1;
+
     gm82_decoded_object_list objs;
     memset(&objs, 0, sizeof(objs));
     objs.count = 2;
-    strncpy(objs.items[0].name, "obj_a", sizeof(objs.items[0].name) - 1);
-    objs.items[0].parent_index = -1;
-    strncpy(objs.items[1].name, "obj_b", sizeof(objs.items[1].name) - 1);
-    objs.items[1].parent_index = -1;
+    objs.items = obj_storage;
+
     gm82_decoded_sprite_list sprites; memset(&sprites, 0, sizeof(sprites));
     gm82_decoded_background_list bgs; memset(&bgs, 0, sizeof(bgs));
     gm82_decoded_room_list rooms; memset(&rooms, 0, sizeof(rooms));
@@ -30,11 +35,13 @@ int main(void) {
     for (int i = 0; i < 3; i++) {
         if (!gm82_runtime_instance_create(&rt, 0, 10.0 * i, 0)) {
             fprintf(stderr, "create a fail\n");
+            gm82_runtime_cleanup(&rt);
             return 1;
         }
     }
     if (!gm82_runtime_instance_create(&rt, 1, 100, 0)) {
         fprintf(stderr, "create b fail\n");
+        gm82_runtime_cleanup(&rt);
         return 1;
     }
 
@@ -48,6 +55,7 @@ int main(void) {
         if (rt.instances[i].alive && rt.instances[i].hspeed == 3) moved++;
     if (moved < 4) {
         fprintf(stderr, "with(all) expected >=4 got %d\n", moved);
+        gm82_runtime_cleanup(&rt);
         return 2;
     }
 
@@ -57,6 +65,7 @@ int main(void) {
         if (rt.instances[i].alive && rt.instances[i].hspeed == 9) n9++;
     if (n9 != 0) {
         fprintf(stderr, "with(noone) leaked %d\n", n9);
+        gm82_runtime_cleanup(&rt);
         return 3;
     }
 
@@ -64,10 +73,12 @@ int main(void) {
     gm82_gml_eval_block(&rt, self, "with (self) { hspeed = 7; }");
     if (self->hspeed != 7) {
         fprintf(stderr, "with(self) failed hspeed=%g\n", self->hspeed);
+        gm82_runtime_cleanup(&rt);
         return 4;
     }
 
     gm82_gml_eval_block(&rt, self, "with (all) { instance_destroy(); }");
     printf("with_edges PASS\n");
+    gm82_runtime_cleanup(&rt);
     return 0;
 }
