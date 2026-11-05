@@ -604,58 +604,6 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_instance_number(ARG_R(0)));
         return 1;
     }
-    if (strcmp(name, "instance_place") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_place(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_place_list") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_place_list(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_position") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_position(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_position_list") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_position_list(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_x") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_x(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_y") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_y(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_speed") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_speed(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_closed") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_closed(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_length") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_length(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_width") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_width(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_height") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_height(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_add_point") == 0 && count >= 3) {
-        *out = gml_value_real(gml_path_add_point_ext(ARG_R(0), ARG_R(1), ARG_R(2), count >= 4 ? ARG_R(3) : 100.0));
-        return 1;
-    }
-    if (strcmp(name, "path_clear_points") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_clear_points(ARG_R(0)));
-        return 1;
-    }
     if (strcmp(name, "room_goto") == 0 && count >= 1) {
         *out = gml_value_real(gml_room_goto(ARG_R(0)));
         return 1;

@@ -30743,7 +30743,6 @@ const createEngineHTML = (projectData) => {
             ["KeyV", 86, "v", "V", "KeyJ", 74, "j", "J"].forEach(k => P1_Input.syncKey(k, down));
         }
     };
-    window.syncKeyboardToPlayers = syncKeyboardToPlayers;
     const Input = {
         get keys() { return P1_Input.keys; },
         get keysPressed() { return P1_Input.keysPressed; },
@@ -97835,45 +97834,6 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
     } catch (e) {}
   };
 
-  reactExports.useEffect(() => {
-    if (mode !== "game") return;
-    const forwarded = new Set();
-    const supported = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space", "Enter", "KeyZ", "KeyX", "KeyC", "KeyV", "KeyA", "KeyD", "KeyW", "KeyS"]);
-    const editable = (target) => {
-      if (!target) return false;
-      const tag = String(target.tagName || "").toLowerCase();
-      return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
-    };
-    const onDown = (event) => {
-      const key = event.code || event.key;
-      if (editable(event.target) || !supported.has(key)) return;
-      if (event.cancelable) event.preventDefault();
-      if (forwarded.has(key) && event.repeat) return;
-      forwarded.add(key);
-      sendKey(key, "keydown");
-    };
-    const onUp = (event) => {
-      const key = event.code || event.key;
-      if (!forwarded.has(key)) return;
-      if (event.cancelable) event.preventDefault();
-      forwarded.delete(key);
-      sendKey(key, "keyup");
-    };
-    const release = () => {
-      for (const key of forwarded) sendKey(key, "keyup");
-      forwarded.clear();
-    };
-    window.addEventListener("keydown", onDown, true);
-    window.addEventListener("keyup", onUp, true);
-    window.addEventListener("blur", release);
-    return () => {
-      release();
-      window.removeEventListener("keydown", onDown, true);
-      window.removeEventListener("keyup", onUp, true);
-      window.removeEventListener("blur", release);
-    };
-  }, [mode, content, iframeRef]);
-
   const handleBtnDown = (e, keyOrKeys) => {
     if (e && e.cancelable) e.preventDefault();
     if (e && e.stopPropagation) e.stopPropagation();
@@ -154951,15 +154911,6 @@ button, input, textarea, select {
           if (cards.length > 0) {
             e.preventDefault();
             cards[cards.length - 1].focus();
-          }
-        } else if (e.key === "PageDown" || e.key === "PageUp") {
-          const cards = Array.from(grid.querySelectorAll(".gmk-cloud-card"));
-          const currentIndex = cards.indexOf(card);
-          if (currentIndex !== -1 && cards.length > 0) {
-            e.preventDefault();
-            const step = e.key === "PageDown" ? 10 : -10;
-            const targetIndex = Math.max(0, Math.min(cards.length - 1, currentIndex + step));
-            cards[targetIndex].focus();
           }
         }
       };

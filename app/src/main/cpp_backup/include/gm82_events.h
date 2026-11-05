@@ -2,7 +2,6 @@
 #ifndef GM82_EVENTS_H
 #define GM82_EVENTS_H
 
-#include "gm82_gml_builtins.h"
 #include "gm82_runtime.h"
 #include <stdint.h>
 #include <stdbool.h>

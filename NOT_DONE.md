@@ -1,11 +1,13 @@
-# ما لم يُنفَّذ
+# ما لم يُنفَّذ — عندك أنت
 
 | بند | الحالة |
 |-----|--------|
-| host DnD gapfill + keyDown | **تم على main** |
-| U2 جهاز + logcat | موقوف على جهاز |
-| U3 NDK playtest | موقوف على جهاز |
-| U4 REA/DLL/GEX | خارج نطاق Android |
-| U5 OpenSLES جهاز | موقوف على جهاز |
+| U1 materialize على main | **تم** |
+| U3 NDK / APK native | مفتوح |
+| U2 جهاز + logcat UNMAPPED | مفتوح |
+| object_index 1:1 | بعد FAIL |
+| GML/DnD كامل GM8 | تدريجي من UNMAPPED |
+| U4 REA/DLL/GEX | مفتوح |
+| U5 OpenSLES جهاز | مفتوح |
 
-`docs/DEVICE_BLOCKED.md`
+تفاصيل: `docs/PLAN_USER_INTERVENTION.md`

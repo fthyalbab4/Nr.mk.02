@@ -28,20 +28,8 @@ static int read_all(const char *path, uint8_t **out, size_t *out_size) {
     return 1;
 }
 
-static int resolve_path(const char *path, char *out, size_t out_sz) {
-    FILE *f = fopen(path, "rb");
-    if (f) { fclose(f); snprintf(out, out_sz, "%s", path); return 1; }
-    snprintf(out, out_sz, "../../%s", path);
-    f = fopen(out, "rb");
-    if (f) { fclose(f); return 1; }
-    snprintf(out, out_sz, "%s", path);
-    return 0;
-}
-
 int main(void) {
-    const char *orig_path = "app/src/main/assets/www/samples/mario_bros.gmk";
-    char path[512];
-    resolve_path(orig_path, path, sizeof(path));
+    const char *path = "app/src/main/assets/www/samples/mario_bros.gmk";
     uint8_t *data = NULL; size_t size = 0;
     if (!read_all(path, &data, &size)) {
         printf("SKIP mario sample not present\n");
