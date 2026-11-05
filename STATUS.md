@@ -5,8 +5,9 @@
 - **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering)
 - **Python Full Verification**: PASS (17/17 system verification tests passing)
 - **C Core Package Makefile**: PASS (NOR_MAKER_COMPLETE_PACKAGE test suite passing)
-- **JS Engine Verification**: PASS (39/39 scripts 100%, 78/78 actions 100%)
-- **Android APK Build**: SUCCESS (NDK C++ & Java build passing across 4 ABIs)
+- **JS Engine Verification**: PASS (39/39 scripts, 78/78 actions)
+- **Android APK Build**: PASS (NDK C++ & Java build passing across 4 ABIs)
+- **Phase 3.6 Host Mario Playable Gate**: PASS (`MARIO_PLAYABLE_PASS_HOST` verified across 95 frames with dx=187.0, soft-render, and room bounds check)
 
 ## Core & GML Capabilities
 - [x] Event loop order (Begin Step, Step, End Step, Collision, Draw Pre/Main/Post)

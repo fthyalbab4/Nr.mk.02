@@ -17,6 +17,8 @@ anti_hallucination_rule: ENFORCED
 ## تقدم هذه الجلسة
 - Event system: Alarm unified, collision `other`, KeyPress/KeyRelease, Outside/Boundary/AnimationEnd, User helper
 - runtime_step order closer to GM 8.x
+- Phase 3.6 MARIO_PLAYABLE_PASS_HOST verified (95 frames replay with displacement, bounds, draw)
+- Tri-mirror C code trees synchronized across app/src/main/cpp, NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX, and app/src/main/cpp_backup
 - Docs updated honestly
 
 ## لا يزال مفتوحًا

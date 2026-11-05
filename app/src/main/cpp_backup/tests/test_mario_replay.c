@@ -128,6 +128,48 @@ int main(void) {
            objects.items[rt.instances[player_index].object_index].name,
            dx_right, dx_left, y_before_jump, y_min);
 
+    /* Step 3.6 verification: 90+ frame playability run under right-movement input */
+    assert(gm82_runtime_goto_room(&rt, 0));
+    player_index = -1;
+    for (int i = 0; i < rt.instance_count; ++i) {
+        int oi = rt.instances[i].object_index;
+        if (rt.instances[i].alive && oi == live_player_object) { player_index = i; break; }
+    }
+    assert(player_index >= 0);
+    gm82_input_init(&input);
+    gm82_input_bind_global(&input);
+
+    double x_start_90 = rt.instances[player_index].x;
+    int rendered_frames = 0;
+    int current_room_idx = rt.current_room;
+    int room_w = (current_room_idx >= 0 && current_room_idx < rooms.count) ? rooms.items[current_room_idx].width : 640;
+    int room_h = (current_room_idx >= 0 && current_room_idx < rooms.count) ? rooms.items[current_room_idx].height : 480;
+
+    for (int frame = 0; frame < 95; ++frame) {
+        gm82_input_begin_frame(&input);
+        gm82_input_key_down(&input, 39); /* Walk right */
+        if (frame == 10 || frame == 50) {
+            gm82_input_key_down(&input, 38); /* VK_UP jump */
+        } else {
+            gm82_input_key_up(&input, 38);
+        }
+        gm82_runtime_step(&rt);
+
+        /* Render frame to verify draw doesn't crash */
+        uint8_t buf[64 * 64 * 4];
+        memset(buf, 0, sizeof(buf));
+        bool drawn = gm82_runtime_draw(&rt, buf, 64, 64);
+        if (drawn) rendered_frames++;
+
+        /* Check that player y position stays safely within room bounds */
+        assert(rt.instances[player_index].y >= 0.0 && rt.instances[player_index].y <= (double)room_h);
+    }
+    double total_dx_90 = rt.instances[player_index].x - x_start_90;
+    assert(total_dx_90 > 20.0);
+    assert(rendered_frames >= 90);
+    printf("MARIO_PLAYABLE_PASS_HOST (dx=%.1f, frames=%d, y=%.1f, bounds=[0,%d])\n",
+           total_dx_90, rendered_frames, rt.instances[player_index].y, room_h);
+
     gm82_runtime_cleanup(&rt);
     gm82_sprite_group_list_free(&groups);
     gm82_decoded_sprite_list_free(&sprites);
