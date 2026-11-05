@@ -2,17 +2,34 @@
 
 **آخر تحديث:** 2026-11-05
 
-## Host P0 — مغلق
+## Phase 0 — baseline freeze
 
-| بند | حالة |
+- Commit freeze: see `BASELINE_REPORT.md`
+- Governing roadmap: **`REALISTIC_GM82_ROADMAP.md`**
+- Canonical core: `app/src/main/cpp/`
+- Mirror gate: `python3 tools/verify_core_mirrors.py`
+
+## Host status
+
+| Item | Status |
 |------|--------|
-| batch4 host stubs + wrap | مغلق |
-| AST break/continue (loop_depth) | مصلح |
-| tri-mirror `gm82_gml_ast_exec.c` | متزامن |
-| residual draw/list callbacks | no-op متعمد (غير مانع لـ MVP) |
-| device U2/U3/U5 | **محظور** — يحتاج جهاز |
+| Host P0 stubs + wrap | closed |
+| AST break/continue loop_depth | fixed |
+| Residual draw/list stubs | intentional no-ops |
+| Device U2/U3/U5 | BLOCKED |
+| is_100 | **false** |
 
-**host_p0: true**  
-**is_100: false** (جهاز فقط)
+## Process rules (enforced)
 
-التفاصيل: `GAPS_HONEST.md` + `docs/DEVICE_BLOCKED.md`
+1. No bulk merge of stale Jules PRs onto main.
+2. One small change + failing test first.
+3. Mirrors must pass `verify_core_mirrors.py`.
+4. No percentage claims without behavioral tests.
+5. Next work priority: Phase 1–3 (mirrors, gap inventory, GML semantics: with/self/other, arrays, bytecode).
+
+## Docs
+
+- `BASELINE_REPORT.md` — freeze point
+- `REALISTIC_GM82_ROADMAP.md` — full plan
+- `GAPS_HONEST.md` — residual gaps
+- `docs/DEVICE_BLOCKED.md` — device checklist
