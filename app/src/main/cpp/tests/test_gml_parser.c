@@ -153,12 +153,31 @@ static void test_ast_execution(void) {
     gm82_runtime_cleanup(&rt);
 }
 
+static void test_do_until_control_flow(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_instance *self = gm82_runtime_instance_create(&rt, 0, 0, 0);
+    assert(self != NULL);
+    gm82_gml_parser p;
+    gm82_gml_parser_init(&p,
+        "x = 0; do { x += 1; if (x < 2) continue; "
+        "if (x >= 4) break; } until (x >= 10);");
+    gm82_gml_ast *root = gm82_gml_parse_program(&p);
+    assert(root != NULL);
+    gm82_gml_exec_result result;
+    assert(gm82_gml_execute_ast(&rt, self, root, &result));
+    assert(!result.returned && !result.broke && self->x == 4.0);
+    gm82_gml_ast_free(root);
+    gm82_runtime_cleanup(&rt);
+}
+
 int main(void) {
     test_lexer();
     test_parser();
     test_operator_source_and_empty_for();
     test_rejection();
     test_ast_execution();
+    test_do_until_control_flow();
     puts("test_gml_parser PASS");
     return 0;
 }
