@@ -695,6 +695,10 @@ double gml_point_direction_pitch(double x1, double y1, double z1,
 double gml_angle_difference_3d(double x1, double y1, double z1,
                                double x2, double y2, double z2);
 double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
+double gml_lengthdir_zx(double len, double dir, double dirz);
+double gml_lengthdir_zy(double len, double dir, double dirz);
+double gml_lengthdir_zz(double len, double dir, double dirz);
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment);
 
 #ifdef __cplusplus
 }

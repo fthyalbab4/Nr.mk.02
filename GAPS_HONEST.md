@@ -8,6 +8,7 @@ This file distinguishes work that was executed in this checkout from work that s
 - Reference/security contracts pass **12 Python tests**. They check the hardened WebView/network settings, absence of PEM private-key markers in bundled HTML, and the reduced JavaScript bridge surface.
 - `action_if_variable` now uses a single `(left value, opcode, right value)` DnD contract in both execution paths, with equality and all six comparison operators covered by regression tests.
 - Buffer operations reject negative and non-finite offsets; relative negative seeks work without unsigned wraparound.
+- Extended GM82Core 3D lengthdir and geometric functions (`lengthdir_zx`, `lengthdir_zy`, `lengthdir_zz`, `point_line_lerp`, `triangle_is_clockwise`, `box_distance`, `angle_abs`) implemented natively and covered by regression tests across all three C mirrors.
 - The GMZ importer accepts normal directory entries and rejects traversal, oversized entries, excessive extraction, and malformed local ZIP headers. The dedicated host test covers a valid directory archive plus oversize and traversal rejections.
 - Android's GMZ picker now stages a selected GMZ/ZIP file internally and calls the existing Studio callback; project extraction and readback are constrained to app-owned canonical directories.
 - Repository-hosted private signing material, tracked debug keystores, and the binary artifact carrying the private key have been removed from the current working tree. The legacy signing identity is compromised and must be rotated; see `SECURITY_ROTATION_REQUIRED.md`.

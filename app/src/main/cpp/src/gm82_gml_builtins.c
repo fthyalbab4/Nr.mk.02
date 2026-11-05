@@ -5220,3 +5220,33 @@ double gml_approach_angle_biased(double ang1, double ang2, double step, double b
     if (diff > 0.0) return ang1 + step * (1.0 + bias);
     return ang1 - step * (1.0 - bias);
 }
+
+double gml_lengthdir_zx(double len, double dir, double dirz) {
+    double r_dir = dir * 3.14159265358979323846 / 180.0;
+    double r_dirz = dirz * 3.14159265358979323846 / 180.0;
+    return len * cos(r_dirz) * cos(r_dir);
+}
+
+double gml_lengthdir_zy(double len, double dir, double dirz) {
+    double r_dir = dir * 3.14159265358979323846 / 180.0;
+    double r_dirz = dirz * 3.14159265358979323846 / 180.0;
+    return -len * cos(r_dirz) * sin(r_dir);
+}
+
+double gml_lengthdir_zz(double len, double dir, double dirz) {
+    (void)dir;
+    double r_dirz = dirz * 3.14159265358979323846 / 180.0;
+    return -len * sin(r_dirz);
+}
+
+double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    if (dx == 0.0 && dy == 0.0) return 0.0;
+    double t = (dx * (px - x1) + dy * (py - y1)) / (dx * dx + dy * dy);
+    if (segment >= 0.5) {
+        if (t < 0.0) t = 0.0;
+        if (t > 1.0) t = 1.0;
+    }
+    return t;
+}

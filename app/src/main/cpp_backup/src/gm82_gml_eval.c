@@ -1227,6 +1227,38 @@ static bool parse_primary(gml_parser *p, double *out) {
                 nargs >= 4 ? args[3] : 0.0
             ); return true;
         }
+        if (strcmp(id, "lengthdir_zx") == 0) {
+            *out = gml_lengthdir_zx(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "lengthdir_zy") == 0) {
+            *out = gml_lengthdir_zy(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "lengthdir_zz") == 0) {
+            *out = gml_lengthdir_zz(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0
+            ); return true;
+        }
+        if (strcmp(id, "point_line_lerp") == 0) {
+            *out = gml_point_line_lerp(
+                nargs >= 1 ? args[0] : 0.0,
+                nargs >= 2 ? args[1] : 0.0,
+                nargs >= 3 ? args[2] : 0.0,
+                nargs >= 4 ? args[3] : 0.0,
+                nargs >= 5 ? args[4] : 0.0,
+                nargs >= 6 ? args[5] : 0.0,
+                nargs >= 7 ? args[6] : 0.0
+            ); return true;
+        }
         if (strcmp(id, "gauss") == 0) {
             *out = gml_gauss(arg, nargs >= 2 ? args[1] : 1); return true;
         }

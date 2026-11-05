@@ -162,6 +162,36 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "unpack_bool(1, 0)", &val));
     assert(val == 1.0);
 
+    /* Test GM82 lengthdir 3D and geometric built-ins */
+    assert(fabs(gml_lengthdir_zx(100.0, 0.0, 0.0) - 100.0) < 1e-5);
+    assert(fabs(gml_lengthdir_zy(100.0, 90.0, 0.0) - (-100.0)) < 1e-5);
+    assert(fabs(gml_lengthdir_zz(100.0, 0.0, 90.0) - (-100.0)) < 1e-5);
+
+    assert(gm82_gml_eval_expr(&rt, NULL, "lengthdir_zx(100, 0, 0)", &val));
+    assert(fabs(val - 100.0) < 1e-5);
+    assert(gm82_gml_eval_expr(&rt, NULL, "lengthdir_zy(100, 90, 0)", &val));
+    assert(fabs(val - (-100.0)) < 1e-5);
+    assert(gm82_gml_eval_expr(&rt, NULL, "lengthdir_zz(100, 0, 90)", &val));
+    assert(fabs(val - (-100.0)) < 1e-5);
+
+    /* point_line_lerp */
+    assert(fabs(gml_point_line_lerp(5.0, 0.0, 0.0, 0.0, 10.0, 0.0, 1.0) - 0.5) < 1e-5);
+    assert(gm82_gml_eval_expr(&rt, NULL, "point_line_lerp(5, 0, 0, 0, 10, 0, 1)", &val));
+    assert(fabs(val - 0.5) < 1e-5);
+
+    /* triangle_is_clockwise, box_distance, angle_abs */
+    assert(gml_triangle_is_clockwise(0.0, 0.0, 0.0, 10.0, 10.0, 0.0) == 0.0);
+    assert(gm82_gml_eval_expr(&rt, NULL, "triangle_is_clockwise(0, 0, 0, 10, 10, 0)", &val));
+    assert(val == 0.0);
+
+    assert(fabs(gml_box_distance(10.0, 0.0) - 10.0) < 1e-4);
+    assert(gm82_gml_eval_expr(&rt, NULL, "box_distance(10, 0)", &val));
+    assert(fabs(val - 10.0) < 1e-4);
+
+    assert(fabs(gml_angle_abs(-90.0) - 270.0) < 1e-5);
+    assert(gm82_gml_eval_expr(&rt, NULL, "angle_abs(-90)", &val));
+    assert(fabs(val - 270.0) < 1e-5);
+
     puts("test_math_builtins_and_eval PASS");
 }
 
