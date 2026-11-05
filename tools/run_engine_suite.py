@@ -22,6 +22,7 @@ TESTS = [
     ("test_gm82_core_math_expansion", "app/src/main/cpp/tests/test_gm82_core_math_expansion.c"),
     ("test_gml_phase5", "app/src/main/cpp/tests/test_gml_phase5.c"),
     ("test_gml_vm_advanced", "app/src/main/cpp/tests/test_gml_vm_advanced.c"),
+    ("test_gml_vm_execution", "app/src/main/cpp/tests/test_gml_vm_execution.c"),
     ("test_phase1", "app/src/main/cpp/tests/test_phase1.c"),
     ("test_buffer_bounds", "app/src/main/cpp/tests/test_buffer_bounds.c"),
     ("test_gmz_import_limits", "app/src/main/cpp/tests/test_gmz_import_limits.c"),

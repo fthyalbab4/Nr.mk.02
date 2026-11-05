@@ -67,6 +67,34 @@ void test_script_invoke_args(void) {
     printf("  Script Invoke Args PASS\n");
 }
 
+static void run_string_case(const char *code, const char *expected) {
+    gml_ast *ast = NULL;
+    char err[160] = {0};
+    assert(gml_parse_program(code, &ast, err, sizeof(err)));
+    assert(ast != NULL);
+
+    gml_vm vm;
+    gml_vm_init(&vm);
+    assert(gml_vm_execute(&vm, ast));
+    assert(vm.returned == 1);
+    assert(vm.return_value.kind == GML_V_STRING);
+    if (strcmp(vm.return_value.string, expected) != 0) {
+        fprintf(stderr, "string concat expected '%s', got '%s'\n", expected,
+                vm.return_value.string ? vm.return_value.string : "<null>");
+    }
+    assert(strcmp(vm.return_value.string, expected) == 0);
+
+    gml_value_free(&vm.return_value);
+    for (size_t i = 0; i < vm.count; ++i) gml_value_free(&vm.vars[i].value);
+    gml_ast_free(ast);
+}
+
+static void test_string_concatenation(void) {
+    run_string_case("return \"mario \" + 1;", "mario 1");
+    run_string_case("label = \"mario \"; label += 1; return label;", "mario 1");
+    printf("  String + number concatenation PASS\n");
+}
+
 void test_typed_with_and_postfix_syntax(void) {
     gml_ast *ast = NULL;
     char err[160] = {0};
@@ -106,6 +134,7 @@ int main(void) {
     printf("--- Running GML VM Execution Test Suite ---\n");
     test_ast_parse_and_execute();
     test_script_invoke_args();
+    test_string_concatenation();
     test_typed_with_and_postfix_syntax();
     printf("--- GML VM Execution Tests Passed! ---\n");
     return 0;
