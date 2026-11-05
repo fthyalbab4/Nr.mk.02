@@ -791,8 +791,8 @@ void gml_set_speed(double v) {
 }
 double gml_get_sprite_index(void) { return g_self ? (double)g_self->sprite_index : -1; }
 void gml_set_sprite_index(double v) { if (g_self) g_self->sprite_index = (int32_t)v; }
-double gml_get_image_index(void) { return g_self ? (double)g_self->image_index : 0; }
-void gml_set_image_index(double v) { if (g_self) g_self->image_index = (int32_t)v; }
+double gml_get_image_index(void) { return g_self ? g_self->image_index : 0; }
+void gml_set_image_index(double v) { if (g_self) g_self->image_index = v; }
 double gml_get_solid(void) { return g_self ? (double)g_self->solid : 0; }
 double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 
@@ -2890,6 +2890,18 @@ double gml_ds_priority_add(double id, double value, double priority) {
     g_ds_prios[i].size++;
     return 1;
 }
+
+double gml_ds_priority_add_many(double id, const double *args, int count) {
+    int i = (int)id;
+    if (i < 0 || i >= GM82_DS_PRIO_MAX || !g_ds_prios[i].used || !args) return id;
+    for (int k = 0; k + 1 < count; k += 2) {
+        if (g_ds_prios[i].size >= GM82_DS_PRIO_CAP) break;
+        g_ds_prios[i].vals[g_ds_prios[i].size] = args[k];
+        g_ds_prios[i].prios[g_ds_prios[i].size] = args[k + 1];
+        g_ds_prios[i].size++;
+    }
+    return id;
+}
 static int prio_max_idx(gm82_ds_prio *p) {
     if (p->size <= 0) return -1;
     int best = 0;
@@ -3860,6 +3872,20 @@ double gml_ds_grid_set(double id, double x, double y, double val) {
     if (ix < 0 || ix >= g_ds_grids[i].width || iy < 0 || iy >= g_ds_grids[i].height) return 0;
     g_ds_grids[i].data[iy * g_ds_grids[i].width + ix] = val;
     return 1;
+}
+
+double gml_ds_grid_set_many(double id, const double *args, int count) {
+    int i = (int)id;
+    if (i < 0 || i >= MAX_DS_GRIDS || !g_ds_grid_active[i] || !args) return id;
+    for (int k = 0; k + 2 < count; k += 3) {
+        int ix = (int)args[k];
+        int iy = (int)args[k + 1];
+        double val = args[k + 2];
+        if (ix >= 0 && ix < g_ds_grids[i].width && iy >= 0 && iy < g_ds_grids[i].height) {
+            g_ds_grids[i].data[iy * g_ds_grids[i].width + ix] = val;
+        }
+    }
+    return id;
 }
 
 double gml_ds_grid_get(double id, double x, double y) {
@@ -5568,7 +5594,7 @@ double gml_extension_detect(void) { return 0.0; }
 double gml_get_frametime_usage(void) { return 0.0; }
 
 static const char *GM82CORE_STUBS[] = {
-  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_grid_set_many", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "ds_priority_add_many", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
+  "array_from_string", "bigchoose", "bigchoose_clear", "bigchoose_get", "bigchoose_weighted", "bigchoose_weighted_get", "choose_weighted", "code_compile", "code_destroy", "code_execute", "code_exists", "code_get_argcount", "code_return", "draw_background_tiled_extra", "draw_setb", "draw_setf", "draw_spotlight", "draw_sprite_part_centered", "draw_sprite_part_extra", "draw_sprite_tiled_extra", "ds_bag_add", "ds_bag_clear", "ds_bag_create", "ds_bag_destroy", "ds_bag_empty", "ds_bag_grab", "ds_bag_quick", "ds_bag_remove", "ds_bag_size", "ds_list_contains_ext", "ds_list_equal", "ds_list_filter", "ds_list_foreach", "ds_list_map", "ds_list_str", "ds_list_union", "ds_map_read_ini", "ds_map_read_ini_string", "ds_map_read_safe", "ds_map_set_many", "ds_map_write_ini", "ds_map_write_ini_string", "dslist", "dsmap", "dss_destroy", "dss_get_type", "dss_grid_create", "dss_list_create", "dss_map_create", "dss_priority_create", "dss_queue_create", "dss_stack_create", "event_alarm", "event_beginstep", "event_draw", "event_endstep", "event_inherit_object", "event_step", "event_trigger", "execute_program_async", "execute_program_async_result", "execute_program_silent", "extension_detect", "file_find_list", "font_add_file", "font_add_winui", "get_frametime_usage", "get_open_filename_ext", "get_save_filename_ext", "global_array_from_string", "include_file_get_buffer", "instance_assign_groups", "instance_create_depth_moving_ext", "keyboard_get_keyname", "match_any", "match_exact", "match_found", "match_not_any", "match_not_exact", "match_not_some", "match_some", "message_default", "mouse_back_button", "mouse_check_direct", "mouse_forward_button", "mouse_in_window", "move_and_collide", "move_towards_gravity", "move_towards_jump", "path_get_approximate_pos", "registry_read_dword", "registry_read_sz", "registry_write_dword", "string_justify", "string_replace_many", "string_wrap", "tile_add_ext", "tile_find_anywhere", "date_get_moon_phase", "date_is_easter", "datetime_current_filename", "distance_to_path"
 };
 static const int GM82CORE_STUB_N = (int)(sizeof(GM82CORE_STUBS)/sizeof(GM82CORE_STUBS[0]));
 int gm82_gm82core_try_stub(const char *id, double *out) {

@@ -170,7 +170,6 @@ double gml_tile_add_ext(void) { return 0; }
 double gml_tile_find_anywhere(void) { return -1; }
 double gml_array_from_string(void) { return 0; }
 double gml_global_array_from_string(void) { return 0; }
-double gml_ds_grid_set_many(void) { return 0; }
 double gml_ds_list_contains_ext(void) { return 0; }
 double gml_ds_list_equal(void) { return 0; }
 double gml_ds_list_str(void) { return 0; }
@@ -181,7 +180,6 @@ double gml_ds_map_read_safe(void) { return 0; }
 double gml_ds_map_set_many(void) { return 0; }
 double gml_ds_map_write_ini(void) { return 0; }
 double gml_ds_map_write_ini_string(void) { return 0; }
-double gml_ds_priority_add_many(void) { return 0; }
 
 /* draw_*_extra — no-op (need GL); residual stubs */
 double gml_draw_background_tiled_extra(void) { return 0; }
@@ -241,7 +239,6 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("tile_find_anywhere", gml_tile_find_anywhere);
     H0("array_from_string", gml_array_from_string);
     H0("global_array_from_string", gml_global_array_from_string);
-    H0("ds_grid_set_many", gml_ds_grid_set_many);
     H0("ds_list_contains_ext", gml_ds_list_contains_ext);
     H0("ds_list_equal", gml_ds_list_equal);
     H0("ds_list_str", gml_ds_list_str);
@@ -252,7 +249,6 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("ds_map_set_many", gml_ds_map_set_many);
     H0("ds_map_write_ini", gml_ds_map_write_ini);
     H0("ds_map_write_ini_string", gml_ds_map_write_ini_string);
-    H0("ds_priority_add_many", gml_ds_priority_add_many);
     H0("registry_read_dword", gml_registry_read_dword);
     H0("registry_read_sz", gml_registry_read_sz);
     H0("registry_write_dword", gml_registry_write_dword);

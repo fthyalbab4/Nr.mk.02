@@ -1035,6 +1035,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_priority_add") == 0) {
             *out = gml_ds_priority_add(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
+        if (strcmp(id, "ds_priority_add_many") == 0) {
+            *out = gml_ds_priority_add_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
+        if (strcmp(id, "ds_grid_set_many") == 0) {
+            *out = gml_ds_grid_set_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
         if (strcmp(id, "ds_priority_find_max") == 0) {
             *out = gml_ds_priority_find_max(arg); return true;
         }
@@ -2246,6 +2252,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "ds_priority_add") == 0) {
             *out = gml_ds_priority_add(args[0], args[1], nargs >= 3 ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "ds_priority_add_many") == 0) {
+            *out = gml_ds_priority_add_many(args[0], nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
+        if (strcmp(id, "ds_grid_set_many") == 0) {
+            *out = gml_ds_grid_set_many(args[0], nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
         }
         if (strcmp(id, "ds_priority_delete_max") == 0) {
             *out = gml_ds_priority_delete_max(arg); return true;

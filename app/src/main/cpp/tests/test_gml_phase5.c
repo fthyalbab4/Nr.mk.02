@@ -184,6 +184,34 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "unpack_bool(1, 0)", &val));
     assert(val == 1.0);
 
+    /* Test GM82 ds_grid_set_many and ds_priority_add_many */
+    double grid = gml_ds_grid_create(4, 4);
+    assert(grid >= 0);
+    double set_args[6] = {1, 1, 42.0, 2, 2, 84.0};
+    gml_ds_grid_set_many(grid, set_args, 6);
+    assert(gml_ds_grid_get(grid, 1, 1) == 42.0);
+    assert(gml_ds_grid_get(grid, 2, 2) == 84.0);
+    assert(gml_ds_grid_get(grid, 0, 0) == 0.0);
+    gml_ds_grid_destroy(grid);
+
+    double prio = gml_ds_priority_create();
+    assert(prio >= 0);
+    double prio_args[4] = {100.0, 10.0, 200.0, 50.0};
+    gml_ds_priority_add_many(prio, prio_args, 4);
+    assert(gml_ds_priority_find_max(prio) == 200.0);
+    gml_ds_priority_destroy(prio);
+
+    /* Test via evaluator */
+    assert(gm82_gml_eval_expr(&rt, NULL, "ds_grid_create(4, 4)", &grid));
+    char eval_buf[128];
+    snprintf(eval_buf, sizeof(eval_buf), "ds_grid_set_many(%d, 0, 0, 99, 3, 3, 77)", (int)grid);
+    assert(gm82_gml_eval_expr(&rt, NULL, eval_buf, &val));
+    snprintf(eval_buf, sizeof(eval_buf), "ds_grid_get(%d, 3, 3)", (int)grid);
+    assert(gm82_gml_eval_expr(&rt, NULL, eval_buf, &val));
+    assert(val == 77.0);
+    snprintf(eval_buf, sizeof(eval_buf), "ds_grid_destroy(%d)", (int)grid);
+    gm82_gml_eval_expr(&rt, NULL, eval_buf, &val);
+
     puts("test_math_builtins_and_eval PASS");
 }
 
