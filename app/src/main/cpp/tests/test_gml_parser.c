@@ -1,4 +1,5 @@
 #include "gm82_gml_parser.h"
+#include "gm82_gml_builtins.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -171,6 +172,28 @@ static void test_do_until_control_flow(void) {
     gm82_runtime_cleanup(&rt);
 }
 
+static void test_bytecode_with_snapshot(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_instance *first = gm82_runtime_instance_create(&rt, 7, 0, 0);
+    gm82_instance *second = gm82_runtime_instance_create(&rt, 7, 0, 0);
+    gm82_instance *third = gm82_runtime_instance_create(&rt, 9, 0, 0);
+    assert(first && second && third);
+    gm82_gml_parser parser;
+    gm82_gml_parser_init(&parser, "with (-3) { x += 1; }");
+    gm82_gml_ast *root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    gm82_gml_bytecode bytecode;
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    gm82_gml_exec_result result;
+    assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(first->x == 1.0 && second->x == 1.0 && third->x == 1.0);
+    assert(gm82_gml_get_self() == first);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(root);
+    gm82_runtime_cleanup(&rt);
+}
+
 int main(void) {
     test_lexer();
     test_parser();
@@ -178,6 +201,7 @@ int main(void) {
     test_rejection();
     test_ast_execution();
     test_do_until_control_flow();
+    test_bytecode_with_snapshot();
     puts("test_gml_parser PASS");
     return 0;
 }
