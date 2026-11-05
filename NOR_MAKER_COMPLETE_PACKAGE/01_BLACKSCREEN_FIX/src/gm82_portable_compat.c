@@ -73,3 +73,23 @@ double gml_lerproach(double a, double b, double t) {
     if (t > 1.0) t = 1.0;
     return a + (b - a) * t;
 }
+
+static int s_file_drag_enabled = 0;
+
+double gml_file_drag_enable(double enable) {
+    s_file_drag_enabled = (enable != 0.0);
+    return (double)s_file_drag_enabled;
+}
+
+double gml_file_drag_count(void) {
+    return 0.0;
+}
+
+const char *gml_file_drag_name(double index) {
+    (void)index;
+    return "";
+}
+
+double gml_file_drag_clear(void) {
+    return 0.0;
+}

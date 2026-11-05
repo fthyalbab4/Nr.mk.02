@@ -1,11 +1,14 @@
 #include "gm82_gml_parser.h"
 #include "gm82_gml_eval.h"
+#include "gm82_gml_builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define GM82_BC_MAX_STEPS 100000
 #define GM82_BC_SOURCE_MAX 8192
+#define GM82_BC_MAX_WITH_DEPTH 32
+#define GM82_BC_MAX_WITH_ITEMS 2048
 
 static bool reserve_code(gm82_gml_bytecode *bc) {
     if (bc->count < bc->capacity) return true;
@@ -137,17 +140,33 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc) {
             bc->code[init].target = finish; g_loop_depth--;
             return true;
         }
+        case GM82_AST_WITH: {
+            if (!source_of(n->a, source)) return false;
+            int begin = emit_code(bc, GM82_BC_WITH_BEGIN, source);
+            if (begin < 0) return false;
+            int body = (int)bc->count;
+            if (!compile_node(n->b, bc)) return false;
+            int next = emit_code(bc, GM82_BC_WITH_NEXT, NULL);
+            if (next < 0) return false;
+            bc->code[next].target = body;
+            bc->code[begin].target = (int)bc->count;
+            return true;
+        }
         case GM82_AST_BREAK: {
             if (g_loop_depth <= 0) return false;
             loop_compile_context *ctx = &g_loop_contexts[g_loop_depth - 1];
             int jump = emit_code(bc, ctx->is_repeat ? GM82_BC_REPEAT_BREAK : GM82_BC_JUMP, NULL); if (jump < 0) return false;
-            if (ctx->break_count >= 64) return false; ctx->breaks[ctx->break_count++] = jump; return true;
+            if (ctx->break_count >= 64) return false;
+            ctx->breaks[ctx->break_count++] = jump;
+            return true;
         }
         case GM82_AST_CONTINUE: {
             if (g_loop_depth <= 0) return false;
             int jump = emit_code(bc, GM82_BC_JUMP, NULL); if (jump < 0) return false;
             loop_compile_context *ctx = &g_loop_contexts[g_loop_depth - 1];
-            if (ctx->continue_count >= 64) return false; ctx->continues[ctx->continue_count++] = jump; return true;
+            if (ctx->continue_count >= 64) return false;
+            ctx->continues[ctx->continue_count++] = jump;
+            return true;
         }
         case GM82_AST_RETURN:
             if (n->a && !source_of(n->a, source)) return false;
@@ -173,17 +192,48 @@ void gm82_gml_bytecode_free(gm82_gml_bytecode *bc) {
     free(bc->code); memset(bc, 0, sizeof(*bc));
 }
 
+typedef struct {
+    int ids[GM82_BC_MAX_WITH_ITEMS];
+    int count;
+    int next;
+    gm82_instance *previous_self;
+    gm82_instance *previous_other;
+} bytecode_with_frame;
+
+static gm82_instance *find_alive_id(gm82_runtime *rt, int id) {
+    if (!rt) return NULL;
+    for (int i = 0; i < rt->instance_count; ++i) {
+        if (rt->instances[i].alive && rt->instances[i].id == id) return &rt->instances[i];
+    }
+    return NULL;
+}
+
+static void restore_with_frames(bytecode_with_frame *frames, int *depth,
+                                gm82_instance **self) {
+    while (*depth > 0) {
+        bytecode_with_frame *frame = &frames[*depth - 1];
+        *self = frame->previous_self;
+        gm82_gml_set_self(frame->previous_self);
+        gm82_gml_set_other(frame->previous_other);
+        --*depth;
+    }
+}
+
 bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82_gml_bytecode *bc, gm82_gml_exec_result *r) {
     if (!rt || !bc || !r) return false;
     memset(r, 0, sizeof(*r));
     int pc = 0; double value = 0;
     int repeat_counts[64];
     int repeat_depth = 0;
+    bytecode_with_frame with_frames[GM82_BC_MAX_WITH_DEPTH];
+    int with_depth = 0;
     while (pc >= 0 && (size_t)pc < bc->count) {
         if (++r->steps > GM82_BC_MAX_STEPS) return false;
         const gm82_gml_bc_instruction *ins = &bc->code[pc];
         switch (ins->opcode) {
-            case GM82_BC_HALT: return true;
+            case GM82_BC_HALT:
+                restore_with_frames(with_frames, &with_depth, &self);
+                return true;
             case GM82_BC_EVAL_STMT:
                 if (!gm82_gml_eval_stmt(rt, self, ins->source ? ins->source : "")) return false;
                 pc++; break;
@@ -209,12 +259,68 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
                 break;
             case GM82_BC_RETURN:
                 if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
-                r->returned = true; r->return_value = value; return true;
+                r->returned = true; r->return_value = value;
+                restore_with_frames(with_frames, &with_depth, &self);
+                return true;
             case GM82_BC_REPEAT_BREAK:
                 if (repeat_depth <= 0) return false;
                 repeat_depth--;
                 pc = ins->target;
                 break;
+            case GM82_BC_WITH_BEGIN: {
+                if (with_depth >= GM82_BC_MAX_WITH_DEPTH) return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "-4", &value)) return false;
+                bytecode_with_frame *frame = &with_frames[with_depth++];
+                memset(frame, 0, sizeof(*frame));
+                frame->previous_self = self;
+                frame->previous_other = gm82_gml_get_other();
+                gm82_gml_set_other(self);
+                int target = (int)value;
+                int limit = rt->instance_count;
+                if (limit < 0) limit = 0;
+                if (limit > GM82_BC_MAX_WITH_ITEMS) limit = GM82_BC_MAX_WITH_ITEMS;
+                for (int i = 0; i < limit; ++i) {
+                    gm82_instance *candidate = &rt->instances[i];
+                    bool match = false;
+                    if (!candidate->alive) continue;
+                    if (target == -3) match = true;
+                    else if (target == -1) match = candidate == frame->previous_self;
+                    else if (target == -2) match = frame->previous_other && candidate == frame->previous_other;
+                    else if (target != -4) match = gm82_instance_matches_object(rt, candidate, target);
+                    if (match && frame->count < GM82_BC_MAX_WITH_ITEMS) frame->ids[frame->count++] = candidate->id;
+                }
+                gm82_instance *first = frame->count > 0 ? find_alive_id(rt, frame->ids[0]) : NULL;
+                if (!first) {
+                    --with_depth;
+                    gm82_gml_set_self(frame->previous_self);
+                    gm82_gml_set_other(frame->previous_other);
+                    pc = ins->target;
+                } else {
+                    frame->next = 1;
+                    self = first;
+                    gm82_gml_set_self(self);
+                    pc++;
+                }
+                break;
+            }
+            case GM82_BC_WITH_NEXT: {
+                if (with_depth <= 0) return false;
+                bytecode_with_frame *frame = &with_frames[with_depth - 1];
+                gm82_instance *next = NULL;
+                while (frame->next < frame->count && !next) next = find_alive_id(rt, frame->ids[frame->next++]);
+                if (next) {
+                    self = next;
+                    gm82_gml_set_self(self);
+                    pc = ins->target;
+                } else {
+                    self = frame->previous_self;
+                    gm82_gml_set_self(frame->previous_self);
+                    gm82_gml_set_other(frame->previous_other);
+                    --with_depth;
+                    pc++;
+                }
+                break;
+            }
             default: return false;
         }
     }

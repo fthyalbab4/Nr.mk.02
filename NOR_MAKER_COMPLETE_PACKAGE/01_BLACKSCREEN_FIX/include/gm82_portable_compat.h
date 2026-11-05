@@ -21,6 +21,12 @@ void gm82_portable_token_reset(void);
 double gml_smoothstep(double edge0, double edge1, double x);
 double gml_lerproach(double a, double b, double t);
 
+/* GM8.2 Drag compatibility stubs (Win32 file drag and drop) */
+double gml_file_drag_enable(double enable);
+double gml_file_drag_count(void);
+const char *gml_file_drag_name(double index);
+double gml_file_drag_clear(void);
+
 #ifdef __cplusplus
 }
 #endif
