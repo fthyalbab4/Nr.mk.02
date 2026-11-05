@@ -327,6 +327,46 @@ static gm82_collision_box instance_collision_box(const gm82_runtime *rt,
     return box;
 }
 
+static int swept_solid_crossing(const gm82_runtime *rt,
+                                const gm82_instance *moving,
+                                const gm82_instance *solid) {
+    if (!rt || !moving || !solid) return 0;
+    gm82_collision_box now = instance_collision_box(rt, moving);
+    gm82_collision_box wall = instance_collision_box(rt, solid);
+    gm82_instance old_instance = *moving;
+    old_instance.x = moving->xprevious;
+    old_instance.y = moving->yprevious;
+    gm82_collision_box old = instance_collision_box(rt, &old_instance);
+
+    double dx = now.left - old.left;
+    double dy = now.top - old.top;
+    if (dy > 0.0 && old.bottom <= wall.top && now.bottom > wall.top) {
+        double t = (wall.top - old.bottom) / dy;
+        double left = old.left + (now.left - old.left) * t;
+        double right = old.right + (now.right - old.right) * t;
+        if (t >= 0.0 && t <= 1.0 && right > wall.left && left < wall.right) return 1;
+    }
+    if (dy < 0.0 && old.top >= wall.bottom && now.top < wall.bottom) {
+        double t = (wall.bottom - old.top) / dy;
+        double left = old.left + (now.left - old.left) * t;
+        double right = old.right + (now.right - old.right) * t;
+        if (t >= 0.0 && t <= 1.0 && right > wall.left && left < wall.right) return 1;
+    }
+    if (dx > 0.0 && old.right <= wall.left && now.right > wall.left) {
+        double t = (wall.left - old.right) / dx;
+        double top = old.top + (now.top - old.top) * t;
+        double bottom = old.bottom + (now.bottom - old.bottom) * t;
+        if (t >= 0.0 && t <= 1.0 && bottom > wall.top && top < wall.bottom) return 1;
+    }
+    if (dx < 0.0 && old.left >= wall.right && now.left < wall.right) {
+        double t = (wall.right - old.left) / dx;
+        double top = old.top + (now.top - old.top) * t;
+        double bottom = old.bottom + (now.bottom - old.bottom) * t;
+        if (t >= 0.0 && t <= 1.0 && bottom > wall.top && top < wall.bottom) return 1;
+    }
+    return 0;
+}
+
 static void resolve_solid_contact(gm82_runtime *rt, gm82_instance *moving,
                                   const gm82_instance *solid) {
     if (!rt || !moving || !solid || !moving->alive || !solid->alive) return;
@@ -537,6 +577,27 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
+    /* The hashed broad phase indexes only the final position. If an instance
+       travels across several cells in one frame, its crossed solid may never
+       become a candidate. Sweep only these exceptional fast movers against
+       solid instances; ordinary movement stays on the spatial-hash path. */
+    for (int i = 0; i < rt->instance_count && i < GM82_MAX_INSTANCES; i++) {
+        gm82_instance *moving = &rt->instances[i];
+        if (!moving->alive || moving->solid) continue;
+        if (fabs(moving->x - moving->xprevious) <= 64.0 &&
+            fabs(moving->y - moving->yprevious) <= 64.0) continue;
+        for (int j = 0; j < rt->instance_count && j < GM82_MAX_INSTANCES; j++) {
+            gm82_instance *solid = &rt->instances[j];
+            if (i == j || !solid->alive || !solid->solid) continue;
+            if (!swept_solid_crossing(rt, moving, solid)) continue;
+            gm82_events_fire_collision(rt, moving, solid);
+            if (moving->alive && solid->alive)
+                gm82_events_fire_collision(rt, solid, moving);
+            if (moving->alive && solid->alive)
+                resolve_solid_contact(rt, moving, solid);
+        }
+    }
+
     if (rt->view_enabled && rt->view_w > 0) {
         gm82_instance *follow_inst = NULL;
         for (int i = 0; i < rt->instance_count; i++) {
@@ -564,17 +625,18 @@ void gm82_runtime_step(gm82_runtime *rt) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
         if (inst->image_speed != 0.0) {
-            inst->image_index += (int32_t)(inst->image_speed > 0 ? 1 : -1);
+            double next_image_index = inst->image_index + inst->image_speed;
             if (rt->sprite_groups && inst->sprite_index >= 0) {
                 int gi = gm82_sprite_group_index_for_frame(rt->sprite_groups, inst->sprite_index);
                 if (gi >= 0) {
                     int fc = rt->sprite_groups->items[gi].frame_count;
-                    if (fc > 0) {
-                        if (inst->image_index < 0) inst->image_index = fc - 1;
-                        else if (inst->image_index >= fc) inst->image_index = 0;
+                    if (fc > 0 && isfinite(next_image_index)) {
+                        next_image_index = fmod(next_image_index, (double)fc);
+                        if (next_image_index < 0.0) next_image_index += fc;
                     }
                 }
             }
+            inst->image_index = next_image_index;
         }
     }
 

@@ -46,7 +46,7 @@ typedef struct {
     double  direction, speed;
     double  gravity, gravity_direction;
     double  friction;
-    int32_t image_index;
+    double  image_index;
     double  image_speed;
     double  image_xscale;
     double  image_yscale;
