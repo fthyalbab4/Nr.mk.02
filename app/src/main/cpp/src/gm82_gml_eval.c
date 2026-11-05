@@ -1216,6 +1216,32 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_timeline_find_name((p->str_mask & 1) ? p->str_args[0] : "");
             return true;
         }
+        if (strcmp(id, "external_define") == 0) {
+            const char *dll = (p->str_mask & 1) ? p->str_args[0] : "";
+            const char *fn = (p->str_mask & 2) ? p->str_args[1] : "";
+            double calltype = nargs >= 3 ? args[2] : 0.0;
+            double restype = nargs >= 4 ? args[3] : 0.0;
+            double argcount = nargs >= 5 ? args[4] : 0.0;
+            *out = gml_external_define(dll, fn, calltype, restype, argcount);
+            return true;
+        }
+        if (strcmp(id, "external_call") == 0) {
+            double id_val = args[0];
+            double a0 = nargs >= 2 ? args[1] : 0.0;
+            double a1 = nargs >= 3 ? args[2] : 0.0;
+            double a2 = nargs >= 4 ? args[3] : 0.0;
+            double a3 = nargs >= 5 ? args[4] : 0.0;
+            double a4 = nargs >= 6 ? args[5] : 0.0;
+            double a5 = nargs >= 7 ? args[6] : 0.0;
+            double a6 = nargs >= 8 ? args[7] : 0.0;
+            *out = gml_external_call(id_val, a0, a1, a2, a3, a4, a5, a6, 0.0);
+            return true;
+        }
+        if (strcmp(id, "external_free") == 0) {
+            const char *dll = (p->str_mask & 1) ? p->str_args[0] : "";
+            *out = gml_external_free(dll);
+            return true;
+        }
         if (strcmp(id, "color_blend") == 0) { *out = gml_color_blend(arg, nargs>=2?args[1]:0, nargs>=3?args[2]:0.5); return true; }
         if (strcmp(id, "color_get_luminance") == 0) { *out = gml_color_get_luminance(arg); return true; }
         if (strcmp(id, "gauss_range") == 0) { *out = gml_gauss_range(arg, nargs>=2?args[1]:1); return true; }

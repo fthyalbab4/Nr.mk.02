@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
+#include "gm82_int_read.h"
 #include "gm82_events.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_input.h"
@@ -259,7 +260,8 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
     }
-    if (other && other->alive && rt->objects) {
+    if (rt->actions) gm82_actions_fire_collision(rt, inst, other, rt->actions);
+    if (other && other->alive && rt->objects && !rt->actions) {
         int32_t oj = other->object_index;
         if (oj >= 0 && oj < rt->objects->count) {
             const gm82_decoded_object *o2 = &rt->objects->items[oj];
@@ -540,7 +542,7 @@ void gm82_events_fire_post_draw_all(gm82_runtime *rt) {
 }
 
 static int32_t ev_rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
+    return gm82_read_i32le(p);
 }
 
 static uint8_t *ev_inflate(const uint8_t *src, size_t n, size_t *ol) {

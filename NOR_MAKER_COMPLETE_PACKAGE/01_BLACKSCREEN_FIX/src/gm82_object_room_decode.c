@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include "gm82_int_read.h"
 #include "gm82_object_room_decode.h"
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,7 @@
 #include <zlib.h>
 
 static int32_t rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
+    return gm82_read_i32le(p);
 }
 
 /* Keep Create events as Create events (main_type 0) without reclassifying. */

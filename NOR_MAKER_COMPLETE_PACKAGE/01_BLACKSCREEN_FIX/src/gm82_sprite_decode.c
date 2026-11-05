@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include "gm82_int_read.h"
 #include "gm82_sprite_decode.h"
 /*
  * Phase 1.2 – Real sprite frame pixel decoder for GMK 800.
@@ -125,7 +126,7 @@ static uint8_t *inflate_at(const uint8_t *src, size_t src_len, size_t *out_len) 
 }
 
 static int32_t rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0] | (p[1]<<8) | (p[2]<<16) | (p[3]<<24));
+    return gm82_read_i32le(p);
 }
 
 /* Extract BGRA frames from one inflated blob.
@@ -203,8 +204,8 @@ int gm82_decode_sprites_from_gmk(const uint8_t *data, size_t size,
                                 data[i+1] == 0x01 || data[i+1] == 0x5e)) {
             size_t out_len = 0;
             uint8_t *inf = inflate_at(data + i, size - i, &out_len);
-            if (inf && out_len > 32) {
-                scan_blob(out, inf, out_len);
+            if (inf) {
+                if (out_len > 32) scan_blob(out, inf, out_len);
                 free(inf);
             }
             i += 16; /* skip ahead */

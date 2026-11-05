@@ -580,6 +580,11 @@ double gml_sound_find(const char *name);
 double gml_font_find(const char *name);
 double gml_path_find_name(const char *name);
 double gml_timeline_find_name(const char *name);
+
+/* External dynamic library (DLL / SO) bridge */
+double gml_external_define(const char *dll, const char *name, double calltype, double restype, double argcount);
+double gml_external_call(double id, double a0, double a1, double a2, double a3, double a4, double a5, double a6, double a7);
+double gml_external_free(const char *dll);
 double gml_place_snapped(double x, double y, double hsnap, double vsnap);
 double gml_move_contact(double dir, double maxdist);
 double gml_move_bounce(double advanced);
