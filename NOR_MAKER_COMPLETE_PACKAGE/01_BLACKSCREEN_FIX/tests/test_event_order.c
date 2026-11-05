@@ -26,21 +26,34 @@ static void test_event_loop_order(void) {
     obj_list.items[0].events[2].main_type = 3; obj_list.items[0].events[2].event_numb = 2; /* End Step */
     obj_list.items[0].events[3].main_type = 8; obj_list.items[0].events[3].event_numb = 72; /* Pre-Draw */
     obj_list.items[0].events[4].main_type = 8; obj_list.items[0].events[4].event_numb = 73; /* Post-Draw */
+    const char *order_code[] = {
+        "x = x * 10 + 1;", /* Begin Step */
+        "x = x * 10 + 2;", /* Step */
+        "x = x * 10 + 3;"  /* End Step */
+    };
+    for (int i = 0; i < 3; ++i) {
+        size_t code_size = strlen(order_code[i]) + 1;
+        obj_list.items[0].events[i].code_snippet = (char *)malloc(code_size);
+        assert(obj_list.items[0].events[i].code_snippet != NULL);
+        memcpy(obj_list.items[0].events[i].code_snippet, order_code[i], code_size);
+    }
 
     gm82_runtime_bind_assets(&rt, &obj_list, NULL, NULL, NULL, NULL);
 
     gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 10.0);
     assert(inst != NULL);
     assert(inst->alive == 1);
+    inst->x = 0.0;
 
     gm82_runtime_step(&rt);
+    assert(inst->x == 123.0);
 
     uint8_t buffer[64 * 64 * 4];
     bool draw_ok = gm82_runtime_draw(&rt, buffer, 64, 64);
     assert(draw_ok == true);
 
     gm82_decoded_object_list_free(&obj_list);
-    printf("  Event loop sequence order test PASS\n");
+    printf("  Event loop Begin/Step/End order assertion PASS (x=%.0f)\n", inst->x);
 }
 
 static void test_destroy_is_deferred_during_draw(void) {

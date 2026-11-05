@@ -676,17 +676,34 @@ static gml_value eval(gml_vm *vm, const gml_ast *n) {
             gml_value r = eval(vm, n->right);
             if (n->op != GML_T_NONE) {
                 gml_value current = eval(vm, n->left);
-                double x = num(current), y = num(r), z = x;
-                switch (n->op) {
-                    case GML_T_PLUS: z = x + y; break;
-                    case GML_T_MINUS: z = x - y; break;
-                    case GML_T_STAR: z = x * y; break;
-                    case GML_T_SLASH: z = y == 0.0 ? 0.0 : x / y; break;
-                    case GML_T_PERCENT: z = fmod(x, y); break;
-                    default: break;
+                if (n->op == GML_T_PLUS && (current.kind == GML_V_STRING || r.kind == GML_V_STRING)) {
+                    char sc[64], sr[64];
+                    const char *s1 = current.kind == GML_V_STRING ? current.string : (snprintf(sc, sizeof(sc), "%g", num(current)), sc);
+                    const char *s2 = r.kind == GML_V_STRING ? r.string : (snprintf(sr, sizeof(sr), "%g", num(r)), sr);
+                    size_t l1 = s1 ? strlen(s1) : 0;
+                    size_t l2 = s2 ? strlen(s2) : 0;
+                    char *combined = malloc(l1 + l2 + 1);
+                    if (combined) {
+                        if (l1) memcpy(combined, s1, l1);
+                        if (l2) memcpy(combined + l1, s2, l2);
+                        combined[l1 + l2] = '\0';
+                        gml_value_free(&r);
+                        r = gml_value_string(combined);
+                        free(combined);
+                    }
+                } else {
+                    double x = num(current), y = num(r), z = x;
+                    switch (n->op) {
+                        case GML_T_PLUS: z = x + y; break;
+                        case GML_T_MINUS: z = x - y; break;
+                        case GML_T_STAR: z = x * y; break;
+                        case GML_T_SLASH: z = y == 0.0 ? 0.0 : x / y; break;
+                        case GML_T_PERCENT: z = fmod(x, y); break;
+                        default: break;
+                    }
+                    gml_value_free(&r);
+                    r = gml_value_real(z);
                 }
-                gml_value_free(&r);
-                r = gml_value_real(z);
                 gml_value_free(&current);
             }
             if (n->left && n->left->kind == GML_AST_NAME) {
