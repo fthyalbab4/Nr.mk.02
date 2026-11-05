@@ -158,13 +158,13 @@ static void test_dnd_action_conditionals(void) {
     assert(target != NULL);
     assert(gm82_action_execute_ref(&rt, inst, &act_coll) == true);
 
-    /* Test action_if_variable */
+    /* Test action_if_variable (canonical args: value, compare, op) */
     gm82_action_ref act_var;
     memset(&act_var, 0, sizeof(act_var));
     strncpy(act_var.name, "action_if_variable", sizeof(act_var.name) - 1);
-    act_var.args[0] = 10;
-    act_var.args[1] = 0; /* equal */
-    act_var.args[2] = 10;
+    act_var.args[0] = 10; /* value */
+    act_var.args[1] = 10; /* compare */
+    act_var.args[2] = 0;  /* op: equal */
     act_var.argc = 3;
     assert(gm82_action_execute_ref(&rt, inst, &act_var) == true);
 
