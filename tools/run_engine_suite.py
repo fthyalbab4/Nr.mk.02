@@ -18,6 +18,7 @@ TESTS = [
     ("test_mario_scripts_fixtures", "app/src/main/cpp/tests/test_mario_scripts_fixtures.c"),
     ("test_gml_lexer", "app/src/main/cpp/tests/test_gml_lexer.c"),
     ("test_gml_comprehensive", "app/src/main/cpp/tests/test_gml_comprehensive.c"),
+    ("test_gml_ds_callbacks", "app/src/main/cpp/tests/test_gml_ds_callbacks.c"),
     ("test_gml_parser", "app/src/main/cpp/tests/test_gml_parser.c"),
     ("test_gm82_core_math_expansion", "app/src/main/cpp/tests/test_gm82_core_math_expansion.c"),
     ("test_gml_phase5", "app/src/main/cpp/tests/test_gml_phase5.c"),

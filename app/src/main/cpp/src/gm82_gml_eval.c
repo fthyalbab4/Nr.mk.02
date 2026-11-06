@@ -874,6 +874,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_list_add_many") == 0) {
             *out = gml_ds_list_add_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
         }
+        if (strcmp(id, "ds_list_filter") == 0 && nargs >= 2) {
+            *out = gml_ds_list_filter(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "ds_list_foreach") == 0 && nargs >= 2) {
+            *out = gml_ds_list_foreach(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "ds_list_map") == 0 && nargs >= 2) {
+            *out = gml_ds_list_map(args[0], args[1]); return true;
+        }
         if (strcmp(id, "ds_list_contains") == 0 && nargs >= 2) {
             *out = gml_ds_list_contains(arg, args[1]); return true;
         }
@@ -3368,4 +3377,37 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
         if (j > 0 && gm82_gml_eval_stmt(rt, self, buf)) ok++;
     }
     return ok;
+}
+
+bool gm82_gml_eval_callback(gm82_runtime *rt, gm82_instance *self,
+                            const char *code, double *out) {
+    if (!rt || !code || !out) return false;
+    char expr[2048];
+    size_t n = strlen(code);
+    if (n >= sizeof(expr)) return false;
+    const char *p = code;
+    while (*p && isspace((unsigned char)*p)) p++;
+    if (*p == '{') {
+        p++;
+        while (*p && isspace((unsigned char)*p)) p++;
+    }
+    bool has_return = strncmp(p, "return", 6) == 0 &&
+        !isalnum((unsigned char)p[6]) && p[6] != '_';
+    if (has_return) {
+        p += 6;
+        while (*p && isspace((unsigned char)*p)) p++;
+    }
+    if (!has_return) {
+        *out = 0;
+        return gm82_gml_eval_block(rt, self, code) >= 0;
+    }
+    size_t used = 0;
+    while (*p && used + 1 < sizeof(expr)) {
+        if (*p == ';' || *p == '}') break;
+        expr[used++] = *p++;
+    }
+    while (used > 0 && isspace((unsigned char)expr[used - 1])) used--;
+    expr[used] = 0;
+    if (used == 0) return false;
+    return gm82_gml_eval_expr(rt, self, expr, out);
 }
