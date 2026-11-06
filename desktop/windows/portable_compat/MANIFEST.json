@@ -1,0 +1,415 @@
+{
+  "format": 1,
+  "origin": "Game Maker Portable archive supplied in the project Drive folder",
+  "excluded": [
+    "*.exe",
+    "*.dll",
+    "*.chm",
+    "dxdata",
+    "rundata"
+  ],
+  "files": [
+    {
+      "path": "Lib/01_move.lib",
+      "bytes": 144227,
+      "sha256": "87a37e9c5f55bb5bedeee59022fd2b13d8e3c4b13e84682c23ac686bd7470f14",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/01_move.lib"
+    },
+    {
+      "path": "Lib/02_main1.lib",
+      "bytes": 122179,
+      "sha256": "2c541b605507dda00c5eaf34b7d01fb92c94338baed46f2c350fc2b0f647fde6",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/02_main1.lib"
+    },
+    {
+      "path": "Lib/03_main2.lib",
+      "bytes": 157710,
+      "sha256": "c79b9a8bdb2c731e78a2de623e6441d951f3be946def5ff18c639d5f0700526f",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/03_main2.lib"
+    },
+    {
+      "path": "Lib/04_control.lib",
+      "bytes": 139139,
+      "sha256": "d7c726beef5ba76bcc21d64d9456c1511358b1d5212eb4f77eed7c8b2739ce61",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/04_control.lib"
+    },
+    {
+      "path": "Lib/05_score.lib",
+      "bytes": 83933,
+      "sha256": "d43121e5ef6faf3cc0baddc15452885a215a8a831fb2db61b11aa5d1d8ded364",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/05_score.lib"
+    },
+    {
+      "path": "Lib/06_extra.lib",
+      "bytes": 127371,
+      "sha256": "78e97d36b1022e88a81d93f4b30f6a641342f49431c041959e6aa305727cb526",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/06_extra.lib"
+    },
+    {
+      "path": "Lib/07_draw.lib",
+      "bytes": 116033,
+      "sha256": "8ca9ce2b4b2449297d5f3f541694ee8b93c874e0cc2003ac4f9ce5021258177e",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/07_draw.lib"
+    },
+    {
+      "path": "Lib/08_move2.lib",
+      "bytes": 24116,
+      "sha256": "30a0f4687eeb03a0bb91814b322a3e3f5c298fe2f3f6fbe15a9f7f19a5af4de7",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/08_move2.lib"
+    },
+    {
+      "path": "Lib/README.md",
+      "bytes": 136,
+      "sha256": "720510275b90e38146593193bbd3ea2b5c41d45d9dce1123df9ababe580e5d44",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/Lib/README.md"
+    },
+    {
+      "path": "extensions/Dear ImGui File Dialogs.dat",
+      "bytes": 1432210,
+      "sha256": "2845ce71a17068b8db6f3be2cc6a53542e847d590757af93c231a56f42b9eb56",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Dear ImGui File Dialogs.dat"
+    },
+    {
+      "path": "extensions/Dear ImGui File Dialogs.ged",
+      "bytes": 12096,
+      "sha256": "b2ba11c83809ca789bffe7b95889f86293665117a4b4ecdbaa370dad6054b3f8",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Dear ImGui File Dialogs.ged"
+    },
+    {
+      "path": "extensions/ExtremePhysics 2.2.dat",
+      "bytes": 139185,
+      "sha256": "4a8d9bb0d75bb393ee7a17707f76659a1cecd53bed5d6dddb5bac7212d187b04",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/ExtremePhysics 2.2.dat"
+    },
+    {
+      "path": "extensions/ExtremePhysics 2.2.ged",
+      "bytes": 68683,
+      "sha256": "e9ae4b1bf9feeed485cb3a0e82f912dee2221c81ed02b1d81ecce9f43dec53d2",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/ExtremePhysics 2.2.ged"
+    },
+    {
+      "path": "extensions/GM Printing.dat",
+      "bytes": 268070,
+      "sha256": "49bad6b04057010272834bb27ed17ec9304827f2e01fbf511eccb086e809363b",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM Printing.dat"
+    },
+    {
+      "path": "extensions/GM Printing.ged",
+      "bytes": 18362,
+      "sha256": "eff9670869b3ba939de228032d8f3d338394aabac14fd9fb49244feac347162c",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM Printing.ged"
+    },
+    {
+      "path": "extensions/GM Room Transitions.dat",
+      "bytes": 2803,
+      "sha256": "df4bea1b132a8e518e91a3d82f00e646c581743642cc88a5765ab41874606524",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM Room Transitions.dat"
+    },
+    {
+      "path": "extensions/GM Room Transitions.ged",
+      "bytes": 13963,
+      "sha256": "0e7382d8a47b959869318c612a66aeb983e662c067b3c87a4dcf47b52f527ed7",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM Room Transitions.ged"
+    },
+    {
+      "path": "extensions/GM Windows Dialogs.dat",
+      "bytes": 354994,
+      "sha256": "93e07782a3695be675409f997d07e0458a37e158c498e5227dbe29231aecf132",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM Windows Dialogs.dat"
+    },
+    {
+      "path": "extensions/GM Windows Dialogs.ged",
+      "bytes": 15048,
+      "sha256": "961c9731a2c328f56d9a7032433c95fd141342b7f787ccdcce35e52eaa3c6173",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM Windows Dialogs.ged"
+    },
+    {
+      "path": "extensions/GM-GMP.dat",
+      "bytes": 106455,
+      "sha256": "7fd16e3cdbbcc0a2fda736adf248fb51edd94c547a2ee322c208f48f6ebcc893",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM-GMP.dat"
+    },
+    {
+      "path": "extensions/GM-GMP.ged",
+      "bytes": 4329,
+      "sha256": "a903a6382f6940007e21c18b4a36e7dacc38c08b621579f9bf52b46f2cc0c859",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/GM-GMP.ged"
+    },
+    {
+      "path": "extensions/Game Appearance.dat",
+      "bytes": 7088,
+      "sha256": "a07691213d57e3695f8e30c56a0d91e71ad48f7a15b967500057025290de986c",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Appearance.dat"
+    },
+    {
+      "path": "extensions/Game Appearance.ged",
+      "bytes": 8848,
+      "sha256": "8cde09ec9739646e80e0ab6f18ad455d3943f77336394a77e85971f01249900e",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Appearance.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Alpha.dat",
+      "bytes": 46417,
+      "sha256": "18edd5a0a38c1df730ffbdc7ebcdce23b3b9d43d2da9516ded8bfd5b61aebe28",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Alpha.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Alpha.ged",
+      "bytes": 1183,
+      "sha256": "99fdc9eae4a43e27d8cf41a62bace31e067589f4312c3d552eee932f03d2e08b",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Alpha.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Angle.dat",
+      "bytes": 775512,
+      "sha256": "5e918460411835e9f3ae640739a1d90c8a69d8a19d42e1c5273b23b09e24864f",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Angle.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Angle.ged",
+      "bytes": 3907,
+      "sha256": "4ecaa6a937d5747c579a984d4e6b7f06c76eee0e8910ff2bc71d7410d06f66dd",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Angle.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Audio.dat",
+      "bytes": 69899,
+      "sha256": "f47c95ce8395d2ffd5fa20281a574591e7011de2c63a5890a52921815743f752",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Audio.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Audio.ged",
+      "bytes": 13532,
+      "sha256": "8315eabc4cf2a66382a7439eee52c4e4947d5a2ea1f2ba20aaa1011bbd6a4fa2",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Audio.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Buffer.dat",
+      "bytes": 168312,
+      "sha256": "e7866be89d59cda73574e564afc842abdbe93fc3015291846005f142de7f6682",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Buffer.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Buffer.ged",
+      "bytes": 17283,
+      "sha256": "275ead74c05d675dc32dc2d303102d7bbe1eecb68b393224f6f90045c943fe39",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Buffer.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Chunk.dat",
+      "bytes": 2335,
+      "sha256": "2f2921f346b517a26bb1b4770912563215e3c662ebe467f596a0696191efa010",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Chunk.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Chunk.ged",
+      "bytes": 817,
+      "sha256": "40880c1e1d16aa2bfe9e3f6cfce87e2ec8aa92c392e5e7be45dd9b1bbbc90664",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Chunk.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Console.dat",
+      "bytes": 7035,
+      "sha256": "1a146a27332dba9be4491c2398bbcdba63fd383a8fdae9bc4d42e171f7560bff",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Console.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Console.ged",
+      "bytes": 4844,
+      "sha256": "ab8f7d5a414d4638776ff942afff9de5bf3c1c7b56be4bb4bac48a6d230f1106",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Console.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Core.dat",
+      "bytes": 121973,
+      "sha256": "308343ef098ff1c1b3e03fec1a1eb596ee1ce287007c77cfe310a11760e56dbe",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Core.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Core.ged",
+      "bytes": 53409,
+      "sha256": "9dfafe1dc595c22636f58c2e4658b2278cf22d577817d9cd63e378cc9cef303e",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Core.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 DirectX8.dat",
+      "bytes": 58565,
+      "sha256": "e56f5066d64d2531bbd36a8f1c9e44da753b07b8faab3535bfd860f8aadaf72d",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 DirectX8.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 DirectX8.ged",
+      "bytes": 14719,
+      "sha256": "d9532914ba57f32dc81d69c5e4efcd6dcabeb240e498c36c11802f129ba6d8b8",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 DirectX8.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 DirectX9.dat",
+      "bytes": 1067537,
+      "sha256": "f986f43cd657c3890325499e86a8d1ea1bf4125afca900a2712735d3dd8bd511",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 DirectX9.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 DirectX9.ged",
+      "bytes": 42991,
+      "sha256": "1e1cc8cd666236dbdb87234fdbb828b1a6255f1336e8d0f224f6811ad4a71f24",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 DirectX9.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 DragFile.dat",
+      "bytes": 2776,
+      "sha256": "3fe628e7ecdbed39d6ace65c4f395b61bda9d8d3882f44f88d4c17be322a1bde",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 DragFile.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 DragFile.ged",
+      "bytes": 1386,
+      "sha256": "07fa773599998a2adb486edc70c6a819620032e7806ed4636a4927dc697cf058",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 DragFile.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Joystick.dat",
+      "bytes": 576389,
+      "sha256": "5ee341207973d210ccf73ba7a48d98cbb72c5005937084eb5ba3b87090bf39ea",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Joystick.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Joystick.ged",
+      "bytes": 5555,
+      "sha256": "b69ee50c9aef8c75665665bb0d9855367e38fc30f8651d03691acc04b9e1199d",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Joystick.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Network.dat",
+      "bytes": 172518,
+      "sha256": "43479077ac269222edaf1121283d46e4a1e3ce5fb7ba2ee77566774e645f1877",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Network.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Network.ged",
+      "bytes": 22245,
+      "sha256": "adae2427bedcd2275b5168446b3e334027289df94f826fdb840a7674b825755e",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Network.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Sound.dat",
+      "bytes": 686272,
+      "sha256": "d4debd1fee081233b4d03fff05ec718654881424ef63b33cf99822424f82e362",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Sound.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Sound.ged",
+      "bytes": 37791,
+      "sha256": "aeb313f757e144ef174140aadda1efa438f90699d3167dc583c6dda78f297771",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Sound.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Test Stub.dat",
+      "bytes": 384,
+      "sha256": "7ee1b828beb71cca6e22a854857501c51ef99b7a0ec70afe3d415261e55ecd8b",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Test Stub.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Test Stub.ged",
+      "bytes": 2393,
+      "sha256": "9308fdff29e595f59c4718e49ab571538aca02523d2578928b9f39f0b99526c0",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Test Stub.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Test.dat",
+      "bytes": 50874,
+      "sha256": "7377e90f925025b752c46bd1b9001a841570cb450d15e8e0483db0653b789fdc",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Test.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Test.ged",
+      "bytes": 4061,
+      "sha256": "b44ea51e05775cd7cc3527526b1dd9bbae63dbd47d49a6d3c28865e635e7ffeb",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Test.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 UI.dat",
+      "bytes": 110585,
+      "sha256": "de6e47a92765ac167f8e260989cda8730260613bb4064548087d1a30f53b60ca",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 UI.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 UI.ged",
+      "bytes": 8873,
+      "sha256": "698c325d3a0b7233fed5d94e161805ec8355f2dbd25da0fc609e072c2fb173b1",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 UI.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Video.dat",
+      "bytes": 4068,
+      "sha256": "6caf5657260451e7807f3a8a01ca6037472eb306d018536867a98788379e9eb7",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Video.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 Video.ged",
+      "bytes": 3602,
+      "sha256": "2faf0a1aa51b7464543508a180421ed4931464c87d764e3317ccdf464a8a4564",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 Video.ged"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 glTF.dat",
+      "bytes": 135391,
+      "sha256": "be948ab2305c002a3fe10ad50590e6760ad11a6d7ce122af4330d8d3e1126e79",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 glTF.dat"
+    },
+    {
+      "path": "extensions/Game Maker 8.2 glTF.ged",
+      "bytes": 16694,
+      "sha256": "933c27767ef622c229d3305163cf426cfd658611977d00a3600b2f486f7bbe07",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Game Maker 8.2 glTF.ged"
+    },
+    {
+      "path": "extensions/N_Menu.dat",
+      "bytes": 45186,
+      "sha256": "d9cee96dcd5a1e47102a2f56e24488adb750f35fcdf1fba1e61444bf76c34d04",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/N_Menu.dat"
+    },
+    {
+      "path": "extensions/N_Menu.ged",
+      "bytes": 6566,
+      "sha256": "3fd7e6315f816fa322b015e48ab59b2f4a9240ae7dbbaa23db916424e75c55f9",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/N_Menu.ged"
+    },
+    {
+      "path": "extensions/Nimble File System.dat",
+      "bytes": 2079,
+      "sha256": "7f7ccefe0e91057c76a680c756888e8fc5ee704cb2b8a97e2edcfde779803312",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Nimble File System.dat"
+    },
+    {
+      "path": "extensions/Nimble File System.ged",
+      "bytes": 2924,
+      "sha256": "a0fa0004830215d9b99f0001145a8fde25adf4092bb613b85069f85cb24161dd",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/Nimble File System.ged"
+    },
+    {
+      "path": "extensions/README.md",
+      "bytes": 92,
+      "sha256": "ffb0d37c123c753d976c1fbcc5f79b939b122c36bef2e3e4b0cc7dd949e34c66",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/README.md"
+    },
+    {
+      "path": "extensions/ds_bin.dat",
+      "bytes": 18744,
+      "sha256": "e38bd14bde04a4c309628dfeaa34192ffeef8d5b461d88f172c0257d5dd5c608",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/ds_bin.dat"
+    },
+    {
+      "path": "extensions/ds_bin.ged",
+      "bytes": 22756,
+      "sha256": "5259a5f962b4833753eb00ff4b89349eda00da1f346c905bdee1b0e562390733",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/extensions/ds_bin.ged"
+    },
+    {
+      "path": "fnames",
+      "bytes": 42879,
+      "sha256": "b52ec58d9169b0a771da5a8b3c6ea09d7fc59cf9ff609a8a9ade63e48c10f7ba",
+      "source": "/home/ubuntu/drive_nor_extracted/nm010/NM.Maker.0..1.0-main/game maker/portable/fnames"
+    }
+  ]
+}
