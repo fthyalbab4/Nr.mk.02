@@ -1,5 +1,7 @@
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +23,38 @@ class SecurityContractTests(unittest.TestCase):
         self.assertIn("isAllowedCloudGmkUrl", ACTIVITY)
         self.assertIn("connection.setInstanceFollowRedirects(false)", ACTIVITY)
         self.assertNotIn("allow-scripts allow-same-origin", ACTIVE_HTML)
+        active_bundle = (ROOT / "app/src/main/assets/index.html").read_text()
+        for html in (ACTIVE_HTML, active_bundle):
+            self.assertNotIn("allow-scripts allow-same-origin", html)
+            self.assertIn("event.source !== window.parent", html)
+            self.assertIn("event.source !== child", html)
+            self.assertIn("postNorKeyboardMessage", html)
+            self.assertNotIn("contentWindow.dispatchEvent(event)", html)
+            self.assertNotIn("typeof win.syncKeyboardToPlayers", html)
+
+    def test_sandbox_bridge_script_parses(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node.js is unavailable; bridge parse is checked in CI where Node is installed")
+        script = r"""
+const fs = require('fs');
+const vm = require('vm');
+for (const file of ['app/src/main/assets/index.html', 'app/src/main/assets/www/index.html']) {
+  const html = fs.readFileSync(file, 'utf8');
+  const start = html.indexOf('const NOR_SANDBOX_BRIDGE_SCRIPT = `');
+  const end = html.indexOf('\nconst ConsoleViewer', start);
+  if (start < 0 || end < 0) throw new Error(file + ': bridge declaration missing');
+  const context = {};
+  vm.runInNewContext(html.slice(start, end) +
+    '\nthis.bridgeHtml = withNorSandboxBridge("<html><body>test</body></html>");', context);
+  if (!context.bridgeHtml.includes('</script></body>')) throw new Error(file + ': script tag was not emitted');
+  const match = context.bridgeHtml.match(/<script data-nor-sandbox-bridge>([\s\S]*?)<\/script>/);
+  if (!match) throw new Error(file + ': injected script could not be extracted');
+  new Function(match[1]);
+}
+"""
+        result = subprocess.run([node, "-e", script], cwd=ROOT, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_bridge_has_no_arbitrary_path_export_or_general_code_api(self):
         methods = set(re.findall(r'@JavascriptInterface public \S+\s+(\w+)\(', ACTIVITY))

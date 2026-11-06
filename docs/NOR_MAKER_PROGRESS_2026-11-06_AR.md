@@ -80,3 +80,12 @@
 - `test_core_mirror_verifier.py`: **PASS**.
 
 هذه النتائج تخص الفرع المحلي بعد دمج `origin/main` عند `8d42248f` وحل التعارضات. لم يُدفع تحديث الفرع بعد في هذا السجل؛ يجب انتظار فحوص GitHub الجديدة على رأس PR قبل إتمام دمجه في `main`.
+
+
+## تشخيص فشل CI وتصحيح عزل iframe (7 نوفمبر 2026، 00:09 +02:00)
+
+فشل تشغيلَا GitHub Actions على PR head `a87d7eb7` عند الاختبار القائم `test_webview_and_network_are_restricted`: commit main `14240252` أضاف `allow-same-origin` إلى iframe الذي يشغّل محتوى `srcDoc` مع `allow-scripts`، مخالفًا عقد الأمان الموجود. لم أرخِ الاختبار ولم أدمج مع الفشل.
+
+أُزيل `allow-same-origin` من ملفي HTML النشطين. للحفاظ على إدخال لوحة المفاتيح وقراءة بيانات controls دون صلاحية same-origin، نُقل التواصل إلى رسائل `postMessage` محصورة: الطفل يقبل الرسائل من `window.parent` فقط، والوالد يقبل بيانات controls من `contentWindow` الخاص بالإطار الحالي فقط، مع تحديد أنواع payload والتحقق من قيم المفاتيح. اختبار الأمان تحقّق من النسختين ومن غياب الاستدعاءات المباشرة العابرة للـorigin.
+
+التحقق المحلي قبل إعادة الدفع: `python3 -m unittest discover -s tests/reference -p 'test_*.py' -v` — **14/14**؛ فاحص JavaScript (`node --check`) للـbundles النشطة نجح؛ اختبار Node للجسر المحقون نجح في التحقق من controls، ورفض مصدر غير موثوق، وإيصال key event. لم يُدفع هذا التصحيح بعد عند إعداد هذا السجل؛ يجب انتظار فحوص GitHub على الرأس الجديد قبل الدمج.
