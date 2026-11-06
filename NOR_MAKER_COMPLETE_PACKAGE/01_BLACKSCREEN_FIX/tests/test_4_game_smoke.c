@@ -103,6 +103,7 @@ int main(void) {
             if (buffer[p] != 0) nonzero_pixels++;
         }
         free(buffer);
+        gm82_runtime_cleanup(&rt);
 
         assert(nonzero_pixels > 1000);
         printf("  [PASS] Sample %d: room_count=%d, sprites=%d, objs=%d, rooms=%d, nonzero_pixels=%d\n",
@@ -110,12 +111,8 @@ int main(void) {
 
         gm82_decoded_sprite_list_free(&sprs);
         gm82_decoded_background_list_free(&bgs);
-        free(objs.items);
-        for (int r = 0; r < rms.count; r++) {
-            free(rms.items[r].instances);
-            free(rms.items[r].tiles);
-        }
-        free(rms.items);
+        gm82_decoded_object_list_free(&objs);
+        gm82_decoded_room_list_free(&rms);
         gm82_sprite_group_list_free(&sgroups);
         gm82_action_table_free(&actions);
 
