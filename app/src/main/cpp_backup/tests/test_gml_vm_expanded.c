@@ -57,6 +57,7 @@ int main(void) {
     gml_instance_activate_object(0);
     assert(gml_instance_exists((double)inst->id) == 1.0);
 
+    gm82_runtime_cleanup(&rt);
     puts("GML_VM_EXPANDED_TEST_PASS");
     return 0;
 }

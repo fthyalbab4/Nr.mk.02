@@ -54,6 +54,7 @@ static void test_collision_shapes(void) {
     double miss_ell = gml_collision_ellipse(0, 0, 50, 50, 1, 0, 0);
     assert(miss_ell == -4);
 
+    gm82_runtime_cleanup(&rt);
     puts("test_collision_shapes PASS");
 }
 
@@ -184,6 +185,7 @@ static void test_math_builtins_and_eval(void) {
     assert(gm82_gml_eval_expr(&rt, NULL, "unpack_bool(1, 0)", &val));
     assert(val == 1.0);
 
+    gm82_runtime_cleanup(&rt);
     puts("test_math_builtins_and_eval PASS");
 }
 
@@ -254,6 +256,7 @@ static void test_dnd_action_conditionals(void) {
     act_var.args[1] = 0;
     act_var.args[2] = 2;
     assert(gm82_action_execute_ref(&rt, inst, &act_var) == false);
+    gm82_runtime_cleanup(&rt);
     puts("test_dnd_action_conditionals PASS");
 }
 

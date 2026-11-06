@@ -120,6 +120,13 @@ void gml_vm_set_script_call(gml_vm *vm, gml_script_call callback, void *userdata
     }
 }
 
+void gml_vm_cleanup(gml_vm *vm) {
+    if (!vm) return;
+    for (size_t i = 0; i < vm->count; ++i) gml_value_free(&vm->vars[i].value);
+    gml_value_free(&vm->return_value);
+    memset(vm, 0, sizeof(*vm));
+}
+
 void gml_vm_push_scope(gml_vm *vm) {
     if (vm && vm->scope_depth < GML_VM_MAX_SCOPE_DEPTH) {
         vm->scope_marks[vm->scope_depth++] = vm->count;

@@ -135,6 +135,7 @@ typedef struct gml_vm {
 } gml_vm;
 
 void gml_vm_init(gml_vm *vm);
+void gml_vm_cleanup(gml_vm *vm);
 void gml_vm_set_native_call(gml_vm *vm, gml_native_call callback, void *userdata);
 void gml_vm_set_name_resolver(gml_vm *vm, gml_name_resolve callback, void *userdata);
 void gml_vm_set_with_callback(gml_vm *vm, gml_with_call callback, void *userdata);

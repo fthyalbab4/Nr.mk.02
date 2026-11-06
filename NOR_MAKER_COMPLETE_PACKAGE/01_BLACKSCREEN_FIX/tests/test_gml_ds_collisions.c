@@ -108,6 +108,7 @@ int main(void) {
     test_sound_controls();
     test_collision_functions(&rt);
 
+    gm82_runtime_cleanup(&rt);
     puts("GML_DS_COLLISIONS_TEST_PASS");
     return 0;
 }

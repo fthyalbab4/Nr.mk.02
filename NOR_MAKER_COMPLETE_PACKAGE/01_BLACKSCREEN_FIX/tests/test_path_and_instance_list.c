@@ -66,6 +66,7 @@ int main(void) {
 
     printf("  [PASS] instance_place_list and instance_position_list OK\n");
 
+    gm82_runtime_cleanup(&rt);
     printf("ALL PATH AND INSTANCE LIST TESTS PASSED!\n");
     return 0;
 }

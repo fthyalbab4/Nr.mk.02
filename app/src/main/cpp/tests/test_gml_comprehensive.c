@@ -289,6 +289,7 @@ int main(void) {
     assert(res == 20.0);
     gml_ds_grid_destroy(g3);
 
+    gm82_runtime_cleanup(&rt);
     puts("GML_COMPREHENSIVE_VM_TEST_PASS");
     return 0;
 }

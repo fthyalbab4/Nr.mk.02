@@ -36,6 +36,7 @@ void test_ast_parse_and_execute(void) {
     assert(vm.return_value.real == 205.0);
 
     gml_ast_free(ast);
+    gml_vm_cleanup(&vm);
     printf("  AST Parse & Execute PASS\n");
 }
 
@@ -64,6 +65,7 @@ void test_script_invoke_args(void) {
 
     gml_ast_free(ast);
     gml_value_free(&out);
+    gml_vm_cleanup(&vm);
     printf("  Script Invoke Args PASS\n");
 }
 
@@ -84,8 +86,7 @@ static void run_string_case(const char *code, const char *expected) {
     }
     assert(strcmp(vm.return_value.string, expected) == 0);
 
-    gml_value_free(&vm.return_value);
-    for (size_t i = 0; i < vm.count; ++i) gml_value_free(&vm.vars[i].value);
+    gml_vm_cleanup(&vm);
     gml_ast_free(ast);
 }
 
@@ -126,7 +127,7 @@ void test_typed_with_and_postfix_syntax(void) {
     assert(vm.return_value.kind == GML_V_STRING);
     assert(strcmp(vm.return_value.string, "line\n\"ok") == 0);
     gml_ast_free(ast);
-    gml_value_free(&vm.return_value);
+    gml_vm_cleanup(&vm);
     printf("  Typed with/index/escape syntax PASS\n");
 }
 
