@@ -112,6 +112,8 @@ public class MainActivity extends Activity {
     public static native void nativeRuntimeMouse(int x, int y, int button, boolean down);
     public static native boolean nativeRuntimeRenderBitmap(Bitmap bitmap);
     public static native String nativeRuntimeSnapshotJson();
+    public static native int nativeRuntimeGetViewWidth();
+    public static native int nativeRuntimeGetViewHeight();
     public static native void nativeRuntimeStep(float deltaSeconds);
     public static native void nativeRuntimeSetRoom(int roomId, int width, int height, boolean clearInstances);
     public static native void nativeRuntimeClearEvents();
@@ -382,6 +384,7 @@ public class MainActivity extends Activity {
             return;
         }
         nativePlayerVisible = true;
+        resizeNativeFrameToRoom();
         lastFrameNanos = 0;
         webView.setVisibility(View.GONE);
         nativeGameView.setVisibility(View.VISIBLE);
@@ -392,6 +395,24 @@ public class MainActivity extends Activity {
         nativeGameView.requestFocus();
         loopHandler.removeCallbacks(nativeFrameLoop);
         loopHandler.post(nativeFrameLoop);
+    }
+
+    /** The native renderer returns the camera viewport, not a fixed 640x480 room. */
+    private void resizeNativeFrameToRoom() {
+        int width;
+        int height;
+        synchronized (nativeLock) {
+            width = nativeRuntimeGetViewWidth();
+            height = nativeRuntimeGetViewHeight();
+        }
+        width = Math.max(1, Math.min(2048, width));
+        height = Math.max(1, Math.min(2048, height));
+        if (frameBitmap == null || frameBitmap.getWidth() != width || frameBitmap.getHeight() != height) {
+            Bitmap old = frameBitmap;
+            frameBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            if (old != null && old != frameBitmap) old.recycle();
+            if (nativeGameView != null) nativeGameView.setImageBitmap(frameBitmap);
+        }
     }
 
     private void showStudio() {
@@ -519,37 +540,37 @@ public class MainActivity extends Activity {
         overlay.addView(exit);
 
         Button left = nesButton("◀", false, 64, 64);
-        FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
-        leftParams.setMargins(dp(28), 0, 0, dp(44)); left.setLayoutParams(leftParams);
+        FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.CENTER_VERTICAL | Gravity.START);
+        leftParams.setMargins(dp(28), 0, 0, 0); left.setLayoutParams(leftParams);
         bindHeld(left, VK_LEFT); overlay.addView(left);
         Button right = nesButton("▶", false, 64, 64);
-        FrameLayout.LayoutParams rightParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
-        rightParams.setMargins(dp(164), 0, 0, dp(44)); right.setLayoutParams(rightParams);
+        FrameLayout.LayoutParams rightParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.CENTER_VERTICAL | Gravity.START);
+        rightParams.setMargins(dp(164), 0, 0, 0); right.setLayoutParams(rightParams);
         bindHeld(right, VK_RIGHT); overlay.addView(right);
         Button up = nesButton("▲", false, 64, 64);
-        FrameLayout.LayoutParams upParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
-        upParams.setMargins(dp(96), 0, 0, dp(112)); up.setLayoutParams(upParams);
+        FrameLayout.LayoutParams upParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.CENTER_VERTICAL | Gravity.START);
+        upParams.setMargins(dp(96), 0, 0, dp(136)); up.setLayoutParams(upParams);
         bindHeld(up, VK_UP); overlay.addView(up);
         Button down = nesButton("▼", false, 64, 64);
-        FrameLayout.LayoutParams downParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
-        downParams.setMargins(dp(96), 0, 0, dp(44)); down.setLayoutParams(downParams);
+        FrameLayout.LayoutParams downParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.CENTER_VERTICAL | Gravity.START);
+        downParams.setMargins(dp(96), dp(136), 0, 0); down.setLayoutParams(downParams);
         bindHeld(down, VK_DOWN); overlay.addView(down);
 
         Button b = nesButton("B", true, 76, 76);
-        FrameLayout.LayoutParams bParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.BOTTOM | Gravity.END);
-        bParams.setMargins(0, 0, dp(148), dp(62)); b.setLayoutParams(bParams);
+        FrameLayout.LayoutParams bParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.CENTER_VERTICAL | Gravity.END);
+        bParams.setMargins(0, 0, dp(148), dp(38)); b.setLayoutParams(bParams);
         bindHeld(b, VK_SPACE); overlay.addView(b);
         Button a = nesButton("A", true, 76, 76);
-        FrameLayout.LayoutParams aParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.BOTTOM | Gravity.END);
-        aParams.setMargins(0, 0, dp(48), dp(32)); a.setLayoutParams(aParams);
+        FrameLayout.LayoutParams aParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.CENTER_VERTICAL | Gravity.END);
+        aParams.setMargins(0, 0, dp(48), dp(72)); a.setLayoutParams(aParams);
         bindHeld(a, VK_UP, VK_SPACE); overlay.addView(a);
         Button select = nesButton("SELECT", false, 92, 38);
-        FrameLayout.LayoutParams selectParams = new FrameLayout.LayoutParams(dp(92), dp(38), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        selectParams.setMargins(0, 0, dp(34), dp(84)); select.setLayoutParams(selectParams);
+        FrameLayout.LayoutParams selectParams = new FrameLayout.LayoutParams(dp(92), dp(38), Gravity.TOP | Gravity.START);
+        selectParams.setMargins(dp(42), dp(70), 0, 0); select.setLayoutParams(selectParams);
         bindHeld(select, VK_SPACE); overlay.addView(select);
         Button start = nesButton("START", false, 92, 38);
-        FrameLayout.LayoutParams startParams = new FrameLayout.LayoutParams(dp(92), dp(38), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        startParams.setMargins(dp(34), 0, 0, dp(84)); start.setLayoutParams(startParams);
+        FrameLayout.LayoutParams startParams = new FrameLayout.LayoutParams(dp(92), dp(38), Gravity.TOP | Gravity.START);
+        startParams.setMargins(dp(144), dp(70), 0, 0); start.setLayoutParams(startParams);
         bindHeld(start, VK_ENTER); overlay.addView(start);
         return overlay;
     }
@@ -903,6 +924,7 @@ public class MainActivity extends Activity {
             String result;
             synchronized (nativeLock) {
                 result = nativeImportGmkSnapshot(bytes, getFilesDir().getAbsolutePath());
+                if (result != null && result.contains("\"complete\":true")) resizeNativeFrameToRoom();
             }
             nativeProjectLoaded = result != null && result.contains("\"complete\":true");
             Log.i(TAG, "Studio GMK import to native runtime: " + result);
@@ -1205,6 +1227,7 @@ public class MainActivity extends Activity {
             synchronized (nativeLock) {
                 String result = nativeImportGmkSnapshot(bytes, getFilesDir().getAbsolutePath());
                 nativeProjectLoaded = result != null && result.contains("\"complete\":true");
+                if (nativeProjectLoaded) resizeNativeFrameToRoom();
                 return result == null ? "{\"ok\":false,\"error\":\"native_import_failed\"}" : result;
             }
         }
