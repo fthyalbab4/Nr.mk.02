@@ -78,6 +78,13 @@ static int gm82_win_fnmatch(const char *pattern, const char *text, int flags) {
 static gm82_runtime *g_rt = NULL;
 static gm82_instance *g_self = NULL;
 static gm82_instance *g_other = NULL;
+#define GM82_GML_CONTEXT_MAX_DEPTH 64
+typedef struct {
+    gm82_instance *self;
+    gm82_instance *other;
+} gm82_gml_context_frame;
+static gm82_gml_context_frame g_context_stack[GM82_GML_CONTEXT_MAX_DEPTH];
+static size_t g_context_depth = 0;
 static int g_sound_playing[64];
 static int g_sound_playing_n = 0;
 
@@ -88,6 +95,23 @@ void gm82_gml_set_other(gm82_instance *o) { g_other = o; }
 gm82_instance *gm82_gml_get_other(void) { return g_other; }
 
 gm82_instance *gm82_gml_get_self(void) { return g_self; }
+
+int gm82_gml_context_push(void) {
+    if (g_context_depth >= GM82_GML_CONTEXT_MAX_DEPTH) return 0;
+    g_context_stack[g_context_depth].self = g_self;
+    g_context_stack[g_context_depth].other = g_other;
+    g_context_depth++;
+    return 1;
+}
+
+void gm82_gml_context_pop(void) {
+    if (g_context_depth == 0) return;
+    g_context_depth--;
+    g_self = g_context_stack[g_context_depth].self;
+    g_other = g_context_stack[g_context_depth].other;
+    g_context_stack[g_context_depth].self = NULL;
+    g_context_stack[g_context_depth].other = NULL;
+}
 
 bool gm82_object_is_ancestor(const gm82_runtime *rt, int32_t child_idx, int32_t parent_idx) {
     if (!rt || !rt->objects || child_idx < 0 || child_idx >= rt->objects->count) return false;
