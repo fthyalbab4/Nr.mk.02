@@ -16,7 +16,7 @@ extern int gm82_action_execute_extra(gm82_runtime *rt, gm82_instance *self, cons
                                       const char str_args[][128], int str_argc);
 
 static int32_t rd_i32(const uint8_t *p) {
-    return (int32_t)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
+    return (int32_t)((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24));
 }
 
 /* Studio/Web contract: 1 <, 2 <=, 3 ==, 4 !=, 5 >=, 6 >. */

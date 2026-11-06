@@ -54,6 +54,7 @@ static void test_event_loop_order(void) {
 
     gm82_decoded_object_list_free(&obj_list);
     printf("  Event loop Begin/Step/End order assertion PASS (x=%.0f)\n", inst->x);
+    gm82_runtime_cleanup(&rt);
 }
 
 static void test_destroy_is_deferred_during_draw(void) {
@@ -126,6 +127,7 @@ static void test_instance_pool_midframe_lifecycle(void) {
     assert(found_inst3 == 1);
 
     printf("  Mid-frame instance lifecycle test PASS\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 static void test_depth_sorting_order(void) {
@@ -159,6 +161,7 @@ static void test_depth_sorting_order(void) {
     assert(snapshot[order[1]]->depth == -100);
 
     printf("  Depth sorting order test PASS\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 static void test_collision_context_and_with(void) {
