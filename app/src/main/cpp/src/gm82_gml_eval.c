@@ -1507,6 +1507,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "instance_some") == 0) { *out = gml_instance_some(arg); return true; }
         if (strcmp(id, "filename_remove_ext") == 0) { *out = gml_filename_remove_ext((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "filename_name") == 0) { *out = gml_filename_name((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "filename_path") == 0) { *out = gml_filename_path((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "filename_dir") == 0) { *out = gml_filename_dir((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "filename_drive") == 0) { *out = gml_filename_drive((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "filename_ext") == 0) { *out = gml_filename_ext((p->str_mask&1)?p->str_args[0]:""); return true; }
+        if (strcmp(id, "filename_change_ext") == 0) { *out = gml_filename_change_ext((p->str_mask&1)?p->str_args[0]:"", (p->str_mask&2)?p->str_args[1]:""); return true; }
         if (strcmp(id, "string_ord_at") == 0) { *out = gml_string_ord_at((p->str_mask&1)?p->str_args[0]:"", nargs>=2?args[1]:1); return true; }
         if (strcmp(id, "string_hexdigits") == 0) { *out = gml_string_hexdigits((p->str_mask&1)?p->str_args[0]:""); return true; }
         if (strcmp(id, "string_number") == 0) { *out = gml_string_number((p->str_mask&1)?p->str_args[0]:""); return true; }
