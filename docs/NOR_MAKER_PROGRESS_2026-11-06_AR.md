@@ -122,3 +122,10 @@
 - مدقق المرايا: **PASS**؛ لكل مرآة 55 source و49 header و39 test و4 ملفات C/H جذرية. فحص CMake/Makefile والاختبار السلبي للمدقق و`git diff --check`: **PASS**.
 
 لم يُجرَ Android/NDK build أو اختبار جهاز/محاكي. كما أن نتائج GitHub Actions تخص الرأس السابق؛ لم تُعَد بعد على رأس المصالحة هذا.
+
+
+## متابعة 7 نوفمبر — حالات GMZ adversarial على main 75fd7c4e
+
+أثناء تجهيز دفع PR، وصل إلى `main` دمج PR #397 عند `75fd7c4e5eff8dc26cf5b9c8559aa8e2d7a8cd2e` وأضاف حالات حدود أرشيف GMZ إلى `test_gmz_import_limits.c` في الأشجار الثلاثة. ضُمّ هذا التغيير محليًا دون تعارض؛ وتشغّل engine suite الاختبار، كما يلتقطه اكتشاف أهداف Full Core عبر wildcard.
+
+التحقق بعد هذا التحديث: engine suite **42/42**، واختبار `GMZ_IMPORT_LIMITS_OK` ناجح، وHost pipeline **4/4** (`RESULT OK`). Full Core شغّل **35 هدفًا** بما فيها GMZ وwith-scoping؛ سجل تجاوزين فقط لغياب عينات GM82 النصية، والتحذير الوحيد هو تحذير `strncpy` السابق في `src/gm82_actions.c:96`. Python reference/security **14/14**، ومدقق المرايا **PASS** (55 source و49 header و39 test و4 ملفات جذرية لكل مرآة). لا يزال CI على رأس PR المحدث وبناء Android/NDK غير منفذين.

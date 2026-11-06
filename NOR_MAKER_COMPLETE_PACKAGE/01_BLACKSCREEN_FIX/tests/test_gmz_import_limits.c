@@ -58,6 +58,30 @@ int main(void) {
     f = fopen(archive, "wb"); assert(f); local_entry(f, &traversal[0]); finish_zip(f, traversal, 1, NULL); assert(fclose(f) == 0);
     assert(nor_import_gmx_gmz_native(archive, output) == 0.0);
 
+    /* Reject a central-directory count above the hard limit without walking it. */
+    snprintf(archive, sizeof(archive), "%s/count-overflow.gmz", base);
+    f = fopen(archive, "wb"); assert(f);
+    u32(f, 0x06054b50u); u16(f, 0); u16(f, 0); u16(f, 2049); u16(f, 2049);
+    u32(f, 0); u32(f, 22); u16(f, 0); assert(fclose(f) == 0);
+    assert(nor_import_gmx_gmz_native(archive, output) == 0.0);
+
+    /* Reject a central directory whose offset/size points outside the archive. */
+    snprintf(archive, sizeof(archive), "%s/central-out-of-range.gmz", base);
+    f = fopen(archive, "wb"); assert(f);
+    u32(f, 0x06054b50u); u16(f, 0); u16(f, 0); u16(f, 1); u16(f, 1);
+    u32(f, 46); u32(f, 0xfffffff0u); u16(f, 0); assert(fclose(f) == 0);
+    assert(nor_import_gmx_gmz_native(archive, output) == 0.0);
+
+    /* Reject a central entry whose local-header offset is outside the archive. */
+    snprintf(archive, sizeof(archive), "%s/local-out-of-range.gmz", base);
+    f = fopen(archive, "wb"); assert(f);
+    u32(f, 0x02014b50u); u16(f, 20); u16(f, 20); u16(f, 0); u16(f, 0); u16(f, 0);
+    u32(f, 0); u32(f, 0); u32(f, 0); u16(f, 7); u16(f, 0); u16(f, 0); u16(f, 0);
+    u16(f, 0); u32(f, 0); u32(f, 0xfffffff0u); fwrite("file.gmx", 1, 7, f);
+    u32(f, 0x06054b50u); u16(f, 0); u16(f, 0); u16(f, 1); u16(f, 1);
+    u32(f, 53); u32(f, 0); u16(f, 0); assert(fclose(f) == 0);
+    assert(nor_import_gmx_gmz_native(archive, output) == 0.0);
+
     char cleanup[180]; snprintf(cleanup, sizeof(cleanup), "rm -rf %s", base);
     assert(system(cleanup) == 0);
     puts("GMZ_IMPORT_LIMITS_OK");
