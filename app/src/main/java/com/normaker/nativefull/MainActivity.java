@@ -458,12 +458,15 @@ public class MainActivity extends Activity {
         if (nativeGameView == null) return null;
         int viewW = nativeGameView.getWidth(), viewH = nativeGameView.getHeight();
         if (viewW <= 0 || viewH <= 0) return null;
-        float scale = Math.min((float) viewW / ROOM_W, (float) viewH / ROOM_H);
+        int roomW = frameBitmap != null ? frameBitmap.getWidth() : nativeRuntimeGetViewWidth();
+        int roomH = frameBitmap != null ? frameBitmap.getHeight() : nativeRuntimeGetViewHeight();
+        if (roomW <= 0 || roomH <= 0) return null;
+        float scale = Math.min((float) viewW / roomW, (float) viewH / roomH);
         if (!(scale > 0f)) return null;
-        float contentW = ROOM_W * scale, contentH = ROOM_H * scale;
+        float contentW = roomW * scale, contentH = roomH * scale;
         float offsetX = (viewW - contentW) / 2f, offsetY = (viewH - contentH) / 2f;
-        int x = Math.max(0, Math.min(ROOM_W - 1, Math.round((viewX - offsetX) / scale)));
-        int y = Math.max(0, Math.min(ROOM_H - 1, Math.round((viewY - offsetY) / scale)));
+        int x = Math.max(0, Math.min(roomW - 1, Math.round((viewX - offsetX) / scale)));
+        int y = Math.max(0, Math.min(roomH - 1, Math.round((viewY - offsetY) / scale)));
         return new int[]{x, y};
     }
 
