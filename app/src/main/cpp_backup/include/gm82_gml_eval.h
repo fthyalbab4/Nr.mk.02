@@ -26,6 +26,10 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
 /* Execute multiple statements separated by ; or newlines */
 int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code);
 
+/* Evaluate a callback script and return its numeric result. */
+bool gm82_gml_eval_callback(gm82_runtime *rt, gm82_instance *self,
+                            const char *code, double *out);
+
 /* Set/get script arguments (argument0, argument1, ...) */
 void gm82_gml_set_script_args(const double *args, int count);
 double gm82_gml_get_script_arg(int index);

@@ -1,5 +1,6 @@
 #include "gm82_gml_parser.h"
 #include "gm82_gml_eval.h"
+#include "gm82_gml_builtins.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -7,6 +8,9 @@
 
 #define GM82_BC_MAX_STEPS 100000
 #define GM82_BC_SOURCE_MAX 8192
+#define GM82_BC_MAX_WITH_DEPTH 32
+#define GM82_BC_MAX_WITH_ITEMS 2048
+#define GM82_BC_MAX_SWITCH_DEPTH 32
 
 static bool reserve_code(gm82_gml_bytecode *bc) {
     if (bc->count < bc->capacity) return true;
@@ -37,6 +41,7 @@ struct loop_context {
     int *continues;
     size_t continue_count, continue_capacity;
     bool is_repeat;
+    bool is_switch;
 };
 
 static bool add_fixup(int **items, size_t *count, size_t *capacity,
@@ -82,6 +87,10 @@ static bool emit_loop_control(const gm82_gml_ast *n, gm82_gml_bytecode *bc,
     if (!loop) {
         snprintf(bc->error, sizeof(bc->error), "%s outside loop",
                  n->kind == GM82_AST_BREAK ? "break" : "continue");
+        return false;
+    }
+    if (n->kind == GM82_AST_CONTINUE && loop->is_switch) {
+        snprintf(bc->error, sizeof(bc->error), "continue inside switch is invalid");
         return false;
     }
     gm82_gml_bc_opcode opcode =
@@ -186,6 +195,36 @@ static bool compile_node(const gm82_gml_ast *n, gm82_gml_bytecode *bc,
             free_loop(&current);
             return true;
         }
+        case GM82_AST_WITH: {
+            if (!source_of(n->a, source)) return false;
+            int begin = emit_code(bc, GM82_BC_WITH_BEGIN, source);
+            if (begin < 0 || !compile_node(n->b, bc, loop)) return false;
+            int next = emit_code(bc, GM82_BC_WITH_NEXT, NULL);
+            if (next < 0) return false;
+            bc->code[next].target = begin + 1;
+            bc->code[begin].target = (int)bc->count;
+            return true;
+        }
+        case GM82_AST_SWITCH: {
+            if (!source_of(n->a, source)) return false;
+            if (emit_code(bc, GM82_BC_SWITCH_BEGIN, source) < 0) return false;
+            loop_context current = { .parent = loop, .is_switch = true };
+            for (const gm82_gml_ast *item = n->b; item; item = item->next) {
+                int marker = item->a ? emit_code(bc, GM82_BC_SWITCH_CASE,
+                                                   source_of(item->a, source) ? source : NULL)
+                                      : emit_code(bc, GM82_BC_SWITCH_DEFAULT, NULL);
+                if (marker < 0) { free_loop(&current); return false; }
+                int body = (int)bc->count;
+                if (!compile_node(item->b, bc, &current)) { free_loop(&current); return false; }
+                bc->code[marker].target = body;
+                bc->code[marker].alternate = (int)bc->count;
+            }
+            int end = emit_code(bc, GM82_BC_SWITCH_END, NULL);
+            if (end < 0) { free_loop(&current); return false; }
+            patch_loop(&current, bc, end, end);
+            free_loop(&current);
+            return true;
+        }
         case GM82_AST_RETURN:
             if (n->a && !source_of(n->a, source)) return false;
             return emit_code(bc, GM82_BC_RETURN, n->a ? source : "0") >= 0;
@@ -214,6 +253,20 @@ void gm82_gml_bytecode_free(gm82_gml_bytecode *bc) {
     for (size_t i = 0; i < bc->count; i++) free(bc->code[i].source);
     free(bc->code); memset(bc, 0, sizeof(*bc));
 }
+typedef struct {
+    int ids[GM82_BC_MAX_WITH_ITEMS];
+    int count;
+    int next;
+    gm82_instance *previous_self;
+    gm82_instance *previous_other;
+} bytecode_with_frame;
+typedef struct { double selector; bool selected; } bytecode_switch_frame;
+static gm82_instance *find_alive_id(gm82_runtime *rt, int id) {
+    if (!rt) return NULL;
+    for (int i = 0; i < rt->instance_count; i++)
+        if (rt->instances[i].alive && rt->instances[i].id == id) return &rt->instances[i];
+    return NULL;
+}
 
 bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82_gml_bytecode *bc, gm82_gml_exec_result *r) {
     if (!rt || !bc || !r) return false;
@@ -221,6 +274,10 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
     int pc = 0; double value = 0;
     int repeat_counts[64];
     int repeat_depth = 0;
+    bytecode_with_frame with_frames[GM82_BC_MAX_WITH_DEPTH];
+    int with_depth = 0;
+    bytecode_switch_frame switch_frames[GM82_BC_MAX_SWITCH_DEPTH];
+    int switch_depth = 0;
     while (pc >= 0 && (size_t)pc < bc->count) {
         if (++r->steps > GM82_BC_MAX_STEPS) return false;
         const gm82_gml_bc_instruction *ins = &bc->code[pc];
@@ -253,6 +310,74 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
                 if (repeat_depth <= 0) return false;
                 repeat_depth--; pc = ins->target;
                 break;
+            case GM82_BC_WITH_BEGIN: {
+                if (with_depth >= GM82_BC_MAX_WITH_DEPTH) return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "-4", &value)) return false;
+                bytecode_with_frame *frame = &with_frames[with_depth++];
+                memset(frame, 0, sizeof(*frame));
+                frame->previous_self = self;
+                frame->previous_other = gm82_gml_get_other();
+                gm82_gml_set_other(self);
+                int target = (int)value;
+                int limit = rt->instance_count;
+                if (limit < 0) limit = 0;
+                if (limit > GM82_BC_MAX_WITH_ITEMS) limit = GM82_BC_MAX_WITH_ITEMS;
+                for (int i = 0; i < limit; i++) {
+                    gm82_instance *candidate = &rt->instances[i];
+                    bool match = candidate->alive && (target == -3 ||
+                        (target == -1 && candidate == frame->previous_self) ||
+                        (target == -2 && frame->previous_other && candidate == frame->previous_other) ||
+                        (target != -1 && target != -2 && target != -3 && target != -4 &&
+                         gm82_instance_matches_object(rt, candidate, target)));
+                    if (match && frame->count < GM82_BC_MAX_WITH_ITEMS) frame->ids[frame->count++] = candidate->id;
+                }
+                gm82_instance *first = frame->count ? find_alive_id(rt, frame->ids[0]) : NULL;
+                if (!first) {
+                    --with_depth;
+                    gm82_gml_set_self(frame->previous_self);
+                    gm82_gml_set_other(frame->previous_other);
+                    pc = ins->target;
+                } else {
+                    frame->next = 1; self = first; gm82_gml_set_self(self); pc++;
+                }
+                break;
+            }
+            case GM82_BC_WITH_NEXT: {
+                if (with_depth <= 0) return false;
+                bytecode_with_frame *frame = &with_frames[with_depth - 1];
+                gm82_instance *next = NULL;
+                while (frame->next < frame->count && !next)
+                    next = find_alive_id(rt, frame->ids[frame->next++]);
+                if (next) { self = next; gm82_gml_set_self(self); pc = ins->target; }
+                else {
+                    self = frame->previous_self;
+                    gm82_gml_set_self(frame->previous_self);
+                    gm82_gml_set_other(frame->previous_other);
+                    --with_depth; pc++;
+                }
+                break;
+            }
+            case GM82_BC_SWITCH_BEGIN:
+                if (switch_depth >= GM82_BC_MAX_SWITCH_DEPTH ||
+                    !gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                switch_frames[switch_depth++] = (bytecode_switch_frame){value, false}; pc++; break;
+            case GM82_BC_SWITCH_CASE: {
+                if (switch_depth <= 0) return false;
+                bytecode_switch_frame *frame = &switch_frames[switch_depth - 1];
+                if (frame->selected) { pc++; break; }
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                if (frame->selector == value) { frame->selected = true; pc = ins->target; }
+                else pc = ins->alternate;
+                break;
+            }
+            case GM82_BC_SWITCH_DEFAULT:
+                if (switch_depth <= 0) return false;
+                if (switch_frames[switch_depth - 1].selected) pc++;
+                else { switch_frames[switch_depth - 1].selected = true; pc = ins->target; }
+                break;
+            case GM82_BC_SWITCH_END:
+                if (switch_depth <= 0) return false;
+                --switch_depth; pc++; break;
             case GM82_BC_RETURN:
                 if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
                 r->returned = true; r->return_value = value; return true;
