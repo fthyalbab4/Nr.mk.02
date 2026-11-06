@@ -1,81 +1,77 @@
-# BASELINE_REPORT — Phase 0 freeze (2026-11-05)
+# NOR Maker Host Baseline Verification
 
-## Freeze marker
+- **Generated (UTC):** 2026-11-06T13:49:38+00:00
+- **Git revision:** `212e667d-dirty`
+- **Elapsed:** 109.16 seconds
+- **Overall status:** PASS
+- **Python reference tests reported:** 13
 
-```text
-commit: 6d4a9709aa9336e8e50a49f1f96846644f55520b
-branch: main
-phase: 0 (baseline freeze)
-policy: no bulk merge of stale Jules PRs onto main
-canonical core: app/src/main/cpp/
-mirrors: app/src/main/cpp_backup/ , NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/
-```
+This report records only the commands listed below. It does not claim an Android APK build,
+physical-device test, release signing, or any test suite that was not run by this script.
 
-## What this report claims vs does not claim
+## Host audit runner: PASS
 
-| Claim type | Status |
-|------------|--------|
-| Documented host suite results in repo (STATUS.md, prior audits) | Recorded as **documented** |
-| Re-run of full suite in this agent session | **NOT re-executed here** |
-| Physical device playtest | **BLOCKED** |
-| 100% GM82 parity | **FORBIDDEN** |
+- Command: `/home/jules/.pyenv/versions/3.12.13/bin/python3 tools/audit_runner.py`
+- Exit code: `0`
 
-Any feature without a behavioral test is `unverified`, not complete.
+Output excerpt:
 
-## Documented host evidence (from repo docs, not re-run)
+    =========================================================
+     NOR MAKER GM82 AUTOMATED AUDIT & VERIFICATION SUITE
+    =========================================================
 
-From `STATUS.md` / prior audit notes on main:
+    === Running: python3 run_full_verification.py (cwd=.) ===
+      [SUCCESS]
+    === Running: node test_all_games_inlined.js (cwd=.) ===
+      [SUCCESS]
+    === Running: python3 tools/run_engine_suite.py (cwd=.) ===
+      [SUCCESS]
+    === Running: make test (cwd=NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX) ===
+      [SUCCESS]
 
-```text
-host tests (documented):     PASS claimed — C engine suite, host pipeline 4 games
-full-core tests (documented): PASS claimed — 01_BLACKSCREEN_FIX make test
-games loaded (documented):   mario_bros, plataformas, shooter, zelda
-games playable (host):       host pipeline PASS claimed; device playable = UNVERIFIED
-```
+    --- Built-in GM82 Functions Audit ---
+      angle_difference: FOUND
+      approach: FOUND
+      color_reverse: FOUND
+      sound_play_pitch: FOUND
+      ds_grid_set_disk: FOUND
+      window_set_size: FOUND
 
-## Known failures / blocked
+    =========================================================
+     AUDIT RESULTS SUMMARY
+    =========================================================
+      run_full_verification.py           : [PASS]
+      test_all_games_inlined.js          : [PASS]
+      run_engine_suite.py                : [PASS]
+      01_BLACKSCREEN_FIX make test       : [PASS]
 
-```text
-U2 playtest + logcat:        DEVICE_BLOCKED
-U3 native SO + keyDown:      DEVICE_BLOCKED
-U5 OpenSLES audio:           DEVICE_BLOCKED
-residual host stubs (~10):   draw_*_extra, draw_spotlight, draw_setb/setf,
-                             ds_list_filter/foreach/map (intentional no-ops)
-```
+      Suite Pass Rate: 4/4 (100.0%)
+      GM82 Target Functions: 6/6 (100.0%)
 
-## Unverified claims (must not be treated as done)
+    All host audit checks passed successfully.
 
-- Pixel-precise collision full parity with GM82
-- Full event-order equivalence vs portable GM8.2 across all rooms
-- Draw GUI / surface / blend parity with reference hashes
-- Save/load round-trip across real games
-- Match API (`match_*`) — PR #361 style claims need re-proof on main
-- Any percentage > documented host smoke
+## Python reference/security tests: PASS
 
-## Open PR policy (Phase 0)
+- Command: `/home/jules/.pyenv/versions/3.12.13/bin/python3 -m unittest discover -s tests/reference -v`
+- Exit code: `0`
 
-Do **not** merge these as whole branches onto current main:
+Output excerpt:
 
-- #356, #358, #361, #364, #365, #367, #370–#380 (and similar Jules bulk sync PRs)
+    test_java_to_jni_contracts_exist (test_android_single_app.SingleAndroidAppIntegrationTests.test_java_to_jni_contracts_exist) ... ok
+    test_launcher_hosts_studio_and_native_player_in_one_activity (test_android_single_app.SingleAndroidAppIntegrationTests.test_launcher_hosts_studio_and_native_player_in_one_activity) ... ok
+    test_runner_assets_are_local_without_parallel_native_loop (test_android_single_app.SingleAndroidAppIntegrationTests.test_runner_assets_are_local_without_parallel_native_loop) ... ok
+    test_invalid_status_rejected (test_catalog_import.CatalogImportTests.test_invalid_status_rejected) ... ok
+    test_kinds_arity_markers_and_unverified_default (test_catalog_import.CatalogImportTests.test_kinds_arity_markers_and_unverified_default) ... ok
+    test_semicolon_and_reviewed_evidence (test_catalog_import.CatalogImportTests.test_semicolon_and_reviewed_evidence) ... ok
+    test_all_samples_have_reproducible_named_resources (test_gmk_inventory.GmkInventoryTests.test_all_samples_have_reproducible_named_resources) ... ok
+    test_named_resource_names_are_ascii (test_gmk_inventory.GmkInventoryTests.test_named_resource_names_are_ascii) ... ok
+    test_advertised_import_bridges_have_implementations (test_security_contract.SecurityContractTests.test_advertised_import_bridges_have_implementations) ... ok
+    test_bridge_has_no_arbitrary_path_export_or_general_code_api (test_security_contract.SecurityContractTests.test_bridge_has_no_arbitrary_path_export_or_general_code_api) ... ok
+    test_keyboard_input_bridge_methods_present (test_security_contract.SecurityContractTests.test_keyboard_input_bridge_methods_present) ... ok
+    test_private_signing_key_is_not_shipped (test_security_contract.SecurityContractTests.test_private_signing_key_is_not_shipped) ... ok
+    test_webview_and_network_are_restricted (test_security_contract.SecurityContractTests.test_webview_and_network_are_restricted) ... ok
 
-Allowed process only:
+    ----------------------------------------------------------------------
+    Ran 13 tests in 1.486s
 
-1. Branch from **current** main
-2. Extract **one** small function or fix
-3. Failing test first
-4. Implement
-5. Run tests
-6. Mirror sync via `tools/verify_core_mirrors.py`
-7. Small PR
-
-## Tools present for gates
-
-- `tools/verify_core_mirrors.py` — tri-mirror src/include parity
-- `tools/generate_baseline_report.py` — host audit + reference tests
-- `tools/daily_audit_runner.py` — engine + verification + host pipeline + make test + JS
-- `tools/gm82_audit_tool.py` — mirror check + suites (percent ranges in tool are estimates; do not treat as verified)
-
-## Next phase (after freeze)
-
-See `REALISTIC_GM82_ROADMAP.md`:
-Phase 1 mirrors → Phase 2 gap inventory → Phase 3 GML semantics (self/other/with, arrays, bytecode) → Phase 4 events → collision → resources → draw/input → game corpus.
+    OK
