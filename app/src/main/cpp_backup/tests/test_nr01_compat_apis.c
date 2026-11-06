@@ -139,6 +139,7 @@ int main(void) {
     gml_ds_grid_destroy(src);
     gml_ds_grid_destroy(dst);
     gml_ds_grid_destroy(overlap);
+    gm82_runtime_cleanup(&rt);
     puts("Nr.mk.01 compatibility APIs PASS");
     return 0;
 }

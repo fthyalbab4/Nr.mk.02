@@ -143,6 +143,7 @@ int main(void) {
            player->y, floor->y);
 
     free(objs.items);
+    gm82_runtime_cleanup(&rt);
     printf("ALL_MARIO_PHYSICS_PARITY_TESTS_PASS\n");
     return 0;
 }
