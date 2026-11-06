@@ -52,6 +52,7 @@ def main() -> int:
         errors.extend(verify_pair(CANONICAL, mirror))
     regression_tests = (
         "test_gml_vm_execution.c",
+        "test_gml_parser.c",
         "test_gml_with_scoping.c",
         "test_with_edges.c",
     )
