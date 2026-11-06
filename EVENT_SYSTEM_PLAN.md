@@ -146,19 +146,19 @@ GM82_PHASE_POST_DRAW
 ## 5. خطة التنفيذ المقترحة (مراحل)
 
 ### المرحلة 1 — توثيق وتثبيت الترتيب الحالي
-- [ ] قراءة `gm82_runtime_step` و `gm82_runtime_step_dt` بالكامل وتوثيق ترتيب استدعاء الـ phases الفعلي.
-- [ ] توثيق متى يُستدعى Create ومتى يُفرَّغ Destroy queue.
-- [ ] كتابة اختبارات وحدة بسيطة تتحقق من ترتيب الأحداث على instances تجريبية.
+- [x] قراءة `gm82_runtime_step` و `gm82_runtime_step_dt` بالكامل وتوثيق ترتيب استدعاء الـ phases الفعلي.
+- [x] توثيق متى يُستدعى Create ومتى يُفرَّغ Destroy queue.
+- [x] كتابة اختبارات وحدة بسيطة تتحقق من ترتيب الأحداث على instances تجريبية.
 
 ### المرحلة 2 — إكمال Alarms + `with`/`other`
-- [ ] توحيد مسار Alarm: countdown → fire `GM82_EV_ALARM` → تنفيذ الكود المرتبط.
+- [x] توحيد مسار Alarm: countdown → fire `GM82_EV_ALARM` → تنفيذ الكود المرتبط.
 - [ ] إكمال دعم `with` داخل الـ GML evaluator.
-- [ ] ضمان أن `other` يُعيَّن بشكل صحيح أثناء Collision events.
+- [x] ضمان أن `other` يُعيَّن بشكل صحيح أثناء Collision events.
 
 ### المرحلة 3 — توسيع التغطية
 - [ ] User events
 - [ ] Outside/Boundary/Animation End
-- [ ] التأكد من Pre/Post Draw
+- [x] التأكد من Pre/Post Draw
 - [ ] توسيع Action Lists تدريجيًا
 
 ### المرحلة 4 — مقارنة مع RE + عينات حقيقية
@@ -177,10 +177,10 @@ GM82_PHASE_POST_DRAW
 
 ## 7. الخطوة التالية المباشرة
 
-1. قراءة تنفيذ `gm82_runtime_step` الحالي وتوثيق الترتيب الفعلي مقابل الجدول في القسم 1.
-2. تحديد أين يُعالَج الـ Alarm countdown وأين يُستدعى `gm82_events_fire_alarm`.
-3. البدء في توحيد مسار Alarm + `with`/`other`.
+1. إكمال `with` داخل evaluator مع nested scope واستعادة `self/other` باختبارات regression.
+2. إضافة User Events وOutside/Boundary/Animation End عند وجود fixture سلوكي.
+3. تنفيذ مقارنة سلوكية مباشرة مع GameMaker Portable أو نقل الاختبار إلى جهاز Android عند توفر البيئة.
 
 ---
 
-*آخر تحديث: 2026-10-30*
+*آخر تحديث: 2026-11-06*

@@ -232,7 +232,7 @@ if pos_sendKey != -1 and pos_newId != -1:
           srcDoc: content,
           style: { width: "100%", height: "100%", border: "none", userSelect: "none" },
           title: "Game Engine Preview",
-          sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
+          sandbox: "allow-scripts allow-modals allow-pointer-lock",
           tabIndex: 0
         })
       }),

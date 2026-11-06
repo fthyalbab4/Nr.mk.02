@@ -1738,6 +1738,21 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_background_tiled") == 0) {
             *out = gml_draw_background_tiled(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
+        if (strcmp(id, "draw_sprite_tiled_extra") == 0 && nargs >= 11) {
+            *out = gml_draw_sprite_tiled_extra(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]); return true;
+        }
+        if (strcmp(id, "draw_background_tiled_extra") == 0 && nargs >= 10) {
+            *out = gml_draw_background_tiled_extra(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]); return true;
+        }
+        if (strcmp(id, "draw_sprite_part_extra") == 0 && nargs >= 13) {
+            *out = gml_draw_sprite_part_extra(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]); return true;
+        }
+        if (strcmp(id, "draw_sprite_part_centered") == 0 && nargs >= 8) {
+            *out = gml_draw_sprite_part_centered(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
+        }
+        if (strcmp(id, "draw_spotlight") == 0 && nargs >= 9) {
+            *out = gml_draw_spotlight(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); return true;
+        }
         if (strcmp(id, "sprite_find") == 0) {
             const char *sp_name = (p->str_mask & 1) ? p->str_args[0] : "";
             *out = gml_sprite_find(sp_name ? sp_name : ""); return true;

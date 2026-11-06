@@ -1591,6 +1591,142 @@ double gml_draw_background_ext(double bg, double x, double y, double xscale, dou
     return gml_draw_background(bg, x, y);
 }
 
+static void draw_frame_part(int frame_idx, int left, int top, int width, int height,
+                            double x, double y, double xscale, double yscale,
+                            double color, double alpha) {
+    if (!g_draw_buf || !g_rt || !g_rt->sprites || frame_idx < 0 ||
+        frame_idx >= g_rt->sprites->count || width <= 0 || height <= 0) return;
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame_idx];
+    if (!fr->rgba || xscale == 0 || yscale == 0 || alpha <= 0) return;
+    if (left < 0) { width += left; left = 0; }
+    if (top < 0) { height += top; top = 0; }
+    if (left + width > fr->width) width = fr->width - left;
+    if (top + height > fr->height) height = fr->height - top;
+    if (width <= 0 || height <= 0) return;
+    uint32_t col = (uint32_t)color;
+    uint8_t cr = col & 255, cg = (col >> 8) & 255, cb = (col >> 16) & 255;
+    int dw = (int)fabs(width * xscale), dh = (int)fabs(height * yscale);
+    if (dw < 1) dw = 1;
+    if (dh < 1) dh = 1;
+    for (int dy = 0; dy < dh; dy++) {
+        int py = (int)y + dy; if (py < 0 || py >= g_draw_h) continue;
+        int sy = top + (int)(dy / fabs(yscale)); if (sy >= top + height) sy = top + height - 1;
+        for (int dx = 0; dx < dw; dx++) {
+            int px = (int)x + dx; if (px < 0 || px >= g_draw_w) continue;
+            int sx = left + (int)(dx / fabs(xscale)); if (sx >= left + width) sx = left + width - 1;
+            const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
+            if (!s[3]) continue;
+            uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+            double a = (s[3] / 255.0) * (alpha > 1 ? 1 : alpha);
+            uint8_t sr = col == 0xFFFFFF ? s[0] : (uint8_t)(s[0] * cr / 255);
+            uint8_t sg = col == 0xFFFFFF ? s[1] : (uint8_t)(s[1] * cg / 255);
+            uint8_t sb = col == 0xFFFFFF ? s[2] : (uint8_t)(s[2] * cb / 255);
+            d[0] = (uint8_t)(d[0] * (1 - a) + sr * a);
+            d[1] = (uint8_t)(d[1] * (1 - a) + sg * a);
+            d[2] = (uint8_t)(d[2] * (1 - a) + sb * a); d[3] = 255;
+        }
+    }
+}
+
+static int resolve_sprite_frame(double sprite, double image) {
+    int si = (int)sprite, frame = si;
+    if (g_rt && g_rt->sprite_groups) frame = gm82_sprite_resolve_frame(g_rt->sprite_groups, si, (int)image);
+    if (!g_rt || !g_rt->sprites || si < 0 || si >= g_rt->sprites->count) return -1;
+    return frame >= 0 && frame < g_rt->sprites->count ? frame : si;
+}
+
+double gml_draw_sprite_part_extra(double sprite, double image, double left, double top,
+                                  double width, double height, double x, double y,
+                                  double xscale, double yscale, double rot, double color, double alpha) {
+    (void)rot;
+    draw_frame_part(resolve_sprite_frame(sprite, image), (int)left, (int)top, (int)width, (int)height,
+                    x, y, xscale, yscale, color, alpha);
+    return 1;
+}
+
+double gml_draw_sprite_part_centered(double sprite, double image, double left, double top,
+                                     double width, double height, double x, double y) {
+    return gml_draw_sprite_part_extra(sprite, image, left, top, width, height,
+                                      x - width / 2, y - height / 2, 1, 1, 0, 0xFFFFFF, 1);
+}
+
+double gml_draw_sprite_tiled_extra(double sprite, double image, double x, double y,
+                                   double xscale, double yscale, double rot, double color,
+                                   double alpha, double hrepeats, double vrepeats) {
+    int frame = resolve_sprite_frame(sprite, image);
+    if (frame < 0 || !g_rt || !g_rt->sprites) return 0;
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame];
+    if (!fr->rgba || fr->width <= 0 || fr->height <= 0 || xscale == 0 || yscale == 0) return 0;
+    int tile_w = (int)fabs(fr->width * xscale), tile_h = (int)fabs(fr->height * yscale);
+    if (tile_w < 1) tile_w = 1;
+    if (tile_h < 1) tile_h = 1;
+    int nx = hrepeats > 0 ? (int)hrepeats : (g_draw_w / tile_w + 2);
+    int ny = vrepeats > 0 ? (int)vrepeats : (g_draw_h / tile_h + 2);
+    if (nx < 0) nx = 0;
+    if (ny < 0) ny = 0;
+    if (nx > 256) nx = 256;
+    if (ny > 256) ny = 256;
+    for (int iy = 0; iy < ny; iy++) for (int ix = 0; ix < nx; ix++)
+        gml_draw_sprite_ext(sprite, image, x + ix * fr->width * xscale,
+                            y + iy * fr->height * yscale, xscale, yscale, rot, color, alpha);
+    return 1;
+}
+
+double gml_draw_background_tiled_extra(double bg, double x, double y, double xscale,
+                                       double yscale, double rot, double color, double alpha,
+                                       double hrepeats, double vrepeats) {
+    if (!g_rt || !g_rt->backgrounds) return 0;
+    int bi = (int)bg; if (bi < 0 || bi >= g_rt->backgrounds->count) return 0;
+    int bw = g_rt->backgrounds->items[bi].width, bh = g_rt->backgrounds->items[bi].height;
+    if (bw <= 0 || bh <= 0 || xscale == 0 || yscale == 0) return 0;
+    int tile_w = (int)fabs(bw * xscale), tile_h = (int)fabs(bh * yscale);
+    if (tile_w < 1) tile_w = 1;
+    if (tile_h < 1) tile_h = 1;
+    int nx = hrepeats > 0 ? (int)hrepeats : (g_draw_w / tile_w + 2);
+    int ny = vrepeats > 0 ? (int)vrepeats : (g_draw_h / tile_h + 2);
+    if (nx < 0) nx = 0;
+    if (ny < 0) ny = 0;
+    if (nx > 256) nx = 256;
+    if (ny > 256) ny = 256;
+    for (int iy = 0; iy < ny; iy++) for (int ix = 0; ix < nx; ix++)
+        gml_draw_background_ext(bg, x + ix * bw * xscale, y + iy * bh * yscale, xscale, yscale, rot, color, alpha);
+    return 1;
+}
+
+double gml_draw_spotlight(double sprite, double image, double x, double y, double xscale,
+                          double yscale, double rot, double color, double alpha) {
+    int frame = resolve_sprite_frame(sprite, image);
+    if (!g_draw_buf || !g_rt || !g_rt->sprites || frame < 0 || xscale == 0 || yscale == 0 || alpha <= 0) return 0;
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[frame];
+    if (!fr->rgba || fr->width <= 0 || fr->height <= 0) return 0;
+    uint32_t col = (uint32_t)color;
+    uint8_t cr = col & 255, cg = (col >> 8) & 255, cb = (col >> 16) & 255;
+    double r = rot * (M_PI / 180.0), cs = cos(r), sn = sin(r);
+    double invx = 1.0 / fabs(xscale), invy = 1.0 / fabs(yscale);
+    /* A spotlight is a room-sized, repeating texture.  Sample it directly so
+       the CPU path has the same useful semantics without a GL texture repeat. */
+    for (int py = 0; py < g_draw_h; py++) for (int px = 0; px < g_draw_w; px++) {
+        double dx = (px - x) * cs + (py - y) * sn;
+        double dy = -(px - x) * sn + (py - y) * cs;
+        int sx = (int)floor(dx * invx + fr->width * 0.5);
+        int sy = (int)floor(dy * invy + fr->height * 0.5);
+        sx = ((sx % fr->width) + fr->width) % fr->width;
+        sy = ((sy % fr->height) + fr->height) % fr->height;
+        const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
+        if (!s[3]) continue;
+        double a = (s[3] / 255.0) * (alpha > 1 ? 1 : alpha);
+        uint8_t *d = g_draw_buf + ((size_t)py * (size_t)g_draw_w + (size_t)px) * 4;
+        uint8_t sr = col == 0xFFFFFF ? s[0] : (uint8_t)(s[0] * cr / 255);
+        uint8_t sg = col == 0xFFFFFF ? s[1] : (uint8_t)(s[1] * cg / 255);
+        uint8_t sb = col == 0xFFFFFF ? s[2] : (uint8_t)(s[2] * cb / 255);
+        d[0] = (uint8_t)(d[0] * (1 - a) + sr * a);
+        d[1] = (uint8_t)(d[1] * (1 - a) + sg * a);
+        d[2] = (uint8_t)(d[2] * (1 - a) + sb * a);
+        d[3] = 255;
+    }
+    return 1;
+}
+
 
 #define GM82_DEBUG_MAX 64
 static char g_debug_logs[GM82_DEBUG_MAX][128];

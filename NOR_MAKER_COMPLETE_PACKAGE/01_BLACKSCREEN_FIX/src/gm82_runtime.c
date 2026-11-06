@@ -1,8 +1,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_runtime.h"
-#include "gm82_gml_builtins.h"
 #include "gm82_events.h"
 #include "gm82_actions.h"
+#include "gm82_gml_builtins.h"
 #include "gm82_gml_eval.h"
 #include <stdlib.h>
 #include <string.h>
@@ -367,6 +367,48 @@ static int swept_solid_crossing(const gm82_runtime *rt,
     return 0;
 }
 
+/* GM8 collision dispatch uses the sprite mask when one is available.  Keep
+   the AABB path as the compatibility fallback for decoded/projected sprites
+   that have no pixel data (text fixtures and partially decoded GMKs). */
+static bool precise_instance_overlap(const gm82_runtime *rt,
+                                     const gm82_instance *a,
+                                     const gm82_instance *b) {
+    if (!rt || !rt->sprites || !a || !b) return true;
+    if (a->sprite_index < 0 || a->sprite_index >= rt->sprites->count ||
+        b->sprite_index < 0 || b->sprite_index >= rt->sprites->count) return true;
+    const gm82_decoded_frame *fa = &rt->sprites->frames[a->sprite_index];
+    const gm82_decoded_frame *fb = &rt->sprites->frames[b->sprite_index];
+    if (!fa->bitmask || !fb->bitmask || fa->bitmask_size == 0 || fb->bitmask_size == 0)
+        return true;
+    double xs1 = a->image_xscale != 0.0 ? a->image_xscale : 1.0;
+    double ys1 = a->image_yscale != 0.0 ? a->image_yscale : 1.0;
+    double xs2 = b->image_xscale != 0.0 ? b->image_xscale : 1.0;
+    double ys2 = b->image_yscale != 0.0 ? b->image_yscale : 1.0;
+    double ax = a->x - fa->origin_x * fabs(xs1);
+    double ay = a->y - fa->origin_y * fabs(ys1);
+    double bx = b->x - fb->origin_x * fabs(xs2);
+    double by = b->y - fb->origin_y * fabs(ys2);
+    double ar = ax + fa->width * fabs(xs1), ab = ay + fa->height * fabs(ys1);
+    double br = bx + fb->width * fabs(xs2), bb = by + fb->height * fabs(ys2);
+    int left = (int)ceil(fmax(ax, bx)), top = (int)ceil(fmax(ay, by));
+    int right = (int)floor(fmin(ar, br)), bottom = (int)floor(fmin(ab, bb));
+    for (int py = top; py < bottom; py++) {
+        for (int px = left; px < right; px++) {
+            int a_x = (int)((px - ax) / fabs(xs1));
+            int a_y = (int)((py - ay) / fabs(ys1));
+            int b_x = (int)((px - bx) / fabs(xs2));
+            int b_y = (int)((py - by) / fabs(ys2));
+            if (xs1 < 0) a_x = fa->width - 1 - a_x;
+            if (ys1 < 0) a_y = fa->height - 1 - a_y;
+            if (xs2 < 0) b_x = fb->width - 1 - b_x;
+            if (ys2 < 0) b_y = fb->height - 1 - b_y;
+            if (gm82_frame_test_pixel(fa, a_x, a_y) &&
+                gm82_frame_test_pixel(fb, b_x, b_y)) return true;
+        }
+    }
+    return false;
+}
+
 static void resolve_solid_contact(gm82_runtime *rt, gm82_instance *moving,
                                   const gm82_instance *solid) {
     if (!rt || !moving || !solid || !moving->alive || !solid->alive) return;
@@ -568,13 +610,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         if (oh < 1) oh = 1;
                         double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
                         if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
-                        /* Exact alpha-mask narrow phase for unscaled, unrotated frames. */
-                        if (fa && fb && fa->bitmask && fb->bitmask &&
-                            xs == 1.0 && ys == 1.0 && oxs == 1.0 && oys == 1.0 &&
-                            inst->image_angle == 0.0 && other->image_angle == 0.0 &&
-                            !gm82_frames_collide_pixel(fa, (int32_t)ax1, (int32_t)ay1,
-                                                       fb, (int32_t)bx1, (int32_t)by1))
-                            continue;
+                        /* Rotation remains on the AABB fallback until the
+                           renderer supplies a rotated mask. */
+                        if (inst->image_angle == 0.0 && other->image_angle == 0.0 &&
+                            !precise_instance_overlap(rt, inst, other)) continue;
                         gm82_events_fire_collision(rt, inst, other);
                         if (inst->alive && other->alive) gm82_events_fire_collision(rt, other, inst);
                         if (other->solid) resolve_solid_contact(rt, inst, other);

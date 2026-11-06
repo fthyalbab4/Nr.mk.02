@@ -89,21 +89,21 @@
 ## 5. الفجوات ذات الأولوية (P0 → P2)
 
 ### P0 — حرجة
-- [ ] توحيد ترتيب التنفيذ داخل `gm82_runtime_step` / `gm82_runtime_step_dt` ليطابق الجدول أعلاه
-- [ ] Alarms كأحداث حقيقية مرتبطة بـ `GM82_EV_ALARM`
+- [x] توحيد ترتيب التنفيذ داخل `gm82_runtime_step` / `gm82_runtime_step_dt` — regression `test_event_order` وhost suite
+- [x] Alarms كأحداث حقيقية مرتبطة بـ `GM82_EV_ALARM` — اختبارات alarm/GML ناجحة
 - [ ] إكمال دعم `with` و `other` في الـ GML evaluator + Collision
-- [ ] Instance Creation Code من الـ Room
-- [ ] توقيت Destroy queue مقابل Destroy event
+- [x] Instance Creation Code من الـ Room — `gm82_decoded_instance.creation_code` ومسار runtime
+- [x] توقيت Destroy queue مقابل Destroy event — regression destruction أثناء Draw
 
 ### P1 — مهمة
 - [ ] User Events (`event_user`)
 - [ ] Outside Room / Boundary / Animation End
-- [ ] Key Press / Key Release منفصلة
-- [ ] Pre-Draw / Post-Draw تُستدعى فعليًا
+- [x] Key Press / Key Release منفصلة
+- [x] Pre-Draw / Post-Draw تُستدعى فعليًا — `test_event_order`
 - [ ] توسيع Action Lists (DnD) من الـ subset الحالي
 
 ### P2 — لاحقًا
-- [ ] Precise collision (mask)
+- [ ] Precise collision (mask) — alpha mask وscale/flip موصولة؛ rotation وأشكال mask المستقلة ما زالت مفتوحة
 - [ ] Particle / Timeline / Path events أدق
 - [ ] Audio حقيقي على الجهاز (OpenSL ES)
 - [ ] مقارنة سلوك مع النسخة Portable

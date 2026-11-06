@@ -475,6 +475,11 @@ void gml_draw_triangle(double x1, double y1, double x2, double y2, double x3, do
 double gml_draw_background(double bg, double x, double y);
 double gml_draw_background_tiled(double bg, double x, double y);
 double gml_draw_background_ext(double bg, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
+double gml_draw_background_tiled_extra(double bg, double x, double y, double xscale, double yscale, double rot, double color, double alpha, double hrepeats, double vrepeats);
+double gml_draw_sprite_tiled_extra(double sprite, double image, double x, double y, double xscale, double yscale, double rot, double color, double alpha, double hrepeats, double vrepeats);
+double gml_draw_sprite_part_extra(double sprite, double image, double left, double top, double width, double height, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
+double gml_draw_sprite_part_centered(double sprite, double image, double left, double top, double width, double height, double x, double y);
+double gml_draw_spotlight(double sprite, double image, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 double gml_string_pos(const char *sub, const char *str);
 double gml_string_char_at(const char *str, double index);
