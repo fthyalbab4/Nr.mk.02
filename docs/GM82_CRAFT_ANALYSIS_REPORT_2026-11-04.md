@@ -73,8 +73,9 @@
 **حالة NOR Maker:**
 
 - توجد bitmask وpixel-precise helpers في `gm82_mask.c` و`gm82_sprite_decode.c`، كما توجد builtins مثل `place_meeting_precise()` و`collision_ellipse()`.
-- لكن resolver الخاص بالحركة والتصادم الصلب في `gm82_runtime.c` يستخدم حاليًا صندوقًا ثابتًا بحجم `16x16` عبر `instance_collision_box()`. لذلك لا يصح إعلان parity كامل مع خيارات أقنعة GM8.2: precise collision متاح لبعض builtins، وليس بعدُ mask-aware في كل مسار الحركة الصلبة.
-- هذه هي أولوية التنفيذ التالية: ربط resolver بقناع sprite/الإطار مع fallback آمن إلى AABB عندما لا تتوفر بيانات الصورة، ثم إضافة اختبارات rectangle/disk/diamond/pixel-mask.
+- تم الآن ربط collision dispatch في `gm82_runtime.c` بفحص قناع sprite/الإطار مع دعم origin وscale، قبل إطلاق Collision events أو solid resolver.
+- عند غياب بيانات القناع، أو عند استخدام fixture/GMK لم يُفكك إلى pixels، يعود المسار تلقائيًا إلى AABB الحالي بدل إسقاط التصادم. أضيف regression في `app/src/main/cpp/tests/test_event_order.c` يثبت أن تداخل AABB الشفاف لا يطلق collision، بينما التداخل بالبكسل يطلقه.
+- لا تزال أشكال محرر GM8.2 (disk/diamond/rectangle) metadata غير ممثلة كخيارات مستقلة في runtime؛ المتاح حاليًا هو alpha bitmask الدقيقة مع AABB fallback.
 
 ### المكونات المساعدة
 
@@ -107,7 +108,7 @@
 لم يتم نسخ ملفات تنفيذية أو DLL أو pseudo-C أو موارد Delphi إلى المستودع. تم اعتماد النتائج كاختبارات توافق وخطة تنفيذ:
 
 1. تثبيت `room_persistent` في parser/runtime بعد تحديد layout GMK من fixtures موثقة.
-2. استبدال fixed `16x16` solid collision resolver بمسار mask-aware مع fallback إلى AABB.
+2. توسيع mask-aware solid resolver ليستخدم شكل القناع المحدد من بيانات sprite عندما تتوفر، مع الحفاظ على AABB fallback.
 3. إضافة regression tests لترتيب Begin Step → Alarm → Input/Step → Motion/Collision → End Step → Draw.
 4. إبقاء التحقق من APK Android منفصلًا؛ التحليل الحالي لا يثبت نجاح build Android ولا parity كامل مع GameMaker.
 
