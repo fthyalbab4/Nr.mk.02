@@ -1,0 +1,65 @@
+name: Windows x64 build and sample verification
+
+on:
+  push:
+    paths:
+      - 'app/src/main/cpp/**'
+      - 'desktop/windows/**'
+      - 'tools/run_engine_suite.py'
+      - '.github/workflows/windows-build.yml'
+  pull_request:
+    paths:
+      - 'app/src/main/cpp/**'
+      - 'desktop/windows/**'
+      - 'tools/run_engine_suite.py'
+      - '.github/workflows/windows-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install MinGW, zlib, Wine, and headless display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+            binutils-mingw-w64-x86-64 libz-mingw-w64-dev wine64 xvfb
+
+      - name: Run host engine suite
+        run: python3 tools/run_engine_suite.py
+
+      - name: Configure Windows x64 target
+        run: |
+          cmake -S desktop/windows -B build-pc-win64 \
+            -DCMAKE_TOOLCHAIN_FILE=desktop/windows/mingw-w64-x86_64.cmake \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Windows x64 executables
+        run: cmake --build build-pc-win64 --parallel 2
+
+      - name: Verify Windows native host under Wine
+        run: |
+          mkdir -p desktop/windows/dist
+          cp build-pc-win64/NorMakerNativePC.exe desktop/windows/dist/
+          cp build-pc-win64/NorMakerStudio.exe desktop/windows/dist/
+          desktop/windows/tools/run_wine_verify.sh desktop/windows/dist/NorMakerNativePC.exe
+
+      - name: Upload Windows binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: nor-maker-windows-x64
+          path: |
+            desktop/windows/dist/NorMakerNativePC.exe
+            desktop/windows/dist/NorMakerStudio.exe
+          if-no-files-found: error
+          retention-days: 7
