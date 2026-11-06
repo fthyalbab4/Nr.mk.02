@@ -3168,11 +3168,10 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
             /* Phase 6: GM8 constants self=-1 other=-2 all=-3 noone=-4 */
             /* Phase 8: snapshot instance indices so create/destroy mid-with is safe */
             int target_id = (int)target_val;
-            gm82_instance *prev_self = self;
-            extern void gm82_gml_set_other(gm82_instance *o);
-            extern gm82_instance *gm82_gml_get_other(void);
-            gm82_instance *prev_other = gm82_gml_get_other();
-            gm82_gml_set_other(prev_self);
+            gm82_instance *caller = gm82_gml_get_self();
+            gm82_instance *previous_other = gm82_gml_get_other();
+            if (!gm82_gml_context_push()) return false;
+            gm82_gml_set_other(caller);
             int snap_n = rt->instance_count;
             if (snap_n < 0) snap_n = 0;
             if (snap_n > 4096) snap_n = 4096;
@@ -3183,8 +3182,8 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 if (!inst->alive) continue;
                 int match = 0;
                 if (target_id == -3) match = 1;
-                else if (target_id == -1) match = (inst == prev_self);
-                else if (target_id == -2) match = (prev_other && inst == prev_other);
+                else if (target_id == -1) match = (inst == caller);
+                else if (target_id == -2) match = (previous_other && inst == previous_other);
                 else if (target_id == -4) match = 0;
                 else match = gm82_instance_matches_object(rt, inst, target_id);
                 if (!match) continue;
@@ -3203,8 +3202,7 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 if (body_buf[0] == '{') gm82_gml_eval_block(rt, inst, body_buf);
                 else gm82_gml_eval_stmt(rt, inst, body_buf);
             }
-            gm82_gml_set_other(prev_other);
-            gm82_gml_set_self(prev_self);
+            gm82_gml_context_pop();
         }
         return true;
     }

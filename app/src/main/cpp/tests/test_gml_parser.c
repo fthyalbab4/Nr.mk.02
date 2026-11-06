@@ -179,18 +179,50 @@ static void test_bytecode_with_snapshot(void) {
     gm82_instance *second = gm82_runtime_instance_create(&rt, 7, 0, 0);
     gm82_instance *third = gm82_runtime_instance_create(&rt, 9, 0, 0);
     assert(first && second && third);
+    gm82_gml_set_self(first);
+    gm82_gml_set_other(second);
     gm82_gml_parser parser;
-    gm82_gml_parser_init(&parser, "with (-3) { x += 1; }");
+    gm82_gml_parser_init(&parser,
+        "with (-3) { with (other) { x += 10; } other.x += 1; x += 1; }");
     gm82_gml_ast *root = gm82_gml_parse_program(&parser);
     assert(root != NULL);
     gm82_gml_bytecode bytecode;
     assert(gm82_gml_compile_bytecode(root, &bytecode));
     gm82_gml_exec_result result;
     assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
-    assert(first->x == 1.0 && second->x == 1.0 && third->x == 1.0);
+    if (first->x != 34.0 || second->x != 1.0 || third->x != 1.0)
+        fprintf(stderr, "nested with x values: first=%g second=%g third=%g\n",
+                first->x, second->x, third->x);
+    assert(first->x == 34.0 && second->x == 1.0 && third->x == 1.0);
     assert(gm82_gml_get_self() == first);
+    assert(gm82_gml_get_other() == second);
     gm82_gml_bytecode_free(&bytecode);
     gm82_gml_ast_free(root);
+
+    gm82_gml_parser return_parser;
+    gm82_gml_parser_init(&return_parser, "with (-3) { return 42; }");
+    gm82_gml_ast *return_root = gm82_gml_parse_program(&return_parser);
+    assert(return_root != NULL && gm82_gml_compile_bytecode(return_root, &bytecode));
+    assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(result.returned && result.return_value == 42.0);
+    assert(gm82_gml_get_self() == first && gm82_gml_get_other() == second);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(return_root);
+
+    gm82_gml_bc_instruction failing_code[] = {
+        { GM82_BC_WITH_BEGIN, 2, 0, "-3" },
+        { GM82_BC_EVAL_STMT, 0, 0, "x = (" },
+        { GM82_BC_WITH_NEXT, 1, 0, NULL }
+    };
+    gm82_gml_bytecode failing_bytecode = {
+        .code = failing_code,
+        .count = sizeof(failing_code) / sizeof(failing_code[0])
+    };
+    assert(!gm82_gml_execute_bytecode(&rt, first, &failing_bytecode, &result));
+    assert(gm82_gml_get_self() == first && gm82_gml_get_other() == second);
+
+    gm82_gml_set_self(NULL);
+    gm82_gml_set_other(NULL);
     gm82_runtime_cleanup(&rt);
 }
 
