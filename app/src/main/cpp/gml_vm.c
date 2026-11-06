@@ -941,8 +941,13 @@ static void exec(gml_vm *vm, const gml_ast *n) {
         }
         case GML_AST_WITH: {
             gml_value target = eval(vm, n->left);
-            if (vm->with_call) vm->with_call(vm->with_userdata, vm, &target, n->right);
-            else snprintf(vm->error, sizeof vm->error, "with callback unavailable");
+            if (vm->with_call) {
+                int ok = vm->with_call(vm->with_userdata, vm, &target, n->right);
+                if (!ok && !vm->error[0])
+                    snprintf(vm->error, sizeof vm->error, "with callback failed");
+            } else {
+                snprintf(vm->error, sizeof vm->error, "with callback unavailable");
+            }
             gml_value_free(&target);
             break;
         }
@@ -977,6 +982,15 @@ int gml_vm_execute(gml_vm *vm, const gml_ast *root) {
     vm->continue_pending = 0;
     gml_value_free(&vm->return_value);
     exec(vm, root);
+    return vm->error[0] == 0;
+}
+
+int gml_vm_execute_fragment(gml_vm *vm, const gml_ast *root) {
+    if (!vm || !root) return 0;
+    /* A with callback executes its body in the current VM frame. Do not clear
+       return/break/error state here: control flow and failures must propagate
+       to the enclosing script, while callers can still pop their scope. */
+    if (!vm->error[0] && !vm->returned) exec(vm, root);
     return vm->error[0] == 0;
 }
 

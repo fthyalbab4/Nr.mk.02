@@ -7,15 +7,23 @@
 #include "gm82_gml_eval.h"
 #include "gm82_object_room_decode.h"
 #include "gm82_actions.h"
+#include <assert.h>
+
+static double instance_var(const gm82_instance *inst, const char *name) {
+    if (!inst || !name) return -999999.0;
+    for (int i = 0; i < inst->var_count; ++i)
+        if (strcmp(inst->vars[i].name, name) == 0) return inst->vars[i].value;
+    return -999999.0;
+}
 
 int main(void) {
     gm82_runtime rt;
     gm82_runtime_init(&rt);
     gm82_decoded_object_list objs;
-    gm82_decoded_object obj_arr[2];
-    memset(obj_arr, 0, sizeof(obj_arr));
+    memset(&objs, 0, sizeof(objs));
     objs.count = 2;
-    objs.items = obj_arr;
+    objs.items = (gm82_decoded_object *)calloc((size_t)objs.count, sizeof(*objs.items));
+    assert(objs.items != NULL);
     strncpy(objs.items[0].name, "obj_a", sizeof(objs.items[0].name) - 1);
     objs.items[0].parent_index = -1;
     strncpy(objs.items[1].name, "obj_b", sizeof(objs.items[1].name) - 1);
@@ -43,6 +51,7 @@ int main(void) {
     gm82_instance *self = &rt.instances[0];
     gm82_gml_set_runtime(&rt);
     gm82_gml_set_self(self);
+    gm82_gml_set_other(NULL);
 
     gm82_gml_eval_block(&rt, self, "with (all) { hspeed = 3; }");
     int moved = 0;
@@ -69,8 +78,47 @@ int main(void) {
         return 4;
     }
 
+    /* Run nested with scopes through the same text evaluator used by GMK
+       events. Inside with(all), other is the caller; nested with(other) targets
+       that caller and sees the enclosing target as its own other. */
+    gm82_instance *saved_other = &rt.instances[1];
+    gm82_gml_set_other(saved_other);
+    const char *nested_code =
+        "with (all) {"
+        " seen_self = self; seen_other = other;\n"
+        " with (other) { nested_self = self; nested_other = other; };\n"
+        " restored_self = self;"
+        "}";
+    assert(gm82_gml_eval_block(&rt, self, nested_code) > 0);
+    for (int i = 0; i < 4; ++i) {
+        assert(instance_var(&rt.instances[i], "seen_self") == rt.instances[i].id);
+        assert(instance_var(&rt.instances[i], "seen_other") == self->id);
+        assert(instance_var(&rt.instances[i], "restored_self") == rt.instances[i].id);
+    }
+    assert(instance_var(self, "nested_self") == self->id);
+    assert(instance_var(self, "nested_other") == rt.instances[3].id);
+    assert(gm82_gml_get_self() == self);
+    assert(gm82_gml_get_other() == saved_other);
+
+    /* Explicit instance target must execute once on the selected instance and
+       restore caller context even when the body changes that target. */
+    assert(gm82_gml_eval_block(&rt, self,
+        "with (other) { selected_self = self; selected_other = other; x += 5; }") > 0);
+    assert(instance_var(saved_other, "selected_self") == saved_other->id);
+    assert(instance_var(saved_other, "selected_other") == self->id);
+    assert(saved_other->x == 15.0);
+    assert(gm82_gml_get_self() == self);
+    assert(gm82_gml_get_other() == saved_other);
+
     gm82_gml_eval_block(&rt, self, "with (all) { instance_destroy(); }");
-    gm82_runtime_cleanup(&rt);
+    assert(gm82_gml_get_self() == self);
+    assert(gm82_gml_get_other() == saved_other);
+    for (int i = 0; i < 4; ++i) assert(rt.instances[i].alive == 0);
     printf("with_edges PASS\n");
+    gm82_gml_set_self(NULL);
+    gm82_gml_set_other(NULL);
+    gm82_gml_set_runtime(NULL);
+    gm82_runtime_cleanup(&rt);
+    free(objs.items);
     return 0;
 }

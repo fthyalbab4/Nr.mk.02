@@ -106,3 +106,19 @@
 - `verify_core_mirrors.py`: **PASS**؛ لكل مرآة 55 ملف source و49 header و38 test و4 ملفات C/H جذرية، مع تطابق CMake وقواعد Makefile. الاختبار السلبي لمدقق المرايا و`git diff --check` اجتازا.
 
 هذه نتائج محلية فقط؛ لم يُجرَ بناء Android/NDK أو اختبار على جهاز/محاكي، ولم تُستقبل بعد نتيجة GitHub Actions على الرأس الجديد. يلزم رفع merge commit المحدّث إلى فرع PR، انتظار checks الجديدة، ثم الدمج إلى `main` إذا اجتازت شروط المستودع.
+
+
+## متابعة 7 نوفمبر — دمج main 533e2203 وتوحيد إصلاحات `with`
+
+تقدّم `main` مرة أخرى إلى `533e2203075f3400b11a12d3154ebd2528be49d4` أثناء المراجعة، لذلك جُلب هذا الرأس قبل دفع الفرع. احتوى commits متداخلة على bridge للـiframe، ومكدس سياق `self/other` لـ`with`، وتنظيف bytecode. حُلّ التداخل باعتماد تنفيذ main الأحدث الذي يستخدم `gm82_gml_context_push/pop` وتنظيف scope، واختبار `test_gml_with_scoping` ونسخة `test_with_edges` الأحدث؛ وحُفظت اختبارات الفرع الإضافية لـ`do-until/continue` و`with(noone)` وفشل bytecode، مع بقاء اختبار `switch`.
+
+احتُفظ بجسر الفرع النشط الذي يرفض أي رسالة لا تأتي من `window.parent` ولا يتيح وصولًا مباشرًا إلى `contentWindow`; وتطابق صلاحيات iframe فيه وفي مصدر React سياسة main الأضيق: `allow-scripts allow-modals allow-pointer-lock` فقط. اختبارات الأمان تؤكد الآن غياب `allow-same-origin` في كل HTML الموزع، وتتحقق سلوكيًا من الجسر. أُدرج test `gml_with_scoping` في engine suite، ونُسخت ملفات C/H والاختبارات إلى المرآتين من canonical.
+
+### التحقق المحلي على رأس main 533e2203
+
+- `python3 tools/run_engine_suite.py`: **42/42**؛ Host pipeline: **4/4** (`RESULT OK`).
+- `make clean && make test` في Full Core: **35 هدفًا**، بينها `test_gml_parser` و`test_gml_with_scoping` و`test_with_edges`؛ اكتمل التشغيل بنجاح. سجل اختبارين `SKIP gm82 text samples not present` لغياب عينات محلية، وظهر تحذير `strncpy` واحد عند `src/gm82_actions.c:96`، خارج نطاق التغييرات.
+- Python reference/security: **14/14**. فحص `node_modules/.bin/tsc -p tsconfig.json --noEmit`: **exit 0**.
+- مدقق المرايا: **PASS**؛ لكل مرآة 55 source و49 header و39 test و4 ملفات C/H جذرية. فحص CMake/Makefile والاختبار السلبي للمدقق و`git diff --check`: **PASS**.
+
+لم يُجرَ Android/NDK build أو اختبار جهاز/محاكي. كما أن نتائج GitHub Actions تخص الرأس السابق؛ لم تُعَد بعد على رأس المصالحة هذا.

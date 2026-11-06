@@ -339,8 +339,7 @@ const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) =
               srcDoc={withNorSandboxBridge(content)}
               title="NES Emulator"
               className="w-full h-full border-none bg-black focus:outline-none"
-              sandbox="allow-scripts allow-pointer-lock allow-downloads allow-forms allow-modals allow-popups allow-presentation allow-top-navigation allow-fullscreen"
-              allowFullScreen={true}
+              sandbox="allow-scripts allow-modals allow-pointer-lock"
             />
           )}
         </div>
