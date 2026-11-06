@@ -31,6 +31,9 @@ void gm82_gml_set_self(gm82_instance *self);
 void gm82_gml_set_other(gm82_instance *o);
 gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
+/* Save/restore nested instance execution context; push returns 0 at capacity. */
+int gm82_gml_context_push(void);
+void gm82_gml_context_pop(void);
 
 /* ---- Instance ---- */
 double gml_instance_create(double x, double y, double object_index);
