@@ -2,22 +2,19 @@
 
 ```
 host_p0: true
-ast_break_continue: fixed
-residual_host_stubs: 10 (draw extras + list callbacks — intentional no-ops)
-device_items: BLOCKED (U2/U3/U5)
+phases_0_10: DONE
+phase_11_host_residual: DONE
+G1-G12: PASS
+G13_portable_compare: NOT_RUN
+G14_device: BLOCKED
 is_100: false
 claim_100_percent_allowed: false
 anti_hallucination_rule: ENFORCED
+bulk_pr_merge: FORBIDDEN
 ```
 
-## Done this session
-- Restored AST `loop_depth` for break/continue (PR #322 regression)
-- Tri-mirror sync for `gm82_gml_ast_exec.c`
-- Honest docs: host closed, device-only remaining
-
-## Not claimed
-- No on-device playtest
-- No 100% parity
-- Residual GL/callback stubs not implemented as real features
-
-`work_strategy: ADD_AND_COMPLETE_NOT_REPLACE`
+## Phase 11 (2026-11-07)
+Host residual cleanup (roadmap originally ended at 10):
+- Makefile: `test_full_suite` + noexec-safe `test`/`gates`
+- `make gates` EXIT 0 including full suite
+- mirrors PASS
