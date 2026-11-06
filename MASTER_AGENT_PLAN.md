@@ -1,49 +1,35 @@
 # MASTER_AGENT_PLAN
 
-**آخر تحديث:** 2026-11-04
+**آخر تحديث:** 2026-11-05
 
-## P0 + host gaps — مكتمل على main
+## Phase 0 — baseline freeze
 
-## إصلاح نواة حرج (try_stub)
-Bug: `gm82_gm82core_try_stub` كان يُستدعى **قبل** handlers حقيقية مثل `move_towards_gravity` فيرجع 0.
-**آخر تحديث:** 2026-11-04 (batch4 host P0 CLOSED)
+- Commit freeze: see `BASELINE_REPORT.md`
+- Governing roadmap: **`REALISTIC_GM82_ROADMAP.md`**
+- Canonical core: `app/src/main/cpp/`
+- Mirror gate: `python3 tools/verify_core_mirrors.py`
 
-## P0 + host gaps — مكتمل على main
+## Host status
 
-## batch4 final (2026-11-04) — HOST CLOSED
-- `gm82_batch4_extras.c`: real host impls (ds_bag_*, bigchoose_*, event_*, date, dss_*, registry/mouse no-ops)
-- linker `--wrap=gm82_gm82core_try_stub` intercepts handled names
-- eval dispatch path for multi-arg host functions
-- GM82CORE_STUBS residual **10** only:
-  - draw_background_tiled_extra, draw_sprite_part_extra, draw_sprite_tiled_extra, draw_sprite_part_centered, draw_spotlight, draw_setb, draw_setf (need GL)
-  - ds_list_filter, ds_list_foreach, ds_list_map (need GML callback support)
+| Item | Status |
+|------|--------|
+| Host P0 stubs + wrap | closed |
+| AST break/continue loop_depth | fixed |
+| Residual draw/list stubs | intentional no-ops |
+| Device U2/U3/U5 | BLOCKED |
+| is_100 | **false** |
 
-```bash
-# أو Actions → apply-core-try-stub-fix
-python3 tools/apply_core_try_stub_fix.py
-git add -A && git commit -m "core try_stub fix" && git push
-```
+## Process rules (enforced)
 
-يضيف أيضاً: `move_and_collide`, `string_wrap`, `distance_to_path`
+1. No bulk merge of stale Jules PRs onto main.
+2. One small change + failing test first.
+3. Mirrors must pass `verify_core_mirrors.py`.
+4. No percentage claims without behavioral tests.
+5. Next work priority: Phase 1–3 (mirrors, gap inventory, GML semantics: with/self/other, arrays, bytecode).
 
-## جهاز فقط
-`docs/DEVICE_BLOCKED.md`
+## Docs
 
-**is_100 (host pipeline): true**
-## P1 — مكتمل ✅
-
-| بند | الحالة |
-|-----|--------|
-| NES runner UI + bridge | **على main** |
-| NES يستدعي `NorNative.keyDown/keyUp` | **على main** |
-| `StudioNativeBridge.keyDown/keyUp` | **تم التطبيق والتحقق بنجاح** |
-| patch يدوي | `tools/patch_keydown_bridge.diff` |
-
-## التالي
-1. تجربة الأزرار على الجهاز مع WebView.
-2. توسيع التوافق مع DnD Actions و GML الإضافية عبر logcat الفعلي.
-
-**is_100 (P0 pipeline): true**
-**host_p0: true**
-**remaining host stubs: 10 (rare / non-blocking for MVP)**
-**is_100: false** (device items open)
+- `BASELINE_REPORT.md` — freeze point
+- `REALISTIC_GM82_ROADMAP.md` — full plan
+- `GAPS_HONEST.md` — residual gaps
+- `docs/DEVICE_BLOCKED.md` — device checklist

@@ -64,3 +64,19 @@
 - بقي تحذير `strncpy` غير الحاجب في `src/gm82_actions.c:96`، وظهر `SKIP` لاختباري Full Core اللذين يتطلبان عينات GM82 النصية المحلية غير المتوفرة.
 
 هذا يطابق ترتيب Timeline المذكور في ملف مرجعي للمشروع، لكنه لا يعوض مقارنة runtime فعلية مع GM82 Portable. التغيير موجود محليًا على الفرع `fix/bytecode-with-mirror-regressions`؛ `main` و`origin/main` ما زالا عند `3760a105ac244d1ea1682df8681c99532fdefb80`. لم يُنشأ commit أو PR ولم يُدفع التغيير إلى GitHub.
+
+
+## متابعة دمج main وحل تعارض PR #393 (22:11 +02:00)
+
+بعد فتح PR، تقدّم `main` من `3760a105` إلى `8d42248f` وأضاف دعم `switch` في compiler/interpreter وAST، وتحسينات parser وDS callbacks. لم أستبدل هذه التغييرات بنسخة الفرع الأقدم: أُدمجت نسخة main الأحدث في فرع PR، وحُفظ دعم switch وديناميكية loop-fixups، ثم أُعيد تطبيق استعادة `self/other` على جميع مخارج bytecode، إصلاح continuation في AST لـ`do-until`، واختبارات `with` وTimeline/Alarm.
+
+حُفظت أيضًا اختبارات main الخاصة بـswitch وcontinue، وأُضيف اختبار لحالة `continue` التي تنهي do-until. أُبقي fixture `with_edges` على مصفوفة main stack-backed مع تنظيف runtime، وأُدخلت مصادر/اختبار DS callback الجديد من main في النسختين المرآتيتين حتى تطابق المصدر الأساسي.
+
+### تحقق النسخة المدموجة محليًا
+
+- `python3 tools/run_engine_suite.py`: **40/40**، وHost pipeline **4/4** (`RESULT OK`).
+- `make test` في Full Core بعد البناء النظيف: **34 هدفًا، 0 أخطاء، exit 0**. شمل ذلك `test_gml_parser` و`test_event_order` و`test_gm82_text_reader_security` و`test_gml_ds_callbacks` و`test_with_edges`؛ trace Timeline/Alarm/Step هو `12345`.
+- `verify_core_mirrors.py`: **PASS**، تطابق 55 ملف source و49 header و38 test و4 ملفات جذرية لكل مرآة؛ CMake/Makefile متطابقان بنيويًا.
+- `test_core_mirror_verifier.py`: **PASS**.
+
+هذه النتائج تخص الفرع المحلي بعد دمج `origin/main` عند `8d42248f` وحل التعارضات. لم يُدفع تحديث الفرع بعد في هذا السجل؛ يجب انتظار فحوص GitHub الجديدة على رأس PR قبل إتمام دمجه في `main`.

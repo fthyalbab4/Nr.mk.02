@@ -12,10 +12,10 @@ int main(void) {
     gm82_runtime rt;
     gm82_runtime_init(&rt);
     gm82_decoded_object_list objs;
-    memset(&objs, 0, sizeof(objs));
+    gm82_decoded_object obj_arr[2];
+    memset(obj_arr, 0, sizeof(obj_arr));
     objs.count = 2;
-    objs.items = (gm82_decoded_object *)calloc((size_t)objs.count, sizeof(*objs.items));
-    if (!objs.items) return 1;
+    objs.items = obj_arr;
     strncpy(objs.items[0].name, "obj_a", sizeof(objs.items[0].name) - 1);
     objs.items[0].parent_index = -1;
     strncpy(objs.items[1].name, "obj_b", sizeof(objs.items[1].name) - 1);
@@ -70,8 +70,7 @@ int main(void) {
     }
 
     gm82_gml_eval_block(&rt, self, "with (all) { instance_destroy(); }");
-    printf("with_edges PASS\n");
     gm82_runtime_cleanup(&rt);
-    free(objs.items);
+    printf("with_edges PASS\n");
     return 0;
 }

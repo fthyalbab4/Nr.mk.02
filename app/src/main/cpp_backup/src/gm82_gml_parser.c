@@ -122,6 +122,12 @@ static void parser_error(gm82_gml_parser *p, const char *msg) {
 static bool advance(gm82_gml_parser *p) { return gm82_gml_lexer_next(&p->lexer, &p->current); }
 static bool accept(gm82_gml_parser *p, gm82_gml_token_kind k) { if (p->current.kind != k) return false; advance(p); return true; }
 static bool expect(gm82_gml_parser *p, gm82_gml_token_kind k) { if (accept(p, k)) return true; parser_error(p, "unexpected token"); return false; }
+static char *operator_text(const gm82_gml_token *t) {
+    if (t && t->kind == GM82_TOK_IDENTIFIER &&
+        (!strcmp(t->text, "and") || !strcmp(t->text, "or") || !strcmp(t->text, "not")))
+        return copy_text(t->text);
+    return copy_text(t ? gm82_gml_token_kind_name(t->kind) : "");
+}
 
 static gm82_gml_ast *expression(gm82_gml_parser *p);
 static gm82_gml_ast *statement(gm82_gml_parser *p);
@@ -161,68 +167,27 @@ static gm82_gml_ast *unary(gm82_gml_parser *p) {
     bool word_not = p->current.kind == GM82_TOK_IDENTIFIER && strcmp(p->current.text, "not") == 0;
     if (p->current.kind == GM82_TOK_MINUS || p->current.kind == GM82_TOK_PLUS || p->current.kind == GM82_TOK_NOT || word_not) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *n = node(GM82_AST_UNARY, &t); if (!n) return NULL;
-        n->text = copy_text(word_not ? "not " : gm82_gml_token_kind_name(t.kind)); n->a = unary(p); if (!n->a) { gm82_gml_ast_free(n); return NULL; } return n;
+        n->text = operator_text(&t); n->a = unary(p); if (!n->text || !n->a) { gm82_gml_ast_free(n); return NULL; } return n;
     }
     return primary(p);
 }
-static const char *binary_operator_text(const gm82_gml_token *t) {
-    if (!t) return "";
-    if (t->kind == GM82_TOK_IDENTIFIER) {
-        if (!strcmp(t->text, "and")) return " and ";
-        if (!strcmp(t->text, "or")) return " or ";
-    }
-    switch (t->kind) {
-        case GM82_TOK_PLUS: return " + ";
-        case GM82_TOK_MINUS: return " - ";
-        case GM82_TOK_STAR: return " * ";
-        case GM82_TOK_SLASH: return " / ";
-        case GM82_TOK_PERCENT: return " % ";
-        case GM82_TOK_EQUAL: return " == ";
-        case GM82_TOK_NOT_EQUAL: return " != ";
-        case GM82_TOK_LESS: return " < ";
-        case GM82_TOK_LESS_EQUAL: return " <= ";
-        case GM82_TOK_GREATER: return " > ";
-        case GM82_TOK_GREATER_EQUAL: return " >= ";
-        case GM82_TOK_AND: return " && ";
-        case GM82_TOK_OR: return " || ";
-        default: return gm82_gml_token_kind_name(t->kind);
-    }
-}
-static gm82_gml_ast *binary_level(gm82_gml_parser *p, gm82_gml_ast *(*sub)(gm82_gml_parser *), gm82_gml_token_kind k1, gm82_gml_token_kind k2) {
+static gm82_gml_ast *binary_level(gm82_gml_parser *p, gm82_gml_ast *(*sub)(gm82_gml_parser *), gm82_gml_token_kind k1, gm82_gml_token_kind k2, gm82_gml_token_kind k3) {
     gm82_gml_ast *left = sub(p); if (!left) return NULL;
-    while (p->current.kind == k1 || p->current.kind == k2) {
+    while (p->current.kind == k1 || p->current.kind == k2 || (k3 != GM82_TOK_EOF && p->current.kind == k3)) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = sub(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(binary_operator_text(&t)); n->a = left; n->b = right; left = n;
-        }
-    return left;
-}
-static gm82_gml_ast *mul(gm82_gml_parser *p) {
-    gm82_gml_ast *left = unary(p);
-    if (!left) return NULL;
-    while (p->current.kind == GM82_TOK_STAR ||
-           p->current.kind == GM82_TOK_SLASH ||
-           p->current.kind == GM82_TOK_PERCENT) {
-        gm82_gml_token t = p->current;
-        advance(p);
-        gm82_gml_ast *right = unary(p);
-        if (!right) { gm82_gml_ast_free(left); return NULL; }
-        gm82_gml_ast *n = node(GM82_AST_BINARY, &t);
-        if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(binary_operator_text(&t));
-        n->a = left;
-        n->b = right;
-        left = n;
+        n->text = operator_text(&t); n->a = left; n->b = right; left = n;
     }
     return left;
 }
-static gm82_gml_ast *add(gm82_gml_parser *p) { return binary_level(p, mul, GM82_TOK_PLUS, GM82_TOK_MINUS); }
+static gm82_gml_ast *mul(gm82_gml_parser *p) { return binary_level(p, unary, GM82_TOK_STAR, GM82_TOK_SLASH, GM82_TOK_PERCENT); }
+static gm82_gml_ast *add(gm82_gml_parser *p) { return binary_level(p, mul, GM82_TOK_PLUS, GM82_TOK_MINUS, GM82_TOK_EOF); }
 static gm82_gml_ast *compare(gm82_gml_parser *p) {
     gm82_gml_ast *left = add(p); if (!left) return NULL;
     while (p->current.kind >= GM82_TOK_EQUAL && p->current.kind <= GM82_TOK_GREATER_EQUAL) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = add(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(binary_operator_text(&t)); n->a = left; n->b = right; left = n;
+        n->text = operator_text(&t); n->a = left; n->b = right; left = n;
     }
     return left;
 }
@@ -233,7 +198,7 @@ static gm82_gml_ast *logic(gm82_gml_parser *p) {
             (!strcmp(p->current.text, "and") || !strcmp(p->current.text, "or")))) {
         gm82_gml_token t = p->current; advance(p); gm82_gml_ast *right = compare(p); if (!right) { gm82_gml_ast_free(left); return NULL; }
         gm82_gml_ast *n = node(GM82_AST_BINARY, &t); if (!n) { gm82_gml_ast_free(left); gm82_gml_ast_free(right); return NULL; }
-        n->text = copy_text(binary_operator_text(&t)); n->a = left; n->b = right; left = n;
+        n->text = operator_text(&t); n->a = left; n->b = right; left = n;
     }
     return left;
 }
@@ -250,6 +215,54 @@ static gm82_gml_ast *block(gm82_gml_parser *p) {
     b->a = head; return b;
 }
 static gm82_gml_ast *body(gm82_gml_parser *p) { return p->current.kind == GM82_TOK_LBRACE ? block(p) : statement(p); }
+static bool is_word(const gm82_gml_parser *p, const char *word) {
+    return p->current.kind == GM82_TOK_IDENTIFIER && strcmp(p->current.text, word) == 0;
+}
+static void append_node(gm82_gml_ast **head, gm82_gml_ast **tail, gm82_gml_ast *item) {
+    if (!*head) *head = item; else (*tail)->next = item;
+    *tail = item;
+}
+static gm82_gml_ast *switch_case_body(gm82_gml_parser *p) {
+    gm82_gml_ast *block_node = node(GM82_AST_BLOCK, &p->current);
+    gm82_gml_ast *head = NULL, *tail = NULL;
+    if (!block_node) return NULL;
+    while (p->current.kind != GM82_TOK_RBRACE && p->current.kind != GM82_TOK_EOF &&
+           !is_word(p, "case") && !is_word(p, "default")) {
+        gm82_gml_ast *item = statement(p);
+        if (!item) { gm82_gml_ast_free(block_node); gm82_gml_ast_free(head); return NULL; }
+        append_node(&head, &tail, item);
+    }
+    block_node->a = head;
+    return block_node;
+}
+static gm82_gml_ast *parse_switch(gm82_gml_parser *p, const gm82_gml_token *start) {
+    gm82_gml_ast *sw = node(GM82_AST_SWITCH, start), *head = NULL, *tail = NULL;
+    if (!sw || !expect(p, GM82_TOK_LPAREN)) { gm82_gml_ast_free(sw); return NULL; }
+    sw->a = expression(p);
+    if (!sw->a || !expect(p, GM82_TOK_RPAREN) || !expect(p, GM82_TOK_LBRACE)) { gm82_gml_ast_free(sw); return NULL; }
+    while (p->current.kind != GM82_TOK_RBRACE && p->current.kind != GM82_TOK_EOF) {
+        gm82_gml_token case_token = p->current;
+        gm82_gml_ast *item = node(GM82_AST_SWITCH_CASE, &case_token);
+        if (!item) { gm82_gml_ast_free(sw); gm82_gml_ast_free(head); return NULL; }
+        if (is_word(p, "case")) {
+            advance(p);
+            item->a = expression(p);
+            if (!item->a || !expect(p, GM82_TOK_COLON)) { gm82_gml_ast_free(item); gm82_gml_ast_free(sw); gm82_gml_ast_free(head); return NULL; }
+        } else if (is_word(p, "default")) {
+            advance(p);
+            if (!expect(p, GM82_TOK_COLON)) { gm82_gml_ast_free(item); gm82_gml_ast_free(sw); gm82_gml_ast_free(head); return NULL; }
+        } else {
+            parser_error(p, "expected case or default");
+            gm82_gml_ast_free(item); gm82_gml_ast_free(sw); gm82_gml_ast_free(head); return NULL;
+        }
+        item->b = switch_case_body(p);
+        if (!item->b) { gm82_gml_ast_free(item); gm82_gml_ast_free(sw); gm82_gml_ast_free(head); return NULL; }
+        append_node(&head, &tail, item);
+    }
+    if (!expect(p, GM82_TOK_RBRACE)) { gm82_gml_ast_free(sw); gm82_gml_ast_free(head); return NULL; }
+    sw->b = head;
+    return sw;
+}
 static gm82_gml_ast *assignment_expression(gm82_gml_parser *p) {
     gm82_gml_token start = p->current;
     gm82_gml_ast *left = expression(p);
@@ -275,6 +288,7 @@ static gm82_gml_ast *statement(gm82_gml_parser *p) {
         if (!strcmp(p->current.text, "do")) { advance(p); gm82_gml_ast *n = node(GM82_AST_DO_UNTIL, &t); n->a = body(p); if (p->current.kind != GM82_TOK_IDENTIFIER || strcmp(p->current.text, "until")) { parser_error(p, "expected until"); gm82_gml_ast_free(n); return NULL; } advance(p); if (!expect(p, GM82_TOK_LPAREN)) { gm82_gml_ast_free(n); return NULL; } n->b = expression(p); if (!expect(p, GM82_TOK_RPAREN)) { gm82_gml_ast_free(n); return NULL; } return n; }
         if (!strcmp(p->current.text, "repeat")) { advance(p); gm82_gml_ast *n = node(GM82_AST_REPEAT, &t); if (!expect(p, GM82_TOK_LPAREN)) return n; n->a = expression(p); if (!expect(p, GM82_TOK_RPAREN)) { gm82_gml_ast_free(n); return NULL; } n->b = body(p); return n; }
         if (!strcmp(p->current.text, "with")) { advance(p); gm82_gml_ast *n = node(GM82_AST_WITH, &t); if (!expect(p, GM82_TOK_LPAREN)) return n; n->a = expression(p); if (!expect(p, GM82_TOK_RPAREN)) { gm82_gml_ast_free(n); return NULL; } n->b = body(p); return n; }
+        if (!strcmp(p->current.text, "switch")) { advance(p); return parse_switch(p, &t); }
         if (!strcmp(p->current.text, "for")) {
             advance(p); gm82_gml_ast *n = node(GM82_AST_FOR, &t);
             if (!expect(p, GM82_TOK_LPAREN)) { gm82_gml_ast_free(n); return NULL; }
@@ -305,7 +319,7 @@ gm82_gml_ast *gm82_gml_parse_program(gm82_gml_parser *p) {
 }
 const char *gm82_gml_parser_error(const gm82_gml_parser *p) { return p ? p->error : "invalid parser"; }
 const char *gm82_gml_ast_kind_name(gm82_gml_ast_kind k) {
-    switch (k) { case GM82_AST_BLOCK:return "block"; case GM82_AST_NUMBER:return "number"; case GM82_AST_STRING:return "string"; case GM82_AST_IDENTIFIER:return "identifier"; case GM82_AST_MEMBER:return "member"; case GM82_AST_INDEX:return "index"; case GM82_AST_CALL:return "call"; case GM82_AST_UNARY:return "unary"; case GM82_AST_BINARY:return "binary"; case GM82_AST_ASSIGN:return "assign"; case GM82_AST_EXPR_STMT:return "expr_stmt"; case GM82_AST_IF:return "if"; case GM82_AST_WHILE:return "while"; case GM82_AST_DO_UNTIL:return "do_until"; case GM82_AST_REPEAT:return "repeat"; case GM82_AST_FOR:return "for"; case GM82_AST_WITH:return "with"; case GM82_AST_RETURN:return "return"; case GM82_AST_BREAK:return "break"; case GM82_AST_CONTINUE:return "continue"; default:return "unknown"; }
+    switch (k) { case GM82_AST_BLOCK:return "block"; case GM82_AST_NUMBER:return "number"; case GM82_AST_STRING:return "string"; case GM82_AST_IDENTIFIER:return "identifier"; case GM82_AST_MEMBER:return "member"; case GM82_AST_INDEX:return "index"; case GM82_AST_CALL:return "call"; case GM82_AST_UNARY:return "unary"; case GM82_AST_BINARY:return "binary"; case GM82_AST_ASSIGN:return "assign"; case GM82_AST_EXPR_STMT:return "expr_stmt"; case GM82_AST_IF:return "if"; case GM82_AST_WHILE:return "while"; case GM82_AST_DO_UNTIL:return "do_until"; case GM82_AST_REPEAT:return "repeat"; case GM82_AST_FOR:return "for"; case GM82_AST_WITH:return "with"; case GM82_AST_SWITCH:return "switch"; case GM82_AST_SWITCH_CASE:return "switch_case"; case GM82_AST_RETURN:return "return"; case GM82_AST_BREAK:return "break"; case GM82_AST_CONTINUE:return "continue"; default:return "unknown"; }
 }
 void gm82_gml_ast_free(gm82_gml_ast *n) {
     while (n) { gm82_gml_ast *next = n->next; gm82_gml_ast_free(n->a); gm82_gml_ast_free(n->b); gm82_gml_ast_free(n->c); gm82_gml_ast_free(n->d); free(n->text); free(n); n = next; }

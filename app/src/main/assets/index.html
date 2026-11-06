@@ -36547,6 +36547,7 @@ const createEngineHTML = (projectData) => {
     };
     window.file_drag_count = () => _gm82_dragged_files.length;
     window.file_drag_name = (idx) => _gm82_dragged_files[idx] || "";
+    window.file_drag_clear = () => { _gm82_dragged_files.length = 0; return 0; };
 
     // --- GM82Alpha: Window Transparency & Chromakey ---
     window.window_set_alphablend = (enable, alpha = 1.0) => {
@@ -98018,7 +98019,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                     srcDoc: content,
                     className: "w-full h-full border-none select-none z-10",
                     title: "Game Engine",
-                    sandbox: "allow-scripts allow-modals allow-pointer-lock",
+                    sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
                     tabIndex: 0
                   }),
                   /* CRT Scanlines */

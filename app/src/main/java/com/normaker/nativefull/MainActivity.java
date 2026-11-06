@@ -33,6 +33,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.graphics.drawable.GradientDrawable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -86,6 +87,7 @@ public class MainActivity extends Activity {
     private Button nativePlayButton;
     private Button returnToStudioButton;
     private Button engineRecordButton;
+    private FrameLayout nesControlsOverlay;
     private EngineVideoRecorder engineVideoRecorder;
     private Bitmap frameBitmap;
     private ValueCallback<Uri[]> pendingFileCallback;
@@ -334,6 +336,13 @@ public class MainActivity extends Activity {
         gameParams.topMargin = controlsInset;
         root.addView(nativeGameView, gameParams);
 
+        nesControlsOverlay = buildNesControlsOverlay();
+        nesControlsOverlay.setVisibility(View.GONE);
+        FrameLayout.LayoutParams nesParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        nesParams.topMargin = controlsInset;
+        root.addView(nesControlsOverlay, nesParams);
+
         nativePlayButton = new Button(this);
         nativePlayButton.setText("تشغيل GMK الأصلي");
         nativePlayButton.setOnClickListener(v -> showNativePlayer());
@@ -376,6 +385,7 @@ public class MainActivity extends Activity {
         lastFrameNanos = 0;
         webView.setVisibility(View.GONE);
         nativeGameView.setVisibility(View.VISIBLE);
+        nesControlsOverlay.setVisibility(View.VISIBLE);
         nativePlayButton.setVisibility(View.GONE);
         returnToStudioButton.setVisibility(View.VISIBLE);
         engineRecordButton.setVisibility(View.VISIBLE);
@@ -390,6 +400,7 @@ public class MainActivity extends Activity {
         loopHandler.removeCallbacks(nativeFrameLoop);
         releaseNativeKeys();
         nativeGameView.setVisibility(View.GONE);
+        nesControlsOverlay.setVisibility(View.GONE);
         returnToStudioButton.setVisibility(View.GONE);
         engineRecordButton.setVisibility(View.GONE);
         nativePlayButton.setVisibility(View.VISIBLE);
@@ -450,9 +461,97 @@ public class MainActivity extends Activity {
         boolean inPad = y >= h * 0.58f;
         setNativeKey(VK_LEFT, inPad && x < w * 0.25f);
         setNativeKey(VK_RIGHT, inPad && x >= w * 0.25f && x < w * 0.50f);
-        setNativeKey(VK_UP, false);
+        setNativeKey(VK_UP, inPad && x >= w * 0.50f && x < w * 0.70f);
         setNativeKey(VK_DOWN, false);
-        setNativeKey(VK_SPACE, inPad && x >= w * 0.70f);
+        boolean jump = inPad && x >= w * 0.70f;
+        setNativeKey(VK_SPACE, jump);
+        setNativeKey(VK_UP, jump || (inPad && x >= w * 0.50f && x < w * 0.70f));
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private GradientDrawable controlBackground(boolean round) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(Color.argb(185, 5, 10, 15));
+        drawable.setStroke(dp(1), Color.rgb(54, 188, 233));
+        drawable.setCornerRadius(dp(round ? 42 : 8));
+        return drawable;
+    }
+
+    private Button nesButton(String label, boolean round, int width, int height) {
+        Button button = new Button(this);
+        button.setText(label);
+        button.setTextColor(Color.rgb(54, 197, 245));
+        button.setTextSize(round ? 18 : 11);
+        button.setAllCaps(false);
+        button.setPadding(0, 0, 0, 0);
+        button.setBackground(controlBackground(round));
+        button.setMinWidth(0);
+        button.setMinHeight(0);
+        button.setLayoutParams(new FrameLayout.LayoutParams(dp(width), dp(height)));
+        return button;
+    }
+
+    private void bindHeld(Button button, int... keys) {
+        button.setOnTouchListener((v, event) -> {
+            int action = event.getActionMasked();
+            boolean down = action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE;
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) down = false;
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                for (int key : keys) setNativeKey(key, down);
+            }
+            return true;
+        });
+    }
+
+    private FrameLayout buildNesControlsOverlay() {
+        FrameLayout overlay = new FrameLayout(this);
+        overlay.setClipChildren(false);
+        overlay.setClipToPadding(false);
+
+        Button exit = nesButton("خروج", false, 70, 42);
+        FrameLayout.LayoutParams exitParams = new FrameLayout.LayoutParams(dp(70), dp(42), Gravity.TOP | Gravity.END);
+        exitParams.setMargins(0, dp(10), dp(12), 0);
+        exit.setLayoutParams(exitParams);
+        exit.setOnClickListener(v -> showStudio());
+        overlay.addView(exit);
+
+        Button left = nesButton("◀", false, 64, 64);
+        FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
+        leftParams.setMargins(dp(28), 0, 0, dp(44)); left.setLayoutParams(leftParams);
+        bindHeld(left, VK_LEFT); overlay.addView(left);
+        Button right = nesButton("▶", false, 64, 64);
+        FrameLayout.LayoutParams rightParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
+        rightParams.setMargins(dp(164), 0, 0, dp(44)); right.setLayoutParams(rightParams);
+        bindHeld(right, VK_RIGHT); overlay.addView(right);
+        Button up = nesButton("▲", false, 64, 64);
+        FrameLayout.LayoutParams upParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
+        upParams.setMargins(dp(96), 0, 0, dp(112)); up.setLayoutParams(upParams);
+        bindHeld(up, VK_UP); overlay.addView(up);
+        Button down = nesButton("▼", false, 64, 64);
+        FrameLayout.LayoutParams downParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM | Gravity.START);
+        downParams.setMargins(dp(96), 0, 0, dp(44)); down.setLayoutParams(downParams);
+        bindHeld(down, VK_DOWN); overlay.addView(down);
+
+        Button b = nesButton("B", true, 76, 76);
+        FrameLayout.LayoutParams bParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.BOTTOM | Gravity.END);
+        bParams.setMargins(0, 0, dp(148), dp(62)); b.setLayoutParams(bParams);
+        bindHeld(b, VK_SPACE); overlay.addView(b);
+        Button a = nesButton("A", true, 76, 76);
+        FrameLayout.LayoutParams aParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.BOTTOM | Gravity.END);
+        aParams.setMargins(0, 0, dp(48), dp(32)); a.setLayoutParams(aParams);
+        bindHeld(a, VK_UP, VK_SPACE); overlay.addView(a);
+        Button select = nesButton("SELECT", false, 92, 38);
+        FrameLayout.LayoutParams selectParams = new FrameLayout.LayoutParams(dp(92), dp(38), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        selectParams.setMargins(0, 0, dp(34), dp(84)); select.setLayoutParams(selectParams);
+        bindHeld(select, VK_SPACE); overlay.addView(select);
+        Button start = nesButton("START", false, 92, 38);
+        FrameLayout.LayoutParams startParams = new FrameLayout.LayoutParams(dp(92), dp(38), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        startParams.setMargins(dp(34), 0, 0, dp(84)); start.setLayoutParams(startParams);
+        bindHeld(start, VK_ENTER); overlay.addView(start);
+        return overlay;
     }
 
     private boolean handleNativeTouch(MotionEvent event) {

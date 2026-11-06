@@ -53,8 +53,14 @@ static bool emit_node(source_buf *b, const gm82_gml_ast *n) {
         case GM82_AST_MEMBER: return emit_node(b, n->a) && emit_char(b, '.') && emit(b, n->text ? n->text : "");
         case GM82_AST_INDEX: return emit_node(b, n->a) && emit_char(b, '[') && emit_node(b, n->b) && emit_char(b, ']');
         case GM82_AST_CALL: return emit_node(b, n->a) && emit_char(b, '(') && emit_list(b, n->b, ", ") && emit_char(b, ')');
-        case GM82_AST_UNARY: return emit(b, n->text ? n->text : "") && emit_node(b, n->a);
-        case GM82_AST_BINARY: return emit_char(b, '(') && emit_node(b, n->a) && emit(b, n->text ? n->text : "") && emit_node(b, n->b) && emit_char(b, ')');
+        case GM82_AST_UNARY:
+            return emit(b, n->text ? n->text : "") &&
+                   (n->text && (!strcmp(n->text, "not") || !strcmp(n->text, "and") || !strcmp(n->text, "or")) ? emit_char(b, ' ') : true) &&
+                   emit_node(b, n->a);
+        case GM82_AST_BINARY:
+            return emit_char(b, '(') && emit_node(b, n->a) && emit_char(b, ' ') &&
+                   emit(b, n->text ? n->text : "") && emit_char(b, ' ') &&
+                   emit_node(b, n->b) && emit_char(b, ')');
         case GM82_AST_ASSIGN: return emit_node(b, n->a) && emit(b, n->text ? n->text : "=") && emit_node(b, n->b);
         case GM82_AST_EXPR_STMT: return emit_node(b, n->a) && emit_char(b, ';');
         case GM82_AST_BLOCK: return emit_char(b, '{') && emit_list(b, n->a, " ") && emit_char(b, '}');
@@ -62,8 +68,19 @@ static bool emit_node(source_buf *b, const gm82_gml_ast *n) {
         case GM82_AST_WHILE: return emit(b, "while (") && emit_node(b, n->a) && emit(b, ") ") && emit_node(b, n->b);
         case GM82_AST_DO_UNTIL: return emit(b, "do ") && emit_node(b, n->a) && emit(b, " until (") && emit_node(b, n->b) && emit(b, ");");
         case GM82_AST_REPEAT: return emit(b, "repeat (") && emit_node(b, n->a) && emit(b, ") ") && emit_node(b, n->b);
-        case GM82_AST_FOR: return emit(b, "for (") && (!n->a || emit_node(b, n->a)) && emit_char(b, ';') && (!n->b || emit_node(b, n->b)) && emit_char(b, ';') && (!n->c || emit_node(b, n->c)) && emit(b, ") ") && emit_node(b, n->d);
+        case GM82_AST_FOR: return emit(b, "for (") && (n->a ? emit_node(b, n->a) : true) && emit(b, ";") && (n->b ? emit_node(b, n->b) : true) && emit(b, ";") && (n->c ? emit_node(b, n->c) : true) && emit(b, ") ") && emit_node(b, n->d);
         case GM82_AST_WITH: return emit(b, "with (") && emit_node(b, n->a) && emit(b, ") ") && emit_node(b, n->b);
+        case GM82_AST_SWITCH: {
+            if (!emit(b, "switch (") || !emit_node(b, n->a) || !emit(b, ") {")) return false;
+            for (const gm82_gml_ast *item = n->b; item; item = item->next) {
+                if (!emit_char(b, ' ') || !emit_node(b, item)) return false;
+            }
+            return emit(b, " }");
+        }
+        case GM82_AST_SWITCH_CASE:
+            if (n->a && (!emit(b, "case ") || !emit_node(b, n->a))) return false;
+            if (!n->a && !emit(b, "default")) return false;
+            return emit_char(b, ':') && emit_node(b, n->b);
         case GM82_AST_RETURN: return emit(b, "return") && (n->a ? (emit_char(b, ' ') && emit_node(b, n->a)) : true) && emit_char(b, ';');
         case GM82_AST_BREAK: return emit(b, "break;");
         case GM82_AST_CONTINUE: return emit(b, "continue;");
@@ -146,6 +163,23 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
             char source[GM82_GML_SOURCE_MAX];
             return gm82_gml_ast_to_source(n, source, sizeof(source)) && gm82_gml_eval_stmt(rt, self, source);
         }
+        case GM82_AST_SWITCH: {
+            double selector = 0;
+            if (!eval_number(rt, self, n->a, &selector)) return false;
+            const gm82_gml_ast *selected = NULL, *fallback = NULL;
+            for (const gm82_gml_ast *item = n->b; item; item = item->next) {
+                if (!item->a) { fallback = item; continue; }
+                double label = 0;
+                if (!eval_number(rt, self, item->a, &label)) return false;
+                if (selector == label) { selected = item; break; }
+            }
+            if (!selected) selected = fallback;
+            for (const gm82_gml_ast *item = selected; item && !r->returned && !r->continued; item = item->next) {
+                if (!execute_node(rt, self, item->b, r)) return false;
+                if (r->broke) { r->broke = false; break; }
+            }
+            return true;
+        }
         case GM82_AST_RETURN: {
             double value = 0; if (n->a && !eval_number(rt, self, n->a, &value)) return false;
             r->returned = true; r->return_value = value; return true;
@@ -166,6 +200,7 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
 bool gm82_gml_execute_ast(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *program, gm82_gml_exec_result *result) {
     if (!rt || !program || !result) return false;
     memset(result, 0, sizeof(*result));
-    return execute_node(rt, self, program, result) && result->steps <= GM82_GML_EXEC_MAX_STEPS &&
-           !result->broke && !result->continued;
+    if (!execute_node(rt, self, program, result)) return false;
+    if (result->broke || result->continued) return false;
+    return result->steps <= GM82_GML_EXEC_MAX_STEPS;
 }
