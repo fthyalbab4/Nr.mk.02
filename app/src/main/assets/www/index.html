@@ -97563,7 +97563,11 @@ const __norForwardAndroidKey = (keyCodeOrName, down) => {
     const frames = document.querySelectorAll('iframe');
     for (const frame of frames) {
       const win = frame && frame.contentWindow;
-      if (!win || typeof win.syncKeyboardToPlayers !== 'function') continue;
+      if (!win) continue;
+      try {
+        win.postMessage({ type: 'nor-maker-input', key: keyCodeOrName, down: !!down }, '*');
+      } catch (_) {}
+      if (typeof win.syncKeyboardToPlayers !== 'function') continue;
       win.syncKeyboardToPlayers(keyCodeOrName, !!down);
       const code = typeof keyCodeOrName === 'number' ? keyCodeOrName : 0;
       const key = typeof keyCodeOrName === 'string' ? keyCodeOrName : String(keyCodeOrName);
@@ -97579,6 +97583,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
   const internalIframeRef = reactExports.useRef(null);
   const iframeRef = forwardedIframeRef || internalIframeRef;
   const containerRef = reactExports.useRef(null);
+  const inputChannelTokenRef = reactExports.useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
   const [activeKeys, setActiveKeys] = reactExports.useState({});
   const [detectedControls, setDetectedControls] = reactExports.useState(null);
   const [toastMessage, setToastMessage] = reactExports.useState(null);
@@ -97587,6 +97592,30 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
   const [isLandscapeMode, setIsLandscapeMode] = reactExports.useState(false);
   const [isGameFullscreen, setIsGameFullscreen] = reactExports.useState(false);
   const lastOrientationTap = reactExports.useRef(0);
+
+  const iframeContent = reactExports.useMemo(() => {
+    if (typeof content !== "string" || !content) return content;
+    const token = inputChannelTokenRef.current;
+    const bridge = `<script>(function(){
+      var TOKEN=${JSON.stringify(token)};
+      var ALLOWED={ArrowLeft:1,ArrowUp:1,ArrowRight:1,ArrowDown:1,Space:1,Enter:1,Escape:1,KeyZ:1,KeyX:1,KeyC:1,KeyA:1,KeyS:1,KeyD:1,KeyK:1,KeyJ:1,ShiftLeft:1,ControlLeft:1,37:1,38:1,39:1,40:1,32:1,13:1,27:1,65:1,67:1,68:1,74:1,75:1,88:1,90:1,16:1,17:1};
+      function apply(d){
+        if(!d || d.type!=="nor-maker-input" || (d.token && d.token!==TOKEN) || typeof d.down!=="boolean") return;
+        var code=typeof d.code==="string"?d.code:"";
+        var key=typeof d.key==="string"?d.key:"";
+        var kc=Number(d.keyCode)||(typeof d.key==="number"?d.key:0);
+        if(!ALLOWED[code] && !ALLOWED[key] && !ALLOWED[kc]) return;
+        var down=!!d.down;
+        try{if(typeof window.syncKeyboardToPlayers==="function"){if(kc)window.syncKeyboardToPlayers(kc,down);if(code)window.syncKeyboardToPlayers(code,down);if(key&&key!==code)window.syncKeyboardToPlayers(key,down);}}catch(_){}
+        try{if(window.Input&&typeof window.Input.syncKey==="function"){if(kc)window.Input.syncKey(kc,down);if(code)window.Input.syncKey(code,down);}}catch(_){}
+        try{if(window.P1_Input&&typeof window.P1_Input.syncKey==="function"){if(kc)window.P1_Input.syncKey(kc,down);if(code)window.P1_Input.syncKey(code,down);}}catch(_){}
+        try{var e=new KeyboardEvent(down?"keydown":"keyup",{key:key||code,code:code||key,keyCode:kc,which:kc,bubbles:true,cancelable:true});try{Object.defineProperty(e,"keyCode",{get:function(){return kc}});Object.defineProperty(e,"which",{get:function(){return kc}})}catch(_){}window.dispatchEvent(e);document.dispatchEvent(e);}catch(_){}
+      }
+      window.addEventListener("message",function(e){if(e.source===window.parent)apply(e.data);});
+    })();<\/script>`;
+    if (/<\/body>/i.test(content)) return content.replace(/<\/body>/i, bridge + "</body>");
+    return content + bridge;
+  }, [content]);
 
   const toggleGameFullscreen = reactExports.useCallback(async () => {
     const root = containerRef.current;
@@ -97774,7 +97803,17 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       }
     }
 
-    /* MARIO_FIX: sync parent + iframe Input */
+    /* Secure iframe bridge: sandboxed srcdoc cannot be accessed directly. */
+    try {
+      if (iwin && typeof iwin.postMessage === "function") {
+        iwin.postMessage({
+          type: "nor-maker-input",
+          token: inputChannelTokenRef.current,
+          key, code, keyCode, down: isDown
+        }, "*");
+      }
+    } catch (_bridgeError) {}
+    /* Legacy same-origin path remains best-effort for non-sandboxed embeds. */
     try {
       const _tgts = [];
       if (typeof window !== "undefined") _tgts.push(window);
@@ -98056,7 +98095,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                   /* Game Iframe */
                   /* @__PURE__ */ jsxRuntimeExports.jsx("iframe", {
                     ref: iframeRef,
-                    srcDoc: content,
+                    srcDoc: iframeContent,
                   className: "w-full h-full border-none select-none z-10",
                   title: "Game Engine",
                   sandbox: "allow-scripts allow-modals allow-pointer-lock",
