@@ -21,6 +21,11 @@ static LARGE_INTEGER g_qpc_frequency;
 static LARGE_INTEGER g_last_tick;
 static double g_step_accumulator = 0.0;
 static char g_loaded_path[MAX_PATH];
+static int g_window_active = 1;
+
+static void release_all_keys(void) {
+    for (int vk = 0; vk < 256; ++vk) gm82_native_key_up(vk);
+}
 
 static void set_title(HWND hwnd, const char *path) {
     char title[MAX_PATH + 64];
@@ -135,7 +140,7 @@ static void on_timer(HWND hwnd) {
     if (elapsed < 0.0) elapsed = 0.0;
     if (elapsed > 0.25) elapsed = 0.25;
 
-    if (gm82_native_is_running()) {
+    if (g_window_active && gm82_native_is_running()) {
         int speed = gm82_native_room_speed();
         if (speed < 1) speed = 30;
         if (speed > 1000) speed = 1000;
@@ -162,6 +167,19 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPAR
         QueryPerformanceCounter(&g_last_tick);
         SetTimer(hwnd, TIMER_ID, 8, NULL);
         DragAcceptFiles(hwnd, TRUE);
+        return 0;
+    case WM_ACTIVATEAPP:
+        g_window_active = wparam ? 1 : 0;
+        if (!g_window_active) {
+            release_all_keys();
+            g_step_accumulator = 0.0;
+        } else {
+            QueryPerformanceCounter(&g_last_tick);
+        }
+        return 0;
+    case WM_KILLFOCUS:
+        release_all_keys();
+        g_step_accumulator = 0.0;
         return 0;
     case WM_COMMAND:
         switch (LOWORD(wparam)) {
@@ -199,6 +217,7 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPAR
     case WM_DESTROY:
         KillTimer(hwnd, TIMER_ID);
         DragAcceptFiles(hwnd, FALSE);
+        release_all_keys();
         nor_win_audio_shutdown();
         gm82_native_shutdown();
         free(g_bgra);
