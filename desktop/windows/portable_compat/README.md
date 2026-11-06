@@ -8,5 +8,9 @@ Included:
 - `Lib/*.lib`: Drag-and-Drop action definitions.
 - `extensions/*.dat` and `extensions/*.ged`: extension metadata and definitions.
 - `MANIFEST.json`: source-relative provenance, byte sizes, and SHA-256 hashes.
+- `catalog.json`: generated names, function signatures, and Action-library catalog.
+- `binary_audit.json`: static PE architecture, imports, exports, and SHA-256 audit.
 
 Executable files, DLLs, CHM help files, `dxdata`, and `rundata` are deliberately excluded from this first stage. They require architecture, ABI, licensing, and runtime-dependency review before packaging.
+
+The binary audit found the supplied Portable executables and DLLs are x86/PE32. They are therefore not directly loadable by the current x64 Windows target. `gm82save.dll` exports printer-related entry points and `libeay32.dll` is a large legacy crypto library; neither is treated as a NOR engine backend.
