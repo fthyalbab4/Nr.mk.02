@@ -2615,6 +2615,63 @@ double gml_ds_list_replace(double id, double pos, double value) {
     return 1;
 }
 
+static int ds_list_snapshot(double id, double *out, int capacity) {
+    int index = (int)id;
+    if (!out || capacity <= 0 || index < 0 || index >= GM82_DS_LIST_MAX ||
+        !g_ds_lists[index].used) return -1;
+    int count = g_ds_lists[index].size;
+    if (count > capacity) count = capacity;
+    for (int i = 0; i < count; i++) out[i] = g_ds_lists[index].data[i];
+    return count;
+}
+
+double gml_ds_list_filter(double id, double script_index) {
+    double values[GM82_DS_LIST_CAP];
+    int count = ds_list_snapshot(id, values, GM82_DS_LIST_CAP);
+    if (count < 0) return -1;
+    double result = gml_ds_list_create();
+    if (result < 0) return -1;
+    for (int i = 0; i < count; i++) {
+        double args[2] = { values[i], (double)i };
+        int ok = 0;
+        double keep = gm82_gml_call_script(script_index, args, 2, &ok);
+        if (!ok) { gml_ds_list_destroy(result); return -1; }
+        if (keep != 0) gml_ds_list_add(result, values[i]);
+    }
+    return result;
+}
+
+double gml_ds_list_foreach(double id, double script_index) {
+    double values[GM82_DS_LIST_CAP];
+    int count = ds_list_snapshot(id, values, GM82_DS_LIST_CAP);
+    if (count < 0) return -1;
+    for (int i = 0; i < count; i++) {
+        double args[2] = { values[i], (double)i };
+        int ok = 0;
+        (void)gm82_gml_call_script(script_index, args, 2, &ok);
+        if (!ok) return -1;
+    }
+    return (double)count;
+}
+
+double gml_ds_list_map(double id, double script_index) {
+    double values[GM82_DS_LIST_CAP];
+    int count = ds_list_snapshot(id, values, GM82_DS_LIST_CAP);
+    if (count < 0) return -1;
+    double result = gml_ds_list_create();
+    if (result < 0) return -1;
+    for (int i = 0; i < count; i++) {
+        double args[2] = { values[i], (double)i };
+        int ok = 0;
+        double mapped = gm82_gml_call_script(script_index, args, 2, &ok);
+        if (!ok || !gml_ds_list_add(result, mapped)) {
+            gml_ds_list_destroy(result);
+            return -1;
+        }
+    }
+    return result;
+}
+
 #define GM82_DS_MAP_MAX 16
 #define GM82_DS_MAP_CAP 128
 typedef struct {
@@ -3693,6 +3750,25 @@ double gml_script_execute(double script_index) {
     const char *code = g_scripts->items[i].code;
     if (!code || !code[0]) return 0;
     return (double)gm82_gml_eval_block(g_rt, g_self, code);
+}
+
+double gm82_gml_call_script(double script_index, const double *args, int count, int *ok) {
+    if (ok) *ok = 0;
+    if (!g_scripts || !g_rt) return 0;
+    int index = (int)script_index;
+    if (index < 0 || index >= g_scripts->count) return 0;
+    const char *code = g_scripts->items[index].code;
+    if (!code || !code[0]) return 0;
+    double saved_args[16];
+    for (int i = 0; i < 16; i++) saved_args[i] = gm82_gml_get_script_arg(i);
+    gm82_instance *saved_self = g_self;
+    gm82_gml_set_script_args(args, count);
+    double result = 0;
+    bool success = gm82_gml_eval_callback(g_rt, g_self, code, &result);
+    gm82_gml_set_script_args(saved_args, 16);
+    gm82_gml_set_self(saved_self);
+    if (ok) *ok = success ? 1 : 0;
+    return success ? result : 0;
 }
 
 static char g_alarm_scripts[12][128];

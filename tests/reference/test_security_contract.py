@@ -20,7 +20,10 @@ class SecurityContractTests(unittest.TestCase):
         self.assertIn("settings.setAllowUniversalAccessFromFileURLs(false)", ACTIVITY)
         self.assertIn("isAllowedCloudGmkUrl", ACTIVITY)
         self.assertIn("connection.setInstanceFollowRedirects(false)", ACTIVITY)
-        self.assertNotIn("allow-scripts allow-same-origin", ACTIVE_HTML)
+        for path in ROOT.glob("app/src/main/assets/**/*.html"):
+            self.assertNotIn("allow-scripts allow-same-origin", path.read_text(errors="ignore"), path)
+        self.assertIn("boundedGmkBytes", ACTIVITY)
+        self.assertIn("byte[] bounded = boundedGmkBytes(bytes)", ACTIVITY)
 
     def test_bridge_has_no_arbitrary_path_export_or_general_code_api(self):
         methods = set(re.findall(r'@JavascriptInterface public \S+\s+(\w+)\(', ACTIVITY))

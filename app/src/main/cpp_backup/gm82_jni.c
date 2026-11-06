@@ -356,6 +356,22 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetRoom(JNIEnv *env, jcla
     return g_current_room;
 }
 
+JNIEXPORT jint JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetViewWidth(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    if (g_engine_loaded && g_runtime_active && g_engine_rt.view_w > 0)
+        return (jint)(g_engine_rt.view_w + 0.5);
+    return (jint)(g_room_w > 0 ? g_room_w : 640);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetViewHeight(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    if (g_engine_loaded && g_runtime_active && g_engine_rt.view_h > 0)
+        return (jint)(g_engine_rt.view_h + 0.5);
+    return (jint)(g_room_h > 0 ? g_room_h : 480);
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeSnapshotJson(JNIEnv *env, jclass clazz) {
     if (g_engine_loaded && g_runtime_active) {

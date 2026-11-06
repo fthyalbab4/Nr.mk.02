@@ -594,7 +594,7 @@ def update_controls():
           srcDoc: content,
           className: "w-full h-full border-none select-none",
           title: "Game Engine Preview",
-          sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
+          sandbox: "allow-scripts allow-modals allow-pointer-lock",
           tabIndex: 0
         })
       }),

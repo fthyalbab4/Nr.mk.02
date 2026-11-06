@@ -1215,6 +1215,10 @@ public class MainActivity extends Activity {
                 return bytes.length <= MAX_GMK_BYTES ? bytes : null;
             } catch (IllegalArgumentException invalid) { return null; }
         }
+        /** Reject oversized or empty native parser inputs at the JavaScript bridge boundary. */
+        private byte[] boundedGmkBytes(byte[] bytes) {
+            return bytes != null && bytes.length >= 12 && bytes.length <= MAX_GMK_BYTES ? bytes : null;
+        }
         @JavascriptInterface public boolean validateGmk(byte[] bytes) { return nativeValidateGmk(bytes); }
         @JavascriptInterface public String gmkResourceManifestBase64(String base64) {
             byte[] bytes = decodeBoundedGmkBase64(base64);
@@ -1231,10 +1235,22 @@ public class MainActivity extends Activity {
                 return result == null ? "{\"ok\":false,\"error\":\"native_import_failed\"}" : result;
             }
         }
-        @JavascriptInterface public String gmkHeaderJson(byte[] bytes) { return nativeGmkHeaderJson(bytes); }
-        @JavascriptInterface public String gmkLayoutJson(byte[] bytes) { return nativeGmkLayoutJson(bytes); }
-        @JavascriptInterface public String gmkChunkInventory(byte[] bytes) { return nativeGmkChunkInventory(bytes); }
-        @JavascriptInterface public String gmkResourceManifest(byte[] bytes) { return nativeGmkResourceManifest(bytes); }
+        @JavascriptInterface public String gmkHeaderJson(byte[] bytes) {
+            byte[] bounded = boundedGmkBytes(bytes);
+            return bounded == null ? "{\"valid\":false,\"error\":\"invalid_input\"}" : nativeGmkHeaderJson(bounded);
+        }
+        @JavascriptInterface public String gmkLayoutJson(byte[] bytes) {
+            byte[] bounded = boundedGmkBytes(bytes);
+            return bounded == null ? "{\"ok\":false,\"error\":\"invalid_input\"}" : nativeGmkLayoutJson(bounded);
+        }
+        @JavascriptInterface public String gmkChunkInventory(byte[] bytes) {
+            byte[] bounded = boundedGmkBytes(bytes);
+            return bounded == null ? "[]" : nativeGmkChunkInventory(bounded);
+        }
+        @JavascriptInterface public String gmkResourceManifest(byte[] bytes) {
+            byte[] bounded = boundedGmkBytes(bytes);
+            return bounded == null ? "{\"resources\":[],\"count\":0,\"error\":\"invalid_input\"}" : nativeGmkResourceManifest(bounded);
+        }
         @JavascriptInterface public String importGmxGmzToApp(String archivePath, String folderName) {
             if (archivePath == null || archivePath.length() == 0) return "";
             String safeName = (folderName == null || folderName.length() == 0 ? "gmx_import" : folderName).replaceAll("[^A-Za-z0-9._-]", "_");
