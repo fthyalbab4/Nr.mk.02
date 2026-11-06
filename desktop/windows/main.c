@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gm82_jni.h"
+#include "win_audio.h"
 
 #define APP_CLASS "NorMakerNativeWindow"
 #define IDM_OPEN  1001
@@ -44,6 +45,7 @@ static BOOL load_project(HWND hwnd, const char *path) {
     lstrcpynA(g_loaded_path, path, MAX_PATH);
     g_step_accumulator = 0.0;
     QueryPerformanceCounter(&g_last_tick);
+    (void)nor_win_audio_init();
     set_title(hwnd, path);
     InvalidateRect(hwnd, NULL, FALSE);
     return TRUE;
@@ -142,9 +144,11 @@ static void on_timer(HWND hwnd) {
         int updates = 0;
         while (g_step_accumulator >= step && updates < 5) {
             gm82_native_step();
+            nor_win_audio_pump();
             g_step_accumulator -= step;
             updates++;
         }
+        nor_win_audio_pump();
         if (updates == 5 && g_step_accumulator > step * 5.0)
             g_step_accumulator = step * 5.0;
         InvalidateRect(hwnd, NULL, FALSE);
@@ -195,6 +199,7 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPAR
     case WM_DESTROY:
         KillTimer(hwnd, TIMER_ID);
         DragAcceptFiles(hwnd, FALSE);
+        nor_win_audio_shutdown();
         gm82_native_shutdown();
         free(g_bgra);
         g_bgra = NULL;
