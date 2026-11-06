@@ -41,6 +41,46 @@
 
 ## 4. تقييم نسب الثبات والتطابق الحالية (Truthful Parity Assessment)
 وفقاً لمعايير التوثيق الصارمة للمشروع:
-- **Host C/JS Pipeline Verification**: **92% - 96%** (تم التحقق التام واجتياز 100% من اختبارات الـ Host الأوتوماتيكية).
+- **Host C/JS Pipeline Verification**: **92% - 96%** (تم التحقق التام واجتياز 100% من اختبارات الـ Host الأوتوماتيكية عبر 38 ملف اختبار C واختبارات الـ 4 ألعاب).
 - **GM82 Core API Parity**: **85% - 90%** (تغطية دوال الـ Builtins الأساسية وامتدادات gm82core).
-- **Android Device Verification**: **60% - 65%** (بناء ملف الـ APK النظيف وجاهز للاختبارات الفيزيائية على الأجهزة).
+- **Android Device Verification**: **60% - 65%** (بناء ملف الـ APK النظيف وجاهز للاختبارات الفيزيائية على الأجهزة، مع فصل تام بين بيئة الـ Host والأجهزة الحقيقية).
+
+---
+
+## 5. خطة إعادة البناء المعمارية الشاملة ومطابقة الهندسة العكسية (4-Phase Blueprint)
+
+استناداً إلى تحليل الهندسة العكسية لملفات GameMaker 8.2 الثنائية (`source/reverse-engineering/`) ومستودعات GM82Project الأصلية (`source/unpacked/`):
+
+### المرحلة الأولى: تحليل البنية التحتية واستخراج الـ Core Architecture
+* **دورة الحياة (Event Loop & Main Loop)**:
+  - الترتيب الزمني الصارم للإطار:
+    1. `GM82_PHASE_BEGIN_STEP`: تحديث مسارات الحركة الأولية والمؤقتات.
+    2. `GM82_PHASE_ALARM`: تشغيل منبهات التوقيت مع إدارة حالات الانتقال بين الغرف بأمان وإعادة ضبط الـ `frame_phase` إلى `IDLE`.
+    3. `GM82_PHASE_STEP`: تشغيل أحداث Step القياسية والتحقق من الاصطدام.
+    4. `GM82_PHASE_COLLISION`: معالجة الاصطدامات مع ربط متغير `other` بشكل دقيق وفكه فور الانتهاء.
+    5. `GM82_PHASE_END_STEP`: تحديث الحركات النهائية، الجاذبية، والاحتكاك.
+    6. `GM82_PHASE_PRE_DRAW` -> `GM82_PHASE_DRAW` -> `GM82_PHASE_POST_DRAW`: الرسم متعدد الطبقات والـ views.
+* **إدارة الـ Instances والذاكرة**:
+  - تأجيل عمليات التدمير (`deferred instance destruction`) أثناء أطوار التنفيذ النشطة لتفادي الوصول إلى مؤشرات تالفة (Dangling Pointers).
+  - استخدام Memory Arena للغرف لإعادة التهيئة اللحظية دون تسريب ذاكرة.
+
+### المرحلة الثانية: مطابقة نظام الـ GML Runner & AST Parser
+* **المفسر وإدارة الـ Scoping**:
+  - معالجة شجرة الإعراب (AST) والـ Bytecode الهجين لدعم استدعاءات السكربتات بمتغيرات `argument0` .. `argument15` و `arg0` .. `arg15`.
+  - التعامل مع الـ Local, Global, والـ Built-in variables (`x`, `y`, `hspeed`, `vspeed`, `gravity`, `friction`, `direction`, إلخ).
+* **الدوال المبنية داخلياً (GM82 Built-in Functions)**:
+  - استكمال الدوال المرجعية من `gm82core` (مثل دوال الهندسة الرياضية المتقدمة `lines_intersect`, `point_direction_pitch`, `unlerp`, `saturate`, ودوال الوقت والمصفوفات).
+  - الحفاظ على التوقيع الدقيق (Function Signatures) والسلوك المتطابق مع Windows IEEE-754.
+
+### المرحلة الثالثة: تحسين وحدة الرسوميات والأصول (Graphics & Asset Manager)
+* **الـ Sprites والـ Surface Rendering**:
+  - استخراج الـ Bounding Boxes ومحاذاة الـ Origins بدقة متناهية.
+  - دعم الـ Alpha Blending، نمط الألوان BGRA/RGBA، وتحويلات الـ Surface المباشرة.
+* **إدارة أصول اللعبة (Asset Pipeline)**:
+  - قراءة سريعة لملفات GMK وتحميل تدفقي للـ Textures دون إجهاد الذاكرة.
+
+### المرحلة الرابعة: وحدة الاختبار والمطابقة الشاملة (Verification Engine)
+* **المقارنة والتحقق المستمر**:
+  - فحص مخرجات الـ 4 ألعاب القياسية (`mario_bros.gmk`, `plataformas.gmk`, `shooter.gmk`, `zelda.gmk`).
+  - تشغيل منظومة التدقيق اليومية `daily_audit_runner.py` والتحقق من عدم وجود أي انحدار برمجي.
+  - المزامنة الثلاثية الإلزامية لكافة ملفات C بين (`app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`).
