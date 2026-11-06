@@ -166,6 +166,12 @@ double gml_ds_list_find_last(double id, double value);
 double gml_ds_list_pop(double id);
 double gml_ds_list_reverse(double id);
 double gml_ds_list_unique(double id);
+double gml_ds_list_filter(double id, double script_index);
+double gml_ds_list_foreach(double id, double script_index);
+double gml_ds_list_map(double id, double script_index);
+
+/* Invoke a loaded GMK/GML script with argument0..argumentN. */
+double gm82_gml_call_script(double script_index, const double *args, int count, int *ok);
 
 /* ds_map (numeric keys only) */
 double gml_ds_map_create(void);

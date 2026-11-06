@@ -172,6 +172,20 @@ static void test_do_until_control_flow(void) {
     gm82_runtime_cleanup(&rt);
 }
 
+static void test_do_until_continue_on_exit(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_gml_parser parser;
+    gm82_gml_parser_init(&parser, "do { continue; } until (1);");
+    gm82_gml_ast *root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    gm82_gml_exec_result result;
+    assert(gm82_gml_execute_ast(&rt, NULL, root, &result));
+    assert(!result.returned && !result.broke && !result.continued);
+    gm82_gml_ast_free(root);
+    gm82_runtime_cleanup(&rt);
+}
+
 static void test_bytecode_with_snapshot(void) {
     gm82_runtime rt;
     gm82_runtime_init(&rt);
@@ -191,6 +205,84 @@ static void test_bytecode_with_snapshot(void) {
     assert(gm82_gml_get_self() == first);
     gm82_gml_bytecode_free(&bytecode);
     gm82_gml_ast_free(root);
+    gm82_runtime_cleanup(&rt);
+}
+
+static void test_bytecode_with_nested_context_and_failure_cleanup(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_instance *first = gm82_runtime_instance_create(&rt, 7, 0, 0);
+    gm82_instance *second = gm82_runtime_instance_create(&rt, 7, 0, 0);
+    gm82_instance *other = gm82_runtime_instance_create(&rt, 9, 0, 0);
+    assert(first && second && other);
+    gm82_gml_set_self(first);
+    gm82_gml_set_other(other);
+
+    gm82_gml_parser parser;
+    gm82_gml_parser_init(&parser,
+        "with (7) { with (self) { x += 2; } }");
+    gm82_gml_ast *root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    gm82_gml_bytecode bytecode;
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    gm82_gml_exec_result result;
+    assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(first->x == 2.0 && second->x == 2.0 && other->x == 0.0);
+    assert(gm82_gml_get_self() == first);
+    assert(gm82_gml_get_other() == other);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(root);
+
+    gm82_gml_parser_init(&parser, "with (other) { x += 10; }");
+    root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(first->x == 2.0 && second->x == 2.0 && other->x == 10.0);
+    assert(gm82_gml_get_self() == first);
+    assert(gm82_gml_get_other() == other);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(root);
+
+    gm82_gml_parser_init(&parser, "with (noone) { x += 100; }");
+    root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(first->x == 2.0 && second->x == 2.0 && other->x == 10.0);
+    assert(gm82_gml_get_self() == first);
+    assert(gm82_gml_get_other() == other);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(root);
+
+    gm82_gml_parser_init(&parser, "with (7) { return x; }");
+    root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    assert(gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(result.returned && result.return_value == first->x);
+    assert(gm82_gml_get_self() == first);
+    assert(gm82_gml_get_other() == other);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(root);
+
+    gm82_gml_parser_init(&parser, "with (7) { x += 1; }");
+    root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    assert(bytecode.count >= 4);
+    assert(bytecode.code[0].opcode == GM82_BC_WITH_BEGIN);
+    assert(bytecode.code[1].opcode == GM82_BC_EVAL_STMT);
+    bytecode.code[1].source[0] = '(';
+    bytecode.code[1].source[1] = '\0';
+    assert(!gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
+    assert(gm82_gml_get_self() == first);
+    assert(gm82_gml_get_other() == other);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_gml_ast_free(root);
+
+    gm82_gml_set_self(NULL);
+    gm82_gml_set_other(NULL);
     gm82_runtime_cleanup(&rt);
 }
 
@@ -237,7 +329,9 @@ int main(void) {
     test_rejection();
     test_ast_execution();
     test_do_until_control_flow();
+    test_do_until_continue_on_exit();
     test_bytecode_with_snapshot();
+    test_bytecode_with_nested_context_and_failure_cleanup();
     test_switch_control_flow();
     puts("test_gml_parser PASS");
     return 0;

@@ -192,11 +192,6 @@ double gml_draw_spotlight(void) { return 0; }
 double batch4_draw_setb(void) { return 0; }
 double batch4_draw_setf(void) { return 0; }
 
-/* ds_list_filter / foreach / map need GML callback — residual */
-double gml_ds_list_filter(void) { return 0; }
-double gml_ds_list_foreach(void) { return 0; }
-double gml_ds_list_map(void) { return 0; }
-
 /* ---- wrap try_stub ---- */
 extern int __real_gm82_gm82core_try_stub(const char *id, double *out) __attribute__((weak));
 
@@ -263,9 +258,6 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("draw_spotlight", gml_draw_spotlight);
     H0("draw_setb", batch4_draw_setb);
     H0("draw_setf", batch4_draw_setf);
-    H0("ds_list_filter", gml_ds_list_filter);
-    H0("ds_list_foreach", gml_ds_list_foreach);
-    H0("ds_list_map", gml_ds_list_map);
     if (__real_gm82_gm82core_try_stub) return __real_gm82_gm82core_try_stub(id, out);
     return 0;
 }

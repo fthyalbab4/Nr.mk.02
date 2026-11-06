@@ -232,6 +232,20 @@ static gml_value eval_index(gml_vm *vm, const gml_ast *n) {
     return r;
 }
 
+static gml_value *resolve_index_lvalue(gml_vm *vm, const gml_ast *node) {
+    if (!node) return NULL;
+    if (node->kind == GML_AST_NAME) return named_slot(vm, node->text);
+    if (node->kind != GML_AST_INDEX || !node->left || !node->right) return NULL;
+
+    gml_value *base = resolve_index_lvalue(vm, node->left);
+    if (!base || base->kind != GML_V_ARRAY || !base->array) return NULL;
+    gml_value index = eval(vm, node->right);
+    size_t i = num(index) < 0 ? 0 : (size_t)num(index);
+    gml_value_free(&index);
+    if (i >= base->array->count) return NULL;
+    return &base->array->items[i];
+}
+
 static gml_value call(gml_vm *vm, const gml_ast *n) {
     if (!n->text) return undef();
     gml_value a[32];
@@ -710,15 +724,12 @@ static gml_value eval(gml_vm *vm, const gml_ast *n) {
                 gml_vm_set(vm, n->left->text, r);
             } else if (n->left && n->left->kind == GML_AST_MEMBER && n->left->left && n->left->left->kind == GML_AST_NAME && !strcmp(n->left->left->text, "self")) {
                 if (vm->member_set) vm->member_set(vm->member_userdata, n->left->text, &r);
-            } else if (n->left && n->left->kind == GML_AST_INDEX && n->left->left && n->left->left->kind == GML_AST_NAME) {
-                gml_value *base = named_slot(vm, n->left->left->text);
-                gml_value idx = eval(vm, n->left->right);
-                size_t i = num(idx) < 0 ? 0 : (size_t)num(idx);
-                if (base && base->kind == GML_V_ARRAY && base->array && i < base->array->count) {
-                    gml_value_free(&base->array->items[i]);
-                    base->array->items[i] = copyv(&r);
+            } else if (n->left && n->left->kind == GML_AST_INDEX) {
+                gml_value *slot = resolve_index_lvalue(vm, n->left);
+                if (slot) {
+                    gml_value_free(slot);
+                    *slot = copyv(&r);
                 }
-                gml_value_free(&idx);
             }
             return r;
         }

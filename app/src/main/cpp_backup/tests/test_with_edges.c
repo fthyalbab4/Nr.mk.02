@@ -70,6 +70,7 @@ int main(void) {
     }
 
     gm82_gml_eval_block(&rt, self, "with (all) { instance_destroy(); }");
+    gm82_runtime_cleanup(&rt);
     printf("with_edges PASS\n");
     return 0;
 }

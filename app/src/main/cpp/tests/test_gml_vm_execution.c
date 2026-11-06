@@ -130,12 +130,43 @@ void test_typed_with_and_postfix_syntax(void) {
     printf("  Typed with/index/escape syntax PASS\n");
 }
 
+static void test_nested_dynamic_array_assignment(void) {
+    gml_vm vm;
+    gml_vm_init(&vm);
+
+    gml_value outer = gml_value_array(1);
+    gml_value inner = gml_value_array(2);
+    assert(outer.array && inner.array);
+    inner.array->items[1] = gml_value_real(3.0);
+    outer.array->items[0] = inner;
+    inner.kind = GML_V_UNDEFINED;
+    inner.array = NULL;
+    assert(gml_vm_set(&vm, "a", outer));
+    gml_value_free(&outer);
+    gml_value index = gml_value_real(0.0);
+    assert(gml_vm_set(&vm, "i", index));
+    gml_value_free(&index);
+
+    gml_ast *ast = NULL;
+    char err[160] = {0};
+    assert(gml_parse_program("a[i][1] += 5; return a[0][1];", &ast, err, sizeof(err)));
+    assert(gml_vm_execute(&vm, ast));
+    assert(vm.returned && vm.return_value.kind == GML_V_REAL);
+    assert(vm.return_value.real == 8.0);
+
+    gml_ast_free(ast);
+    gml_value_free(&vm.return_value);
+    for (size_t i = 0; i < vm.count; ++i) gml_value_free(&vm.vars[i].value);
+    printf("  Nested/dynamic array assignment PASS\n");
+}
+
 int main(void) {
     printf("--- Running GML VM Execution Test Suite ---\n");
     test_ast_parse_and_execute();
     test_script_invoke_args();
     test_string_concatenation();
     test_typed_with_and_postfix_syntax();
+    test_nested_dynamic_array_assignment();
     printf("--- GML VM Execution Tests Passed! ---\n");
     return 0;
 }

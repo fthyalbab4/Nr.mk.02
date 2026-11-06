@@ -260,6 +260,16 @@ typedef struct {
     gm82_instance *previous_self;
     gm82_instance *previous_other;
 } bytecode_with_frame;
+static void restore_with_frames(bytecode_with_frame *frames, int *depth,
+                                gm82_instance **self) {
+    while (*depth > 0) {
+        bytecode_with_frame *frame = &frames[*depth - 1];
+        *self = frame->previous_self;
+        gm82_gml_set_self(frame->previous_self);
+        gm82_gml_set_other(frame->previous_other);
+        --*depth;
+    }
+}
 typedef struct { double selector; bool selected; } bytecode_switch_frame;
 static gm82_instance *find_alive_id(gm82_runtime *rt, int id) {
     if (!rt) return NULL;
@@ -279,40 +289,42 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
     bytecode_switch_frame switch_frames[GM82_BC_MAX_SWITCH_DEPTH];
     int switch_depth = 0;
     while (pc >= 0 && (size_t)pc < bc->count) {
-        if (++r->steps > GM82_BC_MAX_STEPS) return false;
+        if (++r->steps > GM82_BC_MAX_STEPS) goto failed;
         const gm82_gml_bc_instruction *ins = &bc->code[pc];
         switch (ins->opcode) {
-            case GM82_BC_HALT: return true;
+            case GM82_BC_HALT:
+                restore_with_frames(with_frames, &with_depth, &self);
+                return true;
             case GM82_BC_EVAL_STMT:
-                if (!gm82_gml_eval_stmt(rt, self, ins->source ? ins->source : "")) return false;
+                if (!gm82_gml_eval_stmt(rt, self, ins->source ? ins->source : "")) goto failed;
                 pc++; break;
             case GM82_BC_EVAL_EXPR:
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) goto failed;
                 pc++; break;
             case GM82_BC_JUMP: pc = ins->target; break;
             case GM82_BC_JUMP_IF_FALSE:
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) goto failed;
                 pc = value != 0.0 ? pc + 1 : ins->target; break;
             case GM82_BC_REPEAT_INIT:
-                if (repeat_depth >= (int)(sizeof(repeat_counts) / sizeof(repeat_counts[0]))) return false;
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
-                if (value < 0.0 || value > (double)GM82_BC_MAX_STEPS) return false;
+                if (repeat_depth >= (int)(sizeof(repeat_counts) / sizeof(repeat_counts[0]))) goto failed;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) goto failed;
+                if (value < 0.0 || value > (double)GM82_BC_MAX_STEPS) goto failed;
                 repeat_counts[repeat_depth++] = (int)value;
                 if (repeat_counts[repeat_depth - 1] <= 0) { repeat_depth--; pc = ins->target; }
                 else pc++;
                 break;
             case GM82_BC_REPEAT_NEXT:
-                if (repeat_depth <= 0) return false;
+                if (repeat_depth <= 0) goto failed;
                 if (--repeat_counts[repeat_depth - 1] > 0) pc = ins->target;
                 else { repeat_depth--; pc++; }
                 break;
             case GM82_BC_REPEAT_BREAK:
-                if (repeat_depth <= 0) return false;
+                if (repeat_depth <= 0) goto failed;
                 repeat_depth--; pc = ins->target;
                 break;
             case GM82_BC_WITH_BEGIN: {
-                if (with_depth >= GM82_BC_MAX_WITH_DEPTH) return false;
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "-4", &value)) return false;
+                if (with_depth >= GM82_BC_MAX_WITH_DEPTH) goto failed;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "-4", &value)) goto failed;
                 bytecode_with_frame *frame = &with_frames[with_depth++];
                 memset(frame, 0, sizeof(*frame));
                 frame->previous_self = self;
@@ -343,7 +355,7 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
                 break;
             }
             case GM82_BC_WITH_NEXT: {
-                if (with_depth <= 0) return false;
+                if (with_depth <= 0) goto failed;
                 bytecode_with_frame *frame = &with_frames[with_depth - 1];
                 gm82_instance *next = NULL;
                 while (frame->next < frame->count && !next)
@@ -359,30 +371,35 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
             }
             case GM82_BC_SWITCH_BEGIN:
                 if (switch_depth >= GM82_BC_MAX_SWITCH_DEPTH ||
-                    !gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                    !gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) goto failed;
                 switch_frames[switch_depth++] = (bytecode_switch_frame){value, false}; pc++; break;
             case GM82_BC_SWITCH_CASE: {
-                if (switch_depth <= 0) return false;
+                if (switch_depth <= 0) goto failed;
                 bytecode_switch_frame *frame = &switch_frames[switch_depth - 1];
                 if (frame->selected) { pc++; break; }
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) goto failed;
                 if (frame->selector == value) { frame->selected = true; pc = ins->target; }
                 else pc = ins->alternate;
                 break;
             }
             case GM82_BC_SWITCH_DEFAULT:
-                if (switch_depth <= 0) return false;
+                if (switch_depth <= 0) goto failed;
                 if (switch_frames[switch_depth - 1].selected) pc++;
                 else { switch_frames[switch_depth - 1].selected = true; pc = ins->target; }
                 break;
             case GM82_BC_SWITCH_END:
-                if (switch_depth <= 0) return false;
+                if (switch_depth <= 0) goto failed;
                 --switch_depth; pc++; break;
             case GM82_BC_RETURN:
-                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) return false;
-                r->returned = true; r->return_value = value; return true;
-            default: return false;
+                if (!gm82_gml_eval_expr(rt, self, ins->source ? ins->source : "0", &value)) goto failed;
+                r->returned = true; r->return_value = value;
+                restore_with_frames(with_frames, &with_depth, &self);
+                return true;
+            default: goto failed;
         }
     }
+    goto failed;
+failed:
+    restore_with_frames(with_frames, &with_depth, &self);
     return false;
 }
