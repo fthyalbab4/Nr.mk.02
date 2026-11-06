@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_text_reader.h"
+#include "gm82_text_path.h"
 #include "gm82_script.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdarg.h>
 
 /*
  * GM82 text-project loader. The official gm82save format stores resource
@@ -19,6 +21,17 @@
 static int is_dir(const char *path) {
     struct stat st;
     return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+static int project_path(char *out, size_t out_size, const char *root,
+                        const char *format, ...) {
+    char relative[PATH_MAX];
+    va_list args;
+    va_start(args, format);
+    int written = vsnprintf(relative, sizeof(relative), format, args);
+    va_end(args);
+    if (written < 0 || (size_t)written >= sizeof(relative)) return 0;
+    return gm82_text_resolve_path(root, relative, out, out_size);
 }
 
 static char *trim_line(char *s) {
@@ -48,7 +61,10 @@ static int read_index_names(const char *root, const char *group, char ***out_nam
     char line[1024];
     char **names = NULL;
     int count = 0, cap = 0;
-    snprintf(path, sizeof(path), "%s/%s/index.yyd", root, group);
+    if (!project_path(path, sizeof(path), root, "%s/index.yyd", group)) {
+        *out_names = NULL;
+        return 0;
+    }
     f = fopen(path, "r");
     if (!f) { *out_names = NULL; return 0; }
     while (fgets(line, sizeof(line), f)) {
@@ -72,14 +88,16 @@ static int count_asset_dirs(const char *root, const char *group) {
     DIR *d;
     struct dirent *ent;
     int count = 0;
-    snprintf(path, sizeof(path), "%s/%s", root, group);
+    if (!project_path(path, sizeof(path), root, "%s", group)) return 0;
     d = opendir(path);
     if (!d) return 0;
     while ((ent = readdir(d)) != NULL) {
-        char child[1200];
         if (ent->d_name[0] == '.') continue;
-        snprintf(child, sizeof(child), "%s/%s", path, ent->d_name);
-        if (is_dir(child)) ++count;
+        char relative[PATH_MAX];
+        char child[PATH_MAX];
+        int written = snprintf(relative, sizeof(relative), "%s/%s", group, ent->d_name);
+        if (written >= 0 && (size_t)written < sizeof(relative) &&
+            project_path(child, sizeof(child), root, "%s", relative) && is_dir(child)) ++count;
     }
     closedir(d);
     return count;
@@ -114,7 +132,7 @@ static char *read_code_file(const char *path) {
 
 static void load_settings_txt(const char *root, gm82_project_settings *s) {
     char path[1200], line[2048];
-    snprintf(path, sizeof(path), "%s/settings/settings.txt", root);
+    if (!project_path(path, sizeof(path), root, "settings/settings.txt")) return;
     FILE *f = fopen(path, "r");
     if (!f) return;
     while (fgets(line, sizeof(line), f)) {
@@ -163,7 +181,7 @@ static void load_settings_txt(const char *root, gm82_project_settings *s) {
 
 static void load_constants_txt(const char *root, gm82_project_ir *ir) {
     char path[1200], line[2048];
-    snprintf(path, sizeof(path), "%s/settings/constants.txt", root);
+    if (!project_path(path, sizeof(path), root, "settings/constants.txt")) return;
     FILE *f = fopen(path, "r");
     if (!f) return;
     int cap = 0;
@@ -198,8 +216,8 @@ static void load_datafiles(const char *root, gm82_project_ir *ir) {
         memset(inc, 0, sizeof(*inc));
         inc->name = strdup(names[i]);
         char meta[1400], line[2048];
-        snprintf(meta, sizeof(meta), "%s/datafiles/%s.txt", root, names[i]);
-        FILE *f = fopen(meta, "r");
+        FILE *f = project_path(meta, sizeof(meta), root, "datafiles/%s.txt", names[i])
+                      ? fopen(meta, "r") : NULL;
         if (f) {
             while (fgets(line, sizeof(line), f)) {
                 char *p = strchr(line, '=');
@@ -215,9 +233,10 @@ static void load_datafiles(const char *root, gm82_project_ir *ir) {
             }
             fclose(f);
         }
-        snprintf(meta, sizeof(meta), "%s/datafiles/include/%s", root, names[i]);
+        int safe_source = project_path(meta, sizeof(meta), root,
+                                       "datafiles/include/%s", names[i]);
         struct stat st;
-        if (stat(meta, &st) == 0 && S_ISREG(st.st_mode)) {
+        if (safe_source && stat(meta, &st) == 0 && S_ISREG(st.st_mode)) {
             inc->source_path = strdup(meta);
             inc->source_length = (size_t)st.st_size;
         }
@@ -240,8 +259,8 @@ static void load_triggers_dir(const char *root, gm82_project_ir *ir) {
         memset(trig, 0, sizeof(*trig));
         trig->name = strdup(names[i]);
         char meta[1400], line[2048];
-        snprintf(meta, sizeof(meta), "%s/triggers/%s.txt", root, names[i]);
-        FILE *f = fopen(meta, "r");
+        FILE *f = project_path(meta, sizeof(meta), root, "triggers/%s.txt", names[i])
+                      ? fopen(meta, "r") : NULL;
         if (f) {
             while (fgets(line, sizeof(line), f)) {
                 char *p = strchr(line, '=');
@@ -253,8 +272,8 @@ static void load_triggers_dir(const char *root, gm82_project_ir *ir) {
             }
             fclose(f);
         }
-        snprintf(meta, sizeof(meta), "%s/triggers/%s.gml", root, names[i]);
-        trig->condition = read_code_file(meta);
+        if (project_path(meta, sizeof(meta), root, "triggers/%s.gml", names[i]))
+            trig->condition = read_code_file(meta);
         ++kept;
     }
     ir->trigger_count = kept;
@@ -264,14 +283,14 @@ static void load_triggers_dir(const char *root, gm82_project_ir *ir) {
 
 static void load_scripts_from_dir(const char *root, gm82_script_list *list) {
     char subpath[512];
-    snprintf(subpath, sizeof(subpath), "%s/scripts", root);
+    if (!project_path(subpath, sizeof(subpath), root, "scripts")) return;
     DIR *d = opendir(subpath);
     if (!d) return;
     struct dirent *ent;
     while ((ent = readdir(d)) != NULL) {
         if (ent->d_name[0] == '.' || !strstr(ent->d_name, ".gml")) continue;
         char fpath[1024];
-        snprintf(fpath, sizeof(fpath), "%s/%s", subpath, ent->d_name);
+        if (!project_path(fpath, sizeof(fpath), root, "scripts/%s", ent->d_name)) continue;
         FILE *f = fopen(fpath, "r");
         if (!f) continue;
         char code_buf[GM82_SCRIPT_CODE_MAX] = {0};
@@ -311,7 +330,7 @@ static void init_room_defaults(gm82_res_room *room, int id, const char *name) {
 
 static void load_room_txt(const char *root, const char *name, gm82_res_room *room) {
     char path[1200], line[2048];
-    snprintf(path, sizeof(path), "%s/rooms/%s/room.txt", root, name);
+    if (!project_path(path, sizeof(path), root, "rooms/%s/room.txt", name)) return;
     FILE *f = fopen(path, "r");
     if (!f) return;
     while (fgets(line, sizeof(line), f)) {
@@ -352,7 +371,7 @@ static void load_room_txt(const char *root, const char *name, gm82_res_room *roo
 static void load_room_instances(const char *root, const char *room_name,
                                 gm82_res_room *room, char **object_names, int object_count) {
     char path[1200], line[4096];
-    snprintf(path, sizeof(path), "%s/rooms/%s/instances.txt", root, room_name);
+    if (!project_path(path, sizeof(path), root, "rooms/%s/instances.txt", room_name)) return;
     FILE *f = fopen(path, "r");
     if (!f) return;
     int cap = 0;
@@ -383,8 +402,9 @@ static void load_room_instances(const char *root, const char *room_name,
         if (nf > 8) inst->angle = strtod(fields[8], NULL);
         if (nf > 9 && parse_bool(fields[9], 0) && fields[3][0]) {
             char code_path[1400];
-            snprintf(code_path, sizeof(code_path), "%s/rooms/%s/%s.gml", root, room_name, fields[3]);
-            inst->creation_code = read_code_file(code_path);
+            if (project_path(code_path, sizeof(code_path), root,
+                             "rooms/%s/%s.gml", room_name, fields[3]))
+                inst->creation_code = read_code_file(code_path);
         }
         ++room->instance_count;
     }
@@ -394,7 +414,8 @@ static void load_room_instances(const char *root, const char *room_name,
 static void load_room_tiles(const char *root, const char *room_name,
                             gm82_res_room *room, char **background_names, int background_count) {
     char layers_path[1200], line[4096];
-    snprintf(layers_path, sizeof(layers_path), "%s/rooms/%s/layers.txt", root, room_name);
+    if (!project_path(layers_path, sizeof(layers_path), root,
+                      "rooms/%s/layers.txt", room_name)) return;
     FILE *layers = fopen(layers_path, "r");
     if (!layers) return;
     int cap = 0;
@@ -402,7 +423,8 @@ static void load_room_tiles(const char *root, const char *room_name,
         char *depth_name = trim_line(line);
         if (!*depth_name) continue;
         char tile_path[1400];
-        snprintf(tile_path, sizeof(tile_path), "%s/rooms/%s/%s.txt", root, room_name, depth_name);
+        if (!project_path(tile_path, sizeof(tile_path), root,
+                          "rooms/%s/%s.txt", room_name, depth_name)) continue;
         FILE *tf = fopen(tile_path, "r");
         if (!tf) continue;
         char tile_line[4096];

@@ -119,6 +119,7 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
                 if (!execute_node(rt, self, n->a, r)) return false;
                 if (r->broke) { r->broke = false; return true; }
                 if (!eval_bool(rt, self, n->b, &condition)) return false;
+                r->continued = false;
             } while (!condition && !r->returned);
             return true;
         }

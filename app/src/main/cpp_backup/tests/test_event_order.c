@@ -2,6 +2,7 @@
 #include "gm82_events.h"
 #include "gm82_gml_eval.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_timeline.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -26,21 +27,151 @@ static void test_event_loop_order(void) {
     obj_list.items[0].events[2].main_type = 3; obj_list.items[0].events[2].event_numb = 2; /* End Step */
     obj_list.items[0].events[3].main_type = 8; obj_list.items[0].events[3].event_numb = 72; /* Pre-Draw */
     obj_list.items[0].events[4].main_type = 8; obj_list.items[0].events[4].event_numb = 73; /* Post-Draw */
+    const char *order_code[] = {
+        "x = x * 10 + 1;", /* Begin Step */
+        "x = x * 10 + 2;", /* Step */
+        "x = x * 10 + 3;"  /* End Step */
+    };
+    for (int i = 0; i < 3; ++i) {
+        size_t code_size = strlen(order_code[i]) + 1;
+        obj_list.items[0].events[i].code_snippet = (char *)malloc(code_size);
+        assert(obj_list.items[0].events[i].code_snippet != NULL);
+        memcpy(obj_list.items[0].events[i].code_snippet, order_code[i], code_size);
+    }
 
     gm82_runtime_bind_assets(&rt, &obj_list, NULL, NULL, NULL, NULL);
 
     gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 10.0);
+    gm82_instance *inst_two = gm82_runtime_instance_create(&rt, 0, 30.0, 10.0);
     assert(inst != NULL);
+    assert(inst_two != NULL);
     assert(inst->alive == 1);
+    inst->x = 0.0;
+    inst_two->x = 0.0;
 
     gm82_runtime_step(&rt);
+    assert(inst->x == 123.0);
+    assert(inst_two->x == 123.0);
 
     uint8_t buffer[64 * 64 * 4];
     bool draw_ok = gm82_runtime_draw(&rt, buffer, 64, 64);
     assert(draw_ok == true);
 
+    printf("  Event loop Begin/Step/End per-instance assertions PASS (x=%.0f, %.0f)\n",
+           inst->x, inst_two->x);
+    gm82_runtime_cleanup(&rt);
     gm82_decoded_object_list_free(&obj_list);
-    printf("  Event loop sequence order test PASS\n");
+}
+
+static void test_alarm_order_and_one_shot(void) {
+    printf("Testing Alarm 0/11 ordering and one-shot behavior...\n");
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    rt.running = 1;
+
+    gm82_decoded_object_list objects;
+    gm82_decoded_object_list_init(&objects);
+    objects.count = 1;
+    objects.items = (gm82_decoded_object *)calloc(1, sizeof(*objects.items));
+    assert(objects.items != NULL);
+    snprintf(objects.items[0].name, sizeof(objects.items[0].name), "obj_alarm_order");
+    objects.items[0].sprite_index = -1;
+    objects.items[0].event_count = 5;
+    objects.items[0].events[0].main_type = GM82_EV_STEP;
+    objects.items[0].events[0].event_numb = 1;
+    objects.items[0].events[1].main_type = GM82_EV_ALARM;
+    objects.items[0].events[1].event_numb = 0;
+    objects.items[0].events[2].main_type = GM82_EV_ALARM;
+    objects.items[0].events[2].event_numb = 11;
+    objects.items[0].events[3].main_type = GM82_EV_STEP;
+    objects.items[0].events[3].event_numb = 0;
+    objects.items[0].events[4].main_type = GM82_EV_STEP;
+    objects.items[0].events[4].event_numb = 2;
+
+    const char *snippets[] = {
+        "depth = depth * 10 + 1;", /* Begin Step */
+        "depth = depth * 10 + 2;", /* Alarm 0 */
+        "depth = depth * 10 + 3;", /* Alarm 11 */
+        "depth = depth * 10 + 4;", /* Step */
+        "depth = depth * 10 + 5;"  /* End Step */
+    };
+    for (int i = 0; i < 5; ++i) {
+        objects.items[0].events[i].code_snippet = strdup(snippets[i]);
+        assert(objects.items[0].events[i].code_snippet != NULL);
+    }
+    gm82_runtime_bind_assets(&rt, &objects, NULL, NULL, NULL, NULL);
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 10.0);
+    assert(inst != NULL);
+    inst->depth = 0;
+    inst->alarms[0] = 1;
+    inst->alarms[11] = 1;
+
+    gm82_runtime_step(&rt);
+    assert(inst->depth == 12345);
+    assert(inst->alarms[0] == -1 && inst->alarms[11] == -1);
+    gm82_runtime_step(&rt);
+    assert(inst->depth == 12345145);
+
+    printf("  Alarm ordering/one-shot PASS (trace=%d)\n", inst->depth);
+    gm82_runtime_cleanup(&rt);
+    gm82_decoded_object_list_free(&objects);
+}
+
+static void test_timeline_moment_precedes_alarm_and_step(void) {
+    printf("Testing Timeline moment precedes Alarm and Step...\n");
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    rt.running = 1;
+
+    gm82_decoded_object_list objects;
+    gm82_decoded_object_list_init(&objects);
+    objects.count = 1;
+    objects.items = (gm82_decoded_object *)calloc(1, sizeof(*objects.items));
+    assert(objects.items != NULL);
+    snprintf(objects.items[0].name, sizeof(objects.items[0].name), "obj_timeline_order");
+    objects.items[0].sprite_index = -1;
+    objects.items[0].event_count = 4;
+    objects.items[0].events[0].main_type = GM82_EV_STEP;
+    objects.items[0].events[0].event_numb = GM82_STEP_BEGIN;
+    objects.items[0].events[0].code_snippet = strdup("depth = depth * 10 + 1;");
+    objects.items[0].events[1].main_type = GM82_EV_ALARM;
+    objects.items[0].events[1].event_numb = 0;
+    objects.items[0].events[1].code_snippet = strdup("depth = depth * 10 + 3;");
+    objects.items[0].events[2].main_type = GM82_EV_STEP;
+    objects.items[0].events[2].event_numb = GM82_STEP_NORMAL;
+    objects.items[0].events[2].code_snippet = strdup("depth = depth * 10 + 4;");
+    objects.items[0].events[3].main_type = GM82_EV_STEP;
+    objects.items[0].events[3].event_numb = GM82_STEP_END;
+    objects.items[0].events[3].code_snippet = strdup("depth = depth * 10 + 5;");
+    for (int i = 0; i < objects.items[0].event_count; ++i)
+        assert(objects.items[0].events[i].code_snippet != NULL);
+    gm82_runtime_bind_assets(&rt, &objects, NULL, NULL, NULL, NULL);
+
+    gm82_timeline_list timelines;
+    gm82_timeline_list_init(&timelines);
+    int timeline_index = gm82_timeline_add(&timelines, "timeline_order");
+    assert(timeline_index == 0);
+    assert(gm82_timeline_add_moment(&timelines, timeline_index, 1,
+                                    "depth = depth * 10 + 2;") == 1);
+    gm82_timeline_bind(&timelines);
+
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 10.0, 10.0);
+    assert(inst != NULL);
+    inst->depth = 0;
+    inst->timeline_index = timeline_index;
+    inst->timeline_position = 0.0;
+    inst->timeline_speed = 1.0;
+    inst->timeline_running = 1;
+    inst->alarms[0] = 1;
+
+    gm82_runtime_step(&rt);
+    assert(inst->depth == 12345);
+    assert(inst->timeline_position == 1.0);
+
+    printf("  Timeline/Alarm/Step ordering PASS (trace=%d)\n", inst->depth);
+    gm82_timeline_bind(NULL);
+    gm82_runtime_cleanup(&rt);
+    gm82_decoded_object_list_free(&objects);
 }
 
 static void test_destroy_is_deferred_during_draw(void) {
@@ -188,6 +319,8 @@ static void test_collision_context_and_with(void) {
 int main(void) {
     printf("=== RUNNING EVENT ORDER AND LIFECYCLE TESTS ===\n");
     test_event_loop_order();
+    test_alarm_order_and_one_shot();
+    test_timeline_moment_precedes_alarm_and_step();
     test_destroy_is_deferred_during_draw();
     test_instance_pool_midframe_lifecycle();
     test_depth_sorting_order();
