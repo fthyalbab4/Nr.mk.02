@@ -1,22 +1,19 @@
 # SYNC_STATUS (2026-11-07)
 
-## Done on main (via GitHub API)
-- Docs + Makefile gates + verify_core_mirrors.py
-- Behavioral tests tri-tree: with, array, event_order, collision, resource, draw/input/sound, corpus
-- `test_match_api.c` tri-tree + gates entry [R1]
-- MATCH_API.md design note
+## Done on main
+- Behavioral tests + MATCH_API + test_match_api + test_array_2d (tests)
+- Makefile gates include match + array_2d
 
-## Host residual R1 (match_*)
-- Local: PASS (`test_match_api`)
-- Design: sticky any / overwrite exact / pure not_* / match_clear
-- Core C mirrors updated locally; remote large-file push may lag
+## Host residual (local PASS, core C may lag remote if large-file API limits)
+- R1 match_*: clear / pure not_* / sticky any — PASS
+- R2 limited 2D arrays: create_2d, a[i,j], height/length_2d — PASS
+- Tri-mirror local: PASS
 
-## Still open (not host upload)
-- G13 Portable reference compare
+## Still open
+- G13 Portable reference
 - G14 device OpenSLES / WebView JNI
-- True 2D arrays (height still stub=1)
 - Pixel-precise / rotated collision
+- Full sparse GM8 2D (only fixed 32x32x64 pool)
 
 ## Local
-- mirrors PASS (108 core files)
 - is_100: false
