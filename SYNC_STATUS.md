@@ -1,13 +1,12 @@
 # SYNC_STATUS (2026-11-07)
 
-## Host residual
-- Sparse 2D arrays: PASS (`test_array_2d`, large indices)
-- G13: host metrics harness only — Portable compare **NOT_RUN**
-- G14: host contracts PASS — device **DEVICE_BLOCKED**
-- match_* residual: PASS
+## Host remaining plan steps executed
+- BASELINE_REPORT.md (Phase 0)
+- test_precise_collision PASS (bitmask)
+- test_draw_gui_order PASS (pre/draw/post + invisible)
 
-## Open (external)
-- Portable reference logs for G13
-- Android device playtest for G14
+## Still external
+- G13 Portable NOT_RUN
+- G14 device DEVICE_BLOCKED
 
 ## is_100: false
