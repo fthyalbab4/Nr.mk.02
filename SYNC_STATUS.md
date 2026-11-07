@@ -1,13 +1,13 @@
-# SYNC_STATUS (2026-11-07)
+# SYNC_STATUS (2026-11-07 final host closeout)
 
-## Just verified
-- mirrors: PASS (108)
-- `make gates`: HOST GATES OK
+## Verified
+mirrors PASS · make gates HOST GATES OK
 
-## Host residual: closed
-All gated behavioral suites PASS including place_meeting_precise.
+## Artifacts
+- G13_HOST_METRICS.json (HOST_METRICS_ONLY)
+- AGENT_COMPLETION.md
 
-## External
+## Open external
 G13 NOT_RUN · G14 DEVICE_BLOCKED
 
 is_100: false

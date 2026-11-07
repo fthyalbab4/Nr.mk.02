@@ -1,0 +1,12 @@
+{
+  "gate": "G13",
+  "status": "HOST_METRICS_ONLY",
+  "portable_compare": "NOT_RUN",
+  "samples": [
+    {"name":"mario_bros.gmk","load_ok":1,"objects":21,"rooms":2,"room0_instances":181,"alive_after_30":0,"frame":30},
+    {"name":"plataformas.gmk","load_ok":1,"objects":7,"rooms":4,"room0_instances":60,"alive_after_30":0,"frame":30},
+    {"name":"shooter.gmk","load_ok":1,"objects":12,"rooms":2,"room0_instances":308,"alive_after_30":0,"frame":30},
+    {"name":"zelda.gmk","load_ok":1,"objects":11,"rooms":3,"room0_instances":39,"alive_after_30":0,"frame":30}
+  ],
+  "note": "Provide Portable reference logs to enable diff"
+}
