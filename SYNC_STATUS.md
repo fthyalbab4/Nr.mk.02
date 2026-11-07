@@ -1,12 +1,13 @@
 # SYNC_STATUS (2026-11-07)
 
-## Host remaining plan steps executed
-- BASELINE_REPORT.md (Phase 0)
-- test_precise_collision PASS (bitmask)
-- test_draw_gui_order PASS (pre/draw/post + invisible)
+## Host residual closed
+- Scaled bitmask collision PASS
+- Draw fingerprint host stability PASS
 
-## Still external
+## External still open
 - G13 Portable NOT_RUN
 - G14 device DEVICE_BLOCKED
+- Live sprite precise + rotation
+- Portable reference image hashes
 
 ## is_100: false
