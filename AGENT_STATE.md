@@ -2,9 +2,9 @@
 
 ```
 host_p0: true
-phases_0_10: DONE
-phase_11_host_residual: DONE
-G1-G12: PASS
+phases_0_11_host: DONE
+make_gates: HOST GATES OK
+mirrors: PASS (108)
 G13_portable_compare: NOT_RUN
 G14_device: BLOCKED
 is_100: false
@@ -13,8 +13,13 @@ anti_hallucination_rule: ENFORCED
 bulk_pr_merge: FORBIDDEN
 ```
 
-## Phase 11 (2026-11-07)
-Host residual cleanup (roadmap originally ended at 10):
-- Makefile: `test_full_suite` + noexec-safe `test`/`gates`
-- `make gates` EXIT 0 including full suite
-- mirrors PASS
+## Residual closed after phase 11 (2026-11-07)
+- sparse 2D arrays
+- match_* API
+- precise mask + place_meeting_precise
+- draw GUI order + fingerprint
+- G13 host metrics JSON
+- G14 host contracts
+
+## Still external
+Portable binary/logs · Android device playtest
