@@ -43,6 +43,7 @@ gates: all test_full_suite
 		tests/test_draw_input_sound \
 		tests/test_game_corpus \
 		tests/test_match_api \
+		tests/test_array_2d \
 		test_full_suite; do \
 		echo "GATE $$t"; \
 		if [ -f $$t ]; then $(RUNNER) ./$$t || exit 1; else echo "missing $$t"; exit 1; fi; \
