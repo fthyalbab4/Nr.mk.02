@@ -1,13 +1,13 @@
 # SYNC_STATUS (2026-11-07)
 
-## Host residual closed
-- Scaled bitmask collision PASS
-- Draw fingerprint host stability PASS
+## Closed this step
+- test_place_meeting_precise PASS
+- Baseline refreshed
 
-## External still open
-- G13 Portable NOT_RUN
-- G14 device DEVICE_BLOCKED
-- Live sprite precise + rotation
-- Portable reference image hashes
+## Host roadmap residual
+Effectively closed for actionable host work.
+
+## External
+G13 NOT_RUN · G14 DEVICE_BLOCKED
 
 ## is_100: false

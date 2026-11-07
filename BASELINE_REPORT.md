@@ -1,20 +1,14 @@
 # Baseline Report — main host (2026-11-07)
 
-> Phase 0 style snapshot. Not a Portable certificate. `is_100: false`.
+> Not a Portable certificate. `is_100: false`.
 
-## Mirrors
-```
-mirrors: PASS (verify_core_mirrors.py)
-canonical: app/src/main/cpp
-```
+## Mirrors: PASS
 
-## Host behavioral suites: PASS
-with, arrays 1d/2d sparse, match_*, event order, AABB collision, resource import, draw/input/sound, corpus (4 samples), precise mask, draw GUI order
+## Host behavioral PASS
+with/self/other, arrays 1d+sparse2d, match_*, events, AABB,
+place_meeting_precise (synthetic sprites), bitmask+scaled,
+import, draw/input/sound, draw GUI order, fingerprint, corpus 4/4,
+G13 metrics, G14 host contracts
 
-## Open
-```
-G13 Portable compare: NOT_RUN
-G14 device OpenSLES/JNI: DEVICE_BLOCKED
-Rotated/scaled precise collision: limited
-Draw reference image hashes: absent
-```
+## External
+G13 NOT_RUN · G14 DEVICE_BLOCKED · rotation precise not claimed · Portable image hashes absent
