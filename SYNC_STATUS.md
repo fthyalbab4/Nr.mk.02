@@ -1,22 +1,22 @@
 # SYNC_STATUS (2026-11-07)
 
 ## Done on main (via GitHub API)
-- Docs: AGENT_STATE, GAPS_HONEST, PHASE10, PHASE11, PR_TRIAGE, GAP_INVENTORY, CORPUS_METRICS
-- Makefile gates + verify_core_mirrors.py
-- test_with_semantics.c (tri-tree)
-- test_array_semantics.c (tri-tree)
-- test_game_corpus.c (tri-tree) [Step1]
-- test_collision_movement.c (tri-tree) [Step2]
-- test_draw_input_sound.c (tri-tree) [Step3]
-- test_resource_import.c (tri-tree) [Step4]
-- Core place_meeting/inst_world_bbox present on main
+- Docs + Makefile gates + verify_core_mirrors.py
+- Behavioral tests tri-tree: with, array, event_order, collision, resource, draw/input/sound, corpus
+- `test_match_api.c` tri-tree + gates entry [R1]
+- MATCH_API.md design note
 
-## Remaining open (not host upload)
+## Host residual R1 (match_*)
+- Local: PASS (`test_match_api`)
+- Design: sticky any / overwrite exact / pure not_* / match_clear
+- Core C mirrors updated locally; remote large-file push may lag
+
+## Still open (not host upload)
 - G13 Portable reference compare
 - G14 device OpenSLES / WebView JNI
-- match_* API design
+- True 2D arrays (height still stub=1)
+- Pixel-precise / rotated collision
 
 ## Local
-- mirrors PASS (108 files)
-- make gates PASS
+- mirrors PASS (108 core files)
 - is_100: false
