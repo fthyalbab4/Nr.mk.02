@@ -3430,3 +3430,125 @@ bool gm82_gml_eval_callback(gm82_runtime *rt, gm82_instance *self,
     if (used == 0) return false;
     return gm82_gml_eval_expr(rt, self, expr, out);
 }
+
+/* Native AST/value path used by the bytecode VM. It covers the parser's
+   scalar expression model first; unsupported nodes return false so the VM
+   can preserve its compatibility fallback for the larger built-in surface. */
+static unsigned long g_native_ast_eval_count;
+
+static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
+                            gm82_instance *self, double *out);
+
+static bool native_ast_call(const gm82_gml_ast *n, gm82_runtime *rt,
+                            gm82_instance *self, double *out) {
+    if (!n || !n->a || n->a->kind != GM82_AST_IDENTIFIER || !n->a->text) return false;
+    double args[16];
+    int count = 0;
+    for (const gm82_gml_ast *arg = n->b; arg; arg = arg->next) {
+        if (count >= 16 || !native_ast_eval(arg, rt, self, &args[count])) return false;
+        count++;
+    }
+    const char *id = n->a->text;
+    double a = count > 0 ? args[0] : 0.0;
+    if (!strcmp(id, "abs")) { *out = fabs(a); return true; }
+    if (!strcmp(id, "sign")) { *out = a > 0 ? 1 : (a < 0 ? -1 : 0); return true; }
+    if (!strcmp(id, "floor")) { *out = floor(a); return true; }
+    if (!strcmp(id, "ceil")) { *out = ceil(a); return true; }
+    if (!strcmp(id, "round")) { *out = round(a); return true; }
+    if (!strcmp(id, "sqr") || !strcmp(id, "sqrt")) { *out = sqrt(a); return true; }
+    if (!strcmp(id, "power")) { *out = pow(a, count > 1 ? args[1] : 1.0); return true; }
+    if (!strcmp(id, "log10")) { *out = log10(a); return true; }
+    if (!strcmp(id, "log2")) { *out = log2(a); return true; }
+    if (!strcmp(id, "exp")) { *out = exp(a); return true; }
+    if (!strcmp(id, "min")) {
+        if (!count) { *out = 0; return true; }
+        double v = args[0]; for (int i = 1; i < count; i++) if (args[i] < v) v = args[i];
+        *out = v; return true;
+    }
+    if (!strcmp(id, "max")) {
+        if (!count) { *out = 0; return true; }
+        double v = args[0]; for (int i = 1; i < count; i++) if (args[i] > v) v = args[i];
+        *out = v; return true;
+    }
+    if (!strcmp(id, "clamp") && count >= 3) {
+        *out = a < args[1] ? args[1] : (a > args[2] ? args[2] : a); return true;
+    }
+    return false;
+}
+
+static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
+                            gm82_instance *self, double *out) {
+    if (!n || !out) return false;
+    gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
+    switch (n->kind) {
+        case GM82_AST_NUMBER: *out = n->number; return true;
+        case GM82_AST_IDENTIFIER:
+            ensure_global_runtime(rt);
+            return get_var(&p, n->text ? n->text : "", out);
+        case GM82_AST_UNARY: {
+            double v;
+            if (!native_ast_eval(n->a, rt, self, &v)) return false;
+            if (!strcmp(n->text, "-")) *out = -v;
+            else if (!strcmp(n->text, "+")) *out = v;
+            else if (!strcmp(n->text, "!") || !strcmp(n->text, "not")) *out = v == 0 ? 1 : 0;
+            else return false;
+            return true;
+        }
+        case GM82_AST_BINARY: {
+            double l, r;
+            if (!native_ast_eval(n->a, rt, self, &l) || !native_ast_eval(n->b, rt, self, &r)) return false;
+            const char *op = n->text ? n->text : "";
+            if (!strcmp(op, "+")) *out = l + r;
+            else if (!strcmp(op, "-")) *out = l - r;
+            else if (!strcmp(op, "*")) *out = l * r;
+            else if (!strcmp(op, "/")) { if (r == 0) return false; *out = l / r; }
+            else if (!strcmp(op, "%")) { if (r == 0) return false; *out = fmod(l, r); }
+            else if (!strcmp(op, "==")) *out = l == r;
+            else if (!strcmp(op, "!=")) *out = l != r;
+            else if (!strcmp(op, "<")) *out = l < r;
+            else if (!strcmp(op, "<=")) *out = l <= r;
+            else if (!strcmp(op, ">")) *out = l > r;
+            else if (!strcmp(op, ">=")) *out = l >= r;
+            else if (!strcmp(op, "&&") || !strcmp(op, "and")) *out = (l != 0 && r != 0);
+            else if (!strcmp(op, "||") || !strcmp(op, "or")) *out = (l != 0 || r != 0);
+            else return false;
+            return true;
+        }
+        case GM82_AST_CALL: return native_ast_call(n, rt, self, out);
+        default: return false;
+    }
+}
+
+bool gm82_gml_eval_ast_expr(gm82_runtime *rt, gm82_instance *self,
+                            const gm82_gml_ast *expr, double *out) {
+    bool ok = native_ast_eval(expr, rt, self, out);
+    if (ok) g_native_ast_eval_count++;
+    return ok;
+}
+
+bool gm82_gml_eval_ast_stmt(gm82_runtime *rt, gm82_instance *self,
+                            const gm82_gml_ast *stmt) {
+    if (!stmt) return false;
+    if (stmt->kind == GM82_AST_EXPR_STMT) stmt = stmt->a;
+    if (!stmt || stmt->kind != GM82_AST_ASSIGN || !stmt->a ||
+        stmt->a->kind != GM82_AST_IDENTIFIER || !stmt->a->text) return false;
+    double rhs;
+    if (!native_ast_eval(stmt->b, rt, self, &rhs)) return false;
+    gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
+    double value = rhs, old = 0;
+    const char *op = stmt->text ? stmt->text : "=";
+    if (strcmp(op, "=") != 0) {
+        if (!get_var(&p, stmt->a->text, &old)) return false;
+        if (!strcmp(op, "+=")) value = old + rhs;
+        else if (!strcmp(op, "-=")) value = old - rhs;
+        else if (!strcmp(op, "*=")) value = old * rhs;
+        else if (!strcmp(op, "/=")) { if (rhs == 0) return false; value = old / rhs; }
+        else return false;
+    }
+    if (!set_var(&p, stmt->a->text, value)) return false;
+    g_native_ast_eval_count++;
+    return true;
+}
+
+void gm82_gml_native_ast_eval_reset(void) { g_native_ast_eval_count = 0; }
+unsigned long gm82_gml_native_ast_eval_count(void) { return g_native_ast_eval_count; }
