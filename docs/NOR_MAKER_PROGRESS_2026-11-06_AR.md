@@ -129,3 +129,10 @@
 أثناء تجهيز دفع PR، وصل إلى `main` دمج PR #397 عند `75fd7c4e5eff8dc26cf5b9c8559aa8e2d7a8cd2e` وأضاف حالات حدود أرشيف GMZ إلى `test_gmz_import_limits.c` في الأشجار الثلاثة. ضُمّ هذا التغيير محليًا دون تعارض؛ وتشغّل engine suite الاختبار، كما يلتقطه اكتشاف أهداف Full Core عبر wildcard.
 
 التحقق بعد هذا التحديث: engine suite **42/42**، واختبار `GMZ_IMPORT_LIMITS_OK` ناجح، وHost pipeline **4/4** (`RESULT OK`). Full Core شغّل **35 هدفًا** بما فيها GMZ وwith-scoping؛ سجل تجاوزين فقط لغياب عينات GM82 النصية، والتحذير الوحيد هو تحذير `strncpy` السابق في `src/gm82_actions.c:96`. Python reference/security **14/14**، ومدقق المرايا **PASS** (55 source و49 header و39 test و4 ملفات جذرية لكل مرآة). لا يزال CI على رأس PR المحدث وبناء Android/NDK غير منفذين.
+
+
+## متابعة 7 نوفمبر — sanitizer fixes على main ad9ea5f8
+
+وصل `main` إلى `ad9ea5f8d3556c4829be442f2ad7a98596aecda6` (PR #398)، مضيفًا فكّ `int32` بعمليات unsigned وإدارة تنظيف للـruntime في fixtures. تعارضت أسطر cleanup فقط مع توسعات `test_event_order`; حُفظت اختبارات Begin/Step/End وAlarm وTimeline و`with`، وأضيف cleanup للاختبارين mid-frame/depth، ثم نُسخت النتيجة إلى المرآتين. لا توجد ملفات تعارض غير محلولة.
+
+التحقق بعد الدمج المحلي: engine suite **42/42**، Host pipeline **4/4** (`RESULT OK`)، Full Core **35 هدفًا / exit 0** (تجاوزان بسبب غياب عينات GM82 النصية، وتحذير `strncpy` واحد في `src/gm82_actions.c:96`). Python reference/security **14/14**، ومدقق المرايا والاختبار السلبي **PASS**. شُغلت أربعة targets تحت ASan+UBSan مع `detect_leaks=1` و`halt_on_error=1` — `test_event_order`, `test_4_game_smoke`, `test_gm82core_math`, و`test_gmz_import_limits` — واجتازت كلها دون تقرير sanitizer. لم يُنفذ Android/NDK أو اختبار جهاز، ولم تُحدّث بعد حالة GitHub Actions للرأس الجديد.

@@ -244,6 +244,7 @@ static void test_instance_pool_midframe_lifecycle(void) {
     assert(found_inst3 == 1);
 
     printf("  Mid-frame instance lifecycle test PASS\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 static void test_depth_sorting_order(void) {
@@ -277,6 +278,7 @@ static void test_depth_sorting_order(void) {
     assert(snapshot[order[1]]->depth == -100);
 
     printf("  Depth sorting order test PASS\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 static void test_collision_context_and_with(void) {

@@ -50,5 +50,6 @@ int main(void) {
     assert(out == 1.0);
 
     puts("GM82CORE_MATH_TESTS_PASS");
+    gm82_runtime_cleanup(&rt);
     return 0;
 }
