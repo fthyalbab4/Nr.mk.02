@@ -2004,19 +2004,66 @@ double gml_string_upper(const char *str, char *out, size_t out_sz) {
     return (double)k;
 }
 
+enum { GM82_ARRAY_POOL_MAX = 32, GM82_ARRAY_ROWS_MAX = 32, GM82_ARRAY_COLS_MAX = 64 };
+typedef struct {
+    int used, is_2d, rows, cols[GM82_ARRAY_ROWS_MAX];
+    double values[GM82_ARRAY_ROWS_MAX * GM82_ARRAY_COLS_MAX];
+} gm82_array_slot;
+static gm82_array_slot g_array_pool[GM82_ARRAY_POOL_MAX];
+
+static gm82_array_slot *array_slot(double id) {
+    int i = (int)id - 1000;
+    if (i < 0 || i >= GM82_ARRAY_POOL_MAX || !g_array_pool[i].used) return NULL;
+    return &g_array_pool[i];
+}
+static gm82_array_slot *array_new(int rows, int cols, int is_2d) {
+    if (rows < 1) rows = 1; if (cols < 1) cols = 1;
+    if (rows > GM82_ARRAY_ROWS_MAX) rows = GM82_ARRAY_ROWS_MAX;
+    if (cols > GM82_ARRAY_COLS_MAX) cols = GM82_ARRAY_COLS_MAX;
+    for (int i = 0; i < GM82_ARRAY_POOL_MAX; ++i) if (!g_array_pool[i].used) {
+        gm82_array_slot *a = &g_array_pool[i];
+        memset(a, 0, sizeof(*a)); a->used = 1; a->is_2d = is_2d;
+        a->rows = is_2d ? rows : 1;
+        if (!is_2d) a->cols[0] = cols;
+        return a;
+    }
+    return NULL;
+}
+double gml_array_create_2d(double rows, double cols) {
+    gm82_array_slot *a = array_new((int)rows, (int)cols, 1);
+    if (!a) return -1.0;
+    return (double)(1000 + (int)(a - g_array_pool));
+}
+double gml_array_create_1d(double length) {
+    gm82_array_slot *a = array_new(1, (int)length, 0);
+    if (!a) return -1.0;
+    return (double)(1000 + (int)(a - g_array_pool));
+}
+double gml_array_get(double array_id, double row, double col, int has_col) {
+    gm82_array_slot *a = array_slot(array_id);
+    int r = (a && a->is_2d) ? (int)row : 0;
+    int c = has_col ? (int)col : (int)row;
+    if (!a || r < 0 || r >= a->rows || c < 0 || c >= a->cols[r]) return 0.0;
+    return a->values[r * GM82_ARRAY_COLS_MAX + c];
+}
+double gml_array_set(double array_id, double row, double col, int has_col, double value) {
+    gm82_array_slot *a = array_slot(array_id);
+    int r = (a && a->is_2d) ? (int)row : 0;
+    int c = has_col ? (int)col : (int)row;
+    if (!a || r < 0 || r >= GM82_ARRAY_ROWS_MAX || c < 0 || c >= GM82_ARRAY_COLS_MAX) return 0.0;
+    if (a->is_2d) { if (r >= a->rows) a->rows = r + 1; if (c >= a->cols[r]) a->cols[r] = c + 1; }
+    else if (r != 0) return 0.0;
+    a->values[r * GM82_ARRAY_COLS_MAX + c] = value; return 1.0;
+}
 double gml_array_length_1d(double array_id) {
-    (void)array_id;
-    return 1.0;
+    gm82_array_slot *a = array_slot(array_id); return a ? (double)a->cols[0] : 1.0;
 }
-
 double gml_array_length_2d(double array_id, double row) {
-    (void)array_id; (void)row;
-    return 1.0;
+    gm82_array_slot *a = array_slot(array_id); int r = (int)row;
+    return (a && r >= 0 && r < a->rows) ? (double)a->cols[r] : 1.0;
 }
-
 double gml_array_height_2d(double array_id) {
-    (void)array_id;
-    return 1.0;
+    gm82_array_slot *a = array_slot(array_id); return a ? (double)a->rows : 1.0;
 }
 
 

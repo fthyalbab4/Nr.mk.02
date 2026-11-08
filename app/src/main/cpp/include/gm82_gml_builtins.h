@@ -502,6 +502,10 @@ double gml_string_repeat(const char *str, double count, char *out, size_t out_sz
 double gml_array_length_1d(double array_id);
 double gml_array_length_2d(double array_id, double row);
 double gml_array_height_2d(double array_id);
+double gml_array_create_2d(double rows, double cols);
+double gml_array_create_1d(double length);
+double gml_array_get(double array_id, double row, double col, int has_col);
+double gml_array_set(double array_id, double row, double col, int has_col, double value);
 double gml_instance_position(double x, double y, double object_index);
 double gml_sprite_find(const char *name);
 double gml_instance_deactivate_object(double object_index);
