@@ -36,10 +36,10 @@ typedef struct {
 } corpus_entry;
 
 static const corpus_entry k_corpus[] = {
-    { "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/mario_bros.gmk", "mario_like", 1, 1 },
-    { "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/plataformas.gmk", "platformer", 1, 1 },
-    { "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/shooter.gmk", "shooter", 1, 1 },
-    { "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/zelda.gmk", "adventure", 1, 1 },
+    { "../../app/src/main/assets/www/samples/mario_bros.gmk", "mario_like", 1, 1 },
+    { "../../app/src/main/assets/www/samples/plataformas.gmk", "platformer", 1, 1 },
+    { "../../app/src/main/assets/www/samples/shooter.gmk", "shooter", 1, 1 },
+    { "../../app/src/main/assets/www/samples/zelda.gmk", "adventure", 1, 1 },
 };
 
 typedef struct {
