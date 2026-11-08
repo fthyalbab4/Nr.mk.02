@@ -34,6 +34,14 @@ See full history in repo. Latest residual:
 - ASAN regression passed for fields/arrays, builtin calls, bytecode native AST,
   and parser tests.
 
+## AST native control flow
+- **VERIFIED_HOST**: direct AST execution now evaluates conditions and scalar
+  statements through the native path inside `if/else`, `while`, `do-until`,
+  `repeat`, `for`, and `switch` traversal.
+- `tests/test_gml_native_control_flow.c` → `NATIVE_CONTROL_FLOW_TEST_PASS`
+- `with` remains on its compatibility path because instance-context iteration
+  requires a separate native context-frame implementation.
+
 ## Delivery
 ```
 is_100: false
