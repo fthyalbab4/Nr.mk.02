@@ -95,17 +95,22 @@ bool gm82_gml_ast_to_source(const gm82_gml_ast *n, char *out, size_t size) {
 }
 static bool eval_bool(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *n, bool *value) {
     char source[GM82_GML_SOURCE_MAX]; double result = 0;
-    if (!gm82_gml_ast_to_source(n, source, sizeof(source)) || !gm82_gml_eval_expr(rt, self, source, &result)) return false;
+    if (!gm82_gml_eval_ast_expr(rt, self, n, &result) &&
+        (!gm82_gml_ast_to_source(n, source, sizeof(source)) ||
+         !gm82_gml_eval_expr(rt, self, source, &result))) return false;
     *value = result != 0.0; return true;
 }
 static bool eval_number(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *n, double *value) {
     char source[GM82_GML_SOURCE_MAX];
-    if (!gm82_gml_ast_to_source(n, source, sizeof(source))) return false;
-    return gm82_gml_eval_expr(rt, self, source, value);
+    if (gm82_gml_eval_ast_expr(rt, self, n, value)) return true;
+    return gm82_gml_ast_to_source(n, source, sizeof(source)) &&
+           gm82_gml_eval_expr(rt, self, source, value);
 }
 static bool execute_expression(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *n) {
     char source[GM82_GML_SOURCE_MAX];
-    return gm82_gml_ast_to_source(n, source, sizeof(source)) && gm82_gml_eval_stmt(rt, self, source);
+    if (gm82_gml_eval_ast_stmt(rt, self, n)) return true;
+    return gm82_gml_ast_to_source(n, source, sizeof(source)) &&
+           gm82_gml_eval_stmt(rt, self, source);
 }
 
 static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *n, gm82_gml_exec_result *r) {
@@ -117,7 +122,9 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
             return true;
         case GM82_AST_EXPR_STMT: {
             char source[GM82_GML_SOURCE_MAX];
-            return gm82_gml_ast_to_source(n->a, source, sizeof(source)) && gm82_gml_eval_stmt(rt, self, source);
+            if (gm82_gml_eval_ast_stmt(rt, self, n->a)) return true;
+            return gm82_gml_ast_to_source(n->a, source, sizeof(source)) &&
+                   gm82_gml_eval_stmt(rt, self, source);
         }
         case GM82_AST_IF: {
             bool condition; if (!eval_bool(rt, self, n->a, &condition)) return false;

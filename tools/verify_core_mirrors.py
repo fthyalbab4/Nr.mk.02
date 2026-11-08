@@ -91,7 +91,8 @@ def verify_pair(canonical: Path, mirror: Path, recursive: bool = False) -> list[
     return errors
 
 
-def verify_tree_pair(canonical: Path, mirror: Path) -> list[str]:
+def verify_tree_pair(canonical: Path, mirror: Path,
+                     allowed_mirror_only_files: tuple[str, ...] = ()) -> list[str]:
     """Check required mirrored sources/tests, CMake manifests, and content."""
     expected, expected_errors = collect_tree(canonical)
     actual, actual_errors = collect_tree(mirror)
@@ -99,7 +100,8 @@ def verify_tree_pair(canonical: Path, mirror: Path) -> list[str]:
 
     for name in sorted(expected.keys() - actual.keys()):
         errors.append(f"{mirror}: missing {name}")
-    for name in sorted(actual.keys() - expected.keys()):
+    allowed = set(allowed_mirror_only_files)
+    for name in sorted((actual.keys() - expected.keys()) - allowed):
         errors.append(f"{mirror}: unexpected {name}")
     for name in sorted(expected.keys() & actual.keys()):
         if expected[name].read_bytes() != actual[name].read_bytes():
@@ -137,7 +139,8 @@ def main() -> int:
 
     errors: list[str] = []
     for mirror in MIRRORS:
-        errors.extend(verify_tree_pair(CANONICAL, mirror))
+        package_only = ("@root/host_win_runner.c",) if mirror == MIRRORS[1] else ()
+        errors.extend(verify_tree_pair(CANONICAL, mirror, package_only))
     errors.extend(verify_host_makefile())
 
     if errors:

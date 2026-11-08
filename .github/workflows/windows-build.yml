@@ -41,7 +41,7 @@ jobs:
       - name: Configure Windows x64 target
         run: |
           cmake -S desktop/windows -B build-pc-win64 \
-            -DCMAKE_TOOLCHAIN_FILE=desktop/windows/mingw-w64-x86_64.cmake \
+            -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/desktop/windows/mingw-w64-x86_64.cmake" \
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Windows x64 executables

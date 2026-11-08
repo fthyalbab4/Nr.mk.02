@@ -179,26 +179,29 @@ int main(void) {
 
     const char *samples_dir = getenv("NORMAKER_SAMPLES_DIR");
     if (!samples_dir || !samples_dir[0]) {
-        samples_dir = "../../app/src/main/assets/www/samples";
-        if (!directory_ok(samples_dir))
-            samples_dir = "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples";
+        static const char *const candidates[] = {
+            "../../app/src/main/assets/www/samples",
+            "app/src/main/assets/www/samples"
+        };
+        samples_dir = candidates[0];
+        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+            if (directory_ok(candidates[i])) { samples_dir = candidates[i]; break; }
+        }
     }
     corpus_entry corpus[sizeof(k_sample_names) / sizeof(k_sample_names[0])];
     char sample_paths[sizeof(k_sample_names) / sizeof(k_sample_names[0])][1024];
-    for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); i++) {
-        int n = snprintf(sample_paths[i], sizeof(sample_paths[i]), "%s/%s", samples_dir, k_sample_names[i]);
+    for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); ++i) {
+        int n = snprintf(sample_paths[i], sizeof(sample_paths[i]), "%s/%s",
+                         samples_dir, k_sample_names[i]);
         if (n < 0 || (size_t)n >= sizeof(sample_paths[i])) sample_paths[i][0] = 0;
-        corpus[i].path = sample_paths[i];
-        corpus[i].tag = k_sample_tags[i];
-        corpus[i].min_objects = 1;
-        corpus[i].min_rooms = 1;
+        corpus[i] = (corpus_entry){ sample_paths[i], k_sample_tags[i], 1, 1 };
     }
 
     int ran = 0, ok = 0;
     corpus_metrics results[8];
     memset(results, 0, sizeof(results));
 
-    for (size_t i = 0; i < sizeof(corpus) / sizeof(corpus[0]); i++) {
+    for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); i++) {
         if (!file_ok(corpus[i].path)) continue;
         ran++;
         if (run_one(&corpus[i], &results[i])) ok++;
@@ -219,7 +222,7 @@ int main(void) {
     if (out) {
         fprintf(out, "# NOR host corpus metrics (Phase 8)\n");
         fprintf(out, "# tag load objects rooms room0_src inst_room alive_30 draw first_x first_y\n");
-        for (size_t i = 0; i < sizeof(corpus) / sizeof(corpus[0]); i++) {
+        for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); i++) {
             if (!results[i].load_ok && results[i].tag[0] == 0) continue;
             fprintf(out, "%s %d %d %d %d %d %d %d %.2f %.2f\n",
                     results[i].tag, results[i].load_ok, results[i].object_count,

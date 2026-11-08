@@ -29,6 +29,18 @@ def main() -> int:
         if verify_tree_pair(canonical, mirror):
             raise AssertionError("identical trees with normalized test layouts must pass")
 
+        package = root / "01_BLACKSCREEN_FIX"
+        write_tree(package, root_test=False)
+        (package / "host_win_runner.c").write_text(
+            "int host_runner(void) { return 0; }\n", encoding="utf-8")
+        if verify_tree_pair(canonical, package, ("@root/host_win_runner.c",)):
+            raise AssertionError("the single package-only Windows runner may be external")
+        (package / "extra_runner.c").write_text(
+            "int extra_runner(void) { return 0; }\n", encoding="utf-8")
+        errors = verify_tree_pair(canonical, package, ("@root/host_win_runner.c",))
+        if not any("unexpected @root/extra_runner.c" in error for error in errors):
+            raise AssertionError("the package-only exception must not allow other files")
+
         (mirror / "src/core.c").write_text(
             "int core(void) { return 2; }\n", encoding="utf-8")
         errors = verify_tree_pair(canonical, mirror)

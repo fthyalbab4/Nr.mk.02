@@ -12,12 +12,12 @@
 #endif
 #include <sys/stat.h>
 #include "gm82_gml_builtins.h"
+#include "gm82_gml_arrays.h"
 #include "gm82_audio_mixer.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_path.h"
 #include "gm82_timeline.h"
 #include "gm82_gml_eval.h"
-#include "gm82_gml_arrays.h"
 #include "gm82_particles.h"
 #include "gm82_mp_grid.h"
 #include "gm82_script.h"
@@ -329,23 +329,24 @@ static bool aabb_overlap(double ax, double ay, int aw, int ah,
 double gml_place_meeting(double x, double y, double object_index) {
     if (!g_rt || !g_self) return 0;
     int32_t oi = (int32_t)object_index;
-    double sl, st, sr, sb;
-    inst_world_bbox(g_rt, g_self, x, y, &sl, &st, &sr, &sb);
+    int32_t sw, sh;
+    sprite_size(g_rt, g_self->sprite_index, &sw, &sh);
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
         if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
-        double ol, ot, orr, ob;
-        inst_world_bbox(g_rt, o, o->x, o->y, &ol, &ot, &orr, &ob);
-        if (aabb_overlap_d(sl, st, sr, sb, ol, ot, orr, ob)) {
-            bool unit_scale = fabs(g_self->image_xscale) == 1.0 &&
-                              fabs(g_self->image_yscale) == 1.0 &&
-                              fabs(o->image_xscale) == 1.0 &&
-                              fabs(o->image_yscale) == 1.0;
+        double al, at, ar, ab, bl, bt, br, bb;
+        inst_world_bbox(g_rt, g_self, x, y, &al, &at, &ar, &ab);
+        inst_world_bbox(g_rt, o, o->x, o->y, &bl, &bt, &br, &bb);
+        if (aabb_overlap_d(al, at, ar, ab, bl, bt, br, bb)) {
+            bool unit_scale = g_self->image_xscale == 1.0 &&
+                              g_self->image_yscale == 1.0 &&
+                              o->image_xscale == 1.0 &&
+                              o->image_yscale == 1.0;
             if (unit_scale && precise_mask_overlap(g_rt, g_self->sprite_index, x, y,
-                                                  o->sprite_index, o->x, o->y))
+                                                   o->sprite_index, o->x, o->y))
                 return 1;
-            /* Scaled alpha masks are not transformed yet; preserve scaled AABB hits. */
+            /* Scaled or mirrored masks are not transformed yet; preserve their world-AABB hits. */
             if (!unit_scale || !g_rt->sprites ||
                 g_self->sprite_index < 0 || g_self->sprite_index >= g_rt->sprites->count ||
                 o->sprite_index < 0 || o->sprite_index >= g_rt->sprites->count ||
@@ -359,8 +360,7 @@ double gml_place_meeting(double x, double y, double object_index) {
         const gm82_decoded_room *room = &g_rt->rooms->items[g_rt->current_room];
         for (int ti = 0; ti < room->tile_count; ti++) {
             const gm82_decoded_tile *tile = &room->tiles[ti];
-            if (aabb_overlap_d(sl, st, sr, sb, tile->x, tile->y,
-                               tile->x + tile->width, tile->y + tile->height))
+            if (aabb_overlap(x, y, sw, sh, tile->x, tile->y, tile->width, tile->height))
                 return 1;
         }
     }
@@ -2014,14 +2014,29 @@ double gml_string_upper(const char *str, char *out, size_t out_sz) {
     return (double)k;
 }
 
+double gml_array_create_2d(double rows, double cols) {
+    return gm82_gml_array_create_2d(gm82_gml_get_runtime(), rows, cols);
+}
+double gml_array_create_1d(double length) {
+    return gm82_gml_array_create_1d(gm82_gml_get_runtime(), length);
+}
+double gml_array_get(double array_id, double row, double col, int has_col) {
+    gm82_runtime *rt = gm82_gml_get_runtime();
+    return has_col ? gm82_gml_array_get_2d(rt, array_id, row, col)
+                   : gm82_gml_array_get_1d(rt, array_id, row);
+}
+double gml_array_set(double array_id, double row, double col, int has_col, double value) {
+    gm82_runtime *rt = gm82_gml_get_runtime();
+    bool ok = has_col ? gm82_gml_array_set_2d(rt, array_id, row, col, value)
+                      : gm82_gml_array_set_1d(rt, array_id, row, value);
+    return ok ? 1.0 : 0.0;
+}
 double gml_array_length_1d(double array_id) {
     return gm82_gml_array_length_1d(gm82_gml_get_runtime(), array_id);
 }
-
 double gml_array_length_2d(double array_id, double row) {
     return gm82_gml_array_length_2d(gm82_gml_get_runtime(), array_id, row);
 }
-
 double gml_array_height_2d(double array_id) {
     return gm82_gml_array_height_2d(gm82_gml_get_runtime(), array_id);
 }
@@ -5886,10 +5901,13 @@ double gml_match_exact(double a, double b) {
     g_nor_match_found = ok;
     return ok ? 1.0 : 0.0;
 }
+double gml_match_clear(void) {
+    g_nor_match_found = 0;
+    return 0.0;
+}
 double gml_match_found(void) { return g_nor_match_found ? 1.0 : 0.0; }
-double gml_match_clear(void) { g_nor_match_found = 0; return 0.0; }
-double gml_match_not_any(double a, double b) { return a != b ? 1.0 : 0.0; }
-double gml_match_not_exact(double a, double b) { return a != b ? 1.0 : 0.0; }
+double gml_match_not_any(double a, double b) { return (a == b) ? 0.0 : 1.0; }
+double gml_match_not_exact(double a, double b) { return (a == b) ? 0.0 : 1.0; }
 double gml_match_some(double a, double b) { return gml_match_any(a, b); }
 double gml_match_not_some(double a, double b) { return gml_match_not_any(a, b); }
 double gml_mouse_in_window(void) { return 1.0; }

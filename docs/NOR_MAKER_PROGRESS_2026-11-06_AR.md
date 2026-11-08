@@ -158,3 +158,22 @@
 
 ### حالة التسليم المسجلة عند كتابة هذا التحديث
 الرأس المحلي يضم merge مفتوحًا من `origin/main` عند `0f3d3562`، بلا unmerged paths بعد حل التعارضات؛ ولا يزال يلزم حفظ merge commit ورفع فرع `fix/bytecode-with-mirror-regressions` لتحديث PR #393. نتيجة GitHub Actions الناجحة الظاهرة تخص رأسًا أقدم، ويجب انتظار workflow جديد بعد الدفع قبل إجراء merge إلى `main`.
+
+
+## متابعة 9 نوفمبر 2026 — مصالحة main e22f318f وتوحيد Native AST arrays
+
+### المصالحة والتغييرات
+- دُمجت محليًا تغييرات `origin/main` عند `e22f318f` فوق نقطة المصالحة السابقة. حُلّت تعارضات `gm82_gml_builtins.c` و`gm82_gml_eval.c` و`test_game_corpus.c` يدويًا، مع الحفاظ على AST-native field arrays الجديدة، إصلاحات collision من الفرع، ودعم GMK8 parser القادم من main.
+- أُزيل مخزن Native AST القديم المحدود إلى 8 خانات لكل اسم. كل من text evaluator وNative AST يستخدم الآن مخزن arrays runtime-owned واحدًا، مع 1D growth و2D sparse indexing. غُطيت 1D/2D handles وcompound assignment و`array_length_1d`/`array_length_2d`/`array_height_2d` إضافة إلى `self`/`global` و`alarm[]`/`argument[]` في regression.
+- أُصلح `test_game_corpus` ليجد عينات المستودع من جذر repository أو package ويقبل `NORMAKER_SAMPLES_DIR`. كما أُصلح `test_gmk8_action_parse` ليقبل `NORMAKER_GMK8_ACTION_SAMPLE` ويكتشف العينة في مساري root/package.
+- أضيفت اختبارات Native AST وGMK8 إلى Full Core gates وengine suite. بقي `host_win_runner.c` ملف تغليف خاصًا بحزمة Windows خارج core mirrors؛ verifier يستثنيه وحده بالاسم ويرفض أي ملف إضافي غير متوقع. تمت مزامنة ملفات C/H والاختبارات إلى المرآتين.
+
+### التحقق المحلي من الشجرة الحالية
+- `python3 tools/run_engine_suite.py`: **47/47**، مع Host pipeline **4/4** و`RESULT OK`.
+- `make -B -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX gates`: **HOST GATES OK** مع **18** مدخلًا صريحًا، بما فيها `test_full_suite` واختبارات Native AST/GMK8. يظل `test_resource_import` بلا fixture محلية كاملة ويبلغ عن skip؛ corpus مستقل يشغّل الألعاب الأربع المضمنة.
+- Python reference/security: **14/14**. `verify_core_mirrors.py` و`test_core_mirror_verifier.py` و`git diff --check`: **PASS**.
+- ASan+UBSan مع leak detection: regressions `test_gml_native_fields_arrays` و`test_array_semantics` و`test_gml_parser` اجتازت دون تقرير sanitizer.
+- لم يُنفّذ Android/NDK أو اختبار جهاز في هذه الجولة. لا توجد عملية مقارنة فعلية مع GM82 Portable؛ لذا تبقى أنواع عناصر arrays وأبعاد 2D الدقيقة وscaled pixel masks فجوات، ولا يوجد ادعاء توافق 100%.
+
+### حالة GitHub
+الـmerge المحلي ما زال مفتوحًا ومُسجّل التعديلات في الـindex، ولا توجد unmerged paths. الخطوات المتبقية: جلب أحدث `main` مرة أخيرة للتأكد من عدم تقدمه، إنشاء merge commit، دفع الفرع `fix/bytecode-with-mirror-regressions` لتحديث PR #393، انتظار checks على هذا الرأس، ثم إتمام merge إلى `main` إذا نجحت البوابات.

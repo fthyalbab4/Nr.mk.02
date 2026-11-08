@@ -44,6 +44,10 @@ gates: all test_full_suite
 		tests/test_game_corpus \
 		tests/test_match_api \
 		tests/test_array_2d \
+		tests/test_gml_native_builtin_calls \
+		tests/test_gml_native_fields_arrays \
+		tests/test_gml_native_control_flow \
+		tests/test_gmk8_action_parse \
 		tests/test_precise_collision \
 		tests/test_draw_gui_order \
 		tests/test_draw_fingerprint \
