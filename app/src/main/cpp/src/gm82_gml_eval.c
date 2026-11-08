@@ -21,13 +21,27 @@ typedef struct {
     int str_mask;
 } gml_parser;
 
-typedef struct { char name[64]; double value; } gml_global_var;
+typedef struct {
+    char name[64];
+    double value;
+} gml_global_var;
+#define GM82_NATIVE_ARRAY_CAP 8
+#define GM82_NATIVE_ARRAY_SLOTS 256
+typedef struct {
+    gm82_instance *owner;
+    bool global;
+    char name[64];
+    double values[GM82_NATIVE_ARRAY_CAP];
+    uint32_t mask;
+} native_array_slot;
 static gml_global_var g_global_vars[128];
 static int g_global_var_count;
 static gm82_runtime *g_global_runtime;
+static native_array_slot g_native_arrays[GM82_NATIVE_ARRAY_SLOTS];
 
 void gm82_gml_reset_globals(gm82_runtime *rt) {
     memset(g_global_vars, 0, sizeof(g_global_vars));
+    memset(g_native_arrays, 0, sizeof(g_native_arrays));
     g_global_var_count = 0;
     g_global_runtime = rt;
 }
@@ -3524,6 +3538,99 @@ static bool native_ast_call(const gm82_gml_ast *n, gm82_runtime *rt,
     return false;
 }
 
+static bool native_field_name(const gm82_gml_ast *n, char *out, size_t size) {
+    if (!n || !out || size == 0) return false;
+    if (n->kind == GM82_AST_IDENTIFIER) {
+        if (!n->text || strlen(n->text) + 1 > size) return false;
+        strcpy(out, n->text); return true;
+    }
+    if (n->kind == GM82_AST_MEMBER) {
+        char base[128];
+        if (!native_field_name(n->a, base, sizeof(base)) || !n->text) return false;
+        int written = snprintf(out, size, "%s.%s", base, n->text);
+        return written >= 0 && (size_t)written < size;
+    }
+    return false;
+}
+
+static bool native_array_owner(gm82_instance *self, const char *field,
+                               gm82_instance **owner, const char **name,
+                               bool *is_global) {
+    if (!field || !owner || !name || !is_global) return false;
+    *owner = self; *name = field; *is_global = false;
+    if (!strncmp(field, "global.", 7)) {
+        *owner = NULL; *name = field + 7; *is_global = true; return true;
+    }
+    if (!strncmp(field, "self.", 5)) { *name = field + 5; return self != NULL; }
+    if (!strncmp(field, "other.", 6)) {
+        *owner = gm82_gml_get_other(); *name = field + 6; return *owner != NULL;
+    }
+    return self != NULL;
+}
+
+static bool native_array_index(const gm82_gml_ast *index_node,
+                               gm82_runtime *rt, gm82_instance *self, int *out) {
+    double value;
+    if (!index_node || !out || !native_ast_eval(index_node, rt, self, &value) ||
+        value != (double)(int)value || value < 0 || value >= GM82_NATIVE_ARRAY_CAP) return false;
+    *out = (int)value; return true;
+}
+
+static native_array_slot *native_array_slot_find(gm82_instance *owner,
+                                                  bool global, const char *name,
+                                                  bool create) {
+    native_array_slot *free_slot = NULL;
+    for (int i = 0; i < GM82_NATIVE_ARRAY_SLOTS; ++i) {
+        native_array_slot *slot = &g_native_arrays[i];
+        if (!slot->name[0]) { if (!free_slot) free_slot = slot; continue; }
+        if (slot->owner == owner && slot->global == global && !strcmp(slot->name, name)) return slot;
+    }
+    if (!create || !free_slot) return NULL;
+    memset(free_slot, 0, sizeof(*free_slot));
+    free_slot->owner = owner;
+    free_slot->global = global;
+    snprintf(free_slot->name, sizeof(free_slot->name), "%.63s", name);
+    return free_slot;
+}
+
+static bool native_array_get(const char *field, int index, gm82_instance *self,
+                             double *out) {
+    gm82_instance *owner; const char *name; bool is_global;
+    if (!native_array_owner(self, field, &owner, &name, &is_global)) return false;
+    native_array_slot *slot = native_array_slot_find(owner, is_global, name, false);
+    *out = slot && (slot->mask & (1u << index)) ? slot->values[index] : 0.0;
+    return true;
+}
+
+static bool native_array_set(const char *field, int index, gm82_instance *self,
+                             double value) {
+    gm82_instance *owner; const char *name; bool is_global;
+    if (!native_array_owner(self, field, &owner, &name, &is_global)) return false;
+    native_array_slot *slot = native_array_slot_find(owner, is_global, name, true);
+    if (!slot) return false;
+    slot->values[index] = value; slot->mask |= 1u << index; return true;
+}
+
+static bool native_ast_set_lvalue(const gm82_gml_ast *lhs, gm82_runtime *rt,
+                                  gm82_instance *self, double value) {
+    char field[128];
+    if (native_field_name(lhs, field, sizeof(field))) {
+        gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
+        return set_var(&p, field, value);
+    }
+    if (lhs && lhs->kind == GM82_AST_INDEX) {
+        if (!native_field_name(lhs->a, field, sizeof(field))) return false;
+        int index;
+        if (!native_array_index(lhs->b, rt, self, &index)) return false;
+        if (!strcmp(field, "alarm")) {
+            if (!self) return false;
+            self->alarms[index] = (int32_t)value; return true;
+        }
+        return native_array_set(field, index, self, value);
+    }
+    return false;
+}
+
 static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
                             gm82_instance *self, double *out) {
     if (!n || !out) return false;
@@ -3533,6 +3640,26 @@ static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
         case GM82_AST_IDENTIFIER:
             ensure_global_runtime(rt);
             return get_var(&p, n->text ? n->text : "", out);
+        case GM82_AST_MEMBER: {
+            char field[128];
+            if (!native_field_name(n, field, sizeof(field))) return false;
+            ensure_global_runtime(rt);
+            return get_var(&p, field, out);
+        }
+        case GM82_AST_INDEX: {
+            char field[128];
+            int index;
+            if (!native_field_name(n->a, field, sizeof(field)) ||
+                !native_array_index(n->b, rt, self, &index)) return false;
+            if (!strcmp(field, "alarm")) {
+                *out = self ? (double)self->alarms[index] : -1.0;
+                return true;
+            }
+            if (!strcmp(field, "argument") || !strcmp(field, "arg")) {
+                *out = gm82_gml_get_script_arg(index); return true;
+            }
+            return native_array_get(field, index, self, out);
+        }
         case GM82_AST_UNARY: {
             double v;
             if (!native_ast_eval(n->a, rt, self, &v)) return false;
@@ -3578,22 +3705,20 @@ bool gm82_gml_eval_ast_stmt(gm82_runtime *rt, gm82_instance *self,
                             const gm82_gml_ast *stmt) {
     if (!stmt) return false;
     if (stmt->kind == GM82_AST_EXPR_STMT) stmt = stmt->a;
-    if (!stmt || stmt->kind != GM82_AST_ASSIGN || !stmt->a ||
-        stmt->a->kind != GM82_AST_IDENTIFIER || !stmt->a->text) return false;
+    if (!stmt || stmt->kind != GM82_AST_ASSIGN || !stmt->a) return false;
     double rhs;
     if (!native_ast_eval(stmt->b, rt, self, &rhs)) return false;
-    gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
     double value = rhs, old = 0;
     const char *op = stmt->text ? stmt->text : "=";
     if (strcmp(op, "=") != 0) {
-        if (!get_var(&p, stmt->a->text, &old)) return false;
+        if (!native_ast_eval(stmt->a, rt, self, &old)) return false;
         if (!strcmp(op, "+=")) value = old + rhs;
         else if (!strcmp(op, "-=")) value = old - rhs;
         else if (!strcmp(op, "*=")) value = old * rhs;
         else if (!strcmp(op, "/=")) { if (rhs == 0) return false; value = old / rhs; }
         else return false;
     }
-    if (!set_var(&p, stmt->a->text, value)) return false;
+    if (!native_ast_set_lvalue(stmt->a, rt, self, value)) return false;
     g_native_ast_eval_count++;
     return true;
 }

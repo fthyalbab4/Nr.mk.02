@@ -23,6 +23,17 @@ See full history in repo. Latest residual:
 - Unsupported calls and string/member/index expressions still use the legacy
   textual fallback; this section does not claim full built-in native coverage.
 
+## Bytecode native fields and arrays
+- **VERIFIED_HOST**: native AST reads/writes support flattened instance/global
+  member fields (`self.stats.hp`, `global.cache`) and bounded numeric arrays,
+  plus `alarm[index]` and `argument[index]`.
+- Native array storage is an evaluator side-table capped at 256 named arrays,
+  with 8 numeric elements per array; this is not a general dynamic GML struct
+  or unlimited array implementation.
+- `tests/test_gml_native_fields_arrays.c` → `NATIVE_FIELDS_ARRAYS_TEST_PASS`
+- ASAN regression passed for fields/arrays, builtin calls, bytecode native AST,
+  and parser tests.
+
 ## Delivery
 ```
 is_100: false
