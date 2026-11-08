@@ -1,0 +1,6 @@
+# NOR host corpus metrics (Phase 8)
+# tag load objects rooms room0_src inst_room alive_30 draw first_x first_y
+mario_like 1 21 2 181 181 178 1 64.00 192.00
+platformer 1 7 4 60 60 60 1 0.00 352.00
+shooter 1 12 2 308 308 308 1 0.00 0.00
+adventure 1 11 3 39 40 40 1 16.00 16.00

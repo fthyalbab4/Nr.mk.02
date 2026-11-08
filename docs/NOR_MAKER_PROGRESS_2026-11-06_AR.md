@@ -136,3 +136,25 @@
 وصل `main` إلى `ad9ea5f8d3556c4829be442f2ad7a98596aecda6` (PR #398)، مضيفًا فكّ `int32` بعمليات unsigned وإدارة تنظيف للـruntime في fixtures. تعارضت أسطر cleanup فقط مع توسعات `test_event_order`; حُفظت اختبارات Begin/Step/End وAlarm وTimeline و`with`، وأضيف cleanup للاختبارين mid-frame/depth، ثم نُسخت النتيجة إلى المرآتين. لا توجد ملفات تعارض غير محلولة.
 
 التحقق بعد الدمج المحلي: engine suite **42/42**، Host pipeline **4/4** (`RESULT OK`)، Full Core **35 هدفًا / exit 0** (تجاوزان بسبب غياب عينات GM82 النصية، وتحذير `strncpy` واحد في `src/gm82_actions.c:96`). Python reference/security **14/14**، ومدقق المرايا والاختبار السلبي **PASS**. شُغلت أربعة targets تحت ASan+UBSan مع `detect_leaks=1` و`halt_on_error=1` — `test_event_order`, `test_4_game_smoke`, `test_gm82core_math`, و`test_gmz_import_limits` — واجتازت كلها دون تقرير sanitizer. لم يُنفذ Android/NDK أو اختبار جهاز، ولم تُحدّث بعد حالة GitHub Actions للرأس الجديد.
+
+
+## متابعة 9 نوفمبر 2026 — arrays runtime، تصادم scale، وإغلاق بوابات host
+
+### ما تغير
+- أضيف `gm82_gml_arrays.h/.c` كمخزن runtime-owned لمصفوفات رقمية: 1D إنشاء/قراءة/كتابة وتوسعة مع صفر افتراضي، و2D sparse حسب `(row,column)`. تم توصيل `array_create`, `array_create_2d`, `array_length_1d`, `array_length_2d`, و`array_height_2d`، وإضافة auto-create للإسناد المفهرس وcompound assignments. المخزن يسمح بحد أقصى 64 array لكل runtime و65,536 عنصرًا/خلية لكل array، ويُحرر مع `gm82_runtime_cleanup`.
+- وسّع parser/serializer صيغة AST للفهرسة الثنائية `a[row,column]` وأضيف regression عبر bytecode للقراءة والكتابة 1D/2D. أضيف اختبار سعة يفتح runtimeين في الوقت نفسه، ويتحقق من 64 array لكل واحد، ورفض 65، والتنظيف.
+- أصلح `gml_place_meeting` لاستخدام world AABB المحسوب مع `image_xscale/image_yscale`. عند وجود scale لا تزال الدقة pixel-mask متراجعة إلى AABB؛ هذا لا يثبت pixel-precise parity للمناطق الشفافة.
+- أضيف مصدر arrays إلى الربط الصريح في `tools/run_host_pipeline.sh`. وأزيل اعتماد `test_game_corpus` على المسار المطلق القديم `/home/workdir/...`: يقبل الآن `NORMAKER_SAMPLES_DIR` ويستخدم مسار عينات المستودع افتراضيًا.
+- تمت مزامنة source/headers والاختبارات المتغيرة إلى `app/src/main/cpp_backup` و`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` وفق layout الاختبارات الخاص بالحزمة.
+
+### نتائج التحقق المحلي لهذه اللقطة
+- `python3 tools/run_engine_suite.py`: **43/43**؛ Host pipeline: **4/4**.
+- `make -B -C NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX gates`: انتهى بـ **HOST GATES OK**، وشمل 14 مدخل gate صريحًا مع `test_full_suite`. اختبار resource import أبلغ عن skip لغياب مجموعة fixtures الخاصة به؛ اختبار corpus المنفصل حمّل الألعاب الأربع المضمنة وأكمل host pipeline.
+- Python reference/security: **14/14**. مدقق المرايا والاختبار السلبي له و`git diff --check`: **PASS**.
+- اختبارات `test_array_semantics`, `test_array_2d`, و`test_gml_parser` تحت ASan+UBSan مع leak detection: **PASS**. كشف sanitizer أولًا stack overflow في fixture الاختبار الذي وضع ثلاثة `gm82_runtime` على stack؛ نُقلت الـfixtures إلى heap ثم اجتازت الفحوص. لم يظهر بعد ذلك تقرير ASan/UBSan.
+
+### حدود ما تثبته النتائج
+هذه نتائج host محلية فقط. مصفوفات التنفيذ الحالية رقمية، ولم تتم مقارنة أنواع العناصر أو convention أبعاد 2D مع GM82 Portable. لم يُنفذ Android/NDK أو اختبار جهاز في هذه الجولة، ولم يتوفر مرجع Portable؛ لذا تبقى النسبة 100% ممنوعة، وتبقى scaled pixel masks فجوة قائمة.
+
+### حالة التسليم المسجلة عند كتابة هذا التحديث
+الرأس المحلي يضم merge مفتوحًا من `origin/main` عند `0f3d3562`، بلا unmerged paths بعد حل التعارضات؛ ولا يزال يلزم حفظ merge commit ورفع فرع `fix/bytecode-with-mirror-regressions` لتحديث PR #393. نتيجة GitHub Actions الناجحة الظاهرة تخص رأسًا أقدم، ويجب انتظار workflow جديد بعد الدفع قبل إجراء merge إلى `main`.

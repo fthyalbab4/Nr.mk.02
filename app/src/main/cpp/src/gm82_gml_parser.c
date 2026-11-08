@@ -146,6 +146,7 @@ static gm82_gml_ast *primary(gm82_gml_parser *p) {
             q->a = n; q->text = copy_text(m.text); n = q;
         } else if (accept(p, GM82_TOK_LBRACKET)) {
             gm82_gml_ast *q = node(GM82_AST_INDEX, &t); q->a = n; q->b = expression(p);
+            if (p->current.kind == GM82_TOK_COMMA) { advance(p); q->c = expression(p); }
             if (!q->b || !expect(p, GM82_TOK_RBRACKET)) { gm82_gml_ast_free(q); return NULL; } n = q;
         } else if (accept(p, GM82_TOK_LPAREN)) {
             gm82_gml_ast *q = node(GM82_AST_CALL, &t), *head = NULL, *tail = NULL;

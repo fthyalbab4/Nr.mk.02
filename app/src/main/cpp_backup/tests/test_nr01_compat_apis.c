@@ -36,6 +36,17 @@ int main(void) {
     gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 0, 0);
     assert(inst != NULL);
 
+    gm82_mp_grid_world mp;
+    gm82_mp_grid_world_init(&mp);
+    gm82_mp_grid_bind(&mp);
+    double grid = gml_mp_grid_create(0, 0, 4, 4, 16, 16);
+    assert(grid >= 0.0);
+    assert(gml_mp_grid_add_rectangle(grid, 1, 1, 2, 2, 1) == 1.0);
+    assert(gml_mp_grid_clear_cell(grid, 1, 1) == 1.0);
+    assert(gml_mp_grid_clear_rectangle(grid, 2, 2, 2, 2) == 1.0);
+    assert(gml_mp_grid_destroy(grid) == 1.0);
+    gm82_mp_grid_bind(NULL);
+
     assert(near(gml_dot_product_normal(3, 4, 0, 5), 0.8));
     assert(near(gml_dot_product_3d_normal(0, 0, 1, 0, 0, 2), 1.0));
     assert(near(gml_dot_product_normal(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX), 1.0));
@@ -58,7 +69,20 @@ int main(void) {
     assert(gml_date_hour_span(t0, t1) == 1.0);
     assert(gml_date_day_span(t0, t0 + 86400.0) == 1.0);
     assert(near(gml_date_month_span(t0, t0 + 86400.0 * 30.4375), 1.0));
-    assert(near(gml_date_year_span(t0, t0 + 86400.0 * 365.25), 1.0));
+    assert(gml_date_year_span(t0, t0 + 86400.0 * 365.25) == 1.0);
+
+    assert(gml_filename_name("C:\\games\\mario.gmk") == 9.0);
+    assert(strcmp(gm82_gml_last_string(), "mario.gmk") == 0);
+    assert(gml_filename_path("C:\\games\\mario.gmk") == 8.0);
+    assert(strcmp(gm82_gml_last_string(), "C:\\games") == 0);
+    assert(gml_filename_dir("assets/sprites/player.png") == 15.0);
+    assert(strcmp(gm82_gml_last_string(), "assets/sprites/") == 0);
+    assert(gml_filename_drive("D:\\assets\\player.png") == 2.0);
+    assert(strcmp(gm82_gml_last_string(), "D:") == 0);
+    assert(gml_filename_ext("assets/sprites/player.png") == 4.0);
+    assert(strcmp(gm82_gml_last_string(), ".png") == 0);
+    assert(gml_filename_change_ext("assets/player.gmk", "apk") == 17.0);
+    assert(strcmp(gm82_gml_last_string(), "assets/player.apk") == 0);
 
     double value = 0.0;
     assert(gm82_gml_eval_expr(&rt, inst, "dot_product_normal(3,4,0,5)", &value));
@@ -139,6 +163,7 @@ int main(void) {
     gml_ds_grid_destroy(src);
     gml_ds_grid_destroy(dst);
     gml_ds_grid_destroy(overlap);
+    gm82_runtime_cleanup(&rt);
     puts("Nr.mk.01 compatibility APIs PASS");
     return 0;
 }

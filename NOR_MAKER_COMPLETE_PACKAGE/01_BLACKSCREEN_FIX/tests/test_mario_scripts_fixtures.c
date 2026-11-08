@@ -172,6 +172,7 @@ int main(void) {
     test_mario_scripts_and_flow(&rt);
     test_mario_extended_builtins_matrix(&rt);
 
+    gm82_runtime_cleanup(&rt);
     puts("MARIO_SCRIPTS_FIXTURES_TEST_PASS");
     return 0;
 }

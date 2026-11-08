@@ -51,7 +51,8 @@ static bool emit_node(source_buf *b, const gm82_gml_ast *n) {
         case GM82_AST_STRING: return emit_quoted(b, n->text);
         case GM82_AST_IDENTIFIER: return emit(b, n->text ? n->text : "");
         case GM82_AST_MEMBER: return emit_node(b, n->a) && emit_char(b, '.') && emit(b, n->text ? n->text : "");
-        case GM82_AST_INDEX: return emit_node(b, n->a) && emit_char(b, '[') && emit_node(b, n->b) && emit_char(b, ']');
+        case GM82_AST_INDEX: return emit_node(b, n->a) && emit_char(b, '[') && emit_node(b, n->b) &&
+            (n->c ? (emit(b, ", ") && emit_node(b, n->c)) : true) && emit_char(b, ']');
         case GM82_AST_CALL: return emit_node(b, n->a) && emit_char(b, '(') && emit_list(b, n->b, ", ") && emit_char(b, ')');
         case GM82_AST_UNARY:
             return emit(b, n->text ? n->text : "") &&

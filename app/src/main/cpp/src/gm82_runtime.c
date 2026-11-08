@@ -4,6 +4,7 @@
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_gml_eval.h"
+#include "gm82_gml_arrays.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +31,7 @@ void gm82_runtime_init(gm82_runtime *rt) {
 
 void gm82_runtime_cleanup(gm82_runtime *rt) {
     if (!rt) return;
+    gm82_gml_arrays_cleanup(rt);
     gm82_arena_free(&rt->room_arena);
     rt->instance_count = 0;
     rt->destroy_queue_count = 0;

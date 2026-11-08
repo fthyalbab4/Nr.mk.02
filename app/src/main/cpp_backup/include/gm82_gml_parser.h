@@ -121,6 +121,7 @@ typedef struct {
     int target;
     int alternate;
     char *source;
+    const gm82_gml_ast *ast; /* borrowed from the parsed program during execution */
 } gm82_gml_bc_instruction;
 
 typedef struct {

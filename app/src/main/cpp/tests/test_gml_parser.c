@@ -224,9 +224,9 @@ static void test_bytecode_with_snapshot(void) {
     gm82_gml_ast_free(return_root);
 
     gm82_gml_bc_instruction failing_code[] = {
-        { GM82_BC_WITH_BEGIN, 2, 0, "-3" },
-        { GM82_BC_EVAL_STMT, 0, 0, "x = (" },
-        { GM82_BC_WITH_NEXT, 1, 0, NULL }
+        { GM82_BC_WITH_BEGIN, 2, 0, "-3", NULL },
+        { GM82_BC_EVAL_STMT, 0, 0, "x = (", NULL },
+        { GM82_BC_WITH_NEXT, 1, 0, NULL, NULL }
     };
     gm82_gml_bytecode failing_bytecode = {
         .code = failing_code,
@@ -305,6 +305,7 @@ static void test_bytecode_with_nested_context_and_failure_cleanup(void) {
     assert(bytecode.count >= 4);
     assert(bytecode.code[0].opcode == GM82_BC_WITH_BEGIN);
     assert(bytecode.code[1].opcode == GM82_BC_EVAL_STMT);
+    bytecode.code[1].ast = NULL; /* Exercise source fallback after AST-backed evaluation was added. */
     bytecode.code[1].source[0] = '(';
     bytecode.code[1].source[1] = '\0';
     assert(!gm82_gml_execute_bytecode(&rt, first, &bytecode, &result));
@@ -354,6 +355,32 @@ static void test_switch_control_flow(void) {
     gm82_gml_ast_free(root);
 }
 
+static void test_bytecode_array_index_compatibility(void) {
+    const char *source = "a = array_create(3); a[2] = 7; "
+                         "m = array_create_2d(2, 4); m[1, 3] = 9; "
+                         "return a[2] + m[1, 3];";
+    gm82_gml_parser parser;
+    gm82_gml_parser_init(&parser, source);
+    gm82_gml_ast *root = gm82_gml_parse_program(&parser);
+    assert(root != NULL);
+    char serialized[1024];
+    assert(gm82_gml_ast_to_source(root, serialized, sizeof(serialized)));
+    assert(strstr(serialized, "m[1, 3]") != NULL);
+
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_instance *self = gm82_runtime_instance_create(&rt, 0, 0, 0);
+    assert(self != NULL);
+    gm82_gml_bytecode bytecode;
+    assert(gm82_gml_compile_bytecode(root, &bytecode));
+    gm82_gml_exec_result result;
+    assert(gm82_gml_execute_bytecode(&rt, self, &bytecode, &result));
+    assert(result.returned && result.return_value == 16.0);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_runtime_cleanup(&rt);
+    gm82_gml_ast_free(root);
+}
+
 int main(void) {
     test_lexer();
     test_parser();
@@ -365,6 +392,7 @@ int main(void) {
     test_bytecode_with_snapshot();
     test_bytecode_with_nested_context_and_failure_cleanup();
     test_switch_control_flow();
+    test_bytecode_array_index_compatibility();
     puts("test_gml_parser PASS");
     return 0;
 }

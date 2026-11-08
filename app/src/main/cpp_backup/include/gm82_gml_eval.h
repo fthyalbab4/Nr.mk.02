@@ -10,6 +10,7 @@
  */
 
 #include "gm82_runtime.h"
+#include "gm82_gml_parser.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -29,6 +30,14 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
 /* Evaluate a callback script and return its numeric result. */
 bool gm82_gml_eval_callback(gm82_runtime *rt, gm82_instance *self,
                             const char *code, double *out);
+
+/* Evaluate parser-owned AST nodes directly, without serializing/reparsing text. */
+bool gm82_gml_eval_ast_expr(gm82_runtime *rt, gm82_instance *self,
+                            const gm82_gml_ast *expr, double *out);
+bool gm82_gml_eval_ast_stmt(gm82_runtime *rt, gm82_instance *self,
+                            const gm82_gml_ast *stmt);
+void gm82_gml_native_ast_eval_reset(void);
+unsigned long gm82_gml_native_ast_eval_count(void);
 
 /* Set/get script arguments (argument0, argument1, ...) */
 void gm82_gml_set_script_args(const double *args, int count);
