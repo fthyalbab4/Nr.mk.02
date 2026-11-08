@@ -2426,6 +2426,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "array_create_2d") == 0) {
             *out = gml_array_create_2d(arg, nargs >= 2 ? args[1] : 1); return true;
         }
+        if (strcmp(id, "array_create") == 0) {
+            *out = gml_array_create_1d(arg); return true;
+        }
         if (strcmp(id, "math_min") == 0) {
             *out = gml_math_min(arg, nargs >= 2 ? args[1] : 0); return true;
         }
