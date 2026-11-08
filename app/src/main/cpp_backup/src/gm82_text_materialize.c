@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_text_materialize.h"
+#include "gm82_text_path.h"
 #include "gm82_png.h"
 
 #include <stdio.h>
@@ -8,6 +9,18 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <stdarg.h>
+
+static int project_path(char *out, size_t out_size, const char *root,
+                        const char *format, ...) {
+    char relative[PATH_MAX];
+    va_list args;
+    va_start(args, format);
+    int written = vsnprintf(relative, sizeof(relative), format, args);
+    va_end(args);
+    if (written < 0 || (size_t)written >= sizeof(relative)) return 0;
+    return gm82_text_resolve_path(root, relative, out, out_size);
+}
 
 /* Reads <group>/index.yyd into a freshly allocated name array. */
 static int read_index_names(const char *root, const char *group, char ***out_names) {
@@ -16,7 +29,10 @@ static int read_index_names(const char *root, const char *group, char ***out_nam
     char **names = NULL;
     int count = 0, cap = 0;
     *out_names = NULL;
-    snprintf(path, sizeof(path), "%s/%s/index.yyd", root, group);
+    char relative[PATH_MAX];
+    int written = snprintf(relative, sizeof(relative), "%s/index.yyd", group);
+    if (written < 0 || (size_t)written >= sizeof(relative) ||
+        !gm82_text_resolve_path(root, relative, path, sizeof(path))) return 0;
     FILE *f = fopen(path, "r");
     if (!f) return 0;
     while (fgets(line, sizeof(line), f)) {
@@ -106,23 +122,23 @@ static void read_background_txt(const char *path, gm82_res_background *b) {
 
 static bool materialize_one_sprite(const char *root, const char *name, gm82_res_sprite *s) {
     char dir[1200], meta[1400], frame_path[1500];
-    snprintf(dir, sizeof(dir), "%s/sprites/%s", root, name);
-    snprintf(meta, sizeof(meta), "%s/sprite.txt", dir);
-    read_sprite_txt(meta, s);
+    if (!project_path(dir, sizeof(dir), root, "sprites/%s", name)) return false;
+    if (project_path(meta, sizeof(meta), root, "sprites/%s/sprite.txt", name))
+        read_sprite_txt(meta, s);
 
     int frames = s->subimage_count > 0 ? s->subimage_count : 1;
     /* Prefer frame 0; fall back to the first available frame index. */
     gm82_png_image img = {0};
     bool loaded = false;
     for (int i = 0; i < frames && !loaded; ++i) {
-        snprintf(frame_path, sizeof(frame_path), "%s/%d.png", dir, i);
-        if (!file_exists(frame_path)) continue;
+        if (!project_path(frame_path, sizeof(frame_path), root,
+                          "sprites/%s/%d.png", name, i) || !file_exists(frame_path)) continue;
         if (gm82_png_decode_file(frame_path, &img)) loaded = true;
     }
     if (!loaded) {
         /* Some projects only keep a single unnamed frame. */
-        snprintf(frame_path, sizeof(frame_path), "%s/0.png", dir);
-        loaded = gm82_png_decode_file(frame_path, &img);
+        if (project_path(frame_path, sizeof(frame_path), root, "sprites/%s/0.png", name))
+            loaded = gm82_png_decode_file(frame_path, &img);
     }
     if (!loaded) return false;
 
@@ -141,9 +157,9 @@ static bool materialize_one_sprite(const char *root, const char *name, gm82_res_
 
 static bool materialize_one_background(const char *root, const char *name, gm82_res_background *b) {
     char img_path[1400], meta[1400];
-    snprintf(img_path, sizeof(img_path), "%s/backgrounds/%s.png", root, name);
-    snprintf(meta, sizeof(meta), "%s/backgrounds/%s.txt", root, name);
-    read_background_txt(meta, b);
+    if (!project_path(img_path, sizeof(img_path), root, "backgrounds/%s.png", name)) return false;
+    if (project_path(meta, sizeof(meta), root, "backgrounds/%s.txt", name))
+        read_background_txt(meta, b);
 
     gm82_png_image img = {0};
     if (!gm82_png_decode_file(img_path, &img)) return false;

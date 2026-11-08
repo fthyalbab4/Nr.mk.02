@@ -35,11 +35,11 @@ typedef struct {
     int min_rooms;
 } corpus_entry;
 
-static const corpus_entry k_corpus[] = {
-    { "../../app/src/main/assets/www/samples/mario_bros.gmk", "mario_like", 1, 1 },
-    { "../../app/src/main/assets/www/samples/plataformas.gmk", "platformer", 1, 1 },
-    { "../../app/src/main/assets/www/samples/shooter.gmk", "shooter", 1, 1 },
-    { "../../app/src/main/assets/www/samples/zelda.gmk", "adventure", 1, 1 },
+static const char *const k_sample_names[] = {
+    "mario_bros.gmk", "plataformas.gmk", "shooter.gmk", "zelda.gmk"
+};
+static const char *const k_sample_tags[] = {
+    "mario_like", "platformer", "shooter", "adventure"
 };
 
 typedef struct {
@@ -59,6 +59,11 @@ typedef struct {
 static int file_ok(const char *p) {
     struct stat st;
     return p && stat(p, &st) == 0 && S_ISREG(st.st_mode);
+}
+
+static int directory_ok(const char *p) {
+    struct stat st;
+    return p && stat(p, &st) == 0 && S_ISDIR(st.st_mode);
 }
 
 static int count_alive(const gm82_runtime *rt) {
@@ -172,18 +177,38 @@ int main(void) {
     printf("=== test_game_corpus (Phase 8) ===\n");
     printf("NOTE: Host metrics only - no Portable GM8.2 reference process in this environment.\n");
 
+    const char *samples_dir = getenv("NORMAKER_SAMPLES_DIR");
+    if (!samples_dir || !samples_dir[0]) {
+        static const char *const candidates[] = {
+            "../../app/src/main/assets/www/samples",
+            "app/src/main/assets/www/samples"
+        };
+        samples_dir = candidates[0];
+        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+            if (directory_ok(candidates[i])) { samples_dir = candidates[i]; break; }
+        }
+    }
+    corpus_entry corpus[sizeof(k_sample_names) / sizeof(k_sample_names[0])];
+    char sample_paths[sizeof(k_sample_names) / sizeof(k_sample_names[0])][1024];
+    for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); ++i) {
+        int n = snprintf(sample_paths[i], sizeof(sample_paths[i]), "%s/%s",
+                         samples_dir, k_sample_names[i]);
+        if (n < 0 || (size_t)n >= sizeof(sample_paths[i])) sample_paths[i][0] = 0;
+        corpus[i] = (corpus_entry){ sample_paths[i], k_sample_tags[i], 1, 1 };
+    }
+
     int ran = 0, ok = 0;
     corpus_metrics results[8];
     memset(results, 0, sizeof(results));
 
-    for (size_t i = 0; i < sizeof(k_corpus) / sizeof(k_corpus[0]); i++) {
-        if (!file_ok(k_corpus[i].path)) continue;
+    for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); i++) {
+        if (!file_ok(corpus[i].path)) continue;
         ran++;
-        if (run_one(&k_corpus[i], &results[i])) ok++;
+        if (run_one(&corpus[i], &results[i])) ok++;
 
         expect_true(results[i].load_ok, "corpus entry loaded");
-        expect_true(results[i].object_count >= k_corpus[i].min_objects, "min objects");
-        expect_true(results[i].room_count >= k_corpus[i].min_rooms, "min rooms");
+        expect_true(results[i].object_count >= corpus[i].min_objects, "min objects");
+        expect_true(results[i].room_count >= corpus[i].min_rooms, "min rooms");
         expect_true(results[i].frames_stepped == 30, "stepped 30 frames");
         expect_true(results[i].draw_ok, "draw ok");
         expect_true(results[i].instance_count_after_room > 0 || results[i].room0_instances_src == 0,
@@ -197,7 +222,7 @@ int main(void) {
     if (out) {
         fprintf(out, "# NOR host corpus metrics (Phase 8)\n");
         fprintf(out, "# tag load objects rooms room0_src inst_room alive_30 draw first_x first_y\n");
-        for (size_t i = 0; i < sizeof(k_corpus) / sizeof(k_corpus[0]); i++) {
+        for (size_t i = 0; i < sizeof(k_sample_names) / sizeof(k_sample_names[0]); i++) {
             if (!results[i].load_ok && results[i].tag[0] == 0) continue;
             fprintf(out, "%s %d %d %d %d %d %d %d %.2f %.2f\n",
                     results[i].tag, results[i].load_ok, results[i].object_count,

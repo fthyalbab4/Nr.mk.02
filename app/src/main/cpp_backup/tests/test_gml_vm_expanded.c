@@ -15,9 +15,9 @@ int main(void) {
     gm82_gml_set_runtime(&rt);
 
     /* Test array builtins */
-    assert(gml_array_length_1d(0) == 1.0);
-    assert(gml_array_height_2d(0) == 1.0);
-    assert(gml_array_length_2d(0, 0) == 1.0);
+    assert(gml_array_length_1d(0) == 0.0);
+    assert(gml_array_height_2d(0) == 0.0);
+    assert(gml_array_length_2d(0, 0) == 0.0);
 
     /* Test string digits/lower/upper */
     char buf[64];

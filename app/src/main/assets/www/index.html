@@ -97443,6 +97443,10 @@ const BUTTON_MAP = {
   // D-pad Right
 };
 const DEAD_ZONE = 0.25;
+const postNorKeyboardMessage = (target, message) => {
+  if (!target || typeof target.postMessage !== "function") return;
+  try { target.postMessage(Object.assign({ __norSandboxBridge: 1 }, message), "*"); } catch (_) {}
+};
 function useGamepad(options = {}) {
   const { iframeRef, broadcastToWindow = false, enabled = true } = options;
   const rafRef = reactExports.useRef(0);
@@ -97458,7 +97462,10 @@ function useGamepad(options = {}) {
       cancelable: true
     });
     if ((_a2 = iframeRef == null ? void 0 : iframeRef.current) == null ? void 0 : _a2.contentWindow) {
-      iframeRef.current.contentWindow.dispatchEvent(event);
+      postNorKeyboardMessage(iframeRef.current.contentWindow, {
+        type: "keyboard", value: key, key: key, code: key, keyCode: 0,
+        down: type === "keydown"
+      });
     }
     if (broadcastToWindow) {
       window.dispatchEvent(event);
@@ -97564,26 +97571,88 @@ const __norForwardAndroidKey = (keyCodeOrName, down) => {
     for (const frame of frames) {
       const win = frame && frame.contentWindow;
       if (!win) continue;
-      try {
-        win.postMessage({ type: 'nor-maker-input', key: keyCodeOrName, down: !!down }, '*');
-      } catch (_) {}
-      if (typeof win.syncKeyboardToPlayers !== 'function') continue;
-      win.syncKeyboardToPlayers(keyCodeOrName, !!down);
-      const code = typeof keyCodeOrName === 'number' ? keyCodeOrName : 0;
       const key = typeof keyCodeOrName === 'string' ? keyCodeOrName : String(keyCodeOrName);
-      const event = new KeyboardEvent(down ? 'keydown' : 'keyup', { key, code: key, keyCode: code, which: code, bubbles: true, cancelable: true, view: win });
-      try { Object.defineProperty(event, 'keyCode', { get: () => code }); Object.defineProperty(event, 'which', { get: () => code }); } catch (_) {}
-      win.dispatchEvent(event);
+      const keyCode = typeof keyCodeOrName === 'number' ? keyCodeOrName : 0;
+      postNorKeyboardMessage(win, {
+        type: 'keyboard', value: keyCodeOrName, key: key, code: key,
+        keyCode: keyCode, down: !!down
+      });
     }
   } catch (error) { console.warn('NOR Android iframe key bridge failed:', error); }
 };
 window.__norAndroidKey = __norForwardAndroidKey;
+const NOR_SANDBOX_BRIDGE_SCRIPT = `<script data-nor-sandbox-bridge>
+(function() {
+  const notifyControls = function() {
+    try {
+      const controls = window.DETECTED_CONTROLS ||
+        (window.GAME_DATA && window.GAME_DATA.detectedGameControls);
+      if (controls && typeof controls === 'object' && controls.buttons) {
+        window.parent.postMessage({ __norSandboxBridge: 1, type: 'controls', controls: controls }, '*');
+      }
+    } catch (_) {}
+  };
+  window.addEventListener('message', function(event) {
+    if (event.source !== window.parent) return;
+    const message = event.data;
+    if (!message || message.__norSandboxBridge !== 1) return;
+    if (message.type === 'get-controls') { notifyControls(); return; }
+    if (message.type !== 'keyboard' || typeof message.down !== 'boolean') return;
+    const raw = message.value;
+    if ((typeof raw !== 'string' && typeof raw !== 'number') ||
+        (typeof raw === 'string' && raw.length > 32) ||
+        (typeof raw === 'number' && (!Number.isFinite(raw) || Math.abs(raw) > 255))) return;
+    const key = typeof message.key === 'string' && message.key.length <= 32 ? message.key : String(raw);
+    const code = typeof message.code === 'string' && message.code.length <= 32 ? message.code : key;
+    const keyCode = Number.isInteger(message.keyCode) && message.keyCode >= 0 && message.keyCode <= 255
+      ? message.keyCode : (typeof raw === 'number' ? raw : 0);
+    const values = [raw, code, keyCode].filter((value, index, all) =>
+      value !== '' && value !== 0 && value != null && all.indexOf(value) === index);
+    const isDown = message.down;
+    try {
+      if (typeof window.syncKeyboardToPlayers === 'function') {
+        window.syncKeyboardToPlayers(raw, isDown);
+        if (code && code !== raw) window.syncKeyboardToPlayers(code, isDown);
+      }
+    } catch (_) {}
+    for (const input of [window.Input, window.P1_Input]) {
+      try {
+        if (input && typeof input.syncKey === 'function') {
+          for (const value of values) input.syncKey(value, isDown);
+        }
+      } catch (_) {}
+    }
+    const keyEvent = new KeyboardEvent(isDown ? 'keydown' : 'keyup', {
+      key: key, code: code, keyCode: keyCode, which: keyCode,
+      bubbles: true, cancelable: true, view: window
+    });
+    try {
+      Object.defineProperty(keyEvent, 'keyCode', { get: () => keyCode });
+      Object.defineProperty(keyEvent, 'which', { get: () => keyCode });
+    } catch (_) {}
+    for (const target of [window, document, document.body, document.querySelector('canvas')]) {
+      try { if (target) target.dispatchEvent(keyEvent); } catch (_) {}
+    }
+  });
+  window.addEventListener('load', notifyControls, { once: true });
+  setTimeout(notifyControls, 0);
+})();
+<\/script>`;
+const withNorSandboxBridge = (html) => {
+  const source = String(html || '');
+  if (source.includes('data-nor-sandbox-bridge')) return source;
+  const lower = source.toLowerCase();
+  const bodyEnd = lower.lastIndexOf('</body>');
+  if (bodyEnd >= 0) return source.slice(0, bodyEnd) + NOR_SANDBOX_BRIDGE_SCRIPT + source.slice(bodyEnd);
+  const htmlEnd = lower.lastIndexOf('</html>');
+  if (htmlEnd >= 0) return source.slice(0, htmlEnd) + NOR_SANDBOX_BRIDGE_SCRIPT + source.slice(htmlEnd);
+  return source + NOR_SANDBOX_BRIDGE_SCRIPT;
+};
 
 const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, onClose }) => {
   const internalIframeRef = reactExports.useRef(null);
   const iframeRef = forwardedIframeRef || internalIframeRef;
   const containerRef = reactExports.useRef(null);
-  const inputChannelTokenRef = reactExports.useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
   const [activeKeys, setActiveKeys] = reactExports.useState({});
   const [detectedControls, setDetectedControls] = reactExports.useState(null);
   const [toastMessage, setToastMessage] = reactExports.useState(null);
@@ -97592,30 +97661,6 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
   const [isLandscapeMode, setIsLandscapeMode] = reactExports.useState(false);
   const [isGameFullscreen, setIsGameFullscreen] = reactExports.useState(false);
   const lastOrientationTap = reactExports.useRef(0);
-
-  const iframeContent = reactExports.useMemo(() => {
-    if (typeof content !== "string" || !content) return content;
-    const token = inputChannelTokenRef.current;
-    const bridge = `<script>(function(){
-      var TOKEN=${JSON.stringify(token)};
-      var ALLOWED={ArrowLeft:1,ArrowUp:1,ArrowRight:1,ArrowDown:1,Space:1,Enter:1,Escape:1,KeyZ:1,KeyX:1,KeyC:1,KeyA:1,KeyS:1,KeyD:1,KeyK:1,KeyJ:1,ShiftLeft:1,ControlLeft:1,37:1,38:1,39:1,40:1,32:1,13:1,27:1,65:1,67:1,68:1,74:1,75:1,88:1,90:1,16:1,17:1};
-      function apply(d){
-        if(!d || d.type!=="nor-maker-input" || (d.token && d.token!==TOKEN) || typeof d.down!=="boolean") return;
-        var code=typeof d.code==="string"?d.code:"";
-        var key=typeof d.key==="string"?d.key:"";
-        var kc=Number(d.keyCode)||(typeof d.key==="number"?d.key:0);
-        if(!ALLOWED[code] && !ALLOWED[key] && !ALLOWED[kc]) return;
-        var down=!!d.down;
-        try{if(typeof window.syncKeyboardToPlayers==="function"){if(kc)window.syncKeyboardToPlayers(kc,down);if(code)window.syncKeyboardToPlayers(code,down);if(key&&key!==code)window.syncKeyboardToPlayers(key,down);}}catch(_){}
-        try{if(window.Input&&typeof window.Input.syncKey==="function"){if(kc)window.Input.syncKey(kc,down);if(code)window.Input.syncKey(code,down);}}catch(_){}
-        try{if(window.P1_Input&&typeof window.P1_Input.syncKey==="function"){if(kc)window.P1_Input.syncKey(kc,down);if(code)window.P1_Input.syncKey(code,down);}}catch(_){}
-        try{var e=new KeyboardEvent(down?"keydown":"keyup",{key:key||code,code:code||key,keyCode:kc,which:kc,bubbles:true,cancelable:true});try{Object.defineProperty(e,"keyCode",{get:function(){return kc}});Object.defineProperty(e,"which",{get:function(){return kc}})}catch(_){}window.dispatchEvent(e);document.dispatchEvent(e);}catch(_){}
-      }
-      window.addEventListener("message",function(e){if(e.source===window.parent)apply(e.data);});
-    })();<\/script>`;
-    if (/<\/body>/i.test(content)) return content.replace(/<\/body>/i, bridge + "</body>");
-    return content + bridge;
-  }, [content]);
 
   const toggleGameFullscreen = reactExports.useCallback(async () => {
     const root = containerRef.current;
@@ -97716,29 +97761,33 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
 
   reactExports.useEffect(() => {
     if (mode !== "game") return;
+    let receivedControls = false;
+    const onSandboxBridgeMessage = (event) => {
+      const child = iframeRef.current?.contentWindow;
+      if (!child || event.source !== child) return;
+      const message = event.data;
+      if (!message || message.__norSandboxBridge !== 1 || message.type !== "controls") return;
+      const controls = message.controls;
+      if (!controls || typeof controls !== "object" || !controls.buttons || typeof controls.buttons !== "object") return;
+      receivedControls = true;
+      setDetectedControls(controls);
+      if (typeof controls.toastAr === "string") setToastMessage(controls.toastAr);
+    };
+    window.addEventListener("message", onSandboxBridgeMessage);
     const extractControls = () => {
       const win = iframeRef.current?.contentWindow;
-      if (win) {
-        if (win.DETECTED_CONTROLS && win.DETECTED_CONTROLS.buttons) {
-          setDetectedControls(win.DETECTED_CONTROLS);
-          if (win.DETECTED_CONTROLS.toastAr) setToastMessage(win.DETECTED_CONTROLS.toastAr);
-          return true;
-        }
-        if (win.GAME_DATA && win.GAME_DATA.detectedGameControls && win.GAME_DATA.detectedGameControls.buttons) {
-          setDetectedControls(win.GAME_DATA.detectedGameControls);
-          if (win.GAME_DATA.detectedGameControls.toastAr) setToastMessage(win.GAME_DATA.detectedGameControls.toastAr);
-          return true;
-        }
+      if (win && typeof win.postMessage === "function") {
+        try { win.postMessage({ __norSandboxBridge: 1, type: "get-controls" }, "*"); } catch (_) {}
       }
       return false;
     };
-
     if (content) {
       try {
         const m = content.match(/"detectedGameControls"\s*:\s*(\{[\s\S]+?\})\s*,\s*"runtimeDiagnostics"/);
         if (m && m[1]) {
           const parsed = JSON.parse(m[1]);
           if (parsed && parsed.buttons) {
+            receivedControls = true;
             setDetectedControls(parsed);
             if (parsed.toastAr) setToastMessage(parsed.toastAr);
           }
@@ -97746,11 +97795,20 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       } catch(e) {}
     }
 
+    let controlRequests = 0;
     const interval = setInterval(() => {
-      if (extractControls()) clearInterval(interval);
+      if (receivedControls || controlRequests >= 10) {
+        clearInterval(interval);
+        return;
+      }
+      controlRequests++;
+      extractControls();
     }, 150);
-    return () => clearInterval(interval);
-  }, [content, mode]);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("message", onSandboxBridgeMessage);
+    };
+  }, [content, mode, iframeRef]);
 
   reactExports.useEffect(() => {
     if (!toastMessage) return;
@@ -97803,76 +97861,25 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
       }
     }
 
-    /* Secure iframe bridge: sandboxed srcdoc cannot be accessed directly. */
+    /* Keep host-side input hooks local; iframe input crosses the opaque-origin bridge. */
     try {
-      if (iwin && typeof iwin.postMessage === "function") {
-        iwin.postMessage({
-          type: "nor-maker-input",
-          token: inputChannelTokenRef.current,
-          key, code, keyCode, down: isDown
-        }, "*");
+      const values = [keyCode || code || key, code, keyCode]
+        .filter((value, index, all) => value !== "" && value !== 0 && value != null && all.indexOf(value) === index);
+      if (typeof window.syncKeyboardToPlayers === "function") {
+        for (const value of values) window.syncKeyboardToPlayers(value, isDown);
       }
-    } catch (_bridgeError) {}
-    /* Legacy same-origin path remains best-effort for non-sandboxed embeds. */
-    try {
-      const _tgts = [];
-      if (typeof window !== "undefined") _tgts.push(window);
-      if (iwin) _tgts.push(iwin);
-      for (const w of _tgts) {
-        if (!w) continue;
-        try {
-          if (typeof w.syncKeyboardToPlayers === "function") {
-            w.syncKeyboardToPlayers(keyCode || code || key, isDown);
-            if (code) w.syncKeyboardToPlayers(code, isDown);
-          }
-          if (w.Input && typeof w.Input.syncKey === "function") {
-            w.Input.syncKey(keyCode || code || key, isDown);
-            if (code) w.Input.syncKey(code, isDown);
-            if (keyCode) w.Input.syncKey(keyCode, isDown);
-          }
-          if (w.P1_Input && typeof w.P1_Input.syncKey === "function") {
-            w.P1_Input.syncKey(keyCode || code || key, isDown);
-            if (code) w.P1_Input.syncKey(code, isDown);
-          }
-        } catch (_e) {}
+      for (const input of [window.Input, window.P1_Input]) {
+        if (input && typeof input.syncKey === "function") {
+          for (const value of values) input.syncKey(value, isDown);
+        }
       }
-    } catch (_e2) {}
-    if (iwin && typeof iwin.syncKeyboardToPlayers === "function") {
-      try {
-        iwin.syncKeyboardToPlayers(keyCode || code || key, isDown);
-        if (code && code !== key) iwin.syncKeyboardToPlayers(code, isDown);
-      } catch (e) {}
-    }
-
-    if (iwin.Input && typeof iwin.Input.syncKey === "function") {
-      try {
-        iwin.Input.syncKey(keyCode || code || key, isDown);
-        if (code && code !== key) iwin.Input.syncKey(code, isDown);
-      } catch(e) {}
-    }
-
-    try {
-      const event = new KeyboardEvent(type, {
-        key: String(key),
-        code: code || String(key),
-        keyCode: keyCode || 0,
-        which: keyCode || 0,
-        bubbles: true,
-        cancelable: true,
-        view: iwin
+    } catch (_) {}
+    if (iwin) {
+      postNorKeyboardMessage(iwin, {
+        type: "keyboard", value: keyCode || code || key,
+        key: String(key), code: code || String(key), keyCode: keyCode, down: isDown
       });
-      try {
-        Object.defineProperty(event, "keyCode", { get: () => keyCode });
-        Object.defineProperty(event, "which", { get: () => keyCode });
-      } catch(_) {}
-      iwin.dispatchEvent(event);
-      if (iwin.document) {
-        iwin.document.dispatchEvent(event);
-        if (iwin.document.body) iwin.document.body.dispatchEvent(event);
-        const canvas = iwin.document.querySelector("canvas");
-        if (canvas) canvas.dispatchEvent(event);
-      }
-    } catch (e) {}
+    }
   };
 
   reactExports.useEffect(() => {
@@ -98095,7 +98102,7 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                   /* Game Iframe */
                   /* @__PURE__ */ jsxRuntimeExports.jsx("iframe", {
                     ref: iframeRef,
-                    srcDoc: iframeContent,
+                    srcDoc: withNorSandboxBridge(content),
                   className: "w-full h-full border-none select-none z-10",
                   title: "Game Engine",
                   sandbox: "allow-scripts allow-modals allow-pointer-lock",

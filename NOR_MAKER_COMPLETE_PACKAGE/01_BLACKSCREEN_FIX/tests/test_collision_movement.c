@@ -50,7 +50,6 @@ static char *dup_s(const char *s) {
     return p;
 }
 
-/* obj 0 = mover, obj 1 = solid wall/floor, both 16x16 default boxes */
 static void setup_objects(void) {
     memset(&g_objs, 0, sizeof(g_objs));
     g_objs.count = 2;

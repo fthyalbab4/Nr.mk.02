@@ -33,9 +33,21 @@ static const gm82_object_actions *find_object(const gm82_action_table *table,
 }
 
 int main(int argc, char **argv) {
-    const char *path = argc > 1 ? argv[1] : "../02_SAMPLES/mario_bros.gmk";
     size_t size = 0;
-    unsigned char *data = read_file(path, &size);
+    unsigned char *data = NULL;
+    if (argc > 1) {
+        data = read_file(argv[1], &size);
+    } else {
+        const char *override = getenv("NORMAKER_GMK8_ACTION_SAMPLE");
+        if (override && override[0]) data = read_file(override, &size);
+        static const char *const candidates[] = {
+            "../02_SAMPLES/mario_bros.gmk",
+            "NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk",
+            "app/src/main/assets/www/samples/mario_bros.gmk"
+        };
+        for (size_t i = 0; !data && i < sizeof(candidates) / sizeof(candidates[0]); ++i)
+            data = read_file(candidates[i], &size);
+    }
     assert(data != NULL);
 
     gm82_action_table table = {0};

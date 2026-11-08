@@ -51,7 +51,8 @@ static bool emit_node(source_buf *b, const gm82_gml_ast *n) {
         case GM82_AST_STRING: return emit_quoted(b, n->text);
         case GM82_AST_IDENTIFIER: return emit(b, n->text ? n->text : "");
         case GM82_AST_MEMBER: return emit_node(b, n->a) && emit_char(b, '.') && emit(b, n->text ? n->text : "");
-        case GM82_AST_INDEX: return emit_node(b, n->a) && emit_char(b, '[') && emit_node(b, n->b) && emit_char(b, ']');
+        case GM82_AST_INDEX: return emit_node(b, n->a) && emit_char(b, '[') && emit_node(b, n->b) &&
+            (n->c ? (emit(b, ", ") && emit_node(b, n->c)) : true) && emit_char(b, ']');
         case GM82_AST_CALL: return emit_node(b, n->a) && emit_char(b, '(') && emit_list(b, n->b, ", ") && emit_char(b, ')');
         case GM82_AST_UNARY:
             return emit(b, n->text ? n->text : "") &&
@@ -143,6 +144,7 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
                 if (!execute_node(rt, self, n->a, r)) return false;
                 if (r->broke) { r->broke = false; return true; }
                 if (!eval_bool(rt, self, n->b, &condition)) return false;
+                r->continued = false;
             } while (!condition && !r->returned);
             return true;
         }

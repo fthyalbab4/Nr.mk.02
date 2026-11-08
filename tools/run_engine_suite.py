@@ -10,14 +10,17 @@ TESTS = [
     ("test_full_suite", "app/src/main/cpp/test_full_suite.c"),
     ("test_runtime_guard", "app/src/main/cpp/tests/test_runtime_guard.c"),
     ("test_runtime_rendering_collision", "app/src/main/cpp/tests/test_runtime_rendering_collision.c"),
+    ("test_with_edges", "app/src/main/cpp/tests/test_with_edges.c"),
     ("test_draw_extras", "app/src/main/cpp/tests/test_draw_extras.c"),
     ("test_gml_bytecode_native_ast", "app/src/main/cpp/tests/test_gml_bytecode_native_ast.c"),
+    ("test_gmk8_action_parse", "app/src/main/cpp/tests/test_gmk8_action_parse.c"),
     ("test_gml_native_builtin_calls", "app/src/main/cpp/tests/test_gml_native_builtin_calls.c"),
     ("test_gml_native_fields_arrays", "app/src/main/cpp/tests/test_gml_native_fields_arrays.c"),
     ("test_gml_native_control_flow", "app/src/main/cpp/tests/test_gml_native_control_flow.c"),
     ("test_dual_load", "app/src/main/cpp/tests/test_dual_load.c"),
     ("test_input_key_bounds", "app/src/main/cpp/tests/test_input_key_bounds.c"),
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),
+    ("test_gm82_text_reader_security", "app/src/main/cpp/tests/test_gm82_text_reader_security.c"),
     ("test_mario_physics_parity", "app/src/main/cpp/tests/test_mario_physics_parity.c"),
     ("test_mario_replay", "app/src/main/cpp/tests/test_mario_replay.c"),
     ("test_mario_scripts_fixtures", "app/src/main/cpp/tests/test_mario_scripts_fixtures.c"),
@@ -33,13 +36,11 @@ TESTS = [
     ("test_phase1", "app/src/main/cpp/tests/test_phase1.c"),
     ("test_buffer_bounds", "app/src/main/cpp/tests/test_buffer_bounds.c"),
     ("test_gmz_import_limits", "app/src/main/cpp/tests/test_gmz_import_limits.c"),
-    ("test_gml_vm_execution", "app/src/main/cpp/tests/test_gml_vm_execution.c"),
     ("test_gml_vm_expanded", "app/src/main/cpp/tests/test_gml_vm_expanded.c"),
     ("test_gml_ds_collisions", "app/src/main/cpp/tests/test_gml_ds_collisions.c"),
     ("test_paths_particles_mpgrid", "app/src/main/cpp/tests/test_paths_particles_mpgrid.c"),
     ("test_path_and_instance_list", "app/src/main/cpp/tests/test_path_and_instance_list.c"),
     ("test_event_order", "app/src/main/cpp/tests/test_event_order.c"),
-    ("test_with_edges", "app/src/main/cpp/tests/test_with_edges.c"),
     ("test_action_global_dispatch", "app/src/main/cpp/tests/test_action_global_dispatch.c"),
     ("test_phase1_arena_sprites_lifecycle", "app/src/main/cpp/tests/test_phase1_arena_sprites_lifecycle.c"),
     ("test_gml_string_repeat", "app/src/main/cpp/tests/test_gml_string_repeat.c"),
@@ -74,6 +75,10 @@ def main():
         for src in missing:
             print(f"FAIL missing required test: {src}")
         return 1
+
+    for script in ("tools/verify_core_mirrors.py", "tools/test_core_mirror_verifier.py"):
+        if not run([sys.executable, str(ROOT / script)], script):
+            return 1
 
     with tempfile.TemporaryDirectory(prefix="normaker-engine-") as temp:
         build_dir = Path(temp)

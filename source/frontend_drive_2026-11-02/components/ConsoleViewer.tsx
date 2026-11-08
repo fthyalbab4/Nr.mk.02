@@ -14,6 +14,90 @@ interface ConsoleViewerProps {
 // ⚡ Bolt: Pre-allocate static sound array at module level to avoid array allocation on every 500ms debug polling re-render
 const SYNTH_SOUND_TYPES = ['coin', 'laser', 'hit', 'explosion', 'powerup', 'jump'];
 
+const NOR_SANDBOX_BRIDGE_SCRIPT = `<script data-nor-sandbox-bridge>
+(function () {
+  const sendDebugState = function () {
+    try {
+      const instances = Array.isArray(window.instances)
+        ? window.instances.reduce((count, item) => count + (!item || !item.destroyed ? 1 : 0), 0) : 0;
+      const playerHealth = window.player ? Number(window.player.health) : NaN;
+      const state = {
+        instances: instances,
+        score: Number(window.score) || 0,
+        health: Number.isFinite(playerHealth) ? playerHealth : (Number(window.health) || 0),
+        lives: Number(window.lives) || 0
+      };
+      window.parent.postMessage({ __norSandboxBridge: 1, type: 'debug-state', state: state }, '*');
+    } catch (_) {}
+  };
+  window.addEventListener('message', function (messageEvent) {
+    if (messageEvent.source !== window.parent) return;
+    const message = messageEvent.data;
+    if (!message || message.__norSandboxBridge !== 1) return;
+    if (message.type === 'get-debug-state') { sendDebugState(); return; }
+    if (message.type === 'play-preview-sound') {
+      const sounds = ['coin', 'laser', 'hit', 'explosion', 'powerup', 'jump'];
+      if (sounds.includes(message.sound) && typeof window.playSynthSound === 'function') {
+        try { window.playSynthSound(message.sound); } catch (_) {}
+      }
+      return;
+    }
+    if (message.type !== 'keyboard' || typeof message.down !== 'boolean') return;
+    const raw = message.value;
+    if ((typeof raw !== 'string' && typeof raw !== 'number') ||
+        (typeof raw === 'string' && raw.length > 32) ||
+        (typeof raw === 'number' && (!Number.isFinite(raw) || Math.abs(raw) > 255))) return;
+    const key = typeof message.key === 'string' && message.key.length <= 32 ? message.key : String(raw);
+    const code = typeof message.code === 'string' && message.code.length <= 32 ? message.code : key;
+    const keyCode = Number.isInteger(message.keyCode) && message.keyCode >= 0 && message.keyCode <= 255
+      ? message.keyCode : (typeof raw === 'number' ? raw : 0);
+    const values = [raw, code, keyCode].filter((value, index, all) =>
+      value !== '' && value !== 0 && value != null && all.indexOf(value) === index);
+    try {
+      if (typeof window.syncKeyboardToPlayers === 'function') {
+        window.syncKeyboardToPlayers(raw, message.down);
+        if (code && code !== raw) window.syncKeyboardToPlayers(code, message.down);
+      }
+    } catch (_) {}
+    for (const input of [window.Input, window.P1_Input]) {
+      try {
+        if (input && typeof input.syncKey === 'function') {
+          for (const value of values) input.syncKey(value, message.down);
+        }
+      } catch (_) {}
+    }
+    const keyEvent = new KeyboardEvent(message.down ? 'keydown' : 'keyup', {
+      key: key, code: code, keyCode: keyCode, which: keyCode,
+      bubbles: true, cancelable: true, view: window
+    });
+    try {
+      Object.defineProperty(keyEvent, 'keyCode', { get: () => keyCode });
+      Object.defineProperty(keyEvent, 'which', { get: () => keyCode });
+    } catch (_) {}
+    for (const target of [window, document, document.body, document.querySelector('canvas')]) {
+      try { if (target) target.dispatchEvent(keyEvent); } catch (_) {}
+    }
+  });
+  window.addEventListener('load', sendDebugState, { once: true });
+})();
+<\/script>`;
+
+const withNorSandboxBridge = (html: string) => {
+  const source = String(html || '');
+  if (source.includes('data-nor-sandbox-bridge')) return source;
+  const lower = source.toLowerCase();
+  const bodyEnd = lower.lastIndexOf('</body>');
+  if (bodyEnd >= 0) return source.slice(0, bodyEnd) + NOR_SANDBOX_BRIDGE_SCRIPT + source.slice(bodyEnd);
+  const htmlEnd = lower.lastIndexOf('</html>');
+  if (htmlEnd >= 0) return source.slice(0, htmlEnd) + NOR_SANDBOX_BRIDGE_SCRIPT + source.slice(htmlEnd);
+  return source + NOR_SANDBOX_BRIDGE_SCRIPT;
+};
+
+const postSandboxMessage = (target: Window | null | undefined, message: Record<string, unknown>) => {
+  if (!target) return;
+  try { target.postMessage(Object.assign({ __norSandboxBridge: 1 }, message), '*'); } catch (_) {}
+};
+
 const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,36 +108,38 @@ const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) =
   const [customCode, setCustomCode] = useState('');
   const [debugInfo, setDebugInfo] = useState({ instances: 0, score: 0, health: 100, lives: 3 });
 
-  // Query live game engine state periodically
+  // Query only bounded game status over postMessage; never read child globals directly.
   useEffect(() => {
     if (mode !== 'game') return;
+    const onDebugState = (event: MessageEvent) => {
+      const child = iframeRef.current?.contentWindow;
+      if (!child || event.source !== child) return;
+      const message = event.data as { __norSandboxBridge?: unknown; type?: unknown; state?: unknown } | null;
+      if (!message || message.__norSandboxBridge !== 1 || message.type !== 'debug-state' || !message.state) return;
+      const state = message.state as Record<string, unknown>;
+      const values = [state.instances, state.score, state.health, state.lives];
+      if (!values.every(value => typeof value === 'number' && Number.isFinite(value))) return;
+      setDebugInfo({
+        instances: Math.max(0, Math.min(100000, state.instances as number)),
+        score: state.score as number,
+        health: state.health as number,
+        lives: state.lives as number
+      });
+    };
+    window.addEventListener('message', onDebugState);
     const interval = setInterval(() => {
-      const win = iframeRef.current?.contentWindow as any;
-      if (win) {
-        try {
-          let activeInstances = 0;
-          if (Array.isArray(win.instances)) {
-            for (let i = 0; i < win.instances.length; i++) {
-              if (!win.instances[i]?.destroyed) activeInstances++;
-            }
-          }
-          setDebugInfo({
-            instances: activeInstances,
-            score: win.score || 0,
-            health: win.player ? (win.player.health || 0) : (win.health || 0),
-            lives: win.lives || 0
-          });
-        } catch (e) {
-          // Cross-origin or engine not initialized yet
-        }
-      }
+      postSandboxMessage(iframeRef.current?.contentWindow, { type: 'get-debug-state' });
     }, 500);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('message', onDebugState);
+    };
   }, [mode]);
 
-  // Function to inject keyboard events into the iframe
+  // Forward controller input through the iframe's restricted postMessage bridge.
   const sendKey = (key: string, type: 'keydown' | 'keyup') => {
-    if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+    const iwin = iframeRef.current?.contentWindow;
+    if (!iwin) return;
 
     let code = '';
     let keyCode = 0;
@@ -69,40 +155,10 @@ const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) =
         case 'Shift': code = 'ShiftLeft'; keyCode = 16; break;
     }
 
-    const iwin = iframeRef.current?.contentWindow;
-    if (!iwin) return;
-
-    // Direct call bypassing browser security restrictions on programmatically dispatched events
-    if (typeof (iwin as any).syncKeyboardToPlayers === 'function') {
-      try {
-        (iwin as any).syncKeyboardToPlayers(keyCode || key, type === 'keydown');
-      } catch (err) {
-        console.warn("Direct input sync failed:", err);
-      }
-    }
-
-    try {
-      const event = new KeyboardEvent(type, {
-        key: key,
-        code: code,
-        keyCode: keyCode,
-        bubbles: true,
-        cancelable: true,
-        view: iwin as any
-      });
-
-      // Correctly override the read-only properties
-      Object.defineProperty(event, 'keyCode', { get: () => keyCode });
-      Object.defineProperty(event, 'which', { get: () => keyCode });
-
-      // Dispatch to multiple targets to ensure the game engine catches it
-      iwin.dispatchEvent(event);
-      const canvas = iwin.document?.querySelector('canvas');
-      if (canvas) canvas.dispatchEvent(event);
-      if (iwin.document?.body) iwin.document.body.dispatchEvent(event);
-    } catch (e) {
-      console.error(e);
-    }
+    postSandboxMessage(iwin, {
+      type: 'keyboard', value: keyCode || key, key: key, code: code || key,
+      keyCode: keyCode, down: type === 'keydown'
+    });
   };
 
   const handleBtnDown = (e: React.PointerEvent, key: string) => {
@@ -153,39 +209,12 @@ const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) =
       const tag = document.activeElement?.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea') return;
 
-      if (!iframeRef.current || !iframeRef.current.contentWindow) return;
-      const iwin = iframeRef.current.contentWindow;
-
-      // Direct call bypassing browser security restrictions on programmatically dispatched events
-      if (typeof (iwin as any).syncKeyboardToPlayers === 'function') {
-        try {
-          (iwin as any).syncKeyboardToPlayers(e.keyCode || e.key, e.type === 'keydown');
-        } catch (err) {
-          console.warn("Direct parent input sync failed:", err);
-        }
-      }
-
-      try {
-        const event = new KeyboardEvent(e.type, {
-          key: e.key,
-          code: e.code,
-          keyCode: e.keyCode,
-          bubbles: true,
-          cancelable: true,
-          view: iwin as any
-        });
-
-        // Correctly override the read-only properties
-        Object.defineProperty(event, 'keyCode', { get: () => e.keyCode });
-        Object.defineProperty(event, 'which', { get: () => e.keyCode });
-
-        iwin.dispatchEvent(event);
-        const canvas = iwin.document?.querySelector('canvas');
-        if (canvas) canvas.dispatchEvent(event);
-        if (iwin.document?.body) iwin.document.body.dispatchEvent(event);
-      } catch (err) {
-        console.error(err);
-      }
+      const iwin = iframeRef.current?.contentWindow;
+      if (!iwin) return;
+      postSandboxMessage(iwin, {
+        type: 'keyboard', value: e.keyCode || e.key, key: e.key,
+        code: e.code || e.key, keyCode: e.keyCode, down: e.type === 'keydown'
+      });
     };
 
     window.addEventListener('keydown', handleParentKey);
@@ -240,12 +269,8 @@ const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) =
   // Play standalone synthesized sounds
   const playPreviewSound = (soundType: string) => {
     const win = iframeRef.current?.contentWindow;
-    if (win && (win as any).playSynthSound) {
-      try {
-        (win as any).playSynthSound(soundType);
-      } catch (err) {
-        console.error(err);
-      }
+    if (SYNTH_SOUND_TYPES.includes(soundType)) {
+      postSandboxMessage(win, { type: 'play-preview-sound', sound: soundType });
     }
   };
 
@@ -311,11 +336,10 @@ const ConsoleViewer: React.FC<ConsoleViewerProps> = ({ mode, content, title }) =
           {mode === 'game' && (
             <iframe
               ref={iframeRef}
-              srcDoc={content}
+              srcDoc={withNorSandboxBridge(content)}
               title="NES Emulator"
               className="w-full h-full border-none bg-black focus:outline-none"
-              sandbox="allow-scripts allow-pointer-lock allow-downloads allow-forms allow-modals allow-popups allow-presentation allow-top-navigation allow-fullscreen"
-              allowFullScreen={true}
+              sandbox="allow-scripts allow-modals allow-pointer-lock"
             />
           )}
         </div>

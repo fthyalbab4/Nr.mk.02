@@ -4,6 +4,7 @@
  * length growth, compound assign on slots, alarm[] still works.
  */
 #include "gm82_runtime.h"
+#include "gm82_gml_arrays.h"
 #include "gm82_gml_eval.h"
 #include "gm82_gml_builtins.h"
 #include <stdio.h>
@@ -54,6 +55,7 @@ void test_array_create_and_index(void) {
     expect_near(eval_num(&rt, inst, "array_length_1d(a)"), 4.0, "length stays at least 4");
 
     printf("--- test_array_create_and_index done ---\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 void test_array_auto_create_on_write(void) {
@@ -69,6 +71,7 @@ void test_array_auto_create_on_write(void) {
     expect_true(eval_num(&rt, inst, "array_length_1d(scores)") >= 3.0, "length grows to cover index 2");
 
     printf("--- test_array_auto_create_on_write done ---\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 void test_array_compound_assign(void) {
@@ -89,6 +92,7 @@ void test_array_compound_assign(void) {
     expect_near(eval_num(&rt, inst, "v[0]"), 5.0, "v[0] /=");
 
     printf("--- test_array_compound_assign done ---\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 void test_alarm_array_still_works(void) {
@@ -106,6 +110,7 @@ void test_alarm_array_still_works(void) {
     expect_near(eval_num(&rt, inst, "alarm[0]"), 35.0, "alarm[0] +=");
 
     printf("--- test_alarm_array_still_works done ---\n");
+    gm82_runtime_cleanup(&rt);
 }
 
 void test_scalar_compound_still_works(void) {
@@ -120,9 +125,43 @@ void test_scalar_compound_still_works(void) {
     expect_near(eval_num(&rt, inst, "x"), 120.0, "scalar x +=");
     assert(gm82_gml_eval_stmt(&rt, inst, "hp = 50;"));
     assert(gm82_gml_eval_stmt(&rt, inst, "hp *= 2;"));
-    expect_near(eval_num(&rt, inst, "hp"), 100.0, "scalar hp *=");
+    expect_near(eval_num(&rt, inst, "hp"), 100.0, "hp *=");
 
     printf("--- test_scalar_compound_still_works done ---\n");
+    gm82_runtime_cleanup(&rt);
+}
+
+void test_array_pool_capacity_is_per_runtime(void) {
+    gm82_runtime *first = (gm82_runtime *)calloc(1, sizeof(*first));
+    gm82_runtime *second = (gm82_runtime *)calloc(1, sizeof(*second));
+    gm82_runtime *third = (gm82_runtime *)calloc(1, sizeof(*third));
+    assert(first && second && third);
+    gm82_runtime_init(first);
+    gm82_runtime_init(second);
+    double first_ids[64], second_ids[64];
+    int first_ok = 1, second_ok = 1;
+    for (int i = 0; i < 64; i++) {
+        first_ids[i] = gm82_gml_array_create_1d(first, 1.0);
+        second_ids[i] = gm82_gml_array_create_1d(second, 1.0);
+        if (first_ids[i] < 0.0) first_ok = 0;
+        if (second_ids[i] < 0.0) second_ok = 0;
+    }
+    expect_true(first_ok && second_ok, "each runtime can own 64 arrays concurrently");
+    expect_true(first_ids[0] != second_ids[0], "array ids are unique across runtimes");
+    expect_true(gm82_gml_array_create_1d(first, 0.0) < 0.0,
+                "65th array is rejected for a full runtime");
+    expect_true(gm82_gml_array_create_1d(second, 0.0) < 0.0,
+                "full capacity in one runtime does not affect the other");
+    gm82_runtime_cleanup(first);
+    gm82_runtime_cleanup(second);
+
+    gm82_runtime_init(third);
+    expect_true(gm82_gml_array_create_1d(third, 1.0) >= 0.0,
+                "array storage is available after runtime cleanup");
+    gm82_runtime_cleanup(third);
+    free(first);
+    free(second);
+    free(third);
 }
 
 int main(void) {
@@ -132,6 +171,7 @@ int main(void) {
     test_array_compound_assign();
     test_alarm_array_still_works();
     test_scalar_compound_still_works();
+    test_array_pool_capacity_is_per_runtime();
 
     if (g_failures) {
         fprintf(stderr, "\n%d failure(s)\n", g_failures);

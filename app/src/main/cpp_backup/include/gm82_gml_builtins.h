@@ -801,6 +801,7 @@ double gml_match_any(double a, double b);
 double gml_match_exact(double a, double b);
 double gml_match_clear(void);
 double gml_match_found(void);
+double gml_match_clear(void);
 double gml_match_not_any(double a, double b);
 double gml_match_not_exact(double a, double b);
 double gml_match_some(double a, double b);

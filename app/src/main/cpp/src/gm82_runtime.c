@@ -4,6 +4,7 @@
 #include "gm82_actions.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_gml_eval.h"
+#include "gm82_gml_arrays.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +31,7 @@ void gm82_runtime_init(gm82_runtime *rt) {
 
 void gm82_runtime_cleanup(gm82_runtime *rt) {
     if (!rt) return;
+    gm82_gml_arrays_cleanup(rt);
     gm82_arena_free(&rt->room_arena);
     rt->instance_count = 0;
     rt->destroy_queue_count = 0;
@@ -479,6 +481,15 @@ void gm82_runtime_step(gm82_runtime *rt) {
     rt->frame_phase = GM82_PHASE_BEGIN_STEP;
     gm82_events_fire_begin_step_all(rt);
 
+    /* GM82 frame order runs Timeline moments after Begin Step and before Alarms. */
+    gm82_instance *timeline_snapshot[GM82_MAX_INSTANCES];
+    int timeline_count = gm82_runtime_get_active_snapshot(rt, timeline_snapshot);
+    for (int i = 0; i < timeline_count; ++i) {
+        gm82_instance *inst = timeline_snapshot[i];
+        if (inst && inst->alive && inst->timeline_running)
+            gm82_timeline_step_instance(rt, inst);
+    }
+
     rt->frame_phase = GM82_PHASE_ALARM;
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
@@ -518,7 +529,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
         if (!inst->alive) continue;
         if (inst->speed != 0.0) update_speed_from_dir(inst);
         if (inst->path_index >= 0 && inst->path_speed != 0.0) gm82_path_step_instance(inst);
-        if (inst->timeline_running) gm82_timeline_step_instance(rt, inst);
         if (inst->gravity != 0.0) {
             double rad = inst->gravity_direction * 3.141592653589793 / 180.0;
             inst->hspeed += cos(rad) * inst->gravity;

@@ -12,7 +12,13 @@ int main(void) {
         "self.stats.hp = 9;"
         "global.cache[2] = 4;"
         "alarm[3] = 6;"
-        "return inventory[0] + inventory[1] + self.stats.hp + global.cache[2] + alarm[3] + argument[0];";
+        "arr = array_create(1);"
+        "arr[4] = 8;"
+        "arr[4] += 3;"
+        "matrix = array_create_2d(1, 1);"
+        "matrix[2, 3] = 11;"
+        "return inventory[0] + inventory[1] + self.stats.hp + global.cache[2] + alarm[3] + argument[0] + "
+        "array_length_1d(arr) + array_height_2d(matrix) + array_length_2d(matrix, 0) + arr[4] + matrix[2, 3];";
     gm82_gml_parser parser;
     gm82_gml_parser_init(&parser, source);
     gm82_gml_ast *program = gm82_gml_parse_program(&parser);
@@ -38,7 +44,7 @@ int main(void) {
     gm82_gml_exec_result result;
     assert(gm82_gml_execute_bytecode(&runtime, self, &bytecode, &result));
     assert(result.returned);
-    assert(result.return_value == 33.0);
+    assert(result.return_value == 67.0);
     assert(self->alarms[3] == 6);
     assert(gm82_gml_native_ast_eval_count() >= 6);
 

@@ -2,6 +2,7 @@
 #include "gm82_gml_eval.h"
 #include "gm82_portable_compat.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_gml_arrays.h"
 #include "gm82_sound_runtime.h"
 #include "gm82_input.h"
 #include <ctype.h>
@@ -25,23 +26,12 @@ typedef struct {
     char name[64];
     double value;
 } gml_global_var;
-#define GM82_NATIVE_ARRAY_CAP 8
-#define GM82_NATIVE_ARRAY_SLOTS 256
-typedef struct {
-    gm82_instance *owner;
-    bool global;
-    char name[64];
-    double values[GM82_NATIVE_ARRAY_CAP];
-    uint32_t mask;
-} native_array_slot;
 static gml_global_var g_global_vars[128];
 static int g_global_var_count;
 static gm82_runtime *g_global_runtime;
-static native_array_slot g_native_arrays[GM82_NATIVE_ARRAY_SLOTS];
 
 void gm82_gml_reset_globals(gm82_runtime *rt) {
     memset(g_global_vars, 0, sizeof(g_global_vars));
-    memset(g_native_arrays, 0, sizeof(g_native_arrays));
     g_global_var_count = 0;
     g_global_runtime = rt;
 }
@@ -489,11 +479,15 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
-    /* array indexing: alarm[0], 1D arrays, and 2D arrays. */
+    /* alarm is an instance field; regular 1D/2D arrays are runtime-owned handles. */
     if (match(p, '[')) {
-        double idx = 0, col = 0; int has_col = 0;
+        double idx = 0, col = 0;
+        bool has_col = false;
         if (!parse_expr(p, &idx)) return false;
-        if (match(p, ',')) { if (!parse_expr(p, &col)) return false; has_col = 1; }
+        if (match(p, ',')) {
+            if (!parse_expr(p, &col)) return false;
+            has_col = true;
+        }
         if (!match(p, ']')) return false;
         int i = (int)idx;
         if (strcmp(id, "alarm") == 0 && !has_col) {
@@ -503,8 +497,9 @@ static bool parse_primary(gml_parser *p, double *out) {
             return true;
         }
         double array_id = 0;
-        get_var(p, id, &array_id);
-        *out = gml_array_get(array_id, idx, col, has_col);
+        if (!get_var(p, id, &array_id)) return false;
+        *out = has_col ? gm82_gml_array_get_2d(p->rt, array_id, idx, col)
+                       : gm82_gml_array_get_1d(p->rt, array_id, idx);
         return true;
     }
     /* function call? collect up to 16 args */
@@ -3337,19 +3332,18 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         gml_instance_destroy();
         return true;
     }
-    int array_idx = -1, array_col = 0, has_array_col = 0;
+    bool has_array_index = false;
+    bool two_dimensional = false;
+    double array_idx = 0.0, second_array_idx = 0.0;
     if (peek(&p) == '[') {
         getc_(&p);
-        double idx_val = 0;
-        if (!parse_expr(&p, &idx_val)) return false;
+        if (!parse_expr(&p, &array_idx)) return false;
         if (match(&p, ',')) {
-            double col_val = 0;
-            if (!parse_expr(&p, &col_val)) return false;
-            array_col = (int)col_val;
-            has_array_col = 1;
+            two_dimensional = true;
+            if (!parse_expr(&p, &second_array_idx)) return false;
         }
         if (!match(&p, ']')) return false;
-        array_idx = (int)idx_val;
+        has_array_index = true;
         skip_ws(&p);
     }
     /* compound: += -= *= /= */
@@ -3364,31 +3358,50 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     }
     double v;
     if (!parse_expr(&p, &v)) return false;
-    if (array_idx >= 0) {
-        if (strcmp(id, "alarm") == 0 && !has_array_col) {
+    if (has_array_index) {
+        if (strcmp(id, "alarm") == 0) {
+            if (two_dimensional) return false;
             gm82_instance *s = p.self;
-            if (s && array_idx >= 0 && array_idx < 12) {
-                double cur = (double)s->alarms[array_idx];
+            int alarm_index = (int)array_idx;
+            if (s && alarm_index >= 0 && alarm_index < 12) {
+                double cur = (double)s->alarms[alarm_index];
                 if (op=='+') v = cur + v;
                 else if (op=='-') v = cur - v;
-                s->alarms[array_idx] = (int32_t)v;
-                return true;
+                else if (op=='*') v = cur * v;
+                else if (op=='/') v = v != 0.0 ? cur / v : 0.0;
+                s->alarms[alarm_index] = (int32_t)v;
             }
+            return true;
         }
+        if (array_idx < 0.0 || (two_dimensional && second_array_idx < 0.0)) return false;
         double array_id = 0;
         get_var(&p, id, &array_id);
-        if (array_id < 1000.0) {
-            array_id = has_array_col
-                ? gml_array_create_2d(array_idx + 1, array_col + 1)
-                : gml_array_create_1d(array_idx + 1);
-            if (!set_var(&p, id, array_id)) return false;
+        if (two_dimensional) {
+            if (!gm82_gml_array_is_2d(rt, array_id)) {
+                array_id = gm82_gml_array_create_2d(rt, 0.0, 0.0);
+                if (array_id < 0.0 || !set_var(&p, id, array_id)) return false;
+            }
+            if (op) {
+                double current = gm82_gml_array_get_2d(rt, array_id, array_idx, second_array_idx);
+                if (op=='+') v = current + v;
+                else if (op=='-') v = current - v;
+                else if (op=='*') v = current * v;
+                else if (op=='/') v = v != 0.0 ? current / v : 0.0;
+            }
+            return gm82_gml_array_set_2d(rt, array_id, array_idx, second_array_idx, v);
         }
-        double current = gml_array_get(array_id, array_idx, array_col, has_array_col);
-        if (op == '+') v = current + v;
-        else if (op == '-') v = current - v;
-        else if (op == '*') v = current * v;
-        else if (op == '/') v = (v != 0) ? current / v : 0;
-        return gml_array_set(array_id, array_idx, array_col, has_array_col, v) != 0;
+        if (!gm82_gml_array_is_1d(rt, array_id)) {
+            array_id = gm82_gml_array_create_1d(rt, 0.0);
+            if (array_id < 0.0 || !set_var(&p, id, array_id)) return false;
+        }
+        if (op) {
+            double current = gm82_gml_array_get_1d(rt, array_id, array_idx);
+            if (op=='+') v = current + v;
+            else if (op=='-') v = current - v;
+            else if (op=='*') v = current * v;
+            else if (op=='/') v = v != 0.0 ? current / v : 0.0;
+        }
+        return gm82_gml_array_set_1d(rt, array_id, array_idx, v);
     }
     if (op) {
         double cur = 0;
@@ -3564,6 +3577,21 @@ static bool native_ast_call(const gm82_gml_ast *n, gm82_runtime *rt,
     if (!strcmp(id, "ds_grid_destroy") && count >= 1) {
         *out = gml_ds_grid_destroy(args[0]); return true;
     }
+    if (!strcmp(id, "array_create") && count >= 1) {
+        *out = gm82_gml_array_create_1d(rt, args[0]); return *out >= 0.0;
+    }
+    if (!strcmp(id, "array_create_2d") && count >= 2) {
+        *out = gm82_gml_array_create_2d(rt, args[0], args[1]); return *out >= 0.0;
+    }
+    if (!strcmp(id, "array_length_1d") && count >= 1) {
+        *out = gm82_gml_array_length_1d(rt, args[0]); return true;
+    }
+    if (!strcmp(id, "array_length_2d") && count >= 2) {
+        *out = gm82_gml_array_length_2d(rt, args[0], args[1]); return true;
+    }
+    if (!strcmp(id, "array_height_2d") && count >= 1) {
+        *out = gm82_gml_array_height_2d(rt, args[0]); return true;
+    }
     return false;
 }
 
@@ -3582,80 +3610,49 @@ static bool native_field_name(const gm82_gml_ast *n, char *out, size_t size) {
     return false;
 }
 
-static bool native_array_owner(gm82_instance *self, const char *field,
-                               gm82_instance **owner, const char **name,
-                               bool *is_global) {
-    if (!field || !owner || !name || !is_global) return false;
-    *owner = self; *name = field; *is_global = false;
-    if (!strncmp(field, "global.", 7)) {
-        *owner = NULL; *name = field + 7; *is_global = true; return true;
-    }
-    if (!strncmp(field, "self.", 5)) { *name = field + 5; return self != NULL; }
-    if (!strncmp(field, "other.", 6)) {
-        *owner = gm82_gml_get_other(); *name = field + 6; return *owner != NULL;
-    }
-    return self != NULL;
-}
-
 static bool native_array_index(const gm82_gml_ast *index_node,
-                               gm82_runtime *rt, gm82_instance *self, int *out) {
+                               gm82_runtime *rt, gm82_instance *self, double *out) {
     double value;
     if (!index_node || !out || !native_ast_eval(index_node, rt, self, &value) ||
-        value != (double)(int)value || value < 0 || value >= GM82_NATIVE_ARRAY_CAP) return false;
-    *out = (int)value; return true;
-}
-
-static native_array_slot *native_array_slot_find(gm82_instance *owner,
-                                                  bool global, const char *name,
-                                                  bool create) {
-    native_array_slot *free_slot = NULL;
-    for (int i = 0; i < GM82_NATIVE_ARRAY_SLOTS; ++i) {
-        native_array_slot *slot = &g_native_arrays[i];
-        if (!slot->name[0]) { if (!free_slot) free_slot = slot; continue; }
-        if (slot->owner == owner && slot->global == global && !strcmp(slot->name, name)) return slot;
-    }
-    if (!create || !free_slot) return NULL;
-    memset(free_slot, 0, sizeof(*free_slot));
-    free_slot->owner = owner;
-    free_slot->global = global;
-    snprintf(free_slot->name, sizeof(free_slot->name), "%.63s", name);
-    return free_slot;
-}
-
-static bool native_array_get(const char *field, int index, gm82_instance *self,
-                             double *out) {
-    gm82_instance *owner; const char *name; bool is_global;
-    if (!native_array_owner(self, field, &owner, &name, &is_global)) return false;
-    native_array_slot *slot = native_array_slot_find(owner, is_global, name, false);
-    *out = slot && (slot->mask & (1u << index)) ? slot->values[index] : 0.0;
-    return true;
-}
-
-static bool native_array_set(const char *field, int index, gm82_instance *self,
-                             double value) {
-    gm82_instance *owner; const char *name; bool is_global;
-    if (!native_array_owner(self, field, &owner, &name, &is_global)) return false;
-    native_array_slot *slot = native_array_slot_find(owner, is_global, name, true);
-    if (!slot) return false;
-    slot->values[index] = value; slot->mask |= 1u << index; return true;
+        !isfinite(value)) return false;
+    *out = value; return true;
 }
 
 static bool native_ast_set_lvalue(const gm82_gml_ast *lhs, gm82_runtime *rt,
                                   gm82_instance *self, double value) {
     char field[128];
+    ensure_global_runtime(rt);
     if (native_field_name(lhs, field, sizeof(field))) {
         gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
         return set_var(&p, field, value);
     }
     if (lhs && lhs->kind == GM82_AST_INDEX) {
         if (!native_field_name(lhs->a, field, sizeof(field))) return false;
-        int index;
+        double index;
         if (!native_array_index(lhs->b, rt, self, &index)) return false;
         if (!strcmp(field, "alarm")) {
-            if (!self) return false;
-            self->alarms[index] = (int32_t)value; return true;
+            if (lhs->c || !self || index != (double)(int)index || index < 0 || index >= 12)
+                return false;
+            self->alarms[(int)index] = (int32_t)value; return true;
         }
-        return native_array_set(field, index, self, value);
+        ensure_global_runtime(rt);
+        gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
+        double array_id = 0.0;
+        get_var(&p, field, &array_id);
+        if (lhs->c) {
+            double column;
+            if (!native_array_index(lhs->c, rt, self, &column)) return false;
+            if (!gm82_gml_array_is_2d(rt, array_id)) {
+                array_id = gm82_gml_array_create_2d(rt, 0.0, 0.0);
+                if (array_id < 0.0 || !set_var(&p, field, array_id)) return false;
+            }
+            return gm82_gml_array_set_2d(rt, array_id, index, column, value);
+        }
+        if (!gm82_gml_array_is_1d(rt, array_id)) {
+            array_id = gm82_gml_array_create_1d(rt, 0.0);
+            if (array_id < 0.0 || !set_var(&p, field, array_id)) return false;
+        }
+        return gm82_gml_array_set_1d(rt, array_id, index, value);
     }
     return false;
 }
@@ -3677,17 +3674,30 @@ static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
         }
         case GM82_AST_INDEX: {
             char field[128];
-            int index;
+            double index;
             if (!native_field_name(n->a, field, sizeof(field)) ||
                 !native_array_index(n->b, rt, self, &index)) return false;
             if (!strcmp(field, "alarm")) {
-                *out = self ? (double)self->alarms[index] : -1.0;
+                *out = self && !n->c && index == (double)(int)index &&
+                       index >= 0 && index < 12 ? (double)self->alarms[(int)index] : -1.0;
                 return true;
             }
             if (!strcmp(field, "argument") || !strcmp(field, "arg")) {
-                *out = gm82_gml_get_script_arg(index); return true;
+                *out = !n->c && index == (double)(int)index && index >= 0 && index < 16
+                    ? gm82_gml_get_script_arg((int)index) : 0.0;
+                return true;
             }
-            return native_array_get(field, index, self, out);
+            ensure_global_runtime(rt);
+            double array_id = 0.0;
+            get_var(&p, field, &array_id);
+            if (n->c) {
+                double column;
+                if (!native_array_index(n->c, rt, self, &column)) return false;
+                *out = gm82_gml_array_get_2d(rt, array_id, index, column);
+            } else {
+                *out = gm82_gml_array_get_1d(rt, array_id, index);
+            }
+            return true;
         }
         case GM82_AST_UNARY: {
             double v;
