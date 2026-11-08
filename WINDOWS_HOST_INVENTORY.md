@@ -1,18 +1,17 @@
-# Windows NorMaker assets — inventory (2026-11-08)
+# Windows NorMaker — full inventory (verified 2026-11-09)
 
-Scope: **your** Windows / host materials only.
+Reviewed: local artifacts + all fthyalbab4 repos + Nr.mk.02 full tree.
 
-## Found
-- Engine core C (tri-mirror)
-- `gm82_portable_compat` (your helpers)
-- `nor-maker-standalone.exe` — NOR Maker 8.2 UI shell (~9MB); not a native DLL runner set
-- GMK samples
-- Host gates PASS
+## Primary path: `desktop/windows/` on Nr.mk.02
+- NorMakerNativePC.exe / NorMakerStudio.exe (checked-in)
+- main.c, nor_studio.c, win_audio.c
+- portable_compat: fnames, Lib/*.lib, extensions (data only; no DLL runtime load)
+- binary_audit.json: Portable PE static audit (x86)
+- CI: windows-build.yml (MinGW + Wine)
 
-## Not found
-- Separate `.dll` modules for native Windows runner
-- Clean extractable DLL payload from standalone exe
-- Dedicated WinMain editor tree
+## Engine
+- `gm82_actions_parse_gmk8` PASS on mario: 16 objects, 51 actions, 31 code blocks
+- Host gates green; is_100: false
 
-## Direction
-Native **host_win_runner** on existing GM82 core: load GMK → step → soft-draw metrics. Windows-ready flags in core. `is_100: false`.
+## Gaps
+DnD action *execution* completeness, physical Windows QA, WebView2 embed follow-up.
