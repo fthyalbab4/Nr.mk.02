@@ -334,9 +334,10 @@ double gml_place_meeting(double x, double y, double object_index) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
         if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
+        double al, at, ar, ab, bl, bt, br, bb;
+        inst_world_bbox(g_rt, g_self, x, y, &al, &at, &ar, &ab);
+        inst_world_bbox(g_rt, o, o->x, o->y, &bl, &bt, &br, &bb);
+        if (aabb_overlap_d(al, at, ar, ab, bl, bt, br, bb)) {
             if (precise_mask_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y))
                 return 1;
             /* If precise mask not available or returned false but sprites lack pixel data, fallback to AABB */
