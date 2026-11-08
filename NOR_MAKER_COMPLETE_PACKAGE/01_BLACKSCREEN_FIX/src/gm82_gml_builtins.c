@@ -3186,25 +3186,29 @@ double gml_ds_priority_empty(double id) {
 static gm82_mp_grid_world *g_mp = NULL;
 static double g_mp_path_x[256], g_mp_path_y[256];
 static int g_mp_path_n = 0;
-
 void gm82_mp_grid_bind(gm82_mp_grid_world *w) { g_mp = w; }
+static gm82_mp_grid *mp_grid_valid(double id) {
+    int i = (int)id;
+    if (!g_mp || i < 0 || i >= GM82_MP_GRID_MAX || !g_mp->grids[i].used) return NULL;
+    return &g_mp->grids[i];
+}
 
 double gml_mp_grid_create(double left, double top, double hcells, double vcells, double cellw, double cellh) {
     if (!g_mp) return -1;
     return (double)gm82_mp_grid_create(g_mp, (int)left, (int)top, (int)hcells, (int)vcells, (int)cellw, (int)cellh);
 }
 double gml_mp_grid_destroy(double id) {
-    if (!g_mp) return 0;
+    if (!mp_grid_valid(id)) return 0;
     gm82_mp_grid_destroy(g_mp, (int)id);
     return 1;
 }
 double gml_mp_grid_clear_all(double id, double solid) {
-    if (!g_mp) return 0;
+    if (!mp_grid_valid(id)) return 0;
     gm82_mp_grid_clear_all(g_mp, (int)id, solid != 0);
     return 1;
 }
 double gml_mp_grid_add_cell(double id, double cx, double cy, double solid) {
-    if (!g_mp) return 0;
+    if (!mp_grid_valid(id)) return 0;
     gm82_mp_grid_add_cell(g_mp, (int)id, (int)cx, (int)cy, solid != 0);
     return 1;
 }
@@ -3221,19 +3225,45 @@ double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
 double gml_move_contact(double dir, double maxdist) { return gml_move_contact_solid(dir, maxdist); }
 double gml_move_bounce(double advanced) { return gml_move_bounce_solid(advanced); }
 double gml_mp_grid_clear_cell(double id, double cx, double cy) {
-    if (g_mp) gm82_mp_grid_clear_cell(g_mp, (int)id, (int)cx, (int)cy);
-    return 0;
+    if (!mp_grid_valid(id)) return 0;
+    gm82_mp_grid_clear_cell(g_mp, (int)id, (int)cx, (int)cy);
+    return 1;
 }
 double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2) {
-    if (g_mp) gm82_mp_grid_clear_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2);
-    return 0;
+    if (!mp_grid_valid(id)) return 0;
+    gm82_mp_grid_clear_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2);
+    return 1;
 }
 double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid) {
-    if (g_mp) gm82_mp_grid_add_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2, solid != 0);
-    return 0;
+    if (!mp_grid_valid(id)) return 0;
+    gm82_mp_grid_add_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2, solid != 0);
+    return 1;
 }
-double gml_mp_grid_add_instances(double id, double obj, double prec) { (void)id;(void)obj;(void)prec; return 0; }
-double gml_mp_grid_draw(double id) { (void)id; return 0; }
+double gml_mp_grid_add_instances(double id, double obj, double prec) {
+    (void)prec;
+    gm82_mp_grid *grid = mp_grid_valid(id);
+    if (!grid || !g_rt) return 0;
+    int marked = 0;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *inst = &g_rt->instances[i];
+        if (!inst->alive || !gm82_instance_matches_object(g_rt, inst, (int32_t)obj)) continue;
+        double l, t, r, b;
+        inst_world_bbox(g_rt, inst, inst->x, inst->y, &l, &t, &r, &b);
+        int x1 = (int)floor((l - grid->left) / (double)grid->cell_w);
+        int y1 = (int)floor((t - grid->top) / (double)grid->cell_h);
+        int x2 = (int)ceil((r - grid->left) / (double)grid->cell_w) - 1;
+        int y2 = (int)ceil((b - grid->top) / (double)grid->cell_h) - 1;
+        for (int cy = y1; cy <= y2; cy++) {
+            for (int cx = x1; cx <= x2; cx++) {
+                if (cx >= 0 && cy >= 0 && cx < grid->w && cy < grid->h)
+                    grid->cells[cy * GM82_MP_GRID_CELLS + cx] = 1;
+            }
+        }
+        marked++;
+    }
+    return (double)marked;
+}
+double gml_mp_grid_draw(double id) { (void)id; return 0.0; }
 
 double gml_mp_grid_path(double id, double xstart, double ystart, double xgoal, double ygoal, double allowdiag) {
     if (!g_mp) return 0;
@@ -5452,6 +5482,61 @@ double gml_object_other_is_child_of(double parent){ gm82_instance *o=gm82_gml_ge
 double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir){ return gml_instance_create_moving(x,y,obj,sp,dir,grav,gdir); }
 double gml_instance_some(double obj){ gm82_runtime *rt=gm82_gml_get_runtime(); if(!rt) return -4; int32_t oi=(int32_t)obj; int n=0; for(int i=0;i<rt->instance_count;i++) if(rt->instances[i].alive&&(oi<0||rt->instances[i].object_index==oi)) n++; if(n<=0) return -4; int picki=rand()%n,c=0; for(int i=0;i<rt->instance_count;i++){ if(!rt->instances[i].alive) continue; if(oi>=0&&rt->instances[i].object_index!=oi) continue; if(c==picki) return (double)rt->instances[i].id; c++; } return -4; }
 double gml_filename_remove_ext(const char *s){ static char out[512]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} strncpy(out,s,sizeof(out)-1); out[sizeof(out)-1]=0; char *dot=strrchr(out,'.'); if(dot)*dot=0; gm82_gml_set_last_string(out); return (double)strlen(out); }
+static const char *filename_last_sep(const char *s) {
+    const char *a = s ? strrchr(s, '/') : NULL;
+    const char *b = s ? strrchr(s, '\\') : NULL;
+    return (a && b) ? (a > b ? a : b) : (a ? a : b);
+}
+static double filename_emit(const char *s) {
+    gm82_gml_set_last_string(s ? s : "");
+    return (double)strlen(s ? s : "");
+}
+double gml_filename_name(const char *s) {
+    const char *sep = filename_last_sep(s);
+    return filename_emit(sep ? sep + 1 : (s ? s : ""));
+}
+double gml_filename_path(const char *s) {
+    static char out[512];
+    if (!s) return filename_emit("");
+    const char *sep = filename_last_sep(s);
+    if (!sep) return filename_emit("");
+    size_t n = (size_t)(sep - s);
+    if (n >= sizeof(out)) n = sizeof(out) - 1;
+    memcpy(out, s, n); out[n] = 0;
+    return filename_emit(out);
+}
+double gml_filename_dir(const char *s) {
+    static char out[512];
+    if (!s) return filename_emit("");
+    const char *sep = filename_last_sep(s);
+    if (!sep) return filename_emit("");
+    size_t n = (size_t)(sep - s) + 1;
+    if (n >= sizeof(out)) n = sizeof(out) - 1;
+    memcpy(out, s, n); out[n] = 0;
+    return filename_emit(out);
+}
+double gml_filename_drive(const char *s) {
+    static char out[8];
+    out[0] = 0;
+    if (s && isalpha((unsigned char)s[0]) && s[1] == ':') { out[0] = s[0]; out[1] = ':'; out[2] = 0; }
+    return filename_emit(out);
+}
+double gml_filename_ext(const char *s) {
+    const char *name = filename_last_sep(s); name = name ? name + 1 : (s ? s : "");
+    const char *dot = strrchr(name, '.');
+    return filename_emit(dot ? dot : "");
+}
+double gml_filename_change_ext(const char *s, const char *ext) {
+    static char out[512];
+    if (!s) return filename_emit("");
+    const char *dot = strrchr(s, '.');
+    const char *sep = filename_last_sep(s);
+    if (!dot || (sep && dot < sep)) dot = s + strlen(s);
+    size_t n = (size_t)(dot - s); if (n >= sizeof(out)) n = sizeof(out) - 1;
+    memcpy(out, s, n); out[n] = 0;
+    if (ext && ext[0]) { if (ext[0] != '.' && n + 1 < sizeof(out)) strcat(out, "."); strncat(out, ext, sizeof(out) - strlen(out) - 1); }
+    return filename_emit(out);
+}
 double gml_string_ord_at(const char *s,double idx){ if(!s) return 0; int i=(int)idx-1; if(i<0||!s[i]) return 0; return (double)(unsigned char)s[i]; }
 double gml_string_hexdigits(const char *s){ static char out[2048]; size_t j=0; if(!s){out[0]=0;gm82_gml_set_last_string(out);return 0;} for(size_t i=0;s[i]&&j+1<sizeof(out);i++){ char c=s[i]; if((c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F')) out[j++]=c;} out[j]=0; gm82_gml_set_last_string(out); return (double)j; }
 double gml_string_number(const char *s){ static char out[256]; size_t j=0; if(!s){out[0]=0;gm82_gml_set_last_string(out);return 0;} for(size_t i=0;s[i]&&j+1<sizeof(out);i++) if((s[i]>='0'&&s[i]<='9')||s[i]=='.'||s[i]=='-') out[j++]=s[i]; out[j]=0; gm82_gml_set_last_string(out); return atof(out); }

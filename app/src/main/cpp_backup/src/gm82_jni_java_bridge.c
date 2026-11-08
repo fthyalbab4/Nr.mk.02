@@ -24,6 +24,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 #if defined(__ANDROID__) || defined(GM82_HAVE_GLES)
 #include <GLES2/gl2.h>
 #endif
@@ -46,6 +50,27 @@ static uint8_t *g_bridge_frame_rgba = NULL;
 static size_t g_bridge_frame_capacity = 0;
 #define GM82_NATIVE_MAX_FRAME_PIXELS ((size_t)16777216u)
 static void bridge_apply_view_size(void);
+
+static FILE *gm82_open_project_file(const char *path) {
+#if defined(_WIN32)
+    if (path) {
+        int needed = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, NULL, 0);
+        if (needed > 0) {
+            wchar_t *wide = (wchar_t *)malloc((size_t)needed * sizeof(*wide));
+            if (wide) {
+                if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide, needed) > 0) {
+                    FILE *f = _wfopen(wide, L"rb");
+                    free(wide);
+                    if (f) return f;
+                } else {
+                    free(wide);
+                }
+            }
+        }
+    }
+#endif
+    return fopen(path, "rb");
+}
 
 
 bool gm82_native_init(int surface_width, int surface_height) {
@@ -93,7 +118,7 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
         if (err && err_len > 0) snprintf(err, (size_t)err_len, "null path");
         return false;
     }
-    FILE *f = fopen(path, "rb");
+    FILE *f = gm82_open_project_file(path);
     if (!f) {
         if (err && err_len > 0) snprintf(err, (size_t)err_len, "Unable to open project file");
         return false;
