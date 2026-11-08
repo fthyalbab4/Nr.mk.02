@@ -15,6 +15,14 @@ See full history in repo. Latest residual:
 - **DEVICE_BLOCKED**: no Android device in CI/sandbox
 - Host contracts: `tests/test_g14_device_contract.c` (input + sound queue + OpenSLES stub)
 
+## Bytecode native expression calls
+- **VERIFIED_HOST**: AST-native calls now cover selected numeric built-ins with
+  arguments (`lerp`, point distance/direction, `lengthdir_x/y`) and selected
+  numeric DS list/grid operations.
+- `tests/test_gml_native_builtin_calls.c` → `NATIVE_BUILTIN_CALLS_TEST_PASS`
+- Unsupported calls and string/member/index expressions still use the legacy
+  textual fallback; this section does not claim full built-in native coverage.
+
 ## Delivery
 ```
 is_100: false

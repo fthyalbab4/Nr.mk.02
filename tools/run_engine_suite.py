@@ -12,6 +12,7 @@ TESTS = [
     ("test_runtime_rendering_collision", "app/src/main/cpp/tests/test_runtime_rendering_collision.c"),
     ("test_draw_extras", "app/src/main/cpp/tests/test_draw_extras.c"),
     ("test_gml_bytecode_native_ast", "app/src/main/cpp/tests/test_gml_bytecode_native_ast.c"),
+    ("test_gml_native_builtin_calls", "app/src/main/cpp/tests/test_gml_native_builtin_calls.c"),
     ("test_dual_load", "app/src/main/cpp/tests/test_dual_load.c"),
     ("test_input_key_bounds", "app/src/main/cpp/tests/test_input_key_bounds.c"),
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),

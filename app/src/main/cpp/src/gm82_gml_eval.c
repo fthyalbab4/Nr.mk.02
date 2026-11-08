@@ -3473,6 +3473,54 @@ static bool native_ast_call(const gm82_gml_ast *n, gm82_runtime *rt,
     if (!strcmp(id, "clamp") && count >= 3) {
         *out = a < args[1] ? args[1] : (a > args[2] ? args[2] : a); return true;
     }
+    /* Built-ins with numeric arguments use the same engine implementations
+       as the legacy evaluator, but are reached directly from AST values. */
+    if (!strcmp(id, "lerp") && count >= 3) {
+        *out = gml_lerp(args[0], args[1], args[2]); return true;
+    }
+    if (!strcmp(id, "point_distance") && count >= 4) {
+        *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true;
+    }
+    if (!strcmp(id, "point_direction") && count >= 4) {
+        *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true;
+    }
+    if (!strcmp(id, "point_distance_3d") && count >= 6) {
+        *out = gml_point_distance_3d(args[0], args[1], args[2], args[3], args[4], args[5]);
+        return true;
+    }
+    if (!strcmp(id, "lengthdir_x") && count >= 2) {
+        *out = gml_lengthdir_x(args[0], args[1]); return true;
+    }
+    if (!strcmp(id, "lengthdir_y") && count >= 2) {
+        *out = gml_lengthdir_y(args[0], args[1]); return true;
+    }
+    if (!strcmp(id, "ds_list_create") && count == 0) {
+        *out = gml_ds_list_create(); return true;
+    }
+    if (!strcmp(id, "ds_list_add") && count >= 2) {
+        *out = gml_ds_list_add(args[0], args[1]); return true;
+    }
+    if (!strcmp(id, "ds_list_find_value") && count >= 2) {
+        *out = gml_ds_list_find_value(args[0], args[1]); return true;
+    }
+    if (!strcmp(id, "ds_list_size") && count >= 1) {
+        *out = gml_ds_list_size(args[0]); return true;
+    }
+    if (!strcmp(id, "ds_list_destroy") && count >= 1) {
+        *out = gml_ds_list_destroy(args[0]); return true;
+    }
+    if (!strcmp(id, "ds_grid_create") && count >= 2) {
+        *out = gml_ds_grid_create(args[0], args[1]); return true;
+    }
+    if (!strcmp(id, "ds_grid_set") && count >= 4) {
+        *out = gml_ds_grid_set(args[0], args[1], args[2], args[3]); return true;
+    }
+    if (!strcmp(id, "ds_grid_get") && count >= 3) {
+        *out = gml_ds_grid_get(args[0], args[1], args[2]); return true;
+    }
+    if (!strcmp(id, "ds_grid_destroy") && count >= 1) {
+        *out = gml_ds_grid_destroy(args[0]); return true;
+    }
     return false;
 }
 
