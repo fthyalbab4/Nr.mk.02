@@ -5879,9 +5879,13 @@ double gml_match_exact(double a, double b) {
     g_nor_match_found = ok;
     return ok ? 1.0 : 0.0;
 }
+double gml_match_clear(void) {
+    g_nor_match_found = 0;
+    return 0.0;
+}
 double gml_match_found(void) { return g_nor_match_found ? 1.0 : 0.0; }
-double gml_match_not_any(double a, double b) { return gml_match_any(a, b) ? 0.0 : 1.0; }
-double gml_match_not_exact(double a, double b) { return gml_match_exact(a, b) ? 0.0 : 1.0; }
+double gml_match_not_any(double a, double b) { return (a == b) ? 0.0 : 1.0; }
+double gml_match_not_exact(double a, double b) { return (a == b) ? 0.0 : 1.0; }
 double gml_match_some(double a, double b) { return gml_match_any(a, b); }
 double gml_match_not_some(double a, double b) { return gml_match_not_any(a, b); }
 double gml_mouse_in_window(void) { return 1.0; }

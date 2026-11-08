@@ -2873,6 +2873,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_match_any(arg, nargs>=2?args[1]:0); return true;
         }
         if (strcmp(id, "match_exact") == 0) { *out = gml_match_exact(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "match_clear") == 0) { *out = gml_match_clear(); return true; }
         if (strcmp(id, "match_found") == 0) { *out = gml_match_found(); return true; }
         if (strcmp(id, "match_not_any") == 0 || strcmp(id, "match_not_some") == 0) {
             *out = gml_match_not_any(arg, nargs>=2?args[1]:0); return true;

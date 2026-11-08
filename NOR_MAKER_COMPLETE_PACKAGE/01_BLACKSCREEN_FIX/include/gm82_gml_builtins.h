@@ -795,6 +795,7 @@ double gml_string_justify(const char *s, double width);
 double gml_string_replace_many(const char *s, const char *old, const char *rep);
 double gml_match_any(double a, double b);
 double gml_match_exact(double a, double b);
+double gml_match_clear(void);
 double gml_match_found(void);
 double gml_match_not_any(double a, double b);
 double gml_match_not_exact(double a, double b);
