@@ -489,19 +489,22 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
-    /* array indexing: alarm[0], etc. */
+    /* array indexing: alarm[0], 1D arrays, and 2D arrays. */
     if (match(p, '[')) {
-        double idx = 0;
+        double idx = 0, col = 0; int has_col = 0;
         if (!parse_expr(p, &idx)) return false;
+        if (match(p, ',')) { if (!parse_expr(p, &col)) return false; has_col = 1; }
         if (!match(p, ']')) return false;
         int i = (int)idx;
-        if (strcmp(id, "alarm") == 0) {
+        if (strcmp(id, "alarm") == 0 && !has_col) {
             gm82_instance *s = p->self;
             if (s && i >= 0 && i < 12) *out = (double)s->alarms[i];
             else *out = -1;
             return true;
         }
-        *out = 0;
+        double array_id = 0;
+        get_var(p, id, &array_id);
+        *out = gml_array_get(array_id, idx, col, has_col);
         return true;
     }
     /* function call? collect up to 16 args */
@@ -2434,6 +2437,12 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "array_length_2d") == 0) {
             *out = gml_array_length_2d(arg, nargs >= 2 ? args[1] : 0); return true;
         }
+        if (strcmp(id, "array_create_2d") == 0) {
+            *out = gml_array_create_2d(arg, nargs >= 2 ? args[1] : 1); return true;
+        }
+        if (strcmp(id, "array_create") == 0) {
+            *out = gml_array_create_1d(arg); return true;
+        }
         if (strcmp(id, "math_min") == 0) {
             *out = gml_math_min(arg, nargs >= 2 ? args[1] : 0); return true;
         }
@@ -2887,6 +2896,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_match_any(arg, nargs>=2?args[1]:0); return true;
         }
         if (strcmp(id, "match_exact") == 0) { *out = gml_match_exact(arg, nargs>=2?args[1]:0); return true; }
+        if (strcmp(id, "match_clear") == 0) { *out = gml_match_clear(); return true; }
         if (strcmp(id, "match_found") == 0) { *out = gml_match_found(); return true; }
         if (strcmp(id, "match_not_any") == 0 || strcmp(id, "match_not_some") == 0) {
             *out = gml_match_not_any(arg, nargs>=2?args[1]:0); return true;
@@ -3327,11 +3337,17 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         gml_instance_destroy();
         return true;
     }
-    int array_idx = -1;
+    int array_idx = -1, array_col = 0, has_array_col = 0;
     if (peek(&p) == '[') {
         getc_(&p);
         double idx_val = 0;
         if (!parse_expr(&p, &idx_val)) return false;
+        if (match(&p, ',')) {
+            double col_val = 0;
+            if (!parse_expr(&p, &col_val)) return false;
+            array_col = (int)col_val;
+            has_array_col = 1;
+        }
         if (!match(&p, ']')) return false;
         array_idx = (int)idx_val;
         skip_ws(&p);
@@ -3349,7 +3365,7 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     double v;
     if (!parse_expr(&p, &v)) return false;
     if (array_idx >= 0) {
-        if (strcmp(id, "alarm") == 0) {
+        if (strcmp(id, "alarm") == 0 && !has_array_col) {
             gm82_instance *s = p.self;
             if (s && array_idx >= 0 && array_idx < 12) {
                 double cur = (double)s->alarms[array_idx];
@@ -3359,7 +3375,20 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 return true;
             }
         }
-        return true;
+        double array_id = 0;
+        get_var(&p, id, &array_id);
+        if (array_id < 1000.0) {
+            array_id = has_array_col
+                ? gml_array_create_2d(array_idx + 1, array_col + 1)
+                : gml_array_create_1d(array_idx + 1);
+            if (!set_var(&p, id, array_id)) return false;
+        }
+        double current = gml_array_get(array_id, array_idx, array_col, has_array_col);
+        if (op == '+') v = current + v;
+        else if (op == '-') v = current - v;
+        else if (op == '*') v = current * v;
+        else if (op == '/') v = (v != 0) ? current / v : 0;
+        return gml_array_set(array_id, array_idx, array_col, has_array_col, v) != 0;
     }
     if (op) {
         double cur = 0;
