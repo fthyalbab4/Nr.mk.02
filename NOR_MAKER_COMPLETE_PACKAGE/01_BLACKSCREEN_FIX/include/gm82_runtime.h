@@ -5,6 +5,8 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_script.h"
 #include "gm82_background_decode.h"
+#include "gm82_sound_decode.h"
+#include "gm82_font_decode.h"
 #include "gm82_arena.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -96,6 +98,8 @@ typedef struct {
     const gm82_sprite_group_list       *sprite_groups;
     const gm82_decoded_background_list *backgrounds;
     const gm82_decoded_room_list       *rooms;
+    const gm82_decoded_sound_list      *sounds;
+    const gm82_decoded_font_list       *fonts;
     const gm82_action_table            *actions;
     const gm82_script_list             *scripts;
 
@@ -124,6 +128,9 @@ void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_room_list *rooms,
     const gm82_action_table *actions);
 void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_list *groups);
+void gm82_runtime_bind_resources(gm82_runtime *rt,
+    const gm82_decoded_sound_list *sounds,
+    const gm82_decoded_font_list *fonts);
 void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts);
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index);

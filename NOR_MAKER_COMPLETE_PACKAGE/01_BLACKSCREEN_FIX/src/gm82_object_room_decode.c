@@ -11,9 +11,17 @@ static int32_t rd_i32(const uint8_t *p) {
 }
 
 static void gm82_reclass_step_like_events(gm82_decoded_object *o) {
-    /* Create events (main_type 0) must remain Create events to prevent
-     * object variables from being continuously re-initialized every step. */
-    (void)o;
+    /* GMK 800 may omit the Step table entry while retaining its GML code. */
+    if (!o) return;
+    for (int e = 0; e < o->event_count; e++) {
+        gm82_decoded_event *ev = &o->events[e];
+        const char *c = ev->code_snippet;
+        if (!c || !c[0] || ev->main_type != 0) continue;
+        if (strstr(c, "keyboard_check") || strstr(c, "place_free") ||
+            strstr(c, "place_meeting") || strstr(c, "vspeed") ||
+            strstr(c, "hspeed") || strstr(c, "x+=") || strstr(c, "x-=") ||
+            strstr(c, "y+=") || strstr(c, "y-=")) ev->main_type = 3;
+    }
 }
 
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *out_len) {

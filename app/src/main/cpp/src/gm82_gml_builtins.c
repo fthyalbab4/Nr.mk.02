@@ -5683,8 +5683,23 @@ double gml_background_find(const char *name) {
     return -1.0;
 }
 
-double gml_sound_find(const char *name) { (void)name; return -1.0; }
-double gml_font_find(const char *name) { (void)name; return -1.0; }
+double gml_sound_find(const char *name) {
+    if (!g_rt || !g_rt->sounds || !name) return -1.0;
+    for (int i = 0; i < g_rt->sounds->count; i++) {
+        const gm82_decoded_sound *sound = &g_rt->sounds->items[i];
+        if (strcmp(sound->name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
+
+double gml_font_find(const char *name) {
+    if (!g_rt || !g_rt->fonts || !name) return -1.0;
+    for (int i = 0; i < g_rt->fonts->count; i++) {
+        const gm82_decoded_font *font = &g_rt->fonts->items[i];
+        if (strcmp(font->name, name) == 0) return (double)i;
+    }
+    return -1.0;
+}
 
 double gml_path_find_name(const char *name) {
     if (!g_paths || !name) return -1.0;
