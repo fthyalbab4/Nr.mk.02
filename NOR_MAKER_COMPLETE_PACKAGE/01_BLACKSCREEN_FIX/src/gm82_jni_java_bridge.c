@@ -245,6 +245,9 @@ bool gm82_native_load_game(const char *path, char *err, int err_len) {
         fprintf(stderr, "GM82_OBJECT_ORDER %d %s sprite=%d\n", k, objs->items[k].name, objs->items[k].sprite_index);
     gm82_runtime_bind_assets(&g_bridge_rt, objs, &g_bridge_sprites,
                                  &g_bridge_bgs, &g_bridge_rooms, &g_bridge_actions);
+        gm82_runtime_bind_resources(&g_bridge_rt,
+                                    gm82_materialize_get_sounds(),
+                                    gm82_materialize_get_fonts());
         if (sc && sc->count > 0)
             gm82_runtime_bind_scripts(&g_bridge_rt, sc);
     }
