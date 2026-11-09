@@ -1,14 +1,77 @@
-# Baseline Report — main host (2026-11-07)
+# NOR Maker Host Baseline Verification
 
-> Not a Portable certificate. `is_100: false`.
+- **Generated (UTC):** 2026-11-09T13:32:15+00:00
+- **Git revision:** `13463aae`
+- **Elapsed:** 94.69 seconds
+- **Overall status:** PASS
+- **Python reference tests reported:** 13
 
-## Mirrors: PASS
+This report records only the commands listed below. It does not claim an Android APK build,
+physical-device test, release signing, or any test suite that was not run by this script.
 
-## Host behavioral PASS
-with/self/other, arrays 1d+sparse2d, match_*, events, AABB,
-place_meeting_precise (synthetic sprites), bitmask+scaled,
-import, draw/input/sound, draw GUI order, fingerprint, corpus 4/4,
-G13 metrics, G14 host contracts
+## Host audit runner: PASS
 
-## External
-G13 NOT_RUN · G14 DEVICE_BLOCKED · rotation precise not claimed · Portable image hashes absent
+- Command: `python3 tools/audit_runner.py`
+- Exit code: `0`
+
+Output excerpt:
+
+    =========================================================
+     NOR MAKER GM82 AUTOMATED AUDIT & VERIFICATION SUITE
+    =========================================================
+
+    === Running: python3 run_full_verification.py (cwd=.) ===
+      [SUCCESS]
+    === Running: node test_all_games_inlined.js (cwd=.) ===
+      [SUCCESS]
+    === Running: python3 tools/run_engine_suite.py (cwd=.) ===
+      [SUCCESS]
+    === Running: make test (cwd=NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX) ===
+      [SUCCESS]
+
+    --- Built-in GM82 Functions Audit ---
+      angle_difference: FOUND
+      approach: FOUND
+      color_reverse: FOUND
+      sound_play_pitch: FOUND
+      ds_grid_set_disk: FOUND
+      window_set_size: FOUND
+
+    =========================================================
+     AUDIT RESULTS SUMMARY
+    =========================================================
+      run_full_verification.py           : [PASS]
+      test_all_games_inlined.js          : [PASS]
+      run_engine_suite.py                : [PASS]
+      01_BLACKSCREEN_FIX make test       : [PASS]
+
+      Suite Pass Rate: 4/4 (100.0%)
+      GM82 Target Functions: 6/6 (100.0%)
+
+    All host audit checks passed successfully.
+
+## Python reference/security tests: PASS
+
+- Command: `python3 -m unittest discover -s tests/reference -v`
+- Exit code: `0`
+
+Output excerpt:
+
+    test_java_to_jni_contracts_exist (test_android_single_app.SingleAndroidAppIntegrationTests.test_java_to_jni_contracts_exist) ... ok
+    test_launcher_hosts_studio_and_native_player_in_one_activity (test_android_single_app.SingleAndroidAppIntegrationTests.test_launcher_hosts_studio_and_native_player_in_one_activity) ... ok
+    test_runner_assets_are_local_without_parallel_native_loop (test_android_single_app.SingleAndroidAppIntegrationTests.test_runner_assets_are_local_without_parallel_native_loop) ... ok
+    test_invalid_status_rejected (test_catalog_import.CatalogImportTests.test_invalid_status_rejected) ... ok
+    test_kinds_arity_markers_and_unverified_default (test_catalog_import.CatalogImportTests.test_kinds_arity_markers_and_unverified_default) ... ok
+    test_semicolon_and_reviewed_evidence (test_catalog_import.CatalogImportTests.test_semicolon_and_reviewed_evidence) ... ok
+    test_all_samples_have_reproducible_named_resources (test_gmk_inventory.GmkInventoryTests.test_all_samples_have_reproducible_named_resources) ... ok
+    test_named_resource_names_are_ascii (test_gmk_inventory.GmkInventoryTests.test_named_resource_names_are_ascii) ... ok
+    test_advertised_import_bridges_have_implementations (test_security_contract.SecurityContractTests.test_advertised_import_bridges_have_implementations) ... ok
+    test_bridge_has_no_arbitrary_path_export_or_general_code_api (test_security_contract.SecurityContractTests.test_bridge_has_no_arbitrary_path_export_or_general_code_api) ... ok
+    test_keyboard_input_bridge_methods_present (test_security_contract.SecurityContractTests.test_keyboard_input_bridge_methods_present) ... ok
+    test_private_signing_key_is_not_shipped (test_security_contract.SecurityContractTests.test_private_signing_key_is_not_shipped) ... ok
+    test_webview_and_network_are_restricted (test_security_contract.SecurityContractTests.test_webview_and_network_are_restricted) ... ok
+
+    ----------------------------------------------------------------------
+    Ran 13 tests in 1.931s
+
+    OK
