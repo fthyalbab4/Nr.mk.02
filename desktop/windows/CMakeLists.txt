@@ -14,6 +14,7 @@ find_package(ZLIB REQUIRED)
 
 add_executable(nor_maker_pc WIN32
     main.c
+    win_audio.c
     ${GM82_CORE_SOURCES}
 )
 target_include_directories(nor_maker_pc PRIVATE
@@ -26,6 +27,7 @@ target_link_libraries(nor_maker_pc PRIVATE
     shell32
     gdi32
     user32
+    winmm
 )
 if(MINGW)
     target_link_libraries(nor_maker_pc PRIVATE m)

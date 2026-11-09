@@ -210,9 +210,9 @@ static void test_bytecode_with_snapshot(void) {
     gm82_gml_ast_free(return_root);
 
     gm82_gml_bc_instruction failing_code[] = {
-        { GM82_BC_WITH_BEGIN, 2, 0, "-3" },
-        { GM82_BC_EVAL_STMT, 0, 0, "x = (" },
-        { GM82_BC_WITH_NEXT, 1, 0, NULL }
+        { GM82_BC_WITH_BEGIN, 2, 0, "-3", NULL },
+        { GM82_BC_EVAL_STMT, 0, 0, "x = (", NULL },
+        { GM82_BC_WITH_NEXT, 1, 0, NULL, NULL }
     };
     gm82_gml_bytecode failing_bytecode = {
         .code = failing_code,

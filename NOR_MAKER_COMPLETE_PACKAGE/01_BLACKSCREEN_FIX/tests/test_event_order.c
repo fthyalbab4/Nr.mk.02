@@ -201,6 +201,68 @@ static void test_collision_context_and_with(void) {
     printf("  Collision context and with() test PASS\n");
 }
 
+static void test_precise_collision_mask_dispatch(void) {
+    printf("Testing precise sprite-mask collision dispatch...\n");
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    rt.running = 1;
+
+    gm82_decoded_object_list objects;
+    gm82_decoded_object_list_init(&objects);
+    objects.count = 2;
+    objects.items = (gm82_decoded_object *)calloc(2, sizeof(gm82_decoded_object));
+    assert(objects.items != NULL);
+    snprintf(objects.items[0].name, sizeof(objects.items[0].name), "obj_actor");
+    snprintf(objects.items[1].name, sizeof(objects.items[1].name), "obj_wall");
+    objects.items[0].sprite_index = 0;
+    objects.items[1].sprite_index = 1;
+    objects.items[1].solid = 1;
+    objects.items[0].event_count = 1;
+    objects.items[0].events[0].main_type = GM82_EV_COLLISION;
+    objects.items[0].events[0].event_numb = 1;
+    objects.items[0].events[0].code_snippet = strdup("alarm[0] = 7;");
+    assert(objects.items[0].events[0].code_snippet != NULL);
+
+    gm82_decoded_sprite_list sprites;
+    gm82_decoded_sprite_list_init(&sprites);
+    sprites.count = 2;
+    sprites.capacity = 2;
+    sprites.frames = (gm82_decoded_frame *)calloc(2, sizeof(gm82_decoded_frame));
+    assert(sprites.frames != NULL);
+    for (int i = 0; i < 2; i++) {
+        sprites.frames[i].width = 4;
+        sprites.frames[i].height = 4;
+        sprites.frames[i].bitmask_size = 2;
+        sprites.frames[i].bitmask = (uint8_t *)calloc(2, 1);
+        assert(sprites.frames[i].bitmask != NULL);
+    }
+    /* AABB overlaps at the same origin, but these opaque pixels do not. */
+    sprites.frames[0].bitmask[0] = 0x01; /* (0,0) */
+    sprites.frames[1].bitmask[1] = 0x80; /* (3,0) */
+    gm82_runtime_bind_assets(&rt, &objects, &sprites, NULL, NULL, NULL);
+
+    gm82_instance *actor = gm82_runtime_instance_create(&rt, 0, 10, 10);
+    gm82_instance *wall = gm82_runtime_instance_create(&rt, 1, 10, 10);
+    assert(actor && wall);
+    gm82_runtime_step(&rt);
+    assert(actor->alarms[0] == -1);
+
+    /* Move the wall's opaque pixel onto the actor's opaque pixel. */
+    sprites.frames[1].bitmask[1] = 0;
+    sprites.frames[1].bitmask[0] = 0x01;
+    actor->x = actor->xprevious = 10;
+    actor->y = actor->yprevious = 10;
+    wall->x = wall->xprevious = 10;
+    wall->y = wall->yprevious = 10;
+    gm82_runtime_step(&rt);
+    assert(actor->alarms[0] == 7);
+
+    gm82_decoded_sprite_list_free(&sprites);
+    gm82_decoded_object_list_free(&objects);
+    gm82_runtime_cleanup(&rt);
+    printf("  Precise collision-mask dispatch test PASS\n");
+}
+
 int main(void) {
     printf("=== RUNNING EVENT ORDER AND LIFECYCLE TESTS ===\n");
     test_event_loop_order();
@@ -208,6 +270,7 @@ int main(void) {
     test_instance_pool_midframe_lifecycle();
     test_depth_sorting_order();
     test_collision_context_and_with();
+    test_precise_collision_mask_dispatch();
     printf("ALL_EVENT_ORDER_TESTS_PASS\n");
     return 0;
 }

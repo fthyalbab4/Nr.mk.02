@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gm82_jni.h"
+#include "win_audio.h"
 
 #define APP_CLASS "NorMakerNativeWindow"
 #define IDM_OPEN  1001
@@ -19,10 +20,23 @@ static size_t g_bgra_capacity = 0;
 static LARGE_INTEGER g_qpc_frequency;
 static LARGE_INTEGER g_last_tick;
 static double g_step_accumulator = 0.0;
-static char g_loaded_path[MAX_PATH];
+static char g_loaded_path[32768];
+static int g_window_active = 1;
+
+static void release_all_keys(void) {
+    for (int vk = 0; vk < 256; ++vk) gm82_native_key_up(vk);
+}
+
+static int utf8_from_wide(const wchar_t *wide, char *out, int out_len) {
+    if (!wide || !out || out_len <= 0) return 0;
+    int n = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, -1,
+                                out, out_len, NULL, NULL);
+    if (n <= 0) out[0] = 0;
+    return n > 0;
+}
 
 static void set_title(HWND hwnd, const char *path) {
-    char title[MAX_PATH + 64];
+    char title[32768];
     if (path && path[0]) {
         const char *base = strrchr(path, '\\');
         base = base ? base + 1 : path;
@@ -41,26 +55,30 @@ static BOOL load_project(HWND hwnd, const char *path) {
                     "Nor Maker Native PC", MB_OK | MB_ICONERROR);
         return FALSE;
     }
-    lstrcpynA(g_loaded_path, path, MAX_PATH);
+    snprintf(g_loaded_path, sizeof(g_loaded_path), "%s", path);
     g_step_accumulator = 0.0;
     QueryPerformanceCounter(&g_last_tick);
+    (void)nor_win_audio_init();
     set_title(hwnd, path);
     InvalidateRect(hwnd, NULL, FALSE);
     return TRUE;
 }
 
 static void open_project_dialog(HWND hwnd) {
-    char path[MAX_PATH] = {0};
-    OPENFILENAMEA ofn;
+    wchar_t wide_path[32768] = {0};
+    OPENFILENAMEW ofn;
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = hwnd;
-    ofn.lpstrFilter = "GameMaker projects (*.gmk;*.gm81;*.gm6)\0*.gmk;*.gm81;*.gm6\0All files (*.*)\0*.*\0\0";
-    ofn.lpstrFile = path;
-    ofn.nMaxFile = MAX_PATH;
-    ofn.lpstrTitle = "Open a GameMaker project";
+    ofn.lpstrFilter = L"GameMaker projects (*.gmk;*.gm81;*.gm6)\0*.gmk;*.gm81;*.gm6\0All files (*.*)\0*.*\0\0";
+    ofn.lpstrFile = wide_path;
+    ofn.nMaxFile = (DWORD)(sizeof(wide_path) / sizeof(wide_path[0]));
+    ofn.lpstrTitle = L"Open a GameMaker project";
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-    if (GetOpenFileNameA(&ofn)) load_project(hwnd, path);
+    if (GetOpenFileNameW(&ofn)) {
+        char path[32768];
+        if (utf8_from_wide(wide_path, path, (int)sizeof(path))) load_project(hwnd, path);
+    }
 }
 
 static void paint_frame(HWND hwnd, HDC dc) {
@@ -133,7 +151,7 @@ static void on_timer(HWND hwnd) {
     if (elapsed < 0.0) elapsed = 0.0;
     if (elapsed > 0.25) elapsed = 0.25;
 
-    if (gm82_native_is_running()) {
+    if (g_window_active && gm82_native_is_running()) {
         int speed = gm82_native_room_speed();
         if (speed < 1) speed = 30;
         if (speed > 1000) speed = 1000;
@@ -142,9 +160,11 @@ static void on_timer(HWND hwnd) {
         int updates = 0;
         while (g_step_accumulator >= step && updates < 5) {
             gm82_native_step();
+            nor_win_audio_pump();
             g_step_accumulator -= step;
             updates++;
         }
+        nor_win_audio_pump();
         if (updates == 5 && g_step_accumulator > step * 5.0)
             g_step_accumulator = step * 5.0;
         InvalidateRect(hwnd, NULL, FALSE);
@@ -159,6 +179,19 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPAR
         SetTimer(hwnd, TIMER_ID, 8, NULL);
         DragAcceptFiles(hwnd, TRUE);
         return 0;
+    case WM_ACTIVATEAPP:
+        g_window_active = wparam ? 1 : 0;
+        if (!g_window_active) {
+            release_all_keys();
+            g_step_accumulator = 0.0;
+        } else {
+            QueryPerformanceCounter(&g_last_tick);
+        }
+        return 0;
+    case WM_KILLFOCUS:
+        release_all_keys();
+        g_step_accumulator = 0.0;
+        return 0;
     case WM_COMMAND:
         switch (LOWORD(wparam)) {
         case IDM_OPEN: open_project_dialog(hwnd); return 0;
@@ -167,8 +200,13 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPAR
         break;
     case WM_DROPFILES: {
         HDROP drop = (HDROP)wparam;
-        char path[MAX_PATH] = {0};
-        if (DragQueryFileA(drop, 0, path, MAX_PATH)) load_project(hwnd, path);
+        wchar_t wide_path[32768] = {0};
+        char path[32768];
+        if (DragQueryFileW(drop, 0, wide_path,
+                           (UINT)(sizeof(wide_path) / sizeof(wide_path[0]))) &&
+            utf8_from_wide(wide_path, path, (int)sizeof(path))) {
+            load_project(hwnd, path);
+        }
         DragFinish(drop);
         return 0;
     }
@@ -195,6 +233,8 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPAR
     case WM_DESTROY:
         KillTimer(hwnd, TIMER_ID);
         DragAcceptFiles(hwnd, FALSE);
+        release_all_keys();
+        nor_win_audio_shutdown();
         gm82_native_shutdown();
         free(g_bgra);
         g_bgra = NULL;
@@ -304,13 +344,13 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous, LPSTR command_line, i
     LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     for (int i = 1; argv && i < argc; i++) {
         if (wcscmp(argv[i], L"--open") == 0 && i + 1 < argc) {
-            WideCharToMultiByte(CP_ACP, 0, argv[++i], -1, project_path, MAX_PATH, NULL, NULL);
+            WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, argv[++i], -1, project_path, MAX_PATH, NULL, NULL);
         } else if (wcscmp(argv[i], L"--verify-frames") == 0 && i + 1 < argc) {
             verify_frames = _wtoi(argv[++i]);
         } else if (wcscmp(argv[i], L"--dump-frame") == 0 && i + 1 < argc) {
-            WideCharToMultiByte(CP_ACP, 0, argv[++i], -1, dump_path, MAX_PATH, NULL, NULL);
+            WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, argv[++i], -1, dump_path, MAX_PATH, NULL, NULL);
         } else if (argv[i][0] != L'-' && project_path[0] == 0) {
-            WideCharToMultiByte(CP_ACP, 0, argv[i], -1, project_path, MAX_PATH, NULL, NULL);
+            WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, argv[i], -1, project_path, MAX_PATH, NULL, NULL);
         }
     }
     if (argv) LocalFree(argv);

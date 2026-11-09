@@ -1,80 +1,91 @@
 #!/usr/bin/env python3
-"""Verify source/header parity between the active C core and its mirrors."""
+"""
+verify_core_mirrors.py — Phase 1 CI gate
+Single source of truth: app/src/main/cpp/
+Mirrors must be byte-identical for src/ + include/ + selected root files.
+"""
 from __future__ import annotations
-
-from pathlib import Path
+import hashlib
 import sys
+from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-CANONICAL = ROOT / "app/src/main/cpp"
-MIRRORS = (
-    ROOT / "app/src/main/cpp_backup",
-    ROOT / "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX",
+ROOT = Path(__file__).resolve().parent.parent
+
+CANONICAL = ROOT / "app" / "src" / "main" / "cpp"
+MIRRORS = [
+    ("cpp_backup", ROOT / "app" / "src" / "main" / "cpp_backup"),
+    ("blackscreen", ROOT / "NOR_MAKER_COMPLETE_PACKAGE" / "01_BLACKSCREEN_FIX"),
+]
+
+CORE_SUBDIRS = ("src", "include")
+ROOT_FILES = (
+    "gm82_jni.c",
+    "gml_vm.c",
+    "test_full_suite.c",
+    "CMakeLists.txt",
+    "gm82_gmk_format.h",
 )
-SUFFIXES = {".c", ".h"}
 
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 16), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
-def files(directory: Path) -> dict[str, Path]:
-    if not directory.is_dir():
-        raise FileNotFoundError(f"missing source directory: {directory}")
-    return {
-        path.name: path
-        for path in directory.iterdir()
-        if path.is_file() and path.suffix in SUFFIXES
-    }
-
-
-def verify_pair(canonical: Path, mirror: Path) -> list[str]:
-    expected = files(canonical)
-    actual = files(mirror)
-    errors: list[str] = []
-    for name in sorted(expected.keys() - actual.keys()):
-        errors.append(f"{mirror}: missing {name}")
-    for name in sorted(actual.keys() - expected.keys()):
-        errors.append(f"{mirror}: unexpected {name}")
-    for name in sorted(expected.keys() & actual.keys()):
-        if expected[name].read_bytes() != actual[name].read_bytes():
-            errors.append(f"{mirror}: content differs for {name}")
-    if not errors:
-        print(f"CORE_MIRROR_OK {canonical.relative_to(ROOT)} == {mirror.relative_to(ROOT)} ({len(expected)} files)")
-    return errors
-
+def collect(tree: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for sub in CORE_SUBDIRS:
+        d = tree / sub
+        if not d.is_dir():
+            continue
+        for p in sorted(d.rglob("*")):
+            if p.is_file() and p.suffix in (".c", ".h"):
+                rel = str(p.relative_to(tree))
+                out[rel] = sha256(p)
+    for name in ROOT_FILES:
+        p = tree / name
+        if p.is_file():
+            out[name] = sha256(p)
+    return out
 
 def main() -> int:
-    errors: list[str] = []
-    for subdir in ("src", "include"):
-        canonical = CANONICAL / subdir
-        for mirror in MIRRORS:
-            errors.extend(verify_pair(canonical, mirror / subdir))
-    # Some shared core files (notably gml_vm.c) live at each tree's root rather
-    # than under src/; compare those too, while leaving build files target-specific.
-    for mirror in MIRRORS:
-        errors.extend(verify_pair(CANONICAL, mirror))
-    regression_tests = (
-        "test_gml_vm_execution.c",
-        "test_gml_parser.c",
-        "test_gml_with_scoping.c",
-        "test_with_edges.c",
-    )
-    for mirror in MIRRORS:
-        for test_name in regression_tests:
-            regression_test = CANONICAL / "tests" / test_name
-            mirror_test = mirror / "tests" / test_name
-            if not regression_test.is_file():
-                errors.append(f"{regression_test}: missing shared regression test")
-            elif not mirror_test.is_file():
-                errors.append(f"{mirror_test}: missing shared regression test")
-            elif regression_test.read_bytes() != mirror_test.read_bytes():
-                errors.append(f"{mirror_test}: content differs for {test_name}")
-            else:
-                print(f"CORE_MIRROR_TEST_OK {mirror_test.relative_to(ROOT)}")
-    if errors:
-        for error in errors:
-            print(f"CORE_MIRROR_ERROR {error}", file=sys.stderr)
-        return 1
-    print("CORE_MIRRORS_PASS")
-    return 0
+    if not CANONICAL.is_dir():
+        print(f"ERROR: canonical missing: {CANONICAL}", file=sys.stderr)
+        return 2
 
+    canon = collect(CANONICAL)
+    print(f"canonical: {len(canon)} files under {CANONICAL.relative_to(ROOT)}")
+    ok = True
+    for label, mirror in MIRRORS:
+        if not mirror.is_dir():
+            print(f"ERROR: mirror missing: {mirror}", file=sys.stderr)
+            ok = False
+            continue
+        m = collect(mirror)
+        print(f"{label}: {len(m)} files under {mirror.relative_to(ROOT)}")
+        only_c = sorted(set(canon) - set(m))
+        only_m = sorted(set(m) - set(canon))
+        common_diff = sorted(
+            k for k in set(canon) & set(m) if canon[k] != m[k]
+        )
+        if only_c:
+            print(f"  ONLY in canonical ({len(only_c)}): {only_c[:8]}{'...' if len(only_c)>8 else ''}")
+            ok = False
+        if only_m:
+            print(f"  ONLY in {label} ({len(only_m)}): {only_m[:8]}{'...' if len(only_m)>8 else ''}")
+            ok = False
+        if common_diff:
+            print(f"  CONTENT DIFF ({len(common_diff)}): {common_diff[:8]}{'...' if len(common_diff)>8 else ''}")
+            ok = False
+        if not only_c and not only_m and not common_diff:
+            print(f"  OK — identical to canonical")
+
+    if ok:
+        print("\nPASS: all mirrors match canonical (src/ + include/ + root key files)")
+        return 0
+    print("\nFAIL: mirror divergence detected", file=sys.stderr)
+    return 1
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

@@ -10,7 +10,7 @@ The first milestone provides a native Windows window, `.gmk`/`.gm81`/`.gm6` file
 
 1. **Native host shell (done):** engine-level Win32 host and file selection; input forwarding; bounded frame pacing; software framebuffer; headless verification mode. This is `NorMakerNativePC.exe` and it is a diagnostic/engine host, not the editor.
 2. **Nor Maker PC application (done):** `NorMakerStudio.exe` shows the real Nor Maker interface on Windows by serving the bundled editor UI and providing the same `window.NorNative` bridge the Android WebView injects — see "Nor Maker PC application" below.
-3. **Platform parity:** add a Windows audio device backend and route existing sound commands to it; test focus/pause/resume and display scaling; improve Unicode path handling.
+3. **Platform parity (audio started):** the native Windows host now has an additive `winmm/waveOut` device backend fed by the existing NOR mixer; focus/pause/resume, display scaling, and Unicode path handling remain follow-up checks.
 4. **Runtime parity:** expand PC smoke tests across bundled GMK samples; audit incomplete GMK resources/GML builtins and document the supported subset rather than silently claiming full GameMaker compatibility.
 5. **Release:** add reproducible Windows CI, package the EXE with its runtime dependencies, and publish versioned artifacts only after test and license review.
 
@@ -69,7 +69,7 @@ The interface itself was opened through its public URL in a real Chromium browse
 ## Current milestone limits
 
 - The project loader/bridge currently follows the repository's GMK decoding path; this shell filters for `.gmk`, `.gm81`, and `.gm6`. Text `.gm82` projects are not claimed as playable here.
-- This initial shell has no Windows audio backend yet; existing Android audio sources and behavior are untouched. Sound parity is milestone 2.
+- The native Windows host now streams the existing mixer output through `winmm/waveOut`; full embedded GMK asset decoding and physical-device verification remain required for complete sound parity. Android audio sources and behavior are untouched.
 - A Windows EXE is a native host for the current engine, not a guarantee that every GameMaker 8.2 game/API works.
 - GDI software presentation favors compatibility over GPU performance. The Android GLES renderer remains independent.
 - Verification is now executed, not just cross-compiled: the checked-in EXE runs under Wine on an offscreen X server and loads/renders the bundled samples (see "Verified execution under Wine" below). Wine is not Windows, so real-hardware driver, audio and multi-monitor behavior still need a physical Windows machine.

@@ -334,9 +334,10 @@ double gml_place_meeting(double x, double y, double object_index) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
         if (!gm82_instance_matches_object(g_rt, o, oi)) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
+        double al, at, ar, ab, bl, bt, br, bb;
+        inst_world_bbox(g_rt, g_self, x, y, &al, &at, &ar, &ab);
+        inst_world_bbox(g_rt, o, o->x, o->y, &bl, &bt, &br, &bb);
+        if (aabb_overlap_d(al, at, ar, ab, bl, bt, br, bb)) {
             if (precise_mask_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y))
                 return 1;
             /* If precise mask not available or returned false but sprites lack pixel data, fallback to AABB */
@@ -2004,19 +2005,66 @@ double gml_string_upper(const char *str, char *out, size_t out_sz) {
     return (double)k;
 }
 
+enum { GM82_ARRAY_POOL_MAX = 32, GM82_ARRAY_ROWS_MAX = 32, GM82_ARRAY_COLS_MAX = 64 };
+typedef struct {
+    int used, is_2d, rows, cols[GM82_ARRAY_ROWS_MAX];
+    double values[GM82_ARRAY_ROWS_MAX * GM82_ARRAY_COLS_MAX];
+} gm82_array_slot;
+static gm82_array_slot g_array_pool[GM82_ARRAY_POOL_MAX];
+
+static gm82_array_slot *array_slot(double id) {
+    int i = (int)id - 1000;
+    if (i < 0 || i >= GM82_ARRAY_POOL_MAX || !g_array_pool[i].used) return NULL;
+    return &g_array_pool[i];
+}
+static gm82_array_slot *array_new(int rows, int cols, int is_2d) {
+    if (rows < 1) rows = 1; if (cols < 1) cols = 1;
+    if (rows > GM82_ARRAY_ROWS_MAX) rows = GM82_ARRAY_ROWS_MAX;
+    if (cols > GM82_ARRAY_COLS_MAX) cols = GM82_ARRAY_COLS_MAX;
+    for (int i = 0; i < GM82_ARRAY_POOL_MAX; ++i) if (!g_array_pool[i].used) {
+        gm82_array_slot *a = &g_array_pool[i];
+        memset(a, 0, sizeof(*a)); a->used = 1; a->is_2d = is_2d;
+        a->rows = is_2d ? rows : 1;
+        if (!is_2d) a->cols[0] = cols;
+        return a;
+    }
+    return NULL;
+}
+double gml_array_create_2d(double rows, double cols) {
+    gm82_array_slot *a = array_new((int)rows, (int)cols, 1);
+    if (!a) return -1.0;
+    return (double)(1000 + (int)(a - g_array_pool));
+}
+double gml_array_create_1d(double length) {
+    gm82_array_slot *a = array_new(1, (int)length, 0);
+    if (!a) return -1.0;
+    return (double)(1000 + (int)(a - g_array_pool));
+}
+double gml_array_get(double array_id, double row, double col, int has_col) {
+    gm82_array_slot *a = array_slot(array_id);
+    int r = (a && a->is_2d) ? (int)row : 0;
+    int c = has_col ? (int)col : (int)row;
+    if (!a || r < 0 || r >= a->rows || c < 0 || c >= a->cols[r]) return 0.0;
+    return a->values[r * GM82_ARRAY_COLS_MAX + c];
+}
+double gml_array_set(double array_id, double row, double col, int has_col, double value) {
+    gm82_array_slot *a = array_slot(array_id);
+    int r = (a && a->is_2d) ? (int)row : 0;
+    int c = has_col ? (int)col : (int)row;
+    if (!a || r < 0 || r >= GM82_ARRAY_ROWS_MAX || c < 0 || c >= GM82_ARRAY_COLS_MAX) return 0.0;
+    if (a->is_2d) { if (r >= a->rows) a->rows = r + 1; if (c >= a->cols[r]) a->cols[r] = c + 1; }
+    else if (r != 0) return 0.0;
+    a->values[r * GM82_ARRAY_COLS_MAX + c] = value; return 1.0;
+}
 double gml_array_length_1d(double array_id) {
-    (void)array_id;
-    return 1.0;
+    gm82_array_slot *a = array_slot(array_id); return a ? (double)a->cols[0] : 1.0;
 }
-
 double gml_array_length_2d(double array_id, double row) {
-    (void)array_id; (void)row;
-    return 1.0;
+    gm82_array_slot *a = array_slot(array_id); int r = (int)row;
+    return (a && r >= 0 && r < a->rows) ? (double)a->cols[r] : 1.0;
 }
-
 double gml_array_height_2d(double array_id) {
-    (void)array_id;
-    return 1.0;
+    gm82_array_slot *a = array_slot(array_id); return a ? (double)a->rows : 1.0;
 }
 
 
@@ -3186,25 +3234,29 @@ double gml_ds_priority_empty(double id) {
 static gm82_mp_grid_world *g_mp = NULL;
 static double g_mp_path_x[256], g_mp_path_y[256];
 static int g_mp_path_n = 0;
-
 void gm82_mp_grid_bind(gm82_mp_grid_world *w) { g_mp = w; }
+static gm82_mp_grid *mp_grid_valid(double id) {
+    int i = (int)id;
+    if (!g_mp || i < 0 || i >= GM82_MP_GRID_MAX || !g_mp->grids[i].used) return NULL;
+    return &g_mp->grids[i];
+}
 
 double gml_mp_grid_create(double left, double top, double hcells, double vcells, double cellw, double cellh) {
     if (!g_mp) return -1;
     return (double)gm82_mp_grid_create(g_mp, (int)left, (int)top, (int)hcells, (int)vcells, (int)cellw, (int)cellh);
 }
 double gml_mp_grid_destroy(double id) {
-    if (!g_mp) return 0;
+    if (!mp_grid_valid(id)) return 0;
     gm82_mp_grid_destroy(g_mp, (int)id);
     return 1;
 }
 double gml_mp_grid_clear_all(double id, double solid) {
-    if (!g_mp) return 0;
+    if (!mp_grid_valid(id)) return 0;
     gm82_mp_grid_clear_all(g_mp, (int)id, solid != 0);
     return 1;
 }
 double gml_mp_grid_add_cell(double id, double cx, double cy, double solid) {
-    if (!g_mp) return 0;
+    if (!mp_grid_valid(id)) return 0;
     gm82_mp_grid_add_cell(g_mp, (int)id, (int)cx, (int)cy, solid != 0);
     return 1;
 }
@@ -3221,19 +3273,45 @@ double gml_place_snapped(double x, double y, double hsnap, double vsnap) {
 double gml_move_contact(double dir, double maxdist) { return gml_move_contact_solid(dir, maxdist); }
 double gml_move_bounce(double advanced) { return gml_move_bounce_solid(advanced); }
 double gml_mp_grid_clear_cell(double id, double cx, double cy) {
-    if (g_mp) gm82_mp_grid_clear_cell(g_mp, (int)id, (int)cx, (int)cy);
-    return 0;
+    if (!mp_grid_valid(id)) return 0;
+    gm82_mp_grid_clear_cell(g_mp, (int)id, (int)cx, (int)cy);
+    return 1;
 }
 double gml_mp_grid_clear_rectangle(double id, double x1, double y1, double x2, double y2) {
-    if (g_mp) gm82_mp_grid_clear_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2);
-    return 0;
+    if (!mp_grid_valid(id)) return 0;
+    gm82_mp_grid_clear_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2);
+    return 1;
 }
 double gml_mp_grid_add_rectangle(double id, double x1, double y1, double x2, double y2, double solid) {
-    if (g_mp) gm82_mp_grid_add_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2, solid != 0);
-    return 0;
+    if (!mp_grid_valid(id)) return 0;
+    gm82_mp_grid_add_rectangle(g_mp, (int)id, (int)x1, (int)y1, (int)x2, (int)y2, solid != 0);
+    return 1;
 }
-double gml_mp_grid_add_instances(double id, double obj, double prec) { (void)id;(void)obj;(void)prec; return 0; }
-double gml_mp_grid_draw(double id) { (void)id; return 0; }
+double gml_mp_grid_add_instances(double id, double obj, double prec) {
+    (void)prec;
+    gm82_mp_grid *grid = mp_grid_valid(id);
+    if (!grid || !g_rt) return 0;
+    int marked = 0;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *inst = &g_rt->instances[i];
+        if (!inst->alive || !gm82_instance_matches_object(g_rt, inst, (int32_t)obj)) continue;
+        double l, t, r, b;
+        inst_world_bbox(g_rt, inst, inst->x, inst->y, &l, &t, &r, &b);
+        int x1 = (int)floor((l - grid->left) / (double)grid->cell_w);
+        int y1 = (int)floor((t - grid->top) / (double)grid->cell_h);
+        int x2 = (int)ceil((r - grid->left) / (double)grid->cell_w) - 1;
+        int y2 = (int)ceil((b - grid->top) / (double)grid->cell_h) - 1;
+        for (int cy = y1; cy <= y2; cy++) {
+            for (int cx = x1; cx <= x2; cx++) {
+                if (cx >= 0 && cy >= 0 && cx < grid->w && cy < grid->h)
+                    grid->cells[cy * GM82_MP_GRID_CELLS + cx] = 1;
+            }
+        }
+        marked++;
+    }
+    return (double)marked;
+}
+double gml_mp_grid_draw(double id) { (void)id; return 0.0; }
 
 double gml_mp_grid_path(double id, double xstart, double ystart, double xgoal, double ygoal, double allowdiag) {
     if (!g_mp) return 0;
@@ -5452,6 +5530,61 @@ double gml_object_other_is_child_of(double parent){ gm82_instance *o=gm82_gml_ge
 double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir){ return gml_instance_create_moving(x,y,obj,sp,dir,grav,gdir); }
 double gml_instance_some(double obj){ gm82_runtime *rt=gm82_gml_get_runtime(); if(!rt) return -4; int32_t oi=(int32_t)obj; int n=0; for(int i=0;i<rt->instance_count;i++) if(rt->instances[i].alive&&(oi<0||rt->instances[i].object_index==oi)) n++; if(n<=0) return -4; int picki=rand()%n,c=0; for(int i=0;i<rt->instance_count;i++){ if(!rt->instances[i].alive) continue; if(oi>=0&&rt->instances[i].object_index!=oi) continue; if(c==picki) return (double)rt->instances[i].id; c++; } return -4; }
 double gml_filename_remove_ext(const char *s){ static char out[512]; out[0]=0; if(!s){gm82_gml_set_last_string(out);return 0;} strncpy(out,s,sizeof(out)-1); out[sizeof(out)-1]=0; char *dot=strrchr(out,'.'); if(dot)*dot=0; gm82_gml_set_last_string(out); return (double)strlen(out); }
+static const char *filename_last_sep(const char *s) {
+    const char *a = s ? strrchr(s, '/') : NULL;
+    const char *b = s ? strrchr(s, '\\') : NULL;
+    return (a && b) ? (a > b ? a : b) : (a ? a : b);
+}
+static double filename_emit(const char *s) {
+    gm82_gml_set_last_string(s ? s : "");
+    return (double)strlen(s ? s : "");
+}
+double gml_filename_name(const char *s) {
+    const char *sep = filename_last_sep(s);
+    return filename_emit(sep ? sep + 1 : (s ? s : ""));
+}
+double gml_filename_path(const char *s) {
+    static char out[512];
+    if (!s) return filename_emit("");
+    const char *sep = filename_last_sep(s);
+    if (!sep) return filename_emit("");
+    size_t n = (size_t)(sep - s);
+    if (n >= sizeof(out)) n = sizeof(out) - 1;
+    memcpy(out, s, n); out[n] = 0;
+    return filename_emit(out);
+}
+double gml_filename_dir(const char *s) {
+    static char out[512];
+    if (!s) return filename_emit("");
+    const char *sep = filename_last_sep(s);
+    if (!sep) return filename_emit("");
+    size_t n = (size_t)(sep - s) + 1;
+    if (n >= sizeof(out)) n = sizeof(out) - 1;
+    memcpy(out, s, n); out[n] = 0;
+    return filename_emit(out);
+}
+double gml_filename_drive(const char *s) {
+    static char out[8];
+    out[0] = 0;
+    if (s && isalpha((unsigned char)s[0]) && s[1] == ':') { out[0] = s[0]; out[1] = ':'; out[2] = 0; }
+    return filename_emit(out);
+}
+double gml_filename_ext(const char *s) {
+    const char *name = filename_last_sep(s); name = name ? name + 1 : (s ? s : "");
+    const char *dot = strrchr(name, '.');
+    return filename_emit(dot ? dot : "");
+}
+double gml_filename_change_ext(const char *s, const char *ext) {
+    static char out[512];
+    if (!s) return filename_emit("");
+    const char *dot = strrchr(s, '.');
+    const char *sep = filename_last_sep(s);
+    if (!dot || (sep && dot < sep)) dot = s + strlen(s);
+    size_t n = (size_t)(dot - s); if (n >= sizeof(out)) n = sizeof(out) - 1;
+    memcpy(out, s, n); out[n] = 0;
+    if (ext && ext[0]) { if (ext[0] != '.' && n + 1 < sizeof(out)) strcat(out, "."); strncat(out, ext, sizeof(out) - strlen(out) - 1); }
+    return filename_emit(out);
+}
 double gml_string_ord_at(const char *s,double idx){ if(!s) return 0; int i=(int)idx-1; if(i<0||!s[i]) return 0; return (double)(unsigned char)s[i]; }
 double gml_string_hexdigits(const char *s){ static char out[2048]; size_t j=0; if(!s){out[0]=0;gm82_gml_set_last_string(out);return 0;} for(size_t i=0;s[i]&&j+1<sizeof(out);i++){ char c=s[i]; if((c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F')) out[j++]=c;} out[j]=0; gm82_gml_set_last_string(out); return (double)j; }
 double gml_string_number(const char *s){ static char out[256]; size_t j=0; if(!s){out[0]=0;gm82_gml_set_last_string(out);return 0;} for(size_t i=0;s[i]&&j+1<sizeof(out);i++) if((s[i]>='0'&&s[i]<='9')||s[i]=='.'||s[i]=='-') out[j++]=s[i]; out[j]=0; gm82_gml_set_last_string(out); return atof(out); }
@@ -5794,9 +5927,13 @@ double gml_match_exact(double a, double b) {
     g_nor_match_found = ok;
     return ok ? 1.0 : 0.0;
 }
+double gml_match_clear(void) {
+    g_nor_match_found = 0;
+    return 0.0;
+}
 double gml_match_found(void) { return g_nor_match_found ? 1.0 : 0.0; }
-double gml_match_not_any(double a, double b) { return gml_match_any(a, b) ? 0.0 : 1.0; }
-double gml_match_not_exact(double a, double b) { return gml_match_exact(a, b) ? 0.0 : 1.0; }
+double gml_match_not_any(double a, double b) { return (a == b) ? 0.0 : 1.0; }
+double gml_match_not_exact(double a, double b) { return (a == b) ? 0.0 : 1.0; }
 double gml_match_some(double a, double b) { return gml_match_any(a, b); }
 double gml_match_not_some(double a, double b) { return gml_match_not_any(a, b); }
 double gml_mouse_in_window(void) { return 1.0; }
