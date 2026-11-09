@@ -78,7 +78,12 @@ static int count_asset_dirs(const char *root, const char *group) {
     while ((ent = readdir(d)) != NULL) {
         char child[1200];
         if (ent->d_name[0] == '.') continue;
-        snprintf(child, sizeof(child), "%s/%s", path, ent->d_name);
+        size_t path_len = strlen(path);
+        size_t name_len = strlen(ent->d_name);
+        if (path_len + 1U + name_len + 1U > sizeof(child)) continue;
+        memcpy(child, path, path_len);
+        child[path_len] = '/';
+        memcpy(child + path_len + 1U, ent->d_name, name_len + 1U);
         if (is_dir(child)) ++count;
     }
     closedir(d);

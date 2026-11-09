@@ -33,10 +33,31 @@ static const gm82_object_actions *find_object(const gm82_action_table *table,
 }
 
 int main(int argc, char **argv) {
-    const char *path = argc > 1 ? argv[1] : "../02_SAMPLES/mario_bros.gmk";
+    const char *selected_path = argc > 1 ? argv[1] : NULL;
+    const char *candidates[] = {
+        "../02_SAMPLES/mario_bros.gmk",
+        "../../app/src/main/assets/www/samples/mario_bros.gmk",
+        "app/src/main/assets/www/samples/mario_bros.gmk",
+        "../assets/www/samples/mario_bros.gmk"
+    };
+    unsigned char *data = NULL;
     size_t size = 0;
-    unsigned char *data = read_file(path, &size);
-    assert(data != NULL);
+
+    if (selected_path) {
+        data = read_file(selected_path, &size);
+    } else {
+        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+            data = read_file(candidates[i], &size);
+            if (data) {
+                selected_path = candidates[i];
+                break;
+            }
+        }
+    }
+    if (!data) {
+        fprintf(stderr, "missing GMK8 sample; pass a path or run from repo/package root\n");
+        return 2;
+    }
 
     gm82_action_table table = {0};
     int objects = gm82_actions_parse_gmk8(data, size, &table);
@@ -62,6 +83,7 @@ int main(int argc, char **argv) {
 
     gm82_action_table_free(&table);
     free(data);
-    puts("GMK8_ACTION_PARSE_PASS objects=16 actions=51 code_blocks=31");
+    printf("GMK8_ACTION_PARSE_PASS objects=%d actions=%d code_blocks=%d path=%s\n",
+           objects, actions, code_blocks, selected_path);
     return 0;
 }
