@@ -80,6 +80,14 @@ void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_l
     rt->sprite_groups = groups;
 }
 
+void gm82_runtime_bind_resources(gm82_runtime *rt,
+    const gm82_decoded_sound_list *sounds,
+    const gm82_decoded_font_list *fonts) {
+    if (!rt) return;
+    rt->sounds = sounds;
+    rt->fonts = fonts;
+}
+
 void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts) {
     if (!rt) return;
     rt->scripts = scripts;

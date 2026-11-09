@@ -4,6 +4,7 @@
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
 #include "gm82_sound_decode.h"
+#include "gm82_font_decode.h"
 #include "gm82_script.h"
 #include <stdlib.h>
 #include <string.h>
@@ -13,14 +14,24 @@
 /* Code-track: retain last materialize decode lists for runtime bind (not freed mid-session) */
 static gm82_decoded_object_list g_mat_objects;
 static gm82_script_list g_mat_scripts;
+static gm82_decoded_sound_list g_mat_sounds;
+static gm82_decoded_font_list g_mat_fonts;
 static int g_mat_objects_valid = 0;
 static int g_mat_scripts_valid = 0;
+static int g_mat_sounds_valid = 0;
+static int g_mat_fonts_valid = 0;
 
 const gm82_decoded_object_list *gm82_materialize_get_objects(void) {
     return g_mat_objects_valid ? &g_mat_objects : NULL;
 }
 const gm82_script_list *gm82_materialize_get_scripts(void) {
     return g_mat_scripts_valid ? &g_mat_scripts : NULL;
+}
+const gm82_decoded_sound_list *gm82_materialize_get_sounds(void) {
+    return g_mat_sounds_valid ? &g_mat_sounds : NULL;
+}
+const gm82_decoded_font_list *gm82_materialize_get_fonts(void) {
+    return g_mat_fonts_valid ? &g_mat_fonts : NULL;
 }
 gm82_materialize_options gm82_materialize_default_options(void) {
     gm82_materialize_options o = {0};
@@ -259,6 +270,14 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
             gm82_decoded_object_list_free(&g_mat_objects);
             g_mat_objects_valid = 0;
         }
+        if (g_mat_sounds_valid) {
+            gm82_decoded_sound_list_free(&g_mat_sounds);
+            g_mat_sounds_valid = 0;
+        }
+        if (g_mat_fonts_valid) {
+            gm82_decoded_font_list_free(&g_mat_fonts);
+            g_mat_fonts_valid = 0;
+        }
         gm82_decoded_object_list_init(&g_mat_objects);
         int nobj = gm82_decode_objects_from_gmk(ir->source_data, ir->source_data_size, &g_mat_objects);
         if (nobj > 0) {
@@ -268,11 +287,21 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
             gm82_decoded_object_list_free(&g_mat_objects);
         }
 
-        gm82_decoded_sound_list snd_list;
-        int nsnd = gm82_decode_sounds_from_gmk(ir->source_data, ir->source_data_size, &snd_list);
+        memset(&g_mat_sounds, 0, sizeof(g_mat_sounds));
+        int nsnd = gm82_decode_sounds_from_gmk(ir->source_data, ir->source_data_size, &g_mat_sounds);
         if (nsnd > 0) {
             ir->sound_count = nsnd;
-            gm82_decoded_sound_list_free(&snd_list);
+            g_mat_sounds_valid = 1;
+        } else {
+            gm82_decoded_sound_list_free(&g_mat_sounds);
+        }
+
+        memset(&g_mat_fonts, 0, sizeof(g_mat_fonts));
+        int nfnt = gm82_decode_fonts_from_gmk(ir->source_data, ir->source_data_size, &g_mat_fonts);
+        if (nfnt > 0) {
+            g_mat_fonts_valid = 1;
+        } else {
+            gm82_decoded_font_list_free(&g_mat_fonts);
         }
 
         gm82_script_list_init(&g_mat_scripts);
