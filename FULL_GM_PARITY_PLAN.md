@@ -91,7 +91,7 @@
 ### P0 — حرجة
 - [x] توحيد ترتيب التنفيذ داخل `gm82_runtime_step` / `gm82_runtime_step_dt` — regression `test_event_order` وhost suite
 - [x] Alarms كأحداث حقيقية مرتبطة بـ `GM82_EV_ALARM` — اختبارات alarm/GML ناجحة
-- [ ] إكمال دعم `with` و `other` في الـ GML evaluator + Collision
+- [x] دعم `with` و`other` في AST/bytecode/evaluator مع nested scope؛ regression `test_gml_with_nested`، مع بقاء مقارنة السلوك الكامل مع Portable مفتوحة
 - [x] Instance Creation Code من الـ Room — `gm82_decoded_instance.creation_code` ومسار runtime
 - [x] توقيت Destroy queue مقابل Destroy event — regression destruction أثناء Draw
 

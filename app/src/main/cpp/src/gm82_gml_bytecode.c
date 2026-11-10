@@ -273,6 +273,18 @@ static gm82_instance *find_alive_id(gm82_runtime *rt, int id) {
         if (rt->instances[i].alive && rt->instances[i].id == id) return &rt->instances[i];
     return NULL;
 }
+static int with_special_target(const char *source) {
+    const char *start = source ? source : "";
+    while (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r') start++;
+    size_t n = strlen(start);
+    while (n > 0 && (start[n - 1] == ' ' || start[n - 1] == '\t' ||
+                     start[n - 1] == '\n' || start[n - 1] == '\r')) n--;
+    if (n == 4 && !strncmp(start, "self", n)) return -1;
+    if (n == 5 && !strncmp(start, "other", n)) return -2;
+    if (n == 3 && !strncmp(start, "all", n)) return -3;
+    if (n == 5 && !strncmp(start, "noone", n)) return -4;
+    return 0;
+}
 
 static void unwind_bytecode_with(int *depth) {
     while (depth && *depth > 0) {
@@ -350,16 +362,19 @@ bool gm82_gml_execute_bytecode(gm82_runtime *rt, gm82_instance *self, const gm82
                 frame->previous_other = gm82_gml_get_other();
                 gm82_gml_set_other(self);
                 int target = (int)value;
+                int special = with_special_target(ins->source);
                 int limit = rt->instance_count;
                 if (limit < 0) limit = 0;
                 if (limit > GM82_BC_MAX_WITH_ITEMS) limit = GM82_BC_MAX_WITH_ITEMS;
                 for (int i = 0; i < limit; i++) {
                     gm82_instance *candidate = &rt->instances[i];
-                    bool match = candidate->alive && (target == -3 ||
-                        (target == -1 && candidate == frame->previous_self) ||
-                        (target == -2 && frame->previous_other && candidate == frame->previous_other) ||
-                        (target != -1 && target != -2 && target != -3 && target != -4 &&
-                         gm82_instance_matches_object(rt, candidate, target)));
+                    bool match = candidate->alive &&
+                        (special == -3 || (special == 0 && target == -3) ||
+                         (special == -1 && candidate == frame->previous_self) ||
+                         (special == -2 && frame->previous_other && candidate == frame->previous_other) ||
+                         (special == -4 ? false :
+                          (special == 0 && target != -3 && target != -4 &&
+                           gm82_instance_matches_object(rt, candidate, target))));
                     if (match && frame->count < GM82_BC_MAX_WITH_ITEMS) frame->ids[frame->count++] = candidate->id;
                 }
                 gm82_instance *first = frame->count ? find_alive_id(rt, frame->ids[0]) : NULL;

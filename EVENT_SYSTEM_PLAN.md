@@ -152,7 +152,7 @@ GM82_PHASE_POST_DRAW
 
 ### المرحلة 2 — إكمال Alarms + `with`/`other`
 - [x] توحيد مسار Alarm: countdown → fire `GM82_EV_ALARM` → تنفيذ الكود المرتبط.
-- [ ] إكمال دعم `with` داخل الـ GML evaluator.
+- [x] إكمال دعم `with` داخل AST/bytecode/evaluator، بما في ذلك nested scope واستعادة `self/other`؛ regression `test_gml_with_nested`.
 - [x] ضمان أن `other` يُعيَّن بشكل صحيح أثناء Collision events.
 
 ### المرحلة 3 — توسيع التغطية
@@ -177,9 +177,8 @@ GM82_PHASE_POST_DRAW
 
 ## 7. الخطوة التالية المباشرة
 
-1. إكمال `with` داخل evaluator مع nested scope واستعادة `self/other` باختبارات regression.
-2. إضافة User Events وOutside/Boundary/Animation End عند وجود fixture سلوكي.
-3. تنفيذ مقارنة سلوكية مباشرة مع GameMaker Portable أو نقل الاختبار إلى جهاز Android عند توفر البيئة.
+1. إضافة User Events وOutside/Boundary/Animation End عند وجود fixture سلوكي.
+2. تنفيذ مقارنة سلوكية مباشرة مع GameMaker Portable أو نقل الاختبار إلى جهاز Android عند توفر البيئة.
 
 ---
 

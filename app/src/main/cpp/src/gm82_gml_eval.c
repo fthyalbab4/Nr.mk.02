@@ -3180,12 +3180,15 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     /* with (target) body */
     if (strcmp(id, "with") == 0) {
         double target_val = 0;
+        const char *target_start = NULL;
         skip_ws(&p);
         if (peek(&p) == '(') {
             getc_(&p);
+            target_start = p.s + p.i;
             if (!parse_expr(&p, &target_val)) return false;
             if (!match(&p, ')')) return false;
         } else {
+            target_start = p.s + p.i;
             if (!parse_expr(&p, &target_val)) return false;
         }
         skip_ws(&p);
@@ -3210,7 +3213,22 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
             body_buf[k] = 0;
         }
         if (rt) {
-            /* Phase 6: GM8 constants self=-1 other=-2 all=-3 noone=-4 */
+            /* Preserve the symbolic target: self/other evaluate to instance ids,
+               while with() uses them as special selectors. */
+            size_t target_end = p.i;
+            while (target_start < p.s + target_end &&
+                   (*target_start == ' ' || *target_start == '\t' ||
+                    *target_start == '\n' || *target_start == '\r' || *target_start == '(')) target_start++;
+            const char *target_stop = p.s + target_end;
+            while (target_stop > target_start &&
+                   (target_stop[-1] == ' ' || target_stop[-1] == '\t' ||
+                    target_stop[-1] == '\n' || target_stop[-1] == '\r' || target_stop[-1] == ')')) target_stop--;
+            int target_special = 0;
+            size_t target_len = (size_t)(target_stop - target_start);
+            if (target_len == 4 && !strncmp(target_start, "self", target_len)) target_special = -1;
+            else if (target_len == 5 && !strncmp(target_start, "other", target_len)) target_special = -2;
+            else if (target_len == 3 && !strncmp(target_start, "all", target_len)) target_special = -3;
+            else if (target_len == 5 && !strncmp(target_start, "noone", target_len)) target_special = -4;
             /* Phase 8: snapshot instance indices so create/destroy mid-with is safe */
             int target_id = (int)target_val;
             gm82_instance *caller = gm82_gml_get_self();
@@ -3226,10 +3244,10 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 gm82_instance *inst = &rt->instances[i];
                 if (!inst->alive) continue;
                 int match = 0;
-                if (target_id == -3) match = 1;
-                else if (target_id == -1) match = (inst == caller);
-                else if (target_id == -2) match = (previous_other && inst == previous_other);
-                else if (target_id == -4) match = 0;
+                if (target_special == -3 || (target_special == 0 && target_id == -3)) match = 1;
+                else if (target_special == -1) match = (inst == caller);
+                else if (target_special == -2) match = (previous_other && inst == previous_other);
+                else if (target_special == -4 || (target_special == 0 && target_id == -4)) match = 0;
                 else match = gm82_instance_matches_object(rt, inst, target_id);
                 if (!match) continue;
                 snap_ids[n++] = inst->id;
@@ -3415,21 +3433,20 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
         }
         size_t j = 0;
         int depth = 0;
-        int is_if = (strncmp(p, "if", 2) == 0 && !isalnum((unsigned char)p[2]) && p[2] != '_');
+        int has_block = 0;
         while (*p && j + 1 < sizeof(buf)) {
-            if (*p == '{') { depth++; buf[j++] = *p++; continue; }
+            if (*p == '{') { has_block = 1; depth++; buf[j++] = *p++; continue; }
             if (*p == '}') {
                 if (depth > 0) {
                     depth--;
                     buf[j++] = *p++;
-                    if (is_if && depth == 0) break;
+                    if (has_block && depth == 0) break;
                     continue;
                 }
                 break;
             }
             if (depth == 0 && *p == ';') break;
-            if (depth == 0 && *p == '\n' && !is_if) break;
-            if (depth == 0 && *p == '\n' && is_if) { p++; continue; }
+            if (depth == 0 && *p == '\n') break;
             if (*p != '\r') buf[j++] = *p;
             p++;
         }

@@ -1,5 +1,6 @@
 #include "gm82_gml_parser.h"
 #include "gm82_gml_eval.h"
+#include "gm82_gml_builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,6 +113,26 @@ static bool execute_expression(gm82_runtime *rt, gm82_instance *self, const gm82
            gm82_gml_eval_stmt(rt, self, source);
 }
 
+static gm82_instance *find_alive_id(gm82_runtime *rt, int id) {
+    if (!rt) return NULL;
+    for (int i = 0; i < rt->instance_count; i++)
+        if (rt->instances[i].alive && rt->instances[i].id == id) return &rt->instances[i];
+    return NULL;
+}
+
+static int with_special_target(const char *source) {
+    const char *start = source ? source : "";
+    while (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r') start++;
+    size_t n = strlen(start);
+    while (n > 0 && (start[n - 1] == ' ' || start[n - 1] == '\t' ||
+                     start[n - 1] == '\n' || start[n - 1] == '\r')) n--;
+    if (n == 4 && !strncmp(start, "self", n)) return -1;
+    if (n == 5 && !strncmp(start, "other", n)) return -2;
+    if (n == 3 && !strncmp(start, "all", n)) return -3;
+    if (n == 5 && !strncmp(start, "noone", n)) return -4;
+    return 0;
+}
+
 static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *n, gm82_gml_exec_result *r) {
     if (!n || r->returned || r->broke || r->continued) return true;
     if (++r->steps > GM82_GML_EXEC_MAX_STEPS) return false;
@@ -166,8 +187,39 @@ static bool execute_node(gm82_runtime *rt, gm82_instance *self, const gm82_gml_a
             return true;
         }
         case GM82_AST_WITH: {
-            char source[GM82_GML_SOURCE_MAX];
-            return gm82_gml_ast_to_source(n, source, sizeof(source)) && gm82_gml_eval_stmt(rt, self, source);
+            double target_value = 0;
+            char target_source[GM82_GML_SOURCE_MAX];
+            if (!gm82_gml_ast_to_source(n->a, target_source, sizeof(target_source)) ||
+                !eval_number(rt, self, n->a, &target_value)) return false;
+            gm82_instance *previous_self = self;
+            gm82_instance *previous_other = gm82_gml_get_other();
+            int special = with_special_target(target_source);
+            int target = (int)target_value;
+            int ids[2048], count = 0;
+            int limit = rt->instance_count > 2048 ? 2048 : rt->instance_count;
+            for (int i = 0; i < limit; i++) {
+                gm82_instance *candidate = &rt->instances[i];
+                bool match = candidate->alive &&
+                    (special == -3 || (special == 0 && target == -3) ||
+                     (special == -1 && candidate == previous_self) ||
+                     (special == -2 && previous_other && candidate == previous_other) ||
+                     (special == -4 ? false :
+                      (special == 0 && target != -3 && target != -4 &&
+                       gm82_instance_matches_object(rt, candidate, target))));
+                if (match && count < (int)(sizeof(ids) / sizeof(ids[0]))) ids[count++] = candidate->id;
+            }
+            gm82_gml_set_other(previous_self);
+            bool ok = true;
+            for (int i = 0; i < count && ok && !r->returned; i++) {
+                gm82_instance *current = find_alive_id(rt, ids[i]);
+                if (!current) continue;
+                gm82_gml_set_self(current);
+                ok = execute_node(rt, current, n->b, r);
+                if (r->broke || r->continued) break;
+            }
+            gm82_gml_set_self(previous_self);
+            gm82_gml_set_other(previous_other);
+            return ok;
         }
         case GM82_AST_SWITCH: {
             double selector = 0;
