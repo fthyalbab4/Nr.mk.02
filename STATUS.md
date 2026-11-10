@@ -24,4 +24,5 @@
 - [x] Ported native GM82 math & geometry functions from gm82core-main (`unlerp`, `unclerp`, `saturate`, `roundto`, `roundto_unbiased`, `floorto`, `ceilto`, `in_range`, `range_collision`, `lines_intersect`, `pack_bools`, `unpack_bool`, `point_direction_pitch`, `angle_difference_3d`, `approach_angle_biased`, `point_line_lerp`, `lengthdir_zx`, `lengthdir_zy`, `lengthdir_zz`).
 - [x] Expanded GML expression parser function argument capacity to 16 arguments to seamlessly support 9-argument geometric operations (`lines_intersect`).
 - [x] Enhanced `outside_room` builtin to dynamically measure instance bounding box boundaries against active room dimensions.
+- [x] Added native switch-case AST parsing and bytecode execution (`switch`, `case`, `default`, fallthrough and `break`).
 - [x] Maintained 0 diff across all 3 C core mirror trees (`app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`).

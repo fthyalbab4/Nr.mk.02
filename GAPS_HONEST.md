@@ -6,6 +6,7 @@
 - **AST executor loop_depth restored** (2026-11-05): `break`/`continue` outside any loop fail; loops pass `loop_depth+1`. Closes PR #322 regression. Tri-mirror synced.
 - Bytecode path: loop_compile_context + GM82_BC_REPEAT_BREAK already present.
 - `test_gml_parser.c` already covers in-loop break/continue (AST + bytecode) and rejects bare `break;` outside loop.
+- **Native switch-case control flow implemented and verified** (2026-11-06): parses `switch (...) { case ...: default: }`, compiles to bytecode and executes on both AST and bytecode with break/fallthrough support. Tri-mirror synced.
 
 ## Remaining host (rare / non-blocking for MVP)
 These are intentional no-ops until larger subsystems exist:
