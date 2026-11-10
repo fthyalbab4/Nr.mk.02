@@ -6,7 +6,7 @@
  * lhs, opcode, rhs (not lhs, rhs, opcode).
  */
 #include "gm82_actions.h"
-#include "gm82_gml_eval.h"
+#include "gm82_gml_builtins.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
