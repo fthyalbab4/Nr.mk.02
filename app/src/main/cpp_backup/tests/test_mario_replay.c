@@ -127,7 +127,7 @@ int main(void) {
     printf("  replay frame=60 room=%d player=(%.1f,%.1f) grounded=%d\n",
            rt.current_room, x_idle, y_idle, rt.instances[player_index].on_ground);
 
-    for (int frame = 60; frame < 100; ++frame) {
+    for (int frame = 60; frame < 61; ++frame) {
         gm82_input_begin_frame(&input);
         gm82_input_key_down(&input, 39); /* VK_RIGHT */
         gm82_runtime_step(&rt);
@@ -137,24 +137,25 @@ int main(void) {
     double x_right = rt.instances[player_index].x;
     double dx_right = x_right - x_idle;
     assert(dx_right > 0.0);
-    printf("  replay frame=100 room=%d player=(%.1f,%.1f) dx=%.1f grounded=%d\n",
+    printf("  replay frame=61 room=%d player=(%.1f,%.1f) dx=%.1f grounded=%d\n",
            rt.current_room, rt.instances[player_index].x, rt.instances[player_index].y,
            dx_right, rt.instances[player_index].on_ground);
     gm82_input_key_up(&input, 39);
+    assert(rt.instances[player_index].on_ground == 1);
     double y_before_jump = rt.instances[player_index].y;
     double y_min = y_before_jump;
-    /* Frame 101: cover either classic jump binding (Up or Space). */
+    /* Next frame: cover either classic jump binding (Up or Space). */
     gm82_input_begin_frame(&input);
     gm82_input_key_down(&input, 38); /* VK_UP */
     gm82_input_key_down(&input, 32); /* Space */
     gm82_runtime_step(&rt);
     check_replay_state(&rt, player_index);
-    write_replay_trace(trace, 101, &rt, player_index);
+    write_replay_trace(trace, 62, &rt, player_index);
     if (rt.instances[player_index].y < y_min) y_min = rt.instances[player_index].y;
-    printf("  replay frame=101 room=%d player=(%.1f,%.1f) grounded=%d\n",
+    printf("  replay frame=62 room=%d player=(%.1f,%.1f) grounded=%d\n",
            rt.current_room, rt.instances[player_index].x, rt.instances[player_index].y,
            rt.instances[player_index].on_ground);
-    for (int frame = 102; frame <= 160; ++frame) {
+    for (int frame = 63; frame <= 121; ++frame) {
         gm82_input_begin_frame(&input);
         gm82_input_key_up(&input, 38);
         gm82_input_key_up(&input, 32);
@@ -166,7 +167,7 @@ int main(void) {
     assert(y_min < y_before_jump);
     assert(rt.instances[player_index].on_ground == 1);
     if (trace) fclose(trace);
-    printf("  replay frame=160 room=%d player=(%.1f,%.1f) apex_y=%.1f grounded=%d\n",
+    printf("  replay frame=121 room=%d player=(%.1f,%.1f) apex_y=%.1f grounded=%d\n",
            rt.current_room, rt.instances[player_index].x, rt.instances[player_index].y,
            y_min, rt.instances[player_index].on_ground);
     printf("  mario replay: object=%s idle_delta=%.1f right_dx=%.1f jump_y=%.1f->%.1f final_grounded=%d\n",
