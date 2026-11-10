@@ -238,7 +238,7 @@ int gm82_decode_sprites_from_file(const char *path, gm82_decoded_sprite_list *ou
 #ifdef GM82_SPRITE_MAIN
 int main(int argc, char **argv) {
     const char *path = argc > 1 ? argv[1] :
-        "/home/workdir/artifacts/apk_extract/assets/www/samples/mario_bros.gmk";
+        "../02_SAMPLES/mario_bros.gmk";
     gm82_decoded_sprite_list L;
     int n = gm82_decode_sprites_from_file(path, &L);
     printf("decoded_frames=%d\n", n);

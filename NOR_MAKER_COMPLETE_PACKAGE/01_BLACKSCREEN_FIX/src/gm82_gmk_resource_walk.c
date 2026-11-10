@@ -163,7 +163,7 @@ int gm82_gmk_walk_file(const char *path, walk_stats *st) {
 #ifdef GM82_WALK_MAIN
 int main(int argc, char **argv) {
     const char *path = argc > 1 ? argv[1] :
-        "/home/workdir/artifacts/apk_extract/assets/www/samples/mario_bros.gmk";
+        "../02_SAMPLES/mario_bros.gmk";
     walk_stats st;
     int rc = gm82_gmk_walk_file(path, &st);
     printf("walk rc=%d inflated_total=%zu names=%d\n", rc, st.total_inflated, st.name_count);
