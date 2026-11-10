@@ -24,10 +24,10 @@ static void expect_true(int cond, const char *msg) {
 }
 extern double nor_import_gmx_gmz_native(const char *path, const char *output_dir);
 static const char *sample_paths[] = {
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/mario_bros.gmk",
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/plataformas.gmk",
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/shooter.gmk",
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/zelda.gmk",
+    "../02_SAMPLES/mario_bros.gmk",
+    "../02_SAMPLES/plataformas.gmk",
+    "../02_SAMPLES/shooter.gmk",
+    "../02_SAMPLES/zelda.gmk",
     NULL
 };
 static int file_exists(const char *p) {

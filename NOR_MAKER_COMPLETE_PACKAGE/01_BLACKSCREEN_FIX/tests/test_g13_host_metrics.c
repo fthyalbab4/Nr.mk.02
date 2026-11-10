@@ -13,10 +13,10 @@
 #include <sys/stat.h>
 
 static const char *samples[] = {
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/mario_bros.gmk",
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/plataformas.gmk",
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/shooter.gmk",
-    "/home/workdir/artifacts/apk_inspect/extracted/assets/www/samples/zelda.gmk",
+    "../02_SAMPLES/mario_bros.gmk",
+    "../02_SAMPLES/plataformas.gmk",
+    "../02_SAMPLES/shooter.gmk",
+    "../02_SAMPLES/zelda.gmk",
     NULL
 };
 
