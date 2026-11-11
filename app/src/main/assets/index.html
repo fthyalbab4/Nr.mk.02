@@ -30743,6 +30743,7 @@ const createEngineHTML = (projectData) => {
             ["KeyV", 86, "v", "V", "KeyJ", 74, "j", "J"].forEach(k => P1_Input.syncKey(k, down));
         }
     };
+    window.syncKeyboardToPlayers = syncKeyboardToPlayers;
     const Input = {
         get keys() { return P1_Input.keys; },
         get keysPressed() { return P1_Input.keysPressed; },
@@ -97835,6 +97836,45 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
     } catch (e) {}
   };
 
+  reactExports.useEffect(() => {
+    if (mode !== "game") return;
+    const forwarded = new Set();
+    const supported = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space", "Enter", "KeyZ", "KeyX", "KeyC", "KeyV", "KeyA", "KeyD", "KeyW", "KeyS"]);
+    const editable = (target) => {
+      if (!target) return false;
+      const tag = String(target.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
+    };
+    const onDown = (event) => {
+      const key = event.code || event.key;
+      if (editable(event.target) || !supported.has(key)) return;
+      if (event.cancelable) event.preventDefault();
+      if (forwarded.has(key) && event.repeat) return;
+      forwarded.add(key);
+      sendKey(key, "keydown");
+    };
+    const onUp = (event) => {
+      const key = event.code || event.key;
+      if (!forwarded.has(key)) return;
+      if (event.cancelable) event.preventDefault();
+      forwarded.delete(key);
+      sendKey(key, "keyup");
+    };
+    const release = () => {
+      for (const key of forwarded) sendKey(key, "keyup");
+      forwarded.clear();
+    };
+    window.addEventListener("keydown", onDown, true);
+    window.addEventListener("keyup", onUp, true);
+    window.addEventListener("blur", release);
+    return () => {
+      release();
+      window.removeEventListener("keydown", onDown, true);
+      window.removeEventListener("keyup", onUp, true);
+      window.removeEventListener("blur", release);
+    };
+  }, [mode, content, iframeRef]);
+
   const handleBtnDown = (e, keyOrKeys) => {
     if (e && e.cancelable) e.preventDefault();
     if (e && e.stopPropagation) e.stopPropagation();
@@ -98017,10 +98057,10 @@ const ConsoleViewer = ({ mode, content, title, iframeRef: forwardedIframeRef, on
                   /* @__PURE__ */ jsxRuntimeExports.jsx("iframe", {
                     ref: iframeRef,
                     srcDoc: content,
-                    className: "w-full h-full border-none select-none z-10",
-                    title: "Game Engine",
-                    sandbox: "allow-scripts allow-same-origin allow-modals allow-pointer-lock",
-                    tabIndex: 0
+                  className: "w-full h-full border-none select-none z-10",
+                  title: "Game Engine",
+                  sandbox: "allow-scripts allow-modals allow-pointer-lock",
+                  tabIndex: 0
                   }),
                   /* CRT Scanlines */
                   scanlinesEnabled && /* @__PURE__ */ jsxRuntimeExports.jsx("div", {
@@ -127794,6 +127834,37 @@ const App = () => {
       else delete window.__norGmxGmzPicked;
     };
   }, []);
+  reactExports.useEffect(() => {
+    const native = window.NorNative;
+    if (!native || typeof native.pickGmxGmzFolder !== "function") return;
+    const previous = window.__norGmxGmzFolderPicked;
+    window.__norGmxGmzFolderPicked = async (folderPath) => {
+      try {
+        if (!folderPath || typeof native.readGmxGmzFiles !== "function") throw new Error("Native GMX folder bridge غير متاح");
+        const payload = JSON.parse(native.readGmxGmzFiles(folderPath) || "{}");
+        const files = (payload.files || []).map((item) => ({
+          name: item.name,
+          webkitRelativePath: item.webkitRelativePath || item.name,
+          type: item.type || "application/octet-stream",
+          dataUrl: item.dataUrl,
+          text: async () => {
+            const raw = atob(String(item.dataUrl || "").split(",")[1] || "");
+            const bytes = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+            return new TextDecoder("utf-8").decode(bytes);
+          }
+        }));
+        const result = await convertGmxFolderToNor(files);
+        applyImportedGmxResult(result);
+      } catch (err2) {
+        console.error("Android GMX folder import error:", err2);
+        window.alert("فشل استيراد مجلد GMX: " + ((err2 == null ? void 0 : err2.message) || String(err2)));
+      }
+    };
+    return () => {
+      if (previous) window.__norGmxGmzFolderPicked = previous;
+      else delete window.__norGmxGmzFolderPicked;
+    };
+  }, []);
   const requestNativeGmxGmzImport = () => {
     const native = window.NorNative;
     if (native && typeof native.pickGmxGmz === "function") native.pickGmxGmz();
@@ -127819,7 +127890,7 @@ const App = () => {
     const ir = createProjectIR(project, converted);
     const title = String(project.gameInformation.caption || "Imported GM82");
     const applied = applyImportedProject({ source: "GM82", title, story: `Imported from GM82 (v${project.version})`, converted, ir, sourceDiagnostics });
-    window.alert(`تم استيراد مشروع GM82 بنجاح!\n🎨 صور: ${converted.sprites.length} | 🔊 أصوات: ${converted.sounds.length} | 📜 سكربتات: ${converted.scripts.length}\n🧩 كائنات: ${converted.gameObjects.length} | 🗺 غرف: ${converted.rooms.length}`);
+    console.info(`تم استيراد مشروع GM82 بنجاح! صور: ${converted.sprites.length} | أصوات: ${converted.sounds.length} | سكربتات: ${converted.scripts.length} | كائنات: ${converted.gameObjects.length} | غرف: ${converted.rooms.length}`);
     return { ...converted, diagnostics: applied.diagnostics, ir };
   };
   reactExports.useEffect(() => {
@@ -128620,11 +128691,9 @@ const App = () => {
       const importedTitle = String(((_a3 = project.gameInformation) == null ? void 0 : _a3.caption) || ((_b3 = project.sprites[0]) == null ? void 0 : _b3.name) || "Imported GMK");
       const applied = applyImportedProject({ source: isGm82TextProject ? "GM82" : "GMK", title: importedTitle, story: `Imported from ${isGm82TextProject ? "GM82" : "GMK"} (v${project.version})`, converted, ir });
       if (project.version < 800) {
-        window.alert(`Warning: This is an older GMK version (${project.version}). Some resources might not load correctly or may be partially corrupted. We've attempted to load as much as possible.
-
-Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
+        console.warn(`Warning: This is an older GMK version (${project.version}). Some resources might not load correctly or may be partially corrupted. Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
       } else {
-        window.alert(`Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
+        console.info(`Successfully imported GMK project! Items: ${converted.sprites.length} sprites, ${converted.gameObjects.length} objects, ${converted.rooms.length} rooms.`);
       }
     } catch (err2) {
       console.error("GMK Parsing Error:", err2);
@@ -148344,8 +148413,12 @@ SHA-256-Digest: ${entryHash}\r
     certSfContent += wrapManifestText(sfEntry);
   }
   zip.file("META-INF/CERT.SF", certSfContent);
-  const privateKey = forge.pki.privateKeyFromPem(customPrivateKeyPem || PRIVATE_KEY_PEM);
-  const cert = forge.pki.certificateFromPem(customCertificatePem || CERTIFICATE_PEM);
+  if (typeof customPrivateKeyPem !== "string" || typeof customCertificatePem !== "string" ||
+      !customPrivateKeyPem.includes("PRIVATE KEY") || !customCertificatePem.includes("CERTIFICATE")) {
+    throw new Error("APK signing requires a user-supplied private key and matching certificate; no signing identity is bundled.");
+  }
+  const privateKey = forge.pki.privateKeyFromPem(customPrivateKeyPem);
+  const cert = forge.pki.certificateFromPem(customCertificatePem);
   const p72 = forge.pkcs7.createSignedData();
   p72.content = forge.util.createBuffer(certSfContent, "utf8");
   p72.addCertificate(cert);
