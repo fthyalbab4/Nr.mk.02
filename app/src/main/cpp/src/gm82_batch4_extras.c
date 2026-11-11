@@ -184,11 +184,11 @@ double gml_ds_map_write_ini_string(void) { return 0; }
 double gml_ds_priority_add_many(void) { return 0; }
 
 /* draw_*_extra — no-op (need GL); residual stubs */
-double gml_draw_background_tiled_extra(void) { return 0; }
-double gml_draw_sprite_part_extra(void) { return 0; }
-double gml_draw_sprite_tiled_extra(void) { return 0; }
-double gml_draw_sprite_part_centered(void) { return 0; }
-double gml_draw_spotlight(void) { return 0; }
+__attribute__((weak)) double gml_draw_background_tiled_extra(void) { return 0; }
+__attribute__((weak)) double gml_draw_sprite_part_extra(void) { return 0; }
+__attribute__((weak)) double gml_draw_sprite_tiled_extra(void) { return 0; }
+__attribute__((weak)) double gml_draw_sprite_part_centered(void) { return 0; }
+__attribute__((weak)) double gml_draw_spotlight(void) { return 0; }
 double batch4_draw_setb(void) { return 0; }
 double batch4_draw_setf(void) { return 0; }
 
