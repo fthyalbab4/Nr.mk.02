@@ -38,7 +38,8 @@ Native PE analysis needs **Ghidra or Hopper or IDA** configured for REA. Without
 5. Commit on `main` with evidence note in PR body (not fake %).
 
 ## What this environment already checked
-- `rea` CLI installs (npm package `rea-agents`).
+- `rea` CLI installed globally (`npm install -g rea-agents`, version 6.7.0 verified).
+- CLI commands tested and functional: `rea --version`, `rea --help`, `rea providers`.
 - Host here is **Linux**: macOS native providers unavailable; full PE decompile needs Ghidra setup on a workstation.
 - `fnames` parsed vs current `Nr.mk.02` tree: large GML surface still missing; a short **priority** stub list is in `tools/fnames_priority_gaps.txt` (variables/properties often, not only functions).
 

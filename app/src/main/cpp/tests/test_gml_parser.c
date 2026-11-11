@@ -228,6 +228,31 @@ static void test_switch_control_flow(void) {
     gm82_gml_bytecode_free(&bytecode);
     gm82_runtime_cleanup(&bc_rt);
     gm82_gml_ast_free(root);
+
+    /* Verify default fallback case when expression matches neither case */
+    const char *def_source = "x = 0; switch (99) { case 1: x = 10; break; "
+                            "case 2: x = 20; break; default: x = 42; } return x;";
+    gm82_gml_parser def_parser;
+    gm82_gml_parser_init(&def_parser, def_source);
+    gm82_gml_ast *def_root = gm82_gml_parse_program(&def_parser);
+    assert(def_root != NULL);
+
+    gm82_runtime_init(&ast_rt);
+    ast_self = gm82_runtime_instance_create(&ast_rt, 0, 0, 0);
+    assert(ast_self != NULL);
+    assert(gm82_gml_execute_ast(&ast_rt, ast_self, def_root, &ast_result));
+    assert(ast_result.returned && ast_result.return_value == 42.0);
+    gm82_runtime_cleanup(&ast_rt);
+
+    gm82_runtime_init(&bc_rt);
+    bc_self = gm82_runtime_instance_create(&bc_rt, 0, 0, 0);
+    assert(bc_self != NULL);
+    assert(gm82_gml_compile_bytecode(def_root, &bytecode));
+    assert(gm82_gml_execute_bytecode(&bc_rt, bc_self, &bytecode, &bc_result));
+    assert(bc_result.returned && bc_result.return_value == 42.0);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_runtime_cleanup(&bc_rt);
+    gm82_gml_ast_free(def_root);
 }
 
 int main(void) {
