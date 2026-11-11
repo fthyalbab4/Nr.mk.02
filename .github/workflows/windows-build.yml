@@ -31,9 +31,15 @@ jobs:
 
       - name: Install MinGW, zlib, Wine, and headless display
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
-            binutils-mingw-w64-x86-64 libz-mingw-w64-dev wine64 xvfb
+          for i in 1 2 3 4 5; do
+            sudo apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=60 && break || sleep 5
+          done
+          for i in 1 2 3 4 5; do
+            sudo apt-get install -y --fix-missing \
+              -o Acquire::Retries=5 -o Acquire::http::Timeout=60 \
+              cmake gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+              binutils-mingw-w64-x86-64 libz-mingw-w64-dev wine64 xvfb && break || sleep 10
+          done
 
       - name: Run host engine suite
         run: python3 tools/run_engine_suite.py
