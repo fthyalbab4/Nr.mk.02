@@ -49,6 +49,7 @@ TESTS = [
     ("test_gm82core_math", "app/src/main/cpp/tests/test_gm82core_math.c"),
     ("test_gm82_text_project", "app/src/main/cpp/tests/test_gm82_text_project.c"),
     ("test_gm82_text_runtime", "app/src/main/cpp/tests/test_gm82_text_runtime.c"),
+    ("test_gm82_projects_corpus", "app/src/main/cpp/tests/test_gm82_projects_corpus.c"),
     ("test_resource_lookup", "app/src/main/cpp/tests/test_resource_lookup.c"),
     ("test_resource_lookup_gmk", "app/src/main/cpp/tests/test_resource_lookup_gmk.c"),
     ("test_friend_gmk_probe", "app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c"),
