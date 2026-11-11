@@ -1,8 +1,8 @@
 # NOR Maker Host Baseline Verification
 
-- **Generated (UTC):** 2026-11-09T13:32:15+00:00
-- **Git revision:** `13463aae`
-- **Elapsed:** 94.69 seconds
+- **Generated (UTC):** 2026-11-11T13:39:38+00:00
+- **Git revision:** `b50a3a72-dirty`
+- **Elapsed:** 93.38 seconds
 - **Overall status:** PASS
 - **Python reference tests reported:** 13
 
@@ -11,7 +11,7 @@ physical-device test, release signing, or any test suite that was not run by thi
 
 ## Host audit runner: PASS
 
-- Command: `python3 tools/audit_runner.py`
+- Command: `/home/jules/.pyenv/versions/3.12.13/bin/python3 tools/audit_runner.py`
 - Exit code: `0`
 
 Output excerpt:
@@ -52,7 +52,7 @@ Output excerpt:
 
 ## Python reference/security tests: PASS
 
-- Command: `python3 -m unittest discover -s tests/reference -v`
+- Command: `/home/jules/.pyenv/versions/3.12.13/bin/python3 -m unittest discover -s tests/reference -v`
 - Exit code: `0`
 
 Output excerpt:
@@ -72,6 +72,6 @@ Output excerpt:
     test_webview_and_network_are_restricted (test_security_contract.SecurityContractTests.test_webview_and_network_are_restricted) ... ok
 
     ----------------------------------------------------------------------
-    Ran 13 tests in 1.931s
+    Ran 13 tests in 1.807s
 
     OK
