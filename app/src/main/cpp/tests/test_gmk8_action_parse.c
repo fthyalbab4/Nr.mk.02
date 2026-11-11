@@ -36,6 +36,15 @@ int main(int argc, char **argv) {
     const char *path = argc > 1 ? argv[1] : "../02_SAMPLES/mario_bros.gmk";
     size_t size = 0;
     unsigned char *data = read_file(path, &size);
+    if (!data) {
+        /* Fallback for when running from repo root or other working directories */
+        path = "NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk";
+        data = read_file(path, &size);
+    }
+    if (!data) {
+        path = "app/src/main/assets/www/samples/mario_bros.gmk";
+        data = read_file(path, &size);
+    }
     assert(data != NULL);
 
     gm82_action_table table = {0};
