@@ -42,10 +42,21 @@ See full history in repo. Latest residual:
 - `with` remains on its compatibility path because instance-context iteration
   requires a separate native context-frame implementation.
 
+## Phase 0 Baseline & Android NDK Build Status
+- **VERIFIED_HOST**: Baseline tag `v0.1-native-gml-collision-baseline` pinned.
+  Host test suites (27 C test binaries, Python security/reference contracts, 4 sample GMKs) pass 100%.
+  Official run recorded in `BASELINE_REPORT.md`.
+- **VERIFIED_BUILD_ANDROID**: `./gradlew assembleDebug` compiles and packages native engine
+  `libgm82_android.so` cleanly across 4 target ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`).
+  Resolved duplicate draw function symbols (`gml_draw_*_extra`) across all 3 C core mirrors.
+- **HONEST_LIMITATION**: Device-level physical execution and audio OpenSLES playback remain
+  `DEVICE_BLOCKED` in sandbox/CI (no attached physical Android device or active emulator).
+
 ## Delivery
 ```
 is_100: false
 claim_100_percent_allowed: false
 G13: NOT_RUN
 G14: DEVICE_BLOCKED
+APK_BUILD: VERIFIED_DEBUG
 ```
