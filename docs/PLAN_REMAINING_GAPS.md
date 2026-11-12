@@ -71,6 +71,7 @@
 | D1 | تجميع قائمة `missing_builtin` / `unimplemented` من الجهاز | ملف `docs/FAIL_BUILTINS_<date>.md` |
 | D2 | تنفيذ الدفعة الأعلى تكرارًا (غالبًا: surfaces, draw_*, string_*, ds_*, file_*, instance_*, room_*) | كل بند في الدفعة يختفي من اللوج |
 | D3 | `with()` scope صحيح | [مكتمل] AST/bytecode/evaluator يدعم nested scope و`self`/`other`/`all`/`noone`؛ regression `test_gml_with_nested` |
+| D6 | User/Outside/Boundary/Animation End | [مكتمل] dispatch واختبار `test_event_other_parity`؛ تم إصلاح كشف التفاف animation في runtime |
 | D4 | surfaces: create/free/set_target/reset/copy | رسم على surface يظهر في draw |
 | D5 | string producers في eval تربط `set_last_string` | `keyboard_string` و`string(...)` يملأوا last_string |
 

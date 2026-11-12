@@ -673,17 +673,22 @@ void gm82_runtime_step(gm82_runtime *rt) {
         if (!inst->alive) continue;
         if (inst->image_speed != 0.0) {
             double next_image_index = inst->image_index + inst->image_speed;
+            bool animation_wrapped = false;
             if (rt->sprite_groups && inst->sprite_index >= 0) {
                 int gi = gm82_sprite_group_index_for_frame(rt->sprite_groups, inst->sprite_index);
                 if (gi >= 0) {
                     int fc = rt->sprite_groups->items[gi].frame_count;
                     if (fc > 0 && isfinite(next_image_index)) {
+                        double raw_image_index = next_image_index;
                         next_image_index = fmod(next_image_index, (double)fc);
                         if (next_image_index < 0.0) next_image_index += fc;
+                        animation_wrapped = (next_image_index != raw_image_index);
                     }
                 }
             }
             inst->image_index = next_image_index;
+            if (animation_wrapped && inst->alive)
+                gm82_events_fire_other(rt, inst, GM82_OTHER_ANIMATION_END);
         }
     }
 
@@ -691,7 +696,6 @@ void gm82_runtime_step(gm82_runtime *rt) {
     gm82_events_fire_end_step_all(rt);
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
-    gm82_events_fire_animation_end_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
     rt->frame_phase = GM82_PHASE_IDLE;
 }

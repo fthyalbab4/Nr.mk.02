@@ -96,8 +96,8 @@
 - [x] توقيت Destroy queue مقابل Destroy event — regression destruction أثناء Draw
 
 ### P1 — مهمة
-- [ ] User Events (`event_user`)
-- [ ] Outside Room / Boundary / Animation End
+- [x] User Events (`event_user`) — `test_event_other_parity`
+- [x] Outside Room / Boundary / Animation End — `test_event_other_parity`، وإصلاح التفاف `image_index`
 - [x] Key Press / Key Release منفصلة
 - [x] Pre-Draw / Post-Draw تُستدعى فعليًا — `test_event_order`
 - [ ] توسيع Action Lists (DnD) من الـ subset الحالي

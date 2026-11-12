@@ -40,6 +40,7 @@ TESTS = [
     ("test_paths_particles_mpgrid", "app/src/main/cpp/tests/test_paths_particles_mpgrid.c"),
     ("test_path_and_instance_list", "app/src/main/cpp/tests/test_path_and_instance_list.c"),
     ("test_event_order", "app/src/main/cpp/tests/test_event_order.c"),
+    ("test_event_other_parity", "app/src/main/cpp/tests/test_event_other_parity.c"),
     ("test_with_edges", "app/src/main/cpp/tests/test_with_edges.c"),
     ("test_action_global_dispatch", "app/src/main/cpp/tests/test_action_global_dispatch.c"),
     ("test_phase1_arena_sprites_lifecycle", "app/src/main/cpp/tests/test_phase1_arena_sprites_lifecycle.c"),
