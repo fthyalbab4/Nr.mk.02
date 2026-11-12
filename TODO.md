@@ -11,7 +11,8 @@
 ## Remaining parity work
 - [ ] Continue Action Lists expansion with one behavioral contract per action group
 - [x] Optional runtime performance instrumentation and 100/500/1000-instance benchmark
-- [ ] Optimize motion/collision stage using the measured baseline
+- [x] Optimize motion/collision stage with per-frame AABB cache (`docs/PERFORMANCE_AABB_CACHE_2026-11-13.md`)
+- [ ] Reduce collision candidate count or improve spatial-grid locality
 
 ## Device-only
 - [ ] playtest + logcat (`docs/DEVICE_BLOCKED.md`)

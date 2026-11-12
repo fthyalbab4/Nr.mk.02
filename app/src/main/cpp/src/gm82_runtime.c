@@ -607,27 +607,26 @@ void gm82_runtime_step(gm82_runtime *rt) {
 
     {
         enum { CELL = 64, HASH = 256 };
+        typedef struct {
+            double left, top, right, bottom;
+            int valid;
+        } collision_box;
         int16_t head[HASH];
         int16_t next_i[GM82_MAX_INSTANCES];
+        collision_box boxes[GM82_MAX_INSTANCES];
+        memset(boxes, 0, sizeof(boxes));
         for (int i = 0; i < HASH; i++) head[i] = -1;
-        const int n_col = rt->instance_count;
+        const int n_col = rt->instance_count < GM82_MAX_INSTANCES ?
+                          rt->instance_count : GM82_MAX_INSTANCES;
         for (int i = 0; i < n_col && i < GM82_MAX_INSTANCES; i++) {
             next_i[i] = -1;
             gm82_instance *inst = &rt->instances[i];
             if (!inst->alive) continue;
-            int cx = (int)(inst->x / CELL), cy = (int)(inst->y / CELL);
-            unsigned h = (unsigned)((cx * 73856093) ^ (cy * 19349663)) & (HASH - 1);
-            next_i[i] = head[h];
-            head[h] = (int16_t)i;
-        }
-        for (int i = 0; i < n_col; i++) {
-            gm82_instance *inst = &rt->instances[i];
-            if (!inst->alive) continue;
             int32_t sw = 16, sh = 16, sox = 0, soy = 0;
-            const gm82_decoded_frame *fa = NULL;
             if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
-                fa = &rt->sprites->frames[inst->sprite_index];
-                sw = fa->width; sh = fa->height; sox = fa->origin_x; soy = fa->origin_y;
+                const gm82_decoded_frame *frame = &rt->sprites->frames[inst->sprite_index];
+                sw = frame->width; sh = frame->height;
+                sox = frame->origin_x; soy = frame->origin_y;
             }
             double xs = inst->image_xscale != 0.0 ? inst->image_xscale : 1.0;
             double ys = inst->image_yscale != 0.0 ? inst->image_yscale : 1.0;
@@ -635,7 +634,21 @@ void gm82_runtime_step(gm82_runtime *rt) {
             sox = (int32_t)(sox * xs); soy = (int32_t)(soy * ys);
             if (sw < 1) sw = 1;
             if (sh < 1) sh = 1;
-            double ax1 = inst->x - sox, ay1 = inst->y - soy, ax2 = ax1 + sw, ay2 = ay1 + sh;
+            boxes[i].left = inst->x - sox;
+            boxes[i].top = inst->y - soy;
+            boxes[i].right = boxes[i].left + sw;
+            boxes[i].bottom = boxes[i].top + sh;
+            boxes[i].valid = 1;
+            int cx = (int)(inst->x / CELL), cy = (int)(inst->y / CELL);
+            unsigned h = (unsigned)((cx * 73856093) ^ (cy * 19349663)) & (HASH - 1);
+            next_i[i] = head[h];
+            head[h] = (int16_t)i;
+        }
+        for (int i = 0; i < n_col; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive || !boxes[i].valid) continue;
+            double ax1 = boxes[i].left, ay1 = boxes[i].top;
+            double ax2 = boxes[i].right, ay2 = boxes[i].bottom;
             int cx0 = (int)(ax1 / CELL) - 1, cy0 = (int)(ay1 / CELL) - 1;
             int cx1 = (int)(ax2 / CELL) + 1, cy1 = (int)(ay2 / CELL) + 1;
             for (int cy = cy0; cy <= cy1; cy++) {
@@ -644,21 +657,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         for (int j = head[h]; j >= 0; j = next_i[j]) {
                             if (j <= i) continue;
                             gm82_instance *other = &rt->instances[j];
-                            if (!other->alive) continue;
+                            if (!other->alive || !boxes[j].valid) continue;
                             if (rt->perf_enabled) rt->perf.collision_candidates++;
-                        int32_t ow = 16, oh = 16, oox = 0, ooy = 0;
-                        const gm82_decoded_frame *fb = NULL;
-                        if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
-                            fb = &rt->sprites->frames[other->sprite_index];
-                            ow = fb->width; oh = fb->height; oox = fb->origin_x; ooy = fb->origin_y;
-                        }
-                        double oxs = other->image_xscale != 0.0 ? other->image_xscale : 1.0;
-                        double oys = other->image_yscale != 0.0 ? other->image_yscale : 1.0;
-                        ow = (int32_t)(ow * oxs); oh = (int32_t)(oh * oys);
-                        oox = (int32_t)(oox * oxs); ooy = (int32_t)(ooy * oys);
-                        if (ow < 1) ow = 1;
-                        if (oh < 1) oh = 1;
-                            double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
+                            double bx1 = boxes[j].left, by1 = boxes[j].top;
+                            double bx2 = boxes[j].right, by2 = boxes[j].bottom;
                             if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
                             if (rt->perf_enabled) rt->perf.collision_overlaps++;
                         /* Rotation remains on the AABB fallback until the
