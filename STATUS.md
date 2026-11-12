@@ -1,7 +1,7 @@
-# STATUS — System Audit & Core Verification (2026-11-05)
+# STATUS — System Audit & Core Verification (2026-11-12)
 
 ## Verified Metrics & Status
-- **C Engine Suite**: PASS (38/38 native test binaries passing, including `test_with_edges`, `test_runtime_rendering_collision`, `test_path_and_instance_list`)
+- **C Engine Suite**: PASS (53/53 native test binaries passing, including `test_gmk8_action_room_conditions`, `test_gml_native_control_flow`, `test_with_edges`, `test_runtime_rendering_collision`, `test_path_and_instance_list`)
 - **Host Pipeline**: PASS (4/4 sample GMK games executing & rendering: Mario, Plataformas, Shooter, Zelda)
 - **Python Full Verification**: PASS (17/17 system verification tests passing)
 - **C Core Package Makefile**: PASS (`NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX` all 28 target tests passing cleanly)
@@ -14,6 +14,7 @@
 - [x] Path geometry and manipulation built-ins (`path_get_point_x/y/speed`, `path_get_closed`, `path_get_length`, `path_get_width`, `path_get_height`, `path_add_point`, `path_clear_points`)
 - [x] Instance list collision queries (`instance_place_list`, `instance_position_list`)
 - [x] Extended DnD Action Execution (`action_bounce`, `action_wrap`, `action_if_empty`, `action_if_dice`, `action_if_collision`, `action_if_variable`, `action_sprite_set`)
+- [x] DnD room condition actions (`action_if_next_room`, `action_if_previous_room`) use `current_room` with regression coverage
 - [x] GM82Core additions (`move_towards_gravity`, `move_towards_jump`, `instance_create_depth_moving_ext`)
 - [x] Self-parenting loop safety in event dispatcher
 - [x] 3-way C mirror tree synchronization (0 diffs across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)

@@ -15,6 +15,8 @@ TESTS = [
     ("test_gml_native_builtin_calls", "app/src/main/cpp/tests/test_gml_native_builtin_calls.c"),
     ("test_gml_native_fields_arrays", "app/src/main/cpp/tests/test_gml_native_fields_arrays.c"),
     ("test_gml_native_control_flow", "app/src/main/cpp/tests/test_gml_native_control_flow.c"),
+    ("test_gmk8_action_contract", "app/src/main/cpp/tests/test_gmk8_action_contract.c"),
+    ("test_gmk8_action_room_conditions", "app/src/main/cpp/tests/test_gmk8_action_room_conditions.c"),
     ("test_dual_load", "app/src/main/cpp/tests/test_dual_load.c"),
     ("test_input_key_bounds", "app/src/main/cpp/tests/test_input_key_bounds.c"),
     ("test_4_game_smoke", "app/src/main/cpp/tests/test_4_game_smoke.c"),
