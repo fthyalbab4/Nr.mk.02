@@ -10,6 +10,8 @@
 
 ## Remaining parity work
 - [ ] Continue Action Lists expansion with one behavioral contract per action group
+- [x] Optional runtime performance instrumentation and 100/500/1000-instance benchmark
+- [ ] Optimize motion/collision stage using the measured baseline
 
 ## Device-only
 - [ ] playtest + logcat (`docs/DEVICE_BLOCKED.md`)

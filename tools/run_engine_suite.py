@@ -10,6 +10,7 @@ TESTS = [
     ("test_full_suite", "app/src/main/cpp/test_full_suite.c"),
     ("test_runtime_guard", "app/src/main/cpp/tests/test_runtime_guard.c"),
     ("test_runtime_rendering_collision", "app/src/main/cpp/tests/test_runtime_rendering_collision.c"),
+    ("test_runtime_perf_benchmark", "app/src/main/cpp/tests/test_runtime_perf_benchmark.c"),
     ("test_draw_extras", "app/src/main/cpp/tests/test_draw_extras.c"),
     ("test_gml_bytecode_native_ast", "app/src/main/cpp/tests/test_gml_bytecode_native_ast.c"),
     ("test_gml_native_builtin_calls", "app/src/main/cpp/tests/test_gml_native_builtin_calls.c"),

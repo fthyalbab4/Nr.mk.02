@@ -172,6 +172,12 @@ source/unpacked/
 8. Android device verification (عند توفر جهاز).
 9. مقارنة عينات مع Portable باستخدام نتائج RE.
 
+### مسار الأداء المقاس — بدأ 2026-11-13
+
+1. إضافة instrumentation اختياري وbenchmark ثابت — مكتمل، والنتائج في `docs/PERFORMANCE_BASELINE_2026-11-13.md`.
+2. تحسين مرحلة الحركة/التصادم بناءً على baseline، مع الحفاظ على regression الحالي.
+3. قياس snapshots وGML بعد كل تغيير قبل الانتقال إلى تحميل الموارد أو Android rendering.
+
 ---
 
 ## 9. تعريف النجاح القابل للقياس

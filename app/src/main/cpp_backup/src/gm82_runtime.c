@@ -8,12 +8,55 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "gm82_arena.h"
 #include "gm82_sprite_decode.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+static uint64_t perf_now_ns(void) {
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) return 0;
+    return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + (uint64_t)ts.tv_nsec;
+}
+
+static void perf_set_phase(gm82_runtime *rt, int phase) {
+    if (!rt) return;
+    if (rt->perf_enabled) {
+        uint64_t now = perf_now_ns();
+        if (rt->perf_active_phase >= 0 && rt->perf_active_phase < 10 && now >= rt->perf_last_ns)
+            rt->perf.phase_ns[rt->perf_active_phase] += now - rt->perf_last_ns;
+        rt->perf_last_ns = now;
+        rt->perf_active_phase = phase;
+    }
+    rt->frame_phase = phase;
+}
+
+void gm82_runtime_perf_enable(gm82_runtime *rt, bool enabled) {
+    if (!rt) return;
+    rt->perf_enabled = enabled ? 1 : 0;
+    rt->perf_active_phase = GM82_PHASE_IDLE;
+    rt->perf_last_ns = enabled ? perf_now_ns() : 0;
+}
+
+void gm82_runtime_perf_reset(gm82_runtime *rt) {
+    if (!rt) return;
+    memset(&rt->perf, 0, sizeof(rt->perf));
+    rt->perf_active_phase = GM82_PHASE_IDLE;
+    rt->perf_last_ns = rt->perf_enabled ? perf_now_ns() : 0;
+}
+
+void gm82_runtime_perf_snapshot(const gm82_runtime *rt, gm82_perf_stats *out) {
+    if (!rt || !out) return;
+    *out = rt->perf;
+    if (rt->perf_enabled && rt->perf_active_phase >= 0 && rt->perf_active_phase < 10) {
+        uint64_t now = perf_now_ns();
+        if (now >= rt->perf_last_ns)
+            out->phase_ns[rt->perf_active_phase] += now - rt->perf_last_ns;
+    }
+}
 
 void gm82_runtime_init(gm82_runtime *rt) {
     memset(rt, 0, sizeof(*rt));
@@ -25,7 +68,8 @@ void gm82_runtime_init(gm82_runtime *rt) {
     rt->room_height = 480;
     gm82_arena_init(&rt->room_arena, 4u * 1024u * 1024u);
     rt->destroy_queue_count = 0;
-    rt->frame_phase = 0;
+    rt->frame_phase = GM82_PHASE_IDLE;
+    rt->perf_active_phase = GM82_PHASE_IDLE;
 }
 
 void gm82_runtime_cleanup(gm82_runtime *rt) {
@@ -468,8 +512,13 @@ static void resolve_solid_contact(gm82_runtime *rt, gm82_instance *moving,
 
 void gm82_runtime_step(gm82_runtime *rt) {
     if (!rt || !rt->running) return;
+    if (rt->perf_enabled) {
+        rt->perf.frames++;
+        rt->perf_active_phase = GM82_PHASE_IDLE;
+        rt->perf_last_ns = perf_now_ns();
+    }
     rt->frame++;
-    rt->frame_phase = 1;
+    perf_set_phase(rt, GM82_PHASE_IDLE);
     {
         double sec = (rt->room_speed > 0) ? (1.0 / (double)rt->room_speed) : (1.0/30.0);
         gm82_gml_set_frame_time(sec);
@@ -484,10 +533,10 @@ void gm82_runtime_step(gm82_runtime *rt) {
         rt->instances[i].hit_right = 0;
     }
 
-    rt->frame_phase = GM82_PHASE_BEGIN_STEP;
+    perf_set_phase(rt, GM82_PHASE_BEGIN_STEP);
     gm82_events_fire_begin_step_all(rt);
 
-    rt->frame_phase = GM82_PHASE_ALARM;
+    perf_set_phase(rt, GM82_PHASE_ALARM);
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
@@ -503,7 +552,7 @@ void gm82_runtime_step(gm82_runtime *rt) {
                     if (rt->current_room != room_before) {
                         /* A room transition aborts the rest of this frame,
                            but must not leave the runtime stuck in Alarm. */
-                        rt->frame_phase = GM82_PHASE_IDLE;
+                        perf_set_phase(rt, GM82_PHASE_IDLE);
                         return;
                     }
                 }
@@ -511,15 +560,15 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    rt->frame_phase = GM82_PHASE_INPUT;
+    perf_set_phase(rt, GM82_PHASE_INPUT);
     gm82_events_fire_keyboard_all(rt);
     gm82_events_fire_keypress_all(rt);
     gm82_events_fire_keyrelease_all(rt);
     gm82_events_fire_mouse_all(rt);
-    rt->frame_phase = GM82_PHASE_STEP;
+    perf_set_phase(rt, GM82_PHASE_STEP);
     gm82_events_fire_step_all(rt);
 
-    rt->frame_phase = GM82_PHASE_MOTION_COLLISION;
+    perf_set_phase(rt, GM82_PHASE_MOTION_COLLISION);
     const int n_move = rt->instance_count;
     for (int i = 0; i < n_move; i++) {
         gm82_instance *inst = &rt->instances[i];
@@ -592,10 +641,11 @@ void gm82_runtime_step(gm82_runtime *rt) {
             for (int cy = cy0; cy <= cy1; cy++) {
                 for (int cx = cx0; cx <= cx1; cx++) {
                     unsigned h = (unsigned)((cx * 73856093) ^ (cy * 19349663)) & (HASH - 1);
-                    for (int j = head[h]; j >= 0; j = next_i[j]) {
-                        if (j <= i) continue;
-                        gm82_instance *other = &rt->instances[j];
-                        if (!other->alive) continue;
+                        for (int j = head[h]; j >= 0; j = next_i[j]) {
+                            if (j <= i) continue;
+                            gm82_instance *other = &rt->instances[j];
+                            if (!other->alive) continue;
+                            if (rt->perf_enabled) rt->perf.collision_candidates++;
                         int32_t ow = 16, oh = 16, oox = 0, ooy = 0;
                         const gm82_decoded_frame *fb = NULL;
                         if (rt->sprites && other->sprite_index >= 0 && other->sprite_index < rt->sprites->count) {
@@ -608,8 +658,9 @@ void gm82_runtime_step(gm82_runtime *rt) {
                         oox = (int32_t)(oox * oxs); ooy = (int32_t)(ooy * oys);
                         if (ow < 1) ow = 1;
                         if (oh < 1) oh = 1;
-                        double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
-                        if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
+                            double bx1 = other->x - oox, by1 = other->y - ooy, bx2 = bx1 + ow, by2 = by1 + oh;
+                            if (ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1) continue;
+                            if (rt->perf_enabled) rt->perf.collision_overlaps++;
                         /* Rotation remains on the AABB fallback until the
                            renderer supplies a rotated mask. */
                         if (inst->image_angle == 0.0 && other->image_angle == 0.0 &&
@@ -692,12 +743,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
         }
     }
 
-    rt->frame_phase = GM82_PHASE_END_STEP;
+    perf_set_phase(rt, GM82_PHASE_END_STEP);
     gm82_events_fire_end_step_all(rt);
     gm82_events_fire_outside_all(rt);
     gm82_events_fire_boundary_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
-    rt->frame_phase = GM82_PHASE_IDLE;
+    perf_set_phase(rt, GM82_PHASE_IDLE);
 }
 
 static void blend_rgba(uint8_t *dst, const uint8_t *src) {
@@ -729,6 +780,11 @@ static void blit(uint8_t *dst, int dw, int dh, const uint8_t *src, int sw, int s
 
 bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t buf_h) {
     if (!rt || !rgba || buf_w <= 0 || buf_h <= 0) return false;
+    if (rt->perf_enabled) {
+        rt->perf.draw_frames++;
+        rt->perf_active_phase = GM82_PHASE_IDLE;
+        rt->perf_last_ns = perf_now_ns();
+    }
     if ((size_t)buf_w > (size_t)-1 / (size_t)buf_h) return false;
     size_t pixels = (size_t)buf_w * (size_t)buf_h;
     if (pixels > (size_t)-1 / 4u) return false;
@@ -773,9 +829,9 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
         }
     }
 
-    rt->frame_phase = GM82_PHASE_PRE_DRAW;
+    perf_set_phase(rt, GM82_PHASE_PRE_DRAW);
     gm82_events_fire_pre_draw_all(rt);
-    rt->frame_phase = GM82_PHASE_DRAW;
+    perf_set_phase(rt, GM82_PHASE_DRAW);
 
     int order[GM82_MAX_INSTANCES];
     int n = 0;
@@ -810,10 +866,10 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
                                 inst->image_alpha);
         }
     }
-    rt->frame_phase = GM82_PHASE_POST_DRAW;
+    perf_set_phase(rt, GM82_PHASE_POST_DRAW);
     gm82_events_fire_post_draw_all(rt);
     gm82_runtime_flush_destroy_queue(rt);
-    rt->frame_phase = GM82_PHASE_IDLE;
+    perf_set_phase(rt, GM82_PHASE_IDLE);
     return true;
 }
 

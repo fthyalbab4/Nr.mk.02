@@ -20,6 +20,7 @@
 - [x] 3-way C mirror tree synchronization (0 diffs across `app/src/main/cpp`, `NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX`, `app/src/main/cpp_backup`)
 - [x] GML AST & Bytecode Compiler Engine sync (`gm82_gml_parser`, `gm82_gml_ast_exec`, `gm82_gml_bytecode`, `gml_frontend`)
 - [x] P1 Keyboard Input Bridge (`keyDown`, `keyUp`, `key` exposed via `StudioNativeBridge` to `nativeRuntimeKey`)
+- [x] Optional runtime performance counters and repeatable 100/500/1000-instance benchmark (`docs/PERFORMANCE_BASELINE_2026-11-13.md`)
 
 ## GM82 Core Math Expansion & Parity (2026-11-03)
 - [x] Ported native GM82 math & geometry functions from gm82core-main (`unlerp`, `unclerp`, `saturate`, `roundto`, `roundto_unbiased`, `floorto`, `ceilto`, `in_range`, `range_collision`, `lines_intersect`, `pack_bools`, `unpack_bool`, `point_direction_pitch`, `angle_difference_3d`, `approach_angle_biased`, `point_line_lerp`, `lengthdir_zx`, `lengthdir_zy`, `lengthdir_zz`).
