@@ -48,3 +48,22 @@ Python security/reference contracts: 13/13 OK
 ## القرار
 
 المستودع ليس خاليًا من PRs المفتوحة أو المخاطر المتبقية. ما تم إغلاقه هو blocker الاعتماد `node-forge`، مع توثيق PR conflicts، وعدم تجاوز حماية `main`. الأولويات التالية هي: pinning لنسخ Actions، إصلاح `auto-materialize` ليعمل عبر PR بدل push مباشر، ثم إغلاق أو أرشفة PRs القديمة بعد مراجعة أصحابها، وإجراء اختبار Android فعلي.
+
+## أداة المصالحة الآمنة
+
+أضيفت الأداة `tools/reconcile_pr_conflicts_smart.py`. تعتمد على دليل three-way merge (`merge-base`, `ours`, `theirs`) ولا تختار طرفًا عشوائيًا. تحل تلقائيًا فقط الملف الذي يكون فيه الطرفان متطابقين أو يكون أحد الطرفين مطابقًا تمامًا لـmerge-base. تعارضات VM/runtime والمرايا والاختبارات تبقى `CONFLICT_REQUIRES_REVIEW`.
+
+أوضاع التشغيل:
+
+```bash
+# فحص كل PRs المفتوحة دون تعديل أو دفع
+python3 tools/reconcile_pr_conflicts_smart.py
+
+# فحص PR واحدة وتوليد تقرير مستقل
+python3 tools/reconcile_pr_conflicts_smart.py --pr 415 --report /tmp/pr415.json
+
+# إنشاء candidate branches محلية بعد فحص واختبارات؛ لا يوجد push تلقائي
+python3 tools/reconcile_pr_conflicts_smart.py --apply-local
+```
+
+اختبار PR #415 أعاد ستة تعارضات دلالية في core/mirrors وترك main بلا تعديل، وهو السلوك المقصود.
