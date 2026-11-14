@@ -1,1 +1,1 @@
-trigger p1 actions 2026-11-15
+trigger p1 materialize now
