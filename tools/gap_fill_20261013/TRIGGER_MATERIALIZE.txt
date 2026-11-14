@@ -1,1 +1,1 @@
-trigger host dump ppm 2026-11-15
+trigger continue host parity no android
