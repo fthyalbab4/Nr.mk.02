@@ -3023,9 +3023,34 @@ bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr,
     return parse_expr(&p, out);
 }
 
+static bool ast_contains_switch(const gm82_gml_ast *node) {
+    for (const gm82_gml_ast *n = node; n; n = n->next) {
+        if (n->kind == GM82_AST_SWITCH) return true;
+        if (ast_contains_switch(n->a) || ast_contains_switch(n->b) ||
+            ast_contains_switch(n->c) || ast_contains_switch(n->d)) return true;
+    }
+    return false;
+}
+
 bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt) {
     if (!stmt) return false;
     ensure_global_runtime(rt);
+
+    /* The legacy evaluator treats control keywords such as switch as
+       function identifiers. Route only switch-containing statements through
+       the native AST executor and preserve the legacy fallback elsewhere. */
+    gm82_gml_parser ast_parser;
+    gm82_gml_parser_init(&ast_parser, stmt);
+    gm82_gml_ast *ast_program = gm82_gml_parse_program(&ast_parser);
+    if (ast_program && ast_parser.error[0] == '\0' && ast_contains_switch(ast_program)) {
+        gm82_gml_exec_result result;
+        bool ok = gm82_gml_execute_ast(rt, self, ast_program, &result);
+        gm82_gml_ast_free(ast_program);
+        if (ok) return true;
+    } else {
+        gm82_gml_ast_free(ast_program);
+    }
+
     gml_parser p = { stmt, 0, strlen(stmt), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
