@@ -71,6 +71,8 @@ double gml_external_call(double id, double a0, double a1, double a2, double a3, 
     void *fn = g_ext_entries[slot].func_ptr;
     if (!fn) return 0.0;
 
+    /* Simplified GM-style calling convention: up to 8 doubles, returns double.
+       calltype/restype stored for future ABI variants. */
     typedef double (*fn_8d)(double, double, double, double, double, double, double, double);
     fn_8d f = (fn_8d)fn;
     return f(a0, a1, a2, a3, a4, a5, a6, a7);
