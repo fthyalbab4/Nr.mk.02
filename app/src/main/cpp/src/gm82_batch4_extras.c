@@ -183,6 +183,10 @@ double gml_ds_map_write_ini(void) { return 0; }
 double gml_ds_map_write_ini_string(void) { return 0; }
 double gml_ds_priority_add_many(void) { return 0; }
 
+/* draw_*_extra — no-op (need GL); residual stubs */
+double batch4_draw_setb(void) { return 0; }
+double batch4_draw_setf(void) { return 0; }
+
 /* ---- wrap try_stub ---- */
 extern int __real_gm82_gm82core_try_stub(const char *id, double *out) __attribute__((weak));
 
@@ -242,6 +246,8 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("registry_read_dword", gml_registry_read_dword);
     H0("registry_read_sz", gml_registry_read_sz);
     H0("registry_write_dword", gml_registry_write_dword);
+    H0("draw_setb", batch4_draw_setb);
+    H0("draw_setf", batch4_draw_setf);
     if (__real_gm82_gm82core_try_stub) return __real_gm82_gm82core_try_stub(id, out);
     return 0;
 }

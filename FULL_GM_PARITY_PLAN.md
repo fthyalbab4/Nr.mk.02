@@ -96,11 +96,11 @@
 - [x] توقيت Destroy queue مقابل Destroy event — regression destruction أثناء Draw
 
 ### P1 — مهمة
-- [ ] User Events (`event_user`)
-- [ ] Outside Room / Boundary / Animation End
+- [x] User Events (`event_user`) — `test_event_other_parity`
+- [x] Outside Room / Boundary / Animation End — `test_event_other_parity`، وإصلاح التفاف `image_index`
 - [x] Key Press / Key Release منفصلة
 - [x] Pre-Draw / Post-Draw تُستدعى فعليًا — `test_event_order`
-- [ ] توسيع Action Lists (DnD) من الـ subset الحالي
+- [x] دفعة شروط الغرف من Action Lists (`action_if_next_room` و`action_if_previous_room`) — `test_gmk8_action_room_conditions`؛ ما زالت التوسعة العامة لبقية الإجراءات مفتوحة
 
 ### P2 — لاحقًا
 - [ ] Precise collision (mask) — alpha mask وscale/flip موصولة؛ rotation وأشكال mask المستقلة ما زالت مفتوحة
@@ -167,10 +167,16 @@ source/unpacked/
 
 ### بعد ذلك
 5. User events + Outside/Boundary.
-6. توسيع Action Lists.
+6. توسيع Action Lists على دفعات صغيرة مع contract test لكل مجموعة؛ أُغلقت دفعة شروط الغرف في 2026-11-12.
 7. Precise collision.
 8. Android device verification (عند توفر جهاز).
 9. مقارنة عينات مع Portable باستخدام نتائج RE.
+
+### مسار الأداء المقاس — بدأ 2026-11-13
+
+1. إضافة instrumentation اختياري وbenchmark ثابت — مكتمل، والنتائج في `docs/PERFORMANCE_BASELINE_2026-11-13.md`.
+2. تحسين مرحلة الحركة/التصادم بناءً على baseline — cache لصناديق AABB مكتمل، والنتيجة في `docs/PERFORMANCE_AABB_CACHE_2026-11-13.md`.
+3. تقليل مرشحي التصادم أو تحسين locality في spatial grid، ثم قياس snapshots وGML قبل الانتقال إلى تحميل الموارد أو Android rendering.
 
 ---
 
