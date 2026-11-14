@@ -61,6 +61,19 @@ int main(void) {
     assert(gml_ds_grid_destroy(grid) == 1);
     assert(gml_ds_priority_destroy(priority) == 1);
 
+    double external_id = 0;
+    assert(gm82_gml_eval_expr(&runtime, &self,
+        "external_define(\"nonexistent_lib_xyz.so\", \"no_such_fn\", 0, 0, 2)",
+        &external_id));
+    assert(external_id >= 0.0);
+    double external_result = 1;
+    assert(gm82_gml_eval_expr(&runtime, &self,
+        "external_call(-1, 1, 2)", &external_result));
+    assert(external_result == 0.0);
+    assert(gm82_gml_eval_expr(&runtime, &self,
+        "external_free(\"nonexistent_lib_xyz.so\")", &external_result));
+    assert(external_result == 1.0);
+
     gm82_gml_bytecode_free(&bytecode);
     gm82_gml_ast_free(program);
     gm82_gml_set_self(NULL);

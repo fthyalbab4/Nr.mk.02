@@ -2,6 +2,7 @@
 #include "gm82_gml_eval.h"
 #include "gm82_portable_compat.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_external.h"
 #include "gm82_sound_runtime.h"
 #include "gm82_input.h"
 #include <ctype.h>
@@ -2640,6 +2641,31 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "file_exists") == 0) {
             *out = gml_file_exists((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
+        if (strcmp(id, "external_define") == 0) {
+            *out = gml_external_define(
+                (p->str_mask & 1) ? p->str_args[0] : "",
+                (p->str_mask & 2) ? p->str_args[1] : "",
+                nargs >= 3 ? args[2] : 0,
+                nargs >= 4 ? args[3] : 0,
+                nargs >= 5 ? args[4] : 0);
+            return true;
+        }
+        if (strcmp(id, "external_call") == 0) {
+            *out = gml_external_call(
+                arg,
+                nargs >= 2 ? args[1] : 0,
+                nargs >= 3 ? args[2] : 0,
+                nargs >= 4 ? args[3] : 0,
+                nargs >= 5 ? args[4] : 0,
+                nargs >= 6 ? args[5] : 0,
+                nargs >= 7 ? args[6] : 0,
+                nargs >= 8 ? args[7] : 0,
+                nargs >= 9 ? args[8] : 0);
+            return true;
+        }
+        if (strcmp(id, "external_free") == 0) {
+            *out = gml_external_free((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
         if (strcmp(id, "file_delete") == 0) {
             *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
