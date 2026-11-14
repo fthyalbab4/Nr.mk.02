@@ -177,7 +177,6 @@ double gml_ds_list_union(void) { return 0; }
 double gml_ds_map_read_ini(void) { return 0; }
 double gml_ds_map_read_ini_string(void) { return 0; }
 double gml_ds_map_read_safe(void) { return 0; }
-double gml_ds_map_set_many(void) { return 0; }
 double gml_ds_map_write_ini(void) { return 0; }
 double gml_ds_map_write_ini_string(void) { return 0; }
 
@@ -242,7 +241,6 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("ds_map_read_ini", gml_ds_map_read_ini);
     H0("ds_map_read_ini_string", gml_ds_map_read_ini_string);
     H0("ds_map_read_safe", gml_ds_map_read_safe);
-    H0("ds_map_set_many", gml_ds_map_set_many);
     H0("ds_map_write_ini", gml_ds_map_write_ini);
     H0("ds_map_write_ini_string", gml_ds_map_write_ini_string);
     H0("registry_read_dword", gml_registry_read_dword);

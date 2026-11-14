@@ -1041,6 +1041,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_map_add") == 0) {
             *out = gml_ds_map_add(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
+        if (strcmp(id, "ds_map_set_many") == 0) {
+            *out = gml_ds_map_set_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
         if (strcmp(id, "ds_map_replace") == 0) {
             *out = gml_ds_map_replace(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }

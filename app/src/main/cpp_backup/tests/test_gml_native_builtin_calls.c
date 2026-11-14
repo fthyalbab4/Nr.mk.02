@@ -61,6 +61,19 @@ int main(void) {
     assert(gml_ds_grid_destroy(grid) == 1);
     assert(gml_ds_priority_destroy(priority) == 1);
 
+    double map = gml_ds_map_create();
+    const double map_values[] = {1, 10, 2, 20};
+    assert(gml_ds_map_set_many(map, map_values, 4) == map);
+    assert(gml_ds_map_find_value(map, 1) == 10);
+    assert(gml_ds_map_find_value(map, 2) == 20);
+    char map_expr[128];
+    snprintf(map_expr, sizeof(map_expr), "ds_map_set_many(%g, 3, 30)", map);
+    double map_result = 0;
+    assert(gm82_gml_eval_expr(&runtime, &self, map_expr, &map_result));
+    assert(map_result == map);
+    assert(gml_ds_map_find_value(map, 3) == 30);
+    assert(gml_ds_map_destroy(map) == 1);
+
     double external_id = 0;
     assert(gm82_gml_eval_expr(&runtime, &self,
         "external_define(\"nonexistent_lib_xyz.so\", \"no_such_fn\", 0, 0, 2)",

@@ -180,6 +180,7 @@ double gm82_gml_call_script(double script_index, const double *args, int count, 
 double gml_ds_map_create(void);
 double gml_ds_map_destroy(double id);
 double gml_ds_map_add(double id, double key, double value);
+double gml_ds_map_set_many(double id, const double *args, int count);
 double gml_ds_map_find_value(double id, double key);
 double gml_ds_map_exists(double id, double key);
 double gml_ds_map_size(double id);
