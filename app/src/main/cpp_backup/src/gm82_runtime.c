@@ -16,11 +16,22 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+static uint64_t perf_now_ns(void) {
+    LARGE_INTEGER counter;
+    LARGE_INTEGER frequency;
+    if (!QueryPerformanceCounter(&counter) || !QueryPerformanceFrequency(&frequency) || frequency.QuadPart <= 0)
+        return 0;
+    return (uint64_t)((counter.QuadPart * UINT64_C(1000000000)) / (uint64_t)frequency.QuadPart);
+}
+#else
 static uint64_t perf_now_ns(void) {
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) return 0;
     return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + (uint64_t)ts.tv_nsec;
 }
+#endif
 
 static void perf_set_phase(gm82_runtime *rt, int phase) {
     if (!rt) return;
