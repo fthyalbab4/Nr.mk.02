@@ -1,1 +1,1 @@
-trigger continue host parity no android
+trigger host frames proof
