@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore gm82_gml_builtins.h tri-mirror from known-good parent + ds_*_many decls."""
+"""Restore full gm82_gml_builtins.h on all three mirrors from parent commit + ds_*_many decls."""
 from pathlib import Path
 import urllib.request
 
@@ -15,22 +15,19 @@ INSERT = ANCHOR + (
     "double gml_ds_priority_add_many(double id, const double *args, int count);\n"
 )
 
-def fetch(path: str) -> str:
-    url = f"https://raw.githubusercontent.com/fthyalbab4/Nr.mk.02/{PARENT}/{path}"
-    with urllib.request.urlopen(url) as r:
-        return r.read().decode("utf-8")
-
 def main():
-    base = fetch(PATHS[0])
-    if ANCHOR not in base:
+    url = f"https://raw.githubusercontent.com/fthyalbab4/Nr.mk.02/{PARENT}/app/src/main/cpp/include/gm82_gml_builtins.h"
+    with urllib.request.urlopen(url) as r:
+        text = r.read().decode("utf-8")
+    if ANCHOR not in text:
         raise SystemExit("anchor missing in parent blob")
-    if "gml_ds_grid_set_many" not in base:
-        base = base.replace(ANCHOR, INSERT, 1)
+    if "gml_ds_grid_set_many" not in text:
+        text = text.replace(ANCHOR, INSERT, 1)
     for p in PATHS:
         Path(p).parent.mkdir(parents=True, exist_ok=True)
-        Path(p).write_text(base, encoding="utf-8")
-        print("wrote", p, len(base))
-    print("OK restore headers")
+        Path(p).write_text(text, encoding="utf-8")
+        print("wrote", p, len(text))
+    print("OK full header restore")
 
 if __name__ == "__main__":
     main()
