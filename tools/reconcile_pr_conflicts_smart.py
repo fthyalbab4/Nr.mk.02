@@ -60,6 +60,7 @@ def is_critical(path: str) -> bool:
 
 
 def fetch_base(base: str) -> None:
+    git("worktree", "prune")
     git("fetch", "origin", base, "--quiet")
 
 
@@ -150,6 +151,7 @@ def inspect_one(row: dict, base: str, apply: bool, run_tests: bool) -> Result:
     except Exception as exc:
         return Result(number, title, "FETCH_FAILED", [], [], str(exc))
     work = pathlib.Path(tempfile.mkdtemp(prefix=f"smart-pr-{number}-"))
+    wt: pathlib.Path | None = None
     try:
         wt = work / "candidate"
         sh("git", "worktree", "add", "--detach", str(wt), ref)
@@ -190,6 +192,8 @@ def inspect_one(row: dict, base: str, apply: bool, run_tests: bool) -> Result:
         return Result(number, title, "PROVABLE_ONLY_DRY_RUN", safe, blocked,
                       "provable conflicts resolved in temporary worktree; nothing pushed")
     finally:
+        if wt is not None:
+            git("worktree", "remove", "--force", str(wt), check=False)
         shutil.rmtree(work, ignore_errors=True)
 
 
