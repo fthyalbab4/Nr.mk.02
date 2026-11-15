@@ -1,1 +1,1 @@
-trigger ci header order
+trigger rotation bailout + pipeline dump jump
