@@ -13,6 +13,7 @@ ANCHOR = "double gml_ds_grid_set_region_compat(double id, double x1, double y1, 
 INSERT = ANCHOR + (
     "double gml_ds_grid_set_many(double id, const double *args, int count);\n"
     "double gml_ds_priority_add_many(double id, const double *args, int count);\n"
+    "double gml_ds_map_set_many(double id, const double *args, int count);\n"
 )
 
 def main():
@@ -23,10 +24,30 @@ def main():
         raise SystemExit("anchor missing in parent blob")
     if "gml_ds_grid_set_many" not in text:
         text = text.replace(ANCHOR, INSERT, 1)
+    elif "gml_ds_map_set_many" not in text:
+        text = text.replace(
+            "double gml_ds_grid_set_many(double id, const double *args, int count);\n",
+            "double gml_ds_grid_set_many(double id, const double *args, int count);\n"
+            "double gml_ds_map_set_many(double id, const double *args, int count);\n",
+            1,
+        )
     for p in PATHS:
         Path(p).parent.mkdir(parents=True, exist_ok=True)
         Path(p).write_text(text, encoding="utf-8")
         print("wrote", p, len(text))
+    if "gml_ds_map_set_many" not in text:
+        extra = (
+            "\n"
+            "double gml_ds_map_set_many(double id, const double *args, int count);\n"
+            "double gml_ds_grid_set_many(double id, const double *args, int count);\n"
+        )
+        idx = text.rfind("#endif")
+        if idx >= 0:
+            text = text[:idx] + extra + text[idx:]
+        else:
+            text = text + extra
+        for pth in PATHS:
+            Path(pth).write_text(text, encoding="utf-8")
     print("OK full header restore")
 
 if __name__ == "__main__":

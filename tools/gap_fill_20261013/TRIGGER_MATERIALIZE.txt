@@ -1,1 +1,1 @@
-trigger header ds_many decls
+trigger restore map_set_many always
