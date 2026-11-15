@@ -96,6 +96,8 @@ def classify_superseded() -> list[dict]:
 
 def apply_412(ref: str) -> dict:
     # Validate that the exact reviewed change exists in the PR before applying it.
+    already = []
+    needs_apply = []
     for path in PR412_FILES:
         source = blob(ref, path)
         for name in DRAW_NAMES:
@@ -103,8 +105,18 @@ def apply_412(ref: str) -> dict:
             weak = f"__attribute__((weak)) double {name}(void) {{ return 0; }}"
             if weak not in source:
                 raise RuntimeError(f"PR #412 does not contain the reviewed weak form for {name} in {path}")
-            if expected not in blob(f"origin/{BASE}", path):
-                raise RuntimeError(f"main no longer has the expected plain stub in {path}; stop for review")
+            current = (ROOT / path).read_text()
+            if weak in current or f"static double batch4_{name.removeprefix('gml_')}" in current:
+                already.append(f"{path}:{name}")
+            elif expected in current:
+                needs_apply.append((path, name))
+            else:
+                raise RuntimeError(f"unexpected current implementation for {name} in {path}; stop for review")
+
+    if not needs_apply:
+        return {"pr": 412, "status": "SUPERSEDED", "files": PR412_FILES,
+                "already": already,
+                "reason": "main already uses static/weak private draw stubs; PR #412 would regress symbol ownership"}
 
     changed = []
     for path in PR412_FILES:
@@ -112,6 +124,8 @@ def apply_412(ref: str) -> dict:
         text = p.read_text()
         before = text
         for name in DRAW_NAMES:
+            if (path, name) not in needs_apply:
+                continue
             pattern = rf"(?m)^double {re.escape(name)}\(void\) \{{ return 0; \}}$"
             text, count = re.subn(pattern,
                 f"__attribute__((weak)) double {name}(void) {{ return 0; }}", text)
@@ -122,7 +136,8 @@ def apply_412(ref: str) -> dict:
         p.write_text(text)
         changed.append(path)
     return {"pr": 412, "status": "APPLIED_SELECTIVE", "files": changed,
-            "reason": "five residual draw stubs changed to weak symbols in all three mirrors"}
+            "already": already,
+            "reason": "only plain residual draw stubs changed to weak symbols; existing newer implementations preserved"}
 
 
 def verify() -> dict:
