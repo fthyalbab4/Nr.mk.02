@@ -17,11 +17,14 @@ jobs:
       - name: APPLY
         run: |
           python3 tools/restore_gml_builtins_headers.py || true
+          python3 tools/gap_fill_20261013/APPLY_HEADER_DS_MANY.py || true
           python3 tools/gap_fill_20261013/APPLY_P1_ACTIONS.py || true
           python3 tools/gap_fill_20261013/APPLY_PARITY_P0_RUNTIME.py || true
       - name: Host pipeline
         run: bash tools/run_host_pipeline.sh || echo soft-fail
+      - name: Engine suite
+        run: python3 tools/run_engine_suite.py || echo soft-fail
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: materialize P1 actions + builtins header"
+          commit_message: "chore: materialize header/actions after restore"
           file_pattern: "app/src/main/cpp/** docs/**"
