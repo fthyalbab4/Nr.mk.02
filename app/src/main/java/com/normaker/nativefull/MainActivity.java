@@ -828,7 +828,7 @@ public class MainActivity extends Activity {
         Uri firstGmk = null;
         for (Uri uri : results) {
             String name = getDisplayName(uri);
-            if (name != null && name.toLowerCase(Locale.ROOT).matches(".*\\.(gmk|gm81|gm7|gm6)$")) {
+            if (name != null && name.toLowerCase(Locale.ROOT).matches(".*\\.(gmk|gm82|gm81|gm7|gm6)$")) {
                 firstGmk = uri;
                 break;
             }
