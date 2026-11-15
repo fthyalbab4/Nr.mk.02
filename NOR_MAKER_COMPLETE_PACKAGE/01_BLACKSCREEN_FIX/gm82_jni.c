@@ -715,7 +715,10 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
                       g_engine_rt.current_room >= 0 &&
                       g_engine_rt.current_room < g_engine_rooms.count);
 
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.running && room_valid) {
+    /* Keep rendering the current room even when an action temporarily clears
+       running.  The old guard left the Android Bitmap untouched and made the
+       native player appear black after import or a stop/restart transition. */
+    if (g_engine_loaded && g_runtime_active && room_valid) {
         if (!gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height)) {
             /* Fallback background clear on draw error */
             uint8_t *rgba = (uint8_t *)pixels;
