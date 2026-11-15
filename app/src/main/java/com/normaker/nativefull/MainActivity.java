@@ -358,8 +358,13 @@ public class MainActivity extends Activity {
         root.addView(nesControlsOverlay, nesParams);
 
         nativePlayButton = new Button(this);
-        nativePlayButton.setText("تشغيل GMK الأصلي");
-        nativePlayButton.setOnClickListener(v -> showNativePlayer());
+        nativePlayButton.setText("فتح المحاكي الجديد");
+        nativePlayButton.setOnClickListener(v -> openWebRunner());
+        nativePlayButton.setOnLongClickListener(v -> {
+            showNativePlayer();
+            Toast.makeText(this, "تم فتح مسار Native للتوافق فقط", Toast.LENGTH_SHORT).show();
+            return true;
+        });
         FrameLayout.LayoutParams playParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP | Gravity.END);
@@ -388,6 +393,15 @@ public class MainActivity extends Activity {
 
         setContentView(root);
         webView.loadUrl("file:///android_asset/www/index.html");
+    }
+
+    /** Open the feature-complete ConsoleViewer runner instead of bypassing it. */
+    private void openWebRunner() {
+        if (nativePlayerVisible) showStudio();
+        webView.setVisibility(View.VISIBLE);
+        webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('nor-open-runner'));", null);
+        webView.requestFocus();
     }
 
     private void showNativePlayer() {
