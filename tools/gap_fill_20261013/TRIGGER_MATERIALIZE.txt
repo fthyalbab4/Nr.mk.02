@@ -1,1 +1,1 @@
-trigger host frames proof
+trigger header ds_many decls
