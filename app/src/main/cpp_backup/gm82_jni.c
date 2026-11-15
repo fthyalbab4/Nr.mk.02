@@ -1128,10 +1128,14 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     g_runtime_active = 1;
     g_engine_loaded = 1;
 
-    char buf[512];
+    int first_room_instances = n_rm > 0 ? g_engine_rooms.items[0].instance_count : 0;
+    int first_room_width = n_rm > 0 ? g_engine_rooms.items[0].width : 0;
+    int first_room_height = n_rm > 0 ? g_engine_rooms.items[0].height : 0;
+    char buf[768];
     snprintf(buf, sizeof(buf),
-        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
-        n_spr, n_bg, n_obj, n_rm, g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
+        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"firstRoomWidth\":%d,\"firstRoomHeight\":%d,\"firstRoomInstances\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
+        n_spr, n_bg, n_obj, n_rm, first_room_width, first_room_height, first_room_instances,
+        g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
 
     return (*env)->NewStringUTF(env, buf);
 }
