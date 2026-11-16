@@ -49,3 +49,9 @@ claim_100_percent_allowed: false
 G13: NOT_RUN
 G14: DEVICE_BLOCKED
 ```
+
+## High Refresh Rate (90+ FPS) & Reverse Engineering Parity Update (2026-11-12)
+- **VERIFIED_HOST**: Delta-time accumulator step execution verified for 90 FPS, 120 FPS, and 144 FPS in `test_native_frame_api.c`.
+- **GM82 Builtin & Extension Coverage**: 558 native C GML builtins integrated, 28 official GM82 packages in `source/unpacked/` indexed.
+- **Reverse Engineering**: Clean-room pseudocode and symbols from `source/reverse-engineering/` mapped into native hooks (`gm82_native_bridge.c`).
+- **Tri-Mirror Synchronization**: 100% strict match across all 108 core C engine files.

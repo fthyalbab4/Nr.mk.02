@@ -6,6 +6,8 @@
 #include "gm82_jni.h"
 #include "gm82_int_read.h"
 
+extern void gm82_native_step_dt(double dt);
+
 static int resolve_path(const char *path, char *out, size_t out_sz) {
     FILE *f = fopen(path, "rb");
     if (f) { fclose(f); snprintf(out, out_sz, "%s", path); return 1; }
@@ -22,12 +24,30 @@ static void test_high_framerate_dt_accumulation(const char *resolved) {
     assert(gm82_native_load_game(resolved, error, (int)sizeof(error)));
     assert(gm82_native_is_running());
 
+    /* Simulate 90 FPS: dt ~ 0.011111s for 90 frames (1 second) */
+    double dt_90 = 1.0 / 90.0;
+    for (int i = 0; i < 90; i++) {
+        gm82_native_step_dt(dt_90);
+    }
     double dt_90 = 1.0 / 90.0;
     for (int i = 0; i < 90; i++) gm82_native_step_dt(dt_90);
     int width = 0, height = 0;
     const uint8_t *frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
 
+    /* Simulate 120 FPS: dt ~ 0.008333s for 120 frames */
+    double dt_120 = 1.0 / 120.0;
+    for (int i = 0; i < 120; i++) {
+        gm82_native_step_dt(dt_120);
+    }
+    frame = gm82_native_frame_rgba(&width, &height);
+    assert(frame != NULL);
+
+    /* Simulate 144 FPS: dt ~ 0.006944s for 144 frames */
+    double dt_144 = 1.0 / 144.0;
+    for (int i = 0; i < 144; i++) {
+        gm82_native_step_dt(dt_144);
+    }
     double dt_120 = 1.0 / 120.0;
     for (int i = 0; i < 120; i++) gm82_native_step_dt(dt_120);
     frame = gm82_native_frame_rgba(&width, &height);
@@ -73,6 +93,7 @@ int main(void) {
     assert(frame != NULL);
     gm82_native_shutdown();
 
+    /* Run 90+ FPS delta-time accumulator tests */
     test_high_framerate_dt_accumulation(resolved);
 
     puts("native RGBA frame API OK");
