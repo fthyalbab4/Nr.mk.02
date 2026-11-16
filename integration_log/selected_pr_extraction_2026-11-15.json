@@ -1,0 +1,73 @@
+{
+  "repo": "fthyalbab4/Nr.mk.02",
+  "base": "main",
+  "apply": true,
+  "results": [
+    {
+      "pr": 410,
+      "status": "SUPERSEDED",
+      "reason": "main already has a richer sample-path fallback; PR version would regress it",
+      "files": [
+        "app/src/main/cpp/tests/test_gmk8_action_parse.c"
+      ]
+    },
+    {
+      "pr": 415,
+      "status": "SUPERSEDED",
+      "reason": "main already contains the 90/120/144 FPS test; PR version would regress it",
+      "files": [
+        "app/src/main/cpp/tests/test_native_frame_api.c"
+      ]
+    },
+    {
+      "pr": 412,
+      "status": "SUPERSEDED",
+      "files": [
+        "app/src/main/cpp/src/gm82_batch4_extras.c",
+        "app/src/main/cpp_backup/src/gm82_batch4_extras.c",
+        "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c"
+      ],
+      "already": [
+        "app/src/main/cpp/src/gm82_batch4_extras.c:gml_draw_background_tiled_extra",
+        "app/src/main/cpp/src/gm82_batch4_extras.c:gml_draw_sprite_part_extra",
+        "app/src/main/cpp/src/gm82_batch4_extras.c:gml_draw_sprite_tiled_extra",
+        "app/src/main/cpp/src/gm82_batch4_extras.c:gml_draw_sprite_part_centered",
+        "app/src/main/cpp/src/gm82_batch4_extras.c:gml_draw_spotlight",
+        "app/src/main/cpp_backup/src/gm82_batch4_extras.c:gml_draw_background_tiled_extra",
+        "app/src/main/cpp_backup/src/gm82_batch4_extras.c:gml_draw_sprite_part_extra",
+        "app/src/main/cpp_backup/src/gm82_batch4_extras.c:gml_draw_sprite_tiled_extra",
+        "app/src/main/cpp_backup/src/gm82_batch4_extras.c:gml_draw_sprite_part_centered",
+        "app/src/main/cpp_backup/src/gm82_batch4_extras.c:gml_draw_spotlight",
+        "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c:gml_draw_background_tiled_extra",
+        "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c:gml_draw_sprite_part_extra",
+        "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c:gml_draw_sprite_tiled_extra",
+        "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c:gml_draw_sprite_part_centered",
+        "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c:gml_draw_spotlight"
+      ],
+      "reason": "main already uses static/weak private draw stubs; PR #412 would regress symbol ownership"
+    }
+  ],
+  "verification": {
+    "status": "VERIFIED",
+    "commands": [
+      {
+        "command": "python3 tools/verify_core_mirrors.py",
+        "returncode": 0,
+        "stdout": "canonical: 110 files under app/src/main/cpp\ncpp_backup: 110 files under app/src/main/cpp_backup\n  OK — identical to canonical\nblackscreen: 110 files under NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX\n  OK — identical to canonical\n\nPASS: all mirrors match canonical (src/ + include/ + root key files)\n",
+        "stderr": ""
+      },
+      {
+        "command": "python3 tools/run_engine_suite.py",
+        "returncode": 0,
+        "stdout": "rc/main/cpp/tests/test_gm82_projects_corpus.c\n=== test_resource_lookup ===\nRESOURCE_NAME_LOOKUP_PASS\nPASS app/src/main/cpp/tests/test_resource_lookup.c\n=== test_resource_lookup_gmk ===\nGM82_MATERIALIZE_STATS sprites=24 bgs=24 rooms=2 objects=21 scripts=8 instances=301 complete=1\nRESOURCE_TABLES sounds=3 fonts=0\nRESOURCE_GMK_LOOKUP_PASS\nPASS app/src/main/cpp/tests/test_resource_lookup_gmk.c\n=== test_friend_gmk_probe ===\nProbe status: 1, format_kind: 1, magic: 1234321, version: 800, app_id: 123\nGMK Probe test passed successfully!\nPASS app/src/main/cpp/tests/friend_reference/test_friend_gmk_probe.c\n=== test_friend_gml_exec ===\nReturned: 1, Kind: 1, Val: 50.00\nGML Exec test passed successfully!\nPASS app/src/main/cpp/tests/friend_reference/test_friend_gml_exec.c\n=== test_friend_format_import ===\nImport format result for dummy GMK: 3\nGMX/GMZ format import test passed!\nPASS app/src/main/cpp/tests/friend_reference/test_friend_format_import.c\n=== test_reference_gml_do_until ===\nGML_DO_UNTIL_TEST_PASS\nPASS app/src/main/assets/core_validation/gml_do_until_test.c\n=== test_reference_gml_invoke_scope ===\nGML_INVOKE_SCOPE_TEST_PASS\nPASS app/src/main/assets/core_validation/gml_invoke_test.c\nENGINE_TESTS_PASS=54/54\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/mario_bros.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/mario_bros.gmk bytes=92098\nDECODE sprites=47 bgs=24 objs=21 rooms=2\nROOM 0 inst=181 w=1500 h=208\nPLAYER_IDX 175 obj=6 start=(32.0,112.0)\nSTEPS 30 frame=30 moved=1 delta=(120.0,60.9)\nDRAW ok=1 lit=1945\nSAVE_LOAD_TEST ok\nPIPELINE_OK\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/plataformas.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/plataformas.gmk bytes=29058\nDECODE sprites=42 bgs=6 objs=7 rooms=4\nROOM 0 inst=60 w=640 h=480\nPLAYER_IDX 20 obj=0 start=(64.0,304.0)\nSTEPS 30 frame=30 moved=1 delta=(90.0,21.5)\nDRAW ok=1 lit=41517\nSAVE_LOAD_TEST ok\nPIPELINE_OK\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/shooter.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/shooter.gmk bytes=224588\nDECODE sprites=14 bgs=1 objs=12 rooms=2\nROOM 0 inst=312 w=1000 h=800\nPLAYER_IDX 252 obj=0 start=(112.0,96.0)\nSTEPS 30 frame=30 moved=1 delta=(90.0,232.5)\nDRAW ok=1 lit=170295\nSAVE_LOAD_TEST ok\nPIPELINE_OK\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/zelda.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/zelda.gmk bytes=213981\nDECODE sprites=49 bgs=13 objs=11 rooms=3\nROOM 0 inst=40 w=240 h=160\nPLAYER_IDX 39 obj=4 start=(84.0,56.0)\nSTEPS 30 frame=30 moved=1 delta=(90.0,84.5)\nDRAW ok=1 lit=6401\nSAVE_LOAD_TEST ok\nPIPELINE_OK\nSUMMARY expected=4 ok=4 fail=0\nPASS pipeline\nRESULT OK\n",
+        "stderr": ""
+      },
+      {
+        "command": "bash tools/run_host_pipeline.sh",
+        "returncode": 0,
+        "stdout": "=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/mario_bros.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/mario_bros.gmk bytes=92098\nDECODE sprites=47 bgs=24 objs=21 rooms=2\nROOM 0 inst=181 w=1500 h=208\nPLAYER_IDX 175 obj=6 start=(32.0,112.0)\nSTEPS 30 frame=30 moved=1 delta=(120.0,60.9)\nDRAW ok=1 lit=1945\nSAVE_LOAD_TEST ok\nPIPELINE_OK\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/plataformas.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/plataformas.gmk bytes=29058\nDECODE sprites=42 bgs=6 objs=7 rooms=4\nROOM 0 inst=60 w=640 h=480\nPLAYER_IDX 20 obj=0 start=(64.0,304.0)\nSTEPS 30 frame=30 moved=1 delta=(90.0,21.5)\nDRAW ok=1 lit=41517\nSAVE_LOAD_TEST ok\nPIPELINE_OK\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/shooter.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/shooter.gmk bytes=224588\nDECODE sprites=14 bgs=1 objs=12 rooms=2\nROOM 0 inst=312 w=1000 h=800\nPLAYER_IDX 252 obj=0 start=(112.0,96.0)\nSTEPS 30 frame=30 moved=1 delta=(90.0,232.5)\nDRAW ok=1 lit=170295\nSAVE_LOAD_TEST ok\nPIPELINE_OK\n=== /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/zelda.gmk ===\nLOADED /home/ubuntu/gm82_reference_repos/Nr.mk.02_remote_check/app/src/main/assets/www/samples/zelda.gmk bytes=213981\nDECODE sprites=49 bgs=13 objs=11 rooms=3\nROOM 0 inst=40 w=240 h=160\nPLAYER_IDX 39 obj=4 start=(84.0,56.0)\nSTEPS 30 frame=30 moved=1 delta=(90.0,84.5)\nDRAW ok=1 lit=6401\nSAVE_LOAD_TEST ok\nPIPELINE_OK\nSUMMARY expected=4 ok=4 fail=0\n",
+        "stderr": ""
+      }
+    ]
+  }
+}

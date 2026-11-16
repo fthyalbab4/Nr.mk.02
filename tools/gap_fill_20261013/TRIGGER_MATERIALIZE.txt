@@ -1,1 +1,1 @@
-trigger parity p0 apply runtime
+trigger rotation bailout + pipeline dump jump

@@ -514,13 +514,11 @@ static bool execute_named_args(gm82_runtime *rt, gm82_instance *self, const char
         return false;
     }
     if (strcmp(name, "action_if_next_room") == 0) {
-        int cur = 0, n = 0;
-        if (rt->rooms) n = rt->rooms->count;
-        /* soft: assume current is 0 if not tracked */
-        return (cur + 1) < n;
+        if (!rt->rooms || rt->current_room < 0) return false;
+        return rt->current_room + 1 < rt->rooms->count;
     }
     if (strcmp(name, "action_if_previous_room") == 0) {
-        return false; /* no current room index field; soft false */
+        return rt->current_room > 0;
     }
     if (strcmp(name, "action_if") == 0) {
         /* generic: arg0 as truthy */

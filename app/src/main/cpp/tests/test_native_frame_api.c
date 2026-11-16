@@ -29,6 +29,8 @@ static void test_high_framerate_dt_accumulation(const char *resolved) {
     for (int i = 0; i < 90; i++) {
         gm82_native_step_dt(dt_90);
     }
+    double dt_90 = 1.0 / 90.0;
+    for (int i = 0; i < 90; i++) gm82_native_step_dt(dt_90);
     int width = 0, height = 0;
     const uint8_t *frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
@@ -46,6 +48,13 @@ static void test_high_framerate_dt_accumulation(const char *resolved) {
     for (int i = 0; i < 144; i++) {
         gm82_native_step_dt(dt_144);
     }
+    double dt_120 = 1.0 / 120.0;
+    for (int i = 0; i < 120; i++) gm82_native_step_dt(dt_120);
+    frame = gm82_native_frame_rgba(&width, &height);
+    assert(frame != NULL);
+
+    double dt_144 = 1.0 / 144.0;
+    for (int i = 0; i < 144; i++) gm82_native_step_dt(dt_144);
     frame = gm82_native_frame_rgba(&width, &height);
     assert(frame != NULL);
 

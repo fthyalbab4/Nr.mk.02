@@ -1,0 +1,1900 @@
+{
+  "repo": "fthyalbab4/Nr.mk.02",
+  "base": "main",
+  "results": [
+    {
+      "number": 415,
+      "title": "Fix GM82 Core Linkage & Add 90+ FPS Verification",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_native_frame_api.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_native_frame_api.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_native_frame_api.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 414,
+      "title": "فحص دوري يومي وتحديث تقرير التدقيق وسد فجوات دوال الرسم عبر المرايا الثلاث",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 413,
+      "title": "Pin Phase 0 baseline and resolve Android NDK duplicate symbols",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 412,
+      "title": "Fix weak linkage for residual draw stubs across C core mirrors",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_batch4_extras.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 411,
+      "title": "Integrate REA tool and synchronize core mirrors",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 410,
+      "title": "Align GM82 test runner and record baseline audit",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "BASELINE_REPORT.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gmk8_action_parse.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gmk8_action_parse.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gmk8_action_parse.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 406,
+      "title": "Synchronize tri-mirror switch-case and verify core engine test suites",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/assets/index.html",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 405,
+      "title": "Implement GM82 data structures and sync tri-mirror engine",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 396,
+      "title": "Synchronize C Core Mirrors and Update Verified Status",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_eval.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "STATUS.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_eval.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 394,
+      "title": "Fix nested GML with/self/other context handling",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "docs/BASELINE_2026-11-06.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/run_engine_suite.py",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/verify_core_mirrors.py",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 393,
+      "title": "Harden GM82 runtime semantics and mirror regressions",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_text_reader.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gmk8_action_parse.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_native_builtin_calls.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_text_reader.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gmk8_action_parse.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_text_reader.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gmk8_action_parse.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_native_builtin_calls.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/run_engine_suite.py",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/run_host_pipeline.sh",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 392,
+      "title": "Daily Periodic Audit & Tri-Mirror Gap Synchronization",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 391,
+      "title": "Freeze Phase 0 baseline, verify Android APK build, and sync tri-mirrors",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "BASELINE_REPORT.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 390,
+      "title": "Update 7-Phase Architecture Report and Synchronize Tri-Mirror Runtime",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "docs/NOR_ENGINE_PARITY_REPORT_7PHASES.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 389,
+      "title": "Sync core parser mirrors and enforce security contract",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 388,
+      "title": "Document 4-Phase GM82 Architecture Rebuild Plan",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 387,
+      "title": "feat: daily audit and tri-mirror core synchronization",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/assets/index.html",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 386,
+      "title": "Daily Periodic Audit and Core Mirror Synchronization",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 384,
+      "title": "Fix core test verification and audit status",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "STATUS.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 383,
+      "title": "feat: synchronize tri-mirror core and add bytecode with-break support",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_mario_replay.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_mario_replay.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 381,
+      "title": "Expand GM82 core built-ins dispatch and sync tri-mirrors",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "BASELINE_REPORT.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_mario_replay.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_mario_replay.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/run_host_pipeline.sh",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 380,
+      "title": "Establish Phase 0 Baseline and Phase 1 Engine Foundation",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "BASELINE_REPORT.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/generate_baseline_report.py",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 378,
+      "title": "Implement external dynamic library bridge for GML on Android/POSIX",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_actions.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_actions_gmk8.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_jni_java_bridge.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_actions.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_actions_gmk8.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_jni_java_bridge.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 377,
+      "title": "استكمال دوال GM82 Core و GML ومزامنة الأشجار وبناء حزمة أندرويد",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/run_engine_suite.py",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 376,
+      "title": "Core: Sync Tri-Mirrors and Fix Edge Tests",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_mario_replay.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_mario_replay.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 375,
+      "title": "Synchronize C core runtime and close tri-mirror gaps",
+      "status": "FETCH_FAILED",
+      "safe": [],
+      "blocked": [],
+      "detail": "unable to fetch PR head: fatal: couldn't find remote ref pull/375/head",
+      "candidate": ""
+    },
+    {
+      "number": 373,
+      "title": "Synchronize C core tri-mirror tree and parity tests",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_ast_exec.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 372,
+      "title": "Add GML diagnostics, baseline tag, and bytecode with blocks",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "BASELINE_REPORT.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 371,
+      "title": "Periodic Daily Audit and Tri-Mirror Engine Synchronization",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "DAILY_AUDIT_REPORT.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_parser.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_bytecode.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_parser.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 370,
+      "title": "Sync tri-mirrors and add GM82 math builtins",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "AGENT_STATE.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "STATUS.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "TODO.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 367,
+      "title": "Reconcile CI mirror verification and test suites",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "app/src/main/assets/index.html",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "tools/verify_core_mirrors.py",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 365,
+      "title": "Pass Phase 3.6 host Mario playable gate and synchronize tri-mirror C trees",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "AGENT_STATE.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_mario_physics_parity.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "STATUS.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_mario_physics_parity.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 364,
+      "title": "Close GM82 DnD and core builtins gaps with tri-mirror sync",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "GAPS_HONEST.md",
+          "critical": false,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_actions.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_actions.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_actions.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 361,
+      "title": "إكمال وتطوير نواة GM82: تنفيذ دوال الأحداث والمطابقة النصية ومزامنة شجرات النواة وبناء APK الأندرويد",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 358,
+      "title": "Synchronize C core mirror trees and Android assets",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_gmz_import_limits.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_mario_physics_parity.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_event_order.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gml_phase5.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_gmz_import_limits.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_mario_physics_parity.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    },
+    {
+      "number": 356,
+      "title": "Synchronize GM82 C Core Mirrors and Fix Edge Lifecycle",
+      "status": "CONFLICT_REQUIRES_REVIEW",
+      "safe": [],
+      "blocked": [
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "NOR_MAKER_COMPLETE_PACKAGE/01_BLACKSCREEN_FIX/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_builtins.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/src/gm82_gml_eval.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/include/gm82_gml_builtins.h",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/src/gm82_runtime.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        },
+        {
+          "path": "app/src/main/cpp_backup/tests/test_with_edges.c",
+          "critical": true,
+          "reason": "both sides changed relative to merge-base"
+        }
+      ],
+      "detail": "semantic conflicts remain; no branch changed",
+      "candidate": ""
+    }
+  ]
+}

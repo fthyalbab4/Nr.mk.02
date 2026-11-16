@@ -2,6 +2,7 @@
 #include "gm82_gml_eval.h"
 #include "gm82_portable_compat.h"
 #include "gm82_gml_builtins.h"
+#include "gm82_external.h"
 #include "gm82_sound_runtime.h"
 #include "gm82_input.h"
 #include <ctype.h>
@@ -998,6 +999,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_grid_set") == 0) {
             *out = gml_ds_grid_set(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0, (nargs >= 4) ? args[3] : 0); return true;
         }
+        if (strcmp(id, "ds_grid_set_many") == 0) {
+            *out = gml_ds_grid_set_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
         if (strcmp(id, "ds_grid_get") == 0) {
             *out = gml_ds_grid_get(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
@@ -1037,6 +1041,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_map_add") == 0) {
             *out = gml_ds_map_add(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
+        if (strcmp(id, "ds_map_set_many") == 0) {
+            *out = gml_ds_map_set_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
+        }
         if (strcmp(id, "ds_map_replace") == 0) {
             *out = gml_ds_map_replace(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
@@ -1060,6 +1067,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "ds_priority_add") == 0) {
             *out = gml_ds_priority_add(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
+        }
+        if (strcmp(id, "ds_priority_add_many") == 0) {
+            *out = gml_ds_priority_add_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
         }
         if (strcmp(id, "ds_priority_find_max") == 0) {
             *out = gml_ds_priority_find_max(arg); return true;
@@ -2635,6 +2645,31 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "file_exists") == 0) {
             *out = gml_file_exists((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
+        if (strcmp(id, "external_define") == 0) {
+            *out = gml_external_define(
+                (p->str_mask & 1) ? p->str_args[0] : "",
+                (p->str_mask & 2) ? p->str_args[1] : "",
+                nargs >= 3 ? args[2] : 0,
+                nargs >= 4 ? args[3] : 0,
+                nargs >= 5 ? args[4] : 0);
+            return true;
+        }
+        if (strcmp(id, "external_call") == 0) {
+            *out = gml_external_call(
+                arg,
+                nargs >= 2 ? args[1] : 0,
+                nargs >= 3 ? args[2] : 0,
+                nargs >= 4 ? args[3] : 0,
+                nargs >= 5 ? args[4] : 0,
+                nargs >= 6 ? args[5] : 0,
+                nargs >= 7 ? args[6] : 0,
+                nargs >= 8 ? args[7] : 0,
+                nargs >= 9 ? args[8] : 0);
+            return true;
+        }
+        if (strcmp(id, "external_free") == 0) {
+            *out = gml_external_free((p->str_mask & 1) ? p->str_args[0] : ""); return true;
+        }
         if (strcmp(id, "file_delete") == 0) {
             *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
@@ -2672,7 +2707,11 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_script_exists(arg); return true;
         }
         if (strcmp(id, "script_execute") == 0) {
-            *out = gml_script_execute(arg); return true;
+            int script_ok = 0;
+            const double *script_args = nargs > 1 ? &args[1] : NULL;
+            int script_arg_count = nargs > 1 ? nargs - 1 : 0;
+            *out = gm82_gml_call_script(arg, script_args, script_arg_count, &script_ok);
+            return script_ok != 0;
         }
         if (strcmp(id, "string_length") == 0) {
             *out = gml_string_length((p->str_mask & 1) ? p->str_args[0] : ""); return true;
@@ -3023,9 +3062,34 @@ bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr,
     return parse_expr(&p, out);
 }
 
+static bool ast_contains_switch(const gm82_gml_ast *node) {
+    for (const gm82_gml_ast *n = node; n; n = n->next) {
+        if (n->kind == GM82_AST_SWITCH) return true;
+        if (ast_contains_switch(n->a) || ast_contains_switch(n->b) ||
+            ast_contains_switch(n->c) || ast_contains_switch(n->d)) return true;
+    }
+    return false;
+}
+
 bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt) {
     if (!stmt) return false;
     ensure_global_runtime(rt);
+
+    /* The legacy evaluator treats control keywords such as switch as
+       function identifiers. Route only switch-containing statements through
+       the native AST executor and preserve the legacy fallback elsewhere. */
+    gm82_gml_parser ast_parser;
+    gm82_gml_parser_init(&ast_parser, stmt);
+    gm82_gml_ast *ast_program = gm82_gml_parse_program(&ast_parser);
+    if (ast_program && ast_parser.error[0] == '\0' && ast_contains_switch(ast_program)) {
+        gm82_gml_exec_result result;
+        bool ok = gm82_gml_execute_ast(rt, self, ast_program, &result);
+        gm82_gml_ast_free(ast_program);
+        if (ok) return true;
+    } else {
+        gm82_gml_ast_free(ast_program);
+    }
+
     gml_parser p = { stmt, 0, strlen(stmt), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
