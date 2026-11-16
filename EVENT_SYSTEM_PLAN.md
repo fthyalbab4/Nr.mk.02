@@ -156,8 +156,8 @@ GM82_PHASE_POST_DRAW
 - [x] ضمان أن `other` يُعيَّن بشكل صحيح أثناء Collision events.
 
 ### المرحلة 3 — توسيع التغطية
-- [ ] User events
-- [ ] Outside/Boundary/Animation End
+- [x] User events؛ regression `test_event_other_parity`
+- [x] Outside/Boundary/Animation End؛ regression `test_event_other_parity`، مع إصلاح كشف التفاف `image_index`
 - [x] التأكد من Pre/Post Draw
 - [ ] توسيع Action Lists تدريجيًا
 
@@ -177,7 +177,7 @@ GM82_PHASE_POST_DRAW
 
 ## 7. الخطوة التالية المباشرة
 
-1. إضافة User Events وOutside/Boundary/Animation End عند وجود fixture سلوكي.
+1. توسيع Action Lists تدريجيًا مع fixtures سلوكية.
 2. تنفيذ مقارنة سلوكية مباشرة مع GameMaker Portable أو نقل الاختبار إلى جهاز Android عند توفر البيئة.
 
 ---

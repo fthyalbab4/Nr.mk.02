@@ -35,6 +35,21 @@ int main(void) {
     assert(result.return_value == 7.0);
     assert(gm82_gml_native_ast_eval_count() >= 15);
 
+    /* Regression: the legacy statement entry point must route switch through
+       the native AST executor instead of reporting UNMAPPED_GML_FN switch. */
+    assert(gm82_gml_eval_stmt(&runtime, self,
+        "x = 0; switch (2) { case 1: x = 10; break; "
+        "case 2: x = 20; case 3: x += 3; break; "
+        "default: x = 99; }"));
+    double switch_value = 0;
+    assert(gm82_gml_eval_expr(&runtime, self, "x", &switch_value));
+    assert(switch_value == 23.0);
+
+    assert(gm82_gml_eval_stmt(&runtime, self,
+        "switch (9) { case 1: x = 10; break; default: x = -7; }"));
+    assert(gm82_gml_eval_expr(&runtime, self, "x", &switch_value));
+    assert(switch_value == -7.0);
+
     gm82_gml_ast_free(program);
     gm82_gml_set_self(NULL);
     gm82_runtime_cleanup(&runtime);

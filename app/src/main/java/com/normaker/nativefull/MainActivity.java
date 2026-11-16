@@ -1,6 +1,7 @@
 package com.normaker.nativefull;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -88,11 +89,15 @@ public class MainActivity extends Activity {
     private Button returnToStudioButton;
     private Button engineRecordButton;
     private FrameLayout nesControlsOverlay;
+    private FrameLayout activityRoot;
     private EngineVideoRecorder engineVideoRecorder;
     private Bitmap frameBitmap;
     private ValueCallback<Uri[]> pendingFileCallback;
     private volatile boolean nativeProjectLoaded = false;
     private volatile boolean nativePlayerVisible = false;
+    private boolean nativeLandscapeMode = false;
+    private boolean nativeFullscreenMode = false;
+    private boolean nativeRenderFailureLogged = false;
     private long lastFrameNanos;
     private boolean holdLeft, holdRight, holdUp, holdDown, holdSpace;
     private int activeTouchPointerId = MotionEvent.INVALID_POINTER_ID;
@@ -180,7 +185,13 @@ public class MainActivity extends Activity {
                 synchronized (nativeLock) {
                     nativeRuntimeStep(dt);
                     drainNativeSoundCommands();
-                    if (frameBitmap != null) nativeRuntimeRenderBitmap(frameBitmap);
+                    if (frameBitmap != null) {
+                        boolean rendered = nativeRuntimeRenderBitmap(frameBitmap);
+                        if (!rendered && !nativeRenderFailureLogged) {
+                            nativeRenderFailureLogged = true;
+                            Log.w(TAG, "Native renderer returned an empty frame: " + nativeRuntimeSnapshotJson());
+                        }
+                    }
                 }
                 // Encode only the engine framebuffer, not the Activity or toolbar.
                 if (frameBitmap != null && engineVideoRecorder != null && engineVideoRecorder.isRecording())
@@ -275,6 +286,7 @@ public class MainActivity extends Activity {
 
     private void buildUnifiedStudioView() {
         FrameLayout root = new FrameLayout(this);
+        activityRoot = root;
         root.setBackgroundColor(Color.rgb(20, 20, 40));
 
         webView = new WebView(this);
@@ -346,8 +358,13 @@ public class MainActivity extends Activity {
         root.addView(nesControlsOverlay, nesParams);
 
         nativePlayButton = new Button(this);
-        nativePlayButton.setText("تشغيل GMK الأصلي");
-        nativePlayButton.setOnClickListener(v -> showNativePlayer());
+        nativePlayButton.setText("فتح المحاكي الجديد");
+        nativePlayButton.setOnClickListener(v -> openWebRunner());
+        nativePlayButton.setOnLongClickListener(v -> {
+            showNativePlayer();
+            Toast.makeText(this, "تم فتح مسار Native للتوافق فقط", Toast.LENGTH_SHORT).show();
+            return true;
+        });
         FrameLayout.LayoutParams playParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP | Gravity.END);
@@ -378,12 +395,23 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/www/index.html");
     }
 
+    /** Open the feature-complete ConsoleViewer runner instead of bypassing it. */
+    private void openWebRunner() {
+        if (nativePlayerVisible) showStudio();
+        webView.setVisibility(View.VISIBLE);
+        webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('nor-open-runner'));", null);
+        webView.requestFocus();
+    }
+
     private void showNativePlayer() {
         if (!nativeProjectLoaded) {
             Toast.makeText(this, "استورد ملف GMK مدعومًا أولًا من قائمة فتح المشروع", Toast.LENGTH_LONG).show();
             return;
         }
         nativePlayerVisible = true;
+        nativeRenderFailureLogged = false;
+        applyNativeScreenMode(true, false);
         resizeNativeFrameToRoom();
         lastFrameNanos = 0;
         webView.setVisibility(View.GONE);
@@ -395,6 +423,38 @@ public class MainActivity extends Activity {
         nativeGameView.requestFocus();
         loopHandler.removeCallbacks(nativeFrameLoop);
         loopHandler.post(nativeFrameLoop);
+    }
+
+    private void applyNativeScreenMode(boolean landscape, boolean immersive) {
+        nativeLandscapeMode = landscape;
+        nativeFullscreenMode = immersive;
+        setRequestedOrientation(landscape
+                ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        int flags = immersive
+                ? (View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+                : View.SYSTEM_UI_FLAG_FULLSCREEN;
+        getWindow().getDecorView().setSystemUiVisibility(flags);
+        if (activityRoot == null) return;
+        int top = landscape ? 0 : dp(56);
+        if (webView != null) {
+            FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) webView.getLayoutParams();
+            p.topMargin = top;
+            webView.setLayoutParams(p);
+        }
+        if (nativeGameView != null) {
+            FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) nativeGameView.getLayoutParams();
+            p.topMargin = landscape ? 0 : dp(56);
+            nativeGameView.setLayoutParams(p);
+        }
+        if (nesControlsOverlay != null) {
+            FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) nesControlsOverlay.getLayoutParams();
+            p.topMargin = landscape ? 0 : dp(56);
+            nesControlsOverlay.setLayoutParams(p);
+        }
+        activityRoot.setBackgroundColor(Color.BLACK);
     }
 
     /** The native renderer returns the camera viewport, not a fixed 640x480 room. */
@@ -426,7 +486,16 @@ public class MainActivity extends Activity {
         engineRecordButton.setVisibility(View.GONE);
         nativePlayButton.setVisibility(View.VISIBLE);
         webView.setVisibility(View.VISIBLE);
+        applyNativeScreenMode(false, false);
         webView.requestFocus();
+    }
+
+    private void toggleNativeLandscape() {
+        applyNativeScreenMode(!nativeLandscapeMode, nativeFullscreenMode);
+    }
+
+    private void toggleNativeFullscreen() {
+        applyNativeScreenMode(nativeLandscapeMode, !nativeFullscreenMode);
     }
 
     private void toggleEngineRecording() {
@@ -541,6 +610,22 @@ public class MainActivity extends Activity {
         exit.setLayoutParams(exitParams);
         exit.setOnClickListener(v -> showStudio());
         overlay.addView(exit);
+
+        Button landscape = nesButton("↔ أفقي", false, 92, 42);
+        FrameLayout.LayoutParams landscapeParams = new FrameLayout.LayoutParams(
+                dp(92), dp(42), Gravity.TOP | Gravity.END);
+        landscapeParams.setMargins(0, dp(10), dp(94), 0);
+        landscape.setLayoutParams(landscapeParams);
+        landscape.setOnClickListener(v -> toggleNativeLandscape());
+        overlay.addView(landscape);
+
+        Button fullscreen = nesButton("⛶", false, 52, 42);
+        FrameLayout.LayoutParams fullscreenParams = new FrameLayout.LayoutParams(
+                dp(52), dp(42), Gravity.TOP | Gravity.END);
+        fullscreenParams.setMargins(0, dp(10), dp(192), 0);
+        fullscreen.setLayoutParams(fullscreenParams);
+        fullscreen.setOnClickListener(v -> toggleNativeFullscreen());
+        overlay.addView(fullscreen);
 
         Button left = nesButton("◀", false, 64, 64);
         FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(dp(64), dp(64), Gravity.CENTER_VERTICAL | Gravity.START);
@@ -743,7 +828,7 @@ public class MainActivity extends Activity {
         Uri firstGmk = null;
         for (Uri uri : results) {
             String name = getDisplayName(uri);
-            if (name != null && name.toLowerCase(Locale.ROOT).matches(".*\\.(gmk|gm81|gm7|gm6)$")) {
+            if (name != null && name.toLowerCase(Locale.ROOT).matches(".*\\.(gmk|gm82|gm81|gm7|gm6)$")) {
                 firstGmk = uri;
                 break;
             }

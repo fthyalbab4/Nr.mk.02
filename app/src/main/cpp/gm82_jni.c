@@ -715,7 +715,10 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
                       g_engine_rt.current_room >= 0 &&
                       g_engine_rt.current_room < g_engine_rooms.count);
 
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.running && room_valid) {
+    /* Keep rendering the current room even when an action temporarily clears
+       running.  The old guard left the Android Bitmap untouched and made the
+       native player appear black after import or a stop/restart transition. */
+    if (g_engine_loaded && g_runtime_active && room_valid) {
         if (!gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height)) {
             /* Fallback background clear on draw error */
             uint8_t *rgba = (uint8_t *)pixels;
@@ -1125,10 +1128,14 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     g_runtime_active = 1;
     g_engine_loaded = 1;
 
-    char buf[512];
+    int first_room_instances = n_rm > 0 ? g_engine_rooms.items[0].instance_count : 0;
+    int first_room_width = n_rm > 0 ? g_engine_rooms.items[0].width : 0;
+    int first_room_height = n_rm > 0 ? g_engine_rooms.items[0].height : 0;
+    char buf[768];
     snprintf(buf, sizeof(buf),
-        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
-        n_spr, n_bg, n_obj, n_rm, g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
+        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"firstRoomWidth\":%d,\"firstRoomHeight\":%d,\"firstRoomInstances\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
+        n_spr, n_bg, n_obj, n_rm, first_room_width, first_room_height, first_room_instances,
+        g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
 
     return (*env)->NewStringUTF(env, buf);
 }

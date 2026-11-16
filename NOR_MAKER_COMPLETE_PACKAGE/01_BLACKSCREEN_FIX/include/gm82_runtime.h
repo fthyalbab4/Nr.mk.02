@@ -33,6 +33,14 @@ enum gm82_frame_phase {
 };
 
 typedef struct {
+    uint64_t frames;
+    uint64_t draw_frames;
+    uint64_t phase_ns[10];
+    uint64_t collision_candidates;
+    uint64_t collision_overlaps;
+} gm82_perf_stats;
+
+typedef struct {
     char name[32];
     double value;
 } gm82_var;
@@ -115,6 +123,10 @@ typedef struct {
     int32_t frame_phase;
     double  step_accumulator;
     int32_t step_room_speed;
+    int32_t perf_enabled;
+    int32_t perf_active_phase;
+    uint64_t perf_last_ns;
+    gm82_perf_stats perf;
 } gm82_runtime;
 
 void gm82_runtime_flush_destroy_queue(gm82_runtime *rt);
@@ -140,6 +152,9 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y);
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst);
 void gm82_runtime_compact_instances(gm82_runtime *rt);
+void gm82_runtime_perf_enable(gm82_runtime *rt, bool enabled);
+void gm82_runtime_perf_reset(gm82_runtime *rt);
+void gm82_runtime_perf_snapshot(const gm82_runtime *rt, gm82_perf_stats *out);
 
 #ifdef __cplusplus
 }

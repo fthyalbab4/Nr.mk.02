@@ -260,6 +260,32 @@ static void test_switch_control_flow(void) {
     gm82_gml_bytecode_free(&bytecode);
     gm82_runtime_cleanup(&bc_rt);
     gm82_gml_ast_free(root);
+
+    /* A non-matching selector must execute default in both execution paths. */
+    const char *default_source =
+        "x = 0; switch (99) { case 1: x = 10; break; "
+        "case 2: x = 20; break; default: x = 42; } return x;";
+    gm82_gml_parser default_parser;
+    gm82_gml_parser_init(&default_parser, default_source);
+    gm82_gml_ast *default_root = gm82_gml_parse_program(&default_parser);
+    assert(default_root != NULL);
+
+    gm82_runtime_init(&ast_rt);
+    ast_self = gm82_runtime_instance_create(&ast_rt, 0, 0, 0);
+    assert(ast_self != NULL);
+    assert(gm82_gml_execute_ast(&ast_rt, ast_self, default_root, &ast_result));
+    assert(ast_result.returned && ast_result.return_value == 42.0);
+    gm82_runtime_cleanup(&ast_rt);
+
+    gm82_runtime_init(&bc_rt);
+    bc_self = gm82_runtime_instance_create(&bc_rt, 0, 0, 0);
+    assert(bc_self != NULL);
+    assert(gm82_gml_compile_bytecode(default_root, &bytecode));
+    assert(gm82_gml_execute_bytecode(&bc_rt, bc_self, &bytecode, &bc_result));
+    assert(bc_result.returned && bc_result.return_value == 42.0);
+    gm82_gml_bytecode_free(&bytecode);
+    gm82_runtime_cleanup(&bc_rt);
+    gm82_gml_ast_free(default_root);
 }
 
 int main(void) {

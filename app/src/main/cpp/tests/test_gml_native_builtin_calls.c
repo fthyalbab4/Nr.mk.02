@@ -47,6 +47,46 @@ int main(void) {
     assert(fabs(result.return_value - 32.5) < 0.000001);
     assert(gm82_gml_native_ast_eval_count() >= 10);
 
+    double grid = gml_ds_grid_create(3, 3);
+    const double grid_values[] = {0, 0, 11, 2, 1, 22, 1, 2, 33};
+    assert(gml_ds_grid_set_many(grid, grid_values, 9) == grid);
+    assert(gml_ds_grid_get(grid, 0, 0) == 11);
+    assert(gml_ds_grid_get(grid, 2, 1) == 22);
+    assert(gml_ds_grid_get(grid, 1, 2) == 33);
+
+    double priority = gml_ds_priority_create();
+    const double priority_values[] = {10, 1, 20, 5, 30, 3};
+    assert(gml_ds_priority_add_many(priority, priority_values, 6) == priority);
+    assert(gml_ds_priority_find_max(priority) == 20);
+    assert(gml_ds_grid_destroy(grid) == 1);
+    assert(gml_ds_priority_destroy(priority) == 1);
+
+    double map = gml_ds_map_create();
+    const double map_values[] = {1, 10, 2, 20};
+    assert(gml_ds_map_set_many(map, map_values, 4) == map);
+    assert(gml_ds_map_find_value(map, 1) == 10);
+    assert(gml_ds_map_find_value(map, 2) == 20);
+    char map_expr[128];
+    snprintf(map_expr, sizeof(map_expr), "ds_map_set_many(%g, 3, 30)", map);
+    double map_result = 0;
+    assert(gm82_gml_eval_expr(&runtime, &self, map_expr, &map_result));
+    assert(map_result == map);
+    assert(gml_ds_map_find_value(map, 3) == 30);
+    assert(gml_ds_map_destroy(map) == 1);
+
+    double external_id = 0;
+    assert(gm82_gml_eval_expr(&runtime, &self,
+        "external_define(\"nonexistent_lib_xyz.so\", \"no_such_fn\", 0, 0, 2)",
+        &external_id));
+    assert(external_id >= 0.0);
+    double external_result = 1;
+    assert(gm82_gml_eval_expr(&runtime, &self,
+        "external_call(-1, 1, 2)", &external_result));
+    assert(external_result == 0.0);
+    assert(gm82_gml_eval_expr(&runtime, &self,
+        "external_free(\"nonexistent_lib_xyz.so\")", &external_result));
+    assert(external_result == 1.0);
+
     gm82_gml_bytecode_free(&bytecode);
     gm82_gml_ast_free(program);
     gm82_gml_set_self(NULL);
