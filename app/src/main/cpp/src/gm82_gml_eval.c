@@ -2707,7 +2707,11 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_script_exists(arg); return true;
         }
         if (strcmp(id, "script_execute") == 0) {
-            *out = gml_script_execute(arg); return true;
+            int script_ok = 0;
+            const double *script_args = nargs > 1 ? &args[1] : NULL;
+            int script_arg_count = nargs > 1 ? nargs - 1 : 0;
+            *out = gm82_gml_call_script(arg, script_args, script_arg_count, &script_ok);
+            return script_ok != 0;
         }
         if (strcmp(id, "string_length") == 0) {
             *out = gml_string_length((p->str_mask & 1) ? p->str_args[0] : ""); return true;
