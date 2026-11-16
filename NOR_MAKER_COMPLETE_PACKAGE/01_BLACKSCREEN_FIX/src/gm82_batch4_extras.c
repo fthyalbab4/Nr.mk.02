@@ -180,6 +180,7 @@ double gml_ds_map_read_safe(void) { return 0; }
 double gml_ds_map_write_ini(void) { return 0; }
 double gml_ds_map_write_ini_string(void) { return 0; }
 
+/* draw_*_extra are implemented in gm82_gml_builtins.c with full parameter signatures */
 /* draw_*_extra — no-op (need GL); residual stubs (static: avoid duplicate link symbols)
  * Extracted from PR #415 (static rename) / PR #412 (linkage intent). */
 static double batch4_draw_background_tiled_extra(void) { return 0; }

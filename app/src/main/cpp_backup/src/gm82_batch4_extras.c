@@ -180,6 +180,7 @@ double gml_ds_map_read_safe(void) { return 0; }
 double gml_ds_map_write_ini(void) { return 0; }
 double gml_ds_map_write_ini_string(void) { return 0; }
 
+/* draw_*_extra are implemented in gm82_gml_builtins.c with full parameter signatures */
 /* draw_*_extra — no-op (need GL); residual stubs (static: avoid duplicate link symbols)
  * Extracted from PR #415 (static rename) / PR #412 (linkage intent). */
 static double batch4_draw_background_tiled_extra(void) { return 0; }
@@ -246,6 +247,7 @@ int __wrap_gm82_gm82core_try_stub(const char *id, double *out) {
     H0("registry_read_dword", gml_registry_read_dword);
     H0("registry_read_sz", gml_registry_read_sz);
     H0("registry_write_dword", gml_registry_write_dword);
+
     H0("draw_background_tiled_extra", batch4_draw_background_tiled_extra);
     H0("draw_sprite_part_extra", batch4_draw_sprite_part_extra);
     H0("draw_sprite_tiled_extra", batch4_draw_sprite_tiled_extra);
