@@ -180,6 +180,7 @@ double gm82_gml_call_script(double script_index, const double *args, int count, 
 double gml_ds_map_create(void);
 double gml_ds_map_destroy(double id);
 double gml_ds_map_add(double id, double key, double value);
+double gml_ds_map_set_many(double id, const double *args, int count);
 double gml_ds_map_find_value(double id, double key);
 double gml_ds_map_exists(double id, double key);
 double gml_ds_map_size(double id);
@@ -600,6 +601,8 @@ double gml_make_color_hsv(double h, double s, double v);
 double gml_draw_set_blend_mode_ext(double src, double dest);
 double gml_draw_set_circle_precision(double prec);
 double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2, double y2, double val);
+double gml_ds_grid_set_many(double id, const double *args, int count);
+double gml_ds_priority_add_many(double id, const double *args, int count);
 int gml_script_find(const char *name);
 
 /* Missing geometry & utility declarations */

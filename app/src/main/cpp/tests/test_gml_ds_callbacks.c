@@ -21,6 +21,20 @@ int main(void) {
     gm82_gml_set_runtime(&rt);
     gm82_gml_set_self(self);
 
+    double script_result = 0;
+    assert(gm82_gml_eval_expr(&rt, self, "script_find(\"is_large\")", &script_result));
+    assert(script_result == 0);
+    assert(gm82_gml_eval_expr(&rt, self, "script_find(\"IS_LARGE\")", &script_result));
+    assert(script_result == 0);
+    assert(gm82_gml_eval_expr(&rt, self, "script_find(\"is__large\")", &script_result));
+    assert(script_result == 0);
+    assert(gm82_gml_eval_expr(&rt, self, "script_exists(0)", &script_result));
+    assert(script_result == 1);
+    assert(gm82_gml_eval_expr(&rt, self, "script_execute(0, 5)", &script_result));
+    assert(script_result == 1);
+    assert(gm82_gml_eval_expr(&rt, self, "IS_LARGE(5)", &script_result));
+    assert(script_result == 1);
+
     double source = gml_ds_list_create();
     assert(source >= 0);
     assert(gml_ds_list_add(source, 1) == 1);

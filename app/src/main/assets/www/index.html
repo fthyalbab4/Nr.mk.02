@@ -91439,6 +91439,11 @@ const useWindowManager = () => {
       });
     });
   };
+  reactExports.useEffect(() => {
+    const openAndroidRunner = () => openWindow("runner", "game", "Game Runner");
+    window.addEventListener("nor-open-runner", openAndroidRunner);
+    return () => window.removeEventListener("nor-open-runner", openAndroidRunner);
+  }, []);
   const closeWindow = (id2) => {
     setOpenWindows((prev) => prev.filter((w2) => w2.id !== id2));
     setWindowStack((prev) => prev.filter((wId) => wId !== id2));
