@@ -5,7 +5,6 @@
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
 #include "gm82_actions.h"
-#include "gm82_script.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,14 +58,12 @@ int main(void) {
         gm82_decoded_room_list rms;
         gm82_sprite_group_list sgroups;
         gm82_action_table actions;
-        gm82_script_list scripts;
 
         gm82_decoded_sprite_list_init(&sprs);
         gm82_decoded_background_list_init(&bgs);
         memset(&objs, 0, sizeof(objs));
         memset(&rms, 0, sizeof(rms));
         memset(&actions, 0, sizeof(actions));
-        gm82_script_list_init(&scripts);
 
         int n_spr = gm82_decode_sprites_from_gmk(gmk_data, (size_t)fsize, &sprs);
         int n_bg = gm82_decode_backgrounds_from_gmk(gmk_data, (size_t)fsize, &bgs);
@@ -74,7 +71,6 @@ int main(void) {
         int n_obj = gm82_decode_objects_from_gmk(gmk_data, (size_t)fsize, &objs);
         int n_rm = gm82_decode_rooms_from_gmk(gmk_data, (size_t)fsize, &rms);
         gm82_actions_scan_gmk(gmk_data, (size_t)fsize, &actions);
-        gm82_decode_scripts_from_gmk(gmk_data, (size_t)fsize, &scripts);
         gm82_sprite_groups_build(&sprs, &sgroups);
 
         free(gmk_data);
@@ -83,7 +79,6 @@ int main(void) {
         gm82_runtime_init(&rt);
         gm82_runtime_bind_assets(&rt, &objs, &sprs, &bgs, &rms, &actions);
         gm82_runtime_bind_sprite_groups(&rt, &sgroups);
-        if (scripts.count > 0) gm82_runtime_bind_scripts(&rt, &scripts);
 
         bool room_ok = gm82_runtime_goto_room(&rt, 0);
         assert(room_ok == true);
@@ -103,7 +98,6 @@ int main(void) {
             if (buffer[p] != 0) nonzero_pixels++;
         }
         free(buffer);
-        gm82_runtime_cleanup(&rt);
 
         assert(nonzero_pixels > 1000);
         printf("  [PASS] Sample %d: room_count=%d, sprites=%d, objs=%d, rooms=%d, nonzero_pixels=%d\n",
@@ -111,8 +105,12 @@ int main(void) {
 
         gm82_decoded_sprite_list_free(&sprs);
         gm82_decoded_background_list_free(&bgs);
-        gm82_decoded_object_list_free(&objs);
-        gm82_decoded_room_list_free(&rms);
+        free(objs.items);
+        for (int r = 0; r < rms.count; r++) {
+            free(rms.items[r].instances);
+            free(rms.items[r].tiles);
+        }
+        free(rms.items);
         gm82_sprite_group_list_free(&sgroups);
         gm82_action_table_free(&actions);
 

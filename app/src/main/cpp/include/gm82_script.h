@@ -8,20 +8,22 @@
 extern "C" {
 #endif
 
-#define GM82_SCRIPT_MAX 128
-#define GM82_SCRIPT_CODE_MAX 8192
+#define GM82_SCRIPT_MAX 1024
+#define GM82_SCRIPT_CODE_MAX 65536
 
 typedef struct {
-    char name[64];
-    char code[GM82_SCRIPT_CODE_MAX];
+    char  name[64];
+    char *code;
 } gm82_script;
 
 typedef struct {
-    gm82_script items[GM82_SCRIPT_MAX];
-    int count;
+    gm82_script *items;
+    int          count;
+    int          capacity;
 } gm82_script_list;
 
 void gm82_script_list_init(gm82_script_list *L);
+void gm82_script_list_free(gm82_script_list *L);
 int  gm82_script_add(gm82_script_list *L, const char *name, const char *code);
 int  gm82_script_find(const gm82_script_list *L, const char *name);
 

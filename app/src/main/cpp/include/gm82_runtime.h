@@ -5,8 +5,6 @@
 #include "gm82_sprite_decode.h"
 #include "gm82_script.h"
 #include "gm82_background_decode.h"
-#include "gm82_sound_decode.h"
-#include "gm82_font_decode.h"
 #include "gm82_arena.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -33,14 +31,6 @@ enum gm82_frame_phase {
 };
 
 typedef struct {
-    uint64_t frames;
-    uint64_t draw_frames;
-    uint64_t phase_ns[10];
-    uint64_t collision_candidates;
-    uint64_t collision_overlaps;
-} gm82_perf_stats;
-
-typedef struct {
     char name[32];
     double value;
 } gm82_var;
@@ -56,7 +46,8 @@ typedef struct {
     double  direction, speed;
     double  gravity, gravity_direction;
     double  friction;
-    double  image_index;
+    int32_t image_index;
+    double  image_frac;
     double  image_speed;
     double  image_xscale;
     double  image_yscale;
@@ -69,12 +60,6 @@ typedef struct {
     int32_t persistent;
     int32_t alive;
     int32_t create_fired;
-    /* Per-frame contact state; reset before movement and set by the
-       axis-separated solid collision resolver. */
-    int32_t on_ground;
-    int32_t on_ceiling;
-    int32_t hit_left;
-    int32_t hit_right;
     int32_t alarms[12];
     int32_t path_index;
     double  path_position;
@@ -89,6 +74,10 @@ typedef struct {
     int32_t timeline_running;
     gm82_var vars[32];
     int32_t var_count;
+    int32_t on_ground;
+    int32_t on_ceiling;
+    int32_t hit_left;
+    int32_t hit_right;
 } gm82_instance;
 
 typedef struct {
@@ -98,16 +87,17 @@ typedef struct {
 
     int32_t room_width, room_height;
     int32_t room_speed;
+    int32_t room_persistent;
+    char    room_caption[128];
     int32_t current_room;
     int32_t room_loading; /* suppress per-instance Create until room setup completes */
+    int32_t game_started;
 
     const gm82_decoded_object_list     *objects;
     const gm82_decoded_sprite_list     *sprites;
     const gm82_sprite_group_list       *sprite_groups;
     const gm82_decoded_background_list *backgrounds;
     const gm82_decoded_room_list       *rooms;
-    const gm82_decoded_sound_list      *sounds;
-    const gm82_decoded_font_list       *fonts;
     const gm82_action_table            *actions;
     const gm82_script_list             *scripts;
 
@@ -115,18 +105,20 @@ typedef struct {
     int32_t running;
     int32_t view_enabled;
     double  view_x, view_y, view_w, view_h;
+    double  prev_view_x, prev_view_y;
     int32_t view_follow_object;
+    int32_t view_border_h, view_border_v;
+    int32_t view_hspeed, view_vspeed;
+    double  bg_offset_x[8];
+    double  bg_offset_y[8];
 
     gm82_arena room_arena;
     int32_t destroy_queue[GM82_MAX_INSTANCES];
     int32_t destroy_queue_count;
     int32_t frame_phase;
     double  step_accumulator;
+    double  render_alpha;
     int32_t step_room_speed;
-    int32_t perf_enabled;
-    int32_t perf_active_phase;
-    uint64_t perf_last_ns;
-    gm82_perf_stats perf;
 } gm82_runtime;
 
 void gm82_runtime_flush_destroy_queue(gm82_runtime *rt);
@@ -140,9 +132,6 @@ void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_room_list *rooms,
     const gm82_action_table *actions);
 void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_list *groups);
-void gm82_runtime_bind_resources(gm82_runtime *rt,
-    const gm82_decoded_sound_list *sounds,
-    const gm82_decoded_font_list *fonts);
 void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts);
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 bool gm82_runtime_goto_room(gm82_runtime *rt, int room_index);
@@ -152,9 +141,6 @@ bool gm82_runtime_draw(gm82_runtime *rt, uint8_t *rgba, int32_t buf_w, int32_t b
 gm82_instance *gm82_runtime_instance_create(gm82_runtime *rt, int32_t object_index, double x, double y);
 void gm82_runtime_instance_destroy(gm82_runtime *rt, gm82_instance *inst);
 void gm82_runtime_compact_instances(gm82_runtime *rt);
-void gm82_runtime_perf_enable(gm82_runtime *rt, bool enabled);
-void gm82_runtime_perf_reset(gm82_runtime *rt);
-void gm82_runtime_perf_snapshot(const gm82_runtime *rt, gm82_perf_stats *out);
 
 #ifdef __cplusplus
 }

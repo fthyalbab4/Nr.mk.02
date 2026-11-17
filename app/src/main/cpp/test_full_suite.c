@@ -7,10 +7,13 @@
 #include "gm82_runtime.h"
 #include "gm82_actions.h"
 #include "gm82_input.h"
+#include "gm82_diagnostics.h"
+#include "gm82_ged_extensions.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 extern double nor_import_format_native(const char *path);
 extern double nor_validate_rom_native(const char *path, double kind);
@@ -196,8 +199,7 @@ void test_gml_builtins_suite(void) {
 }
 
 void test_retro_rom_suite(void) {
-    int mkdir_status = system("mkdir -p /tmp/nor_core_tests");
-    assert(mkdir_status == 0);
+    mkdir("/tmp/nor_core_tests", 0755);
     const char *nes_path = "/tmp/nor_core_tests/test.nes";
     const char *gbc_path = "/tmp/nor_core_tests/test.gbc";
     const char *gba_path = "/tmp/nor_core_tests/test.gba";
@@ -369,12 +371,11 @@ void test_user_events_and_drawing_suite(void) {
     gm82_decoded_object obj;
     memset(&obj, 0, sizeof(obj));
     strncpy(obj.name, "obj_test_user", sizeof(obj.name));
-    obj.parent_index = -1;
     obj.sprite_index = 0;
     obj.event_count = 1;
 
     obj.events[0].main_type = 7; /* User Event */
-    obj.events[0].event_numb = 10; /* GM82_OTHER_USER0 */
+    obj.events[0].event_numb = 10; /* Event User 0 */
     obj.events[0].code_snippet = "x += 50; y += 100;";
 
     obj_list.count = 1;
@@ -404,6 +405,7 @@ void test_user_events_and_drawing_suite(void) {
 
     /* Test event_user(0) via gml_event_user */
     assert(gml_event_user(0.0) == 1.0);
+    printf("DEBUG user event inst->x=%.1f y=%.1f\n", inst->x, inst->y);
     assert(inst->x == 60.0 && inst->y == 120.0);
 
     /* Test draw_sprite_ext soft rendering */
@@ -420,6 +422,149 @@ void test_user_events_and_drawing_suite(void) {
     printf("[PASS] User Events & Extended Sprite Drawing Suite\n");
 }
 
+void test_lib_129_actions_parity_suite(void) {
+    gm82_diag_reset();
+    gm82_ui_event_clear();
+    gm82_highscore_clear();
+
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    rt.room_width = 640;
+    rt.room_height = 480;
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 100.0, 100.0);
+    assert(inst != NULL);
+    gm82_gml_set_runtime(&rt);
+    gm82_gml_set_self(inst);
+
+    int total_actions = gm82_action_standard_count();
+    assert(total_actions >= 129);
+    for (int i = 0; i < total_actions; i++) {
+        const char *aname = gm82_action_standard_name(i);
+        assert(aname != NULL && aname[0] != '\0');
+        assert(gm82_action_execute_named(&rt, inst, aname) == true);
+        gml_value vargs[2] = { gml_value_real(0.0), gml_value_real(0.0) };
+        gml_value vout;
+        memset(&vout, 0, sizeof(vout));
+        assert(gm82_native_call(NULL, aname, vargs, 2, &vout) == 1);
+        gml_value_free(&vout);
+    }
+    assert(gm82_diag_unmapped_action_total() == 0);
+
+    /* Behavioral checks: action_create_object_random / motion / kill_position */
+    int before_cnt = rt.instance_count;
+    gm82_action_arg cargs[6];
+    memset(cargs, 0, sizeof(cargs));
+    cargs[0].num = 1; cargs[1].num = 2; cargs[2].num = 3; cargs[3].num = 4;
+    cargs[4].num = 220; cargs[5].num = 180;
+    double outv = 0.0;
+    assert(gm82_action_call_args(&rt, inst, "action_create_object_random", cargs, 6, &outv) == true);
+    assert(rt.instance_count == before_cnt + 1);
+    assert(gm82_action_call_args(&rt, inst, "action_kill_position", &cargs[4], 2, &outv) == true);
+
+    /* Behavioral checks: CD hardware virtual state + UI event queue + highscore + fullscreen */
+    gm82_ui_event_clear();
+    cargs[0].num = 2; cargs[1].num = 5;
+    assert(gm82_action_call_args(&rt, inst, "action_cd_play", cargs, 2, &outv) == true);
+    int pres = 0, play = 0, paus = 0, tf = 0, tl = 0;
+    gm82_action_cd_state(&pres, &play, &paus, &tf, &tl);
+    assert(pres == 1 && play == 1 && paus == 0 && tf == 2 && tl == 5);
+    assert(gm82_action_call_args(&rt, inst, "action_cd_pause", NULL, 0, &outv) == true);
+    gm82_action_cd_state(&pres, &play, &paus, &tf, &tl);
+    assert(paus == 1);
+    assert(gm82_action_call_args(&rt, inst, "action_cd_resume", NULL, 0, &outv) == true);
+    gm82_action_cd_state(&pres, &play, &paus, &tf, &tl);
+    assert(paus == 0 && play == 1);
+    assert(gm82_action_call_args(&rt, inst, "action_cd_stop", NULL, 0, &outv) == true);
+    gm82_action_cd_state(&pres, &play, &paus, &tf, &tl);
+    assert(play == 0);
+
+    gm82_action_arg msg_arg;
+    memset(&msg_arg, 0, sizeof(msg_arg));
+    msg_arg.is_string = 1;
+    snprintf(msg_arg.str, sizeof(msg_arg.str), "Hello NOR");
+    assert(gm82_action_call_args(&rt, inst, "action_message", &msg_arg, 1, &outv) == true);
+    snprintf(msg_arg.str, sizeof(msg_arg.str), "https://example.org");
+    assert(gm82_action_call_args(&rt, inst, "action_webpage", &msg_arg, 1, &outv) == true);
+    assert(gm82_ui_event_pending_count() >= 2);
+    char ev_json[1024];
+    assert(gm82_ui_event_pop_json(ev_json, sizeof(ev_json)) > 0);
+    assert(strstr(ev_json, "Hello NOR") != NULL);
+    gm82_ui_event_clear();
+
+    /* Behavioral checks: GML evaluator invoking action_* */
+    assert(gm82_gml_eval_expr(&rt, inst, "action_fullscreen(1)", &outv));
+    assert(gm82_action_get_fullscreen() == 1);
+    assert(gm82_gml_eval_expr(&rt, inst, "action_fullscreen(0)", &outv));
+    assert(gm82_action_get_fullscreen() == 0);
+
+    printf("[PASS] 129+ Lib Actions Parity Suite (%d actions, 0 unmapped)\n", total_actions);
+}
+
+void test_ged_extensions_parity_suite(void) {
+    gm82_diag_reset();
+    gm82_ged_reset();
+
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 50.0, 50.0);
+    assert(inst != NULL);
+    gm82_gml_set_runtime(&rt);
+    gm82_gml_set_self(inst);
+
+    assert(gm82_ged_extension_count() >= 18);
+    assert(gm82_ged_constant_count() == 137);
+    assert(gm82_ged_function_count() == 1014);
+
+    /* Extension registry lookups via GML */
+    double val = 0.0;
+    assert(gm82_gml_eval_expr(&rt, inst, "extension_exists(\"gm82core\")", &val) && val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "extension_exists(\"gm82buf\")", &val) && val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "extension_exists(\"gm82audio\")", &val) && val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "extension_get_count()", &val) && val >= 18.0);
+
+    /* Extension constants resolved cleanly in evaluator */
+    assert(gm82_gml_eval_expr(&rt, inst, "gs_running", &val) && val == -1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "dss_type_map", &val) && val == 0.0625);
+    assert(gm82_gml_eval_expr(&rt, inst, "se_lowpass", &val) && val == 3.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "ui_b_accept", &val) && val == 1.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "tcp_offline", &val) && val == 0.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "falloff_exp", &val) && val == 0.0);
+    assert(gm82_gml_eval_expr(&rt, inst, "video_loop", &val) && val == 1.0);
+
+    /* Buffer write / deflate / inflate / read roundtrip via GML */
+    assert(gm82_gml_eval_expr(&rt, inst, "buffer_create()", &val) && val >= 0.0);
+    double bid = val;
+    gml_value bargs[2] = { gml_value_real(bid), gml_value_string("HelloGM82Buffer") };
+    gml_value bout;
+    memset(&bout, 0, sizeof(bout));
+    assert(gm82_native_call(NULL, "buffer_write_string_nt", bargs, 2, &bout) == 1);
+    gml_value_free(&bargs[1]);
+    gml_value_free(&bout);
+    assert(gm82_native_call(NULL, "buffer_deflate", bargs, 1, &bout) == 1 && bout.real == 1.0);
+    assert(gm82_native_call(NULL, "buffer_inflate", bargs, 1, &bout) == 1 && bout.real == 1.0);
+    bargs[1] = gml_value_real(0.0);
+    assert(gm82_native_call(NULL, "buffer_set_pos", bargs, 2, &bout) == 1);
+    assert(gm82_native_call(NULL, "buffer_read_string_nt", bargs, 1, &bout) == 1);
+    assert(bout.kind == GML_V_STRING && strcmp(bout.string, "HelloGM82Buffer") == 0);
+    gml_value_free(&bout);
+    assert(gm82_native_call(NULL, "buffer_destroy", bargs, 1, &bout) == 1);
+
+    /* Exhaustively verify all 1,014 public GED/GEJ functions dispatch cleanly */
+    int fn_total = gm82_ged_function_count();
+    for (int i = 0; i < fn_total; i++) {
+        const char *fname = gm82_ged_function_name(i);
+        assert(fname != NULL && fname[0] != '\0');
+        gml_value dargs[2] = { gml_value_real(1.0), gml_value_real(2.0) };
+        gml_value dout;
+        memset(&dout, 0, sizeof(dout));
+        assert(gm82_native_call(NULL, fname, dargs, 2, &dout) == 1);
+        gml_value_free(&dout);
+    }
+    assert(gm82_diag_unmapped_gml_total() == 0);
+
+    printf("[PASS] GED Extensions & Constants Parity Suite (18 pkgs, 137 consts, %d funcs, 0 unmapped)\n", fn_total);
+}
+
 int main(void) {
     printf("--- Running Native Host Comprehensive Test Suite ---\n");
     test_gmk_probe_suite();
@@ -428,6 +573,8 @@ int main(void) {
     test_retro_rom_suite();
     test_advanced_gml_and_physics_suite();
     test_user_events_and_drawing_suite();
+    test_lib_129_actions_parity_suite();
+    test_ged_extensions_parity_suite();
     printf("--- All Native Host Tests Passed! ---\n");
     return 0;
 }

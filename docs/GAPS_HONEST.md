@@ -1,26 +1,21 @@
-# GAPS_HONEST — Nr.mk.02
+# GAPS_HONEST — Nr.mk.02 (2026-10-27)
 
-## CLOSED / measured on host
+## CLOSED / landed
 | Area | Evidence |
 |------|----------|
-| Host pipeline 4 GMK samples | `SUMMARY expected=4 ok=4 fail=0` |
-| Engine suite | `RESULT OK` |
-| Soft-render non-black frames | lit>0; DUMP_PPM sprites visible |
-| Draw Pre/Post | `gm82_runtime_draw` |
-| Outside/Boundary | in step |
-| Room creation_code field | wired on goto_room when decoder fills it |
-| Precise collision | `precise_instance_overlap` + frame bitmasks from decode; AABB if no mask |
-| DnD extras | move_free, draw_self, draw_background, … via APPLY_P1 |
-| `gml_ds_map_set_many` | implemented + header decl |
+| Host pipeline 4 samples | ok=4 fail=0 (historical) |
+| gm82core name coverage | try_stub + batch-all |
+| O6 parent chain | parent_index + walk |
+| Stub shadow bug | room_find/sprite_find removed from stub table |
+| Stub promote | window_has_focus, file_text_writelf, ds_map_set, instance_create_depth, string_starts/ends_with, move_wrap, object_find, … on `86179058` |
 
-## OPEN (honest)
-| Area | Notes |
-|------|-------|
-| Android device play | needs APK + device — out of current host focus |
-| Rotated sprite pixel masks | angle≠0 falls back to AABB by design |
-| String keys in ds_map | numeric keys only |
-| Full Portable frame-diff corpus | not automated |
-| All cloud-catalog GMKs | only 4 in-repo samples measured |
-| HTML/WASM full play | needs native bridge |
+## OPEN (cannot fully close without device)
+| ID | Gap |
+|----|-----|
+| O1 | APK install + logcat on real phone |
+| O2 | Complex GMK edge materialize (needs FAIL) |
+| O3 | Real PCM / OpenSL path on device |
+| O4 | GLES FBO if soft fails on device |
+| O5 | Remaining pure stubs: code_*, ds_bag_*, heavy draw_*, registry_*, match_* |
 
-**No 100% claim.**
+No 100% claims. Code path ≠ device acceptance.

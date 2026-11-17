@@ -10,20 +10,6 @@ static int32_t rd_i32(const uint8_t *p) {
     return gm82_read_i32le(p);
 }
 
-static void gm82_reclass_step_like_events(gm82_decoded_object *o) {
-    /* GMK 800 may omit the Step table entry while retaining its GML code. */
-    if (!o) return;
-    for (int e = 0; e < o->event_count; e++) {
-        gm82_decoded_event *ev = &o->events[e];
-        const char *c = ev->code_snippet;
-        if (!c || !c[0] || ev->main_type != 0) continue;
-        if (strstr(c, "keyboard_check") || strstr(c, "place_free") ||
-            strstr(c, "place_meeting") || strstr(c, "vspeed") ||
-            strstr(c, "hspeed") || strstr(c, "x+=") || strstr(c, "x-=") ||
-            strstr(c, "y+=") || strstr(c, "y-=")) ev->main_type = 3;
-    }
-}
-
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *out_len) {
     *out_len = 0;
     z_stream strm; memset(&strm, 0, sizeof(strm));
@@ -56,12 +42,27 @@ void gm82_decoded_room_list_init(gm82_decoded_room_list *L) {
     memset(L, 0, sizeof(*L));
 }
 
+void gm82_decoded_action_free(gm82_decoded_action *a) {
+    if (!a) return;
+    free(a->fn_code);
+    for (int i = 0; i < 8; i++) free(a->arg_strs[i]);
+    memset(a, 0, sizeof(*a));
+}
+
 void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
     if (!L) return;
     if (L->items) {
         for (int i = 0; i < L->count; i++) {
-            for (int e = 0; e < L->items[i].event_count && e < GM82_OBJ_EVENT_MAX; e++)
-                free(L->items[i].events[e].code_snippet);
+            for (int e = 0; e < L->items[i].event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+                gm82_decoded_event *ev = &L->items[i].events[e];
+                free(ev->code_snippet);
+                if (ev->actions) {
+                    for (int a = 0; a < ev->action_cap; a++) {
+                        gm82_decoded_action_free(&ev->actions[a]);
+                    }
+                    free(ev->actions);
+                }
+            }
         }
     }
     free(L->items);
@@ -71,6 +72,7 @@ void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
 void gm82_decoded_room_list_free(gm82_decoded_room_list *L) {
     if (!L) return;
     for (int i = 0; i < L->count; i++) {
+        free(L->items[i].creation_code);
         if (L->items[i].instances) {
             for (int k = 0; k < L->items[i].instance_count; k++)
                 free(L->items[i].instances[k].creation_code);
@@ -137,95 +139,113 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
             size_t p = off + 32;
             for (int main = 0; main < 12 && p + 4 <= ol; main++) {
                 int safety = 0;
-                while (p + 4 <= ol && safety++ < 48) {
+                while (p + 4 <= ol && safety++ < 64) {
                     int32_t eid = rd_i32(d + p); p += 4;
                     if (eid == -1) break;
                     if (p + 8 > ol) break;
-                    int32_t aver = rd_i32(d + p);
-                    if (aver != 400 && aver != 440) { p -= 4; break; }
+                    int32_t ever = rd_i32(d + p);
+                    if (ever != 400 && ever != 440) { p -= 4; break; }
                     p += 4;
                     int32_t acount = rd_i32(d + p); p += 4;
                     if (acount < 0 || acount > 64) break;
                     gm82_decoded_event *ev = NULL;
                     if (o->event_count < GM82_OBJ_EVENT_MAX) {
-                        ev = &o->events[o->event_count];
+                        ev = &o->events[o->event_count++];
+                        memset(ev, 0, sizeof(*ev));
                         ev->main_type = main;
                         ev->event_numb = eid;
-                        ev->action_count = acount;
-                        ev->action_name0[0] = 0;
                         ev->action_id0 = -1;
                         ev->action_arg0 = -1;
-                        ev->code_snippet = NULL;
-                        o->event_count++;
+                        if (acount > 0) {
+                            ev->actions = (gm82_decoded_action *)calloc((size_t)acount, sizeof(gm82_decoded_action));
+                            ev->action_cap = ev->actions ? acount : 0;
+                        }
                     }
-                    size_t window_end = p + 1200;
-                    if (window_end > ol) window_end = ol;
-                    size_t q = p;
-                    int found_term = 0;
-                    int actions_seen = 0;
-                    while (q + 4 <= window_end && actions_seen < acount + 4) {
-                        int32_t nlen = rd_i32(d + q);
-                        if (nlen >= 8 && nlen < 48 && q + 4 + (size_t)nlen <= ol) {
-                            const uint8_t *s = d + q + 4;
-                            if (s[0]=='a' && s[1]=='c' && s[2]=='t' && s[3]=='i' &&
-                                s[4]=='o' && s[5]=='n' && s[6]=='_') {
-                                actions_seen++;
-                                if (ev && !ev->action_name0[0]) {
-                                    int L = nlen < 47 ? nlen : 47;
-                                    memcpy(ev->action_name0, s, (size_t)L);
-                                    ev->action_name0[L] = 0;
-                                    if (q >= 8) {
-                                        int32_t maybe_id = rd_i32(d + q - 8);
-                                        if (maybe_id > 0 && maybe_id < 10000)
-                                            ev->action_id0 = maybe_id;
-                                    }
-                                    size_t r = q + 4 + (size_t)nlen;
-                                    for (int t = 0; t < 8 && r + 4 <= ol; t++, r += 4) {
-                                        int32_t v = rd_i32(d + r);
-                                        if (v >= 0 && v < 512) { ev->action_arg0 = v; break; }
-                                    }
+                    int32_t stored = 0;
+                    int parse_err = 0;
+                    for (int32_t ak = 0; ak < acount && !parse_err; ak++) {
+                        if (p + 32 > ol) { parse_err = 1; break; }
+                        int32_t aver = rd_i32(d + p); p += 4;
+                        if (aver != 440 && aver != 400) { parse_err = 1; break; }
+                        gm82_decoded_action act;
+                        memset(&act, 0, sizeof(act));
+                        act.lib_id = rd_i32(d + p); p += 4;
+                        act.action_id = rd_i32(d + p); p += 4;
+                        act.kind = rd_i32(d + p); p += 4;
+                        act.can_be_relative = rd_i32(d + p); p += 4;
+                        act.is_condition = rd_i32(d + p); p += 4;
+                        act.applies_to_something = rd_i32(d + p); p += 4;
+                        act.exec_type = rd_i32(d + p); p += 4;
+                        if (p + 4 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        int32_t fnlen = rd_i32(d + p); p += 4;
+                        if (fnlen < 0 || p + (size_t)fnlen > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        if (fnlen > 0) {
+                            int cp = fnlen < (int)sizeof(act.fn_name) - 1 ? fnlen : (int)sizeof(act.fn_name) - 1;
+                            memcpy(act.fn_name, d + p, (size_t)cp);
+                            act.fn_name[cp] = 0;
+                            p += (size_t)fnlen;
+                        }
+                        if (p + 4 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        int32_t fclen = rd_i32(d + p); p += 4;
+                        if (fclen < 0 || p + (size_t)fclen > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        if (fclen > 0) {
+                            act.fn_code = (char *)malloc((size_t)fclen + 1);
+                            if (act.fn_code) {
+                                memcpy(act.fn_code, d + p, (size_t)fclen);
+                                act.fn_code[fclen] = 0;
+                            }
+                            p += (size_t)fclen;
+                        }
+                        if (p + 8 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        act.arg_count = rd_i32(d + p); p += 4;
+                        int32_t nb_at = rd_i32(d + p); p += 4;
+                        if (nb_at < 0 || nb_at > 32 || p + (size_t)nb_at * 4 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        for (int32_t t = 0; t < nb_at; t++) {
+                            int32_t at = rd_i32(d + p); p += 4;
+                            if (t < 8) act.arg_types[t] = at;
+                        }
+                        if (p + 12 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        act.applies_to = rd_i32(d + p); p += 4;
+                        act.is_relative = rd_i32(d + p); p += 4;
+                        int32_t nargs = rd_i32(d + p); p += 4;
+                        if (nargs < 0 || nargs > 32) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        for (int32_t k = 0; k < nargs; k++) {
+                            if (p + 4 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                            int32_t alen = rd_i32(d + p); p += 4;
+                            if (alen < 0 || p + (size_t)alen > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                            if (k < 8 && alen > 0) {
+                                act.arg_strs[k] = (char *)malloc((size_t)alen + 1);
+                                if (act.arg_strs[k]) {
+                                    memcpy(act.arg_strs[k], d + p, (size_t)alen);
+                                    act.arg_strs[k][alen] = 0;
                                 }
                             }
+                            p += (size_t)alen;
                         }
-                        if (rd_i32(d + q) == -1) { p = q; found_term = 1; break; }
-                        q += 4;
+                        if (parse_err) break;
+                        if (p + 4 > ol) { gm82_decoded_action_free(&act); parse_err = 1; break; }
+                        act.is_not = rd_i32(d + p); p += 4;
+                        if (ev && ev->actions && stored < ev->action_cap) {
+                            ev->actions[stored] = act;
+                            if (stored == 0) {
+                                ev->action_id0 = act.action_id;
+                                if (act.fn_name[0]) snprintf(ev->action_name0, sizeof(ev->action_name0), "%s", act.fn_name);
+                                if (act.arg_strs[0] && act.arg_strs[0][0] >= '0' && act.arg_strs[0][0] <= '9') {
+                                    ev->action_arg0 = atoi(act.arg_strs[0]);
+                                }
+                            }
+                            const char *gml = (act.action_id == 603 && act.arg_strs[0]) ? act.arg_strs[0]
+                                            : ((act.exec_type == 2 && act.fn_code) ? act.fn_code : NULL);
+                            if (gml && gml[0] && !ev->code_snippet) {
+                                ev->code_snippet = strdup(gml);
+                            }
+                            stored++;
+                        } else {
+                            gm82_decoded_action_free(&act);
+                        }
                     }
-                    if (!found_term) { p = window_end; break; }
-                }
-            }
-        }
-        if (o->event_count > 0) {
-            for (size_t q = 0; q + 8 < ol; q++) {
-                int32_t nlen = rd_i32(d + q);
-                if (nlen < 40 || nlen > 2000 || q + 4 + (size_t)nlen > ol) continue;
-                const uint8_t *cs = d + q + 4;
-                int okc = 1;
-                for (int k = 0; k < nlen; k++) {
-                    uint8_t ch = cs[k];
-                    if (ch == 0) { okc = 0; break; }
-                    if (ch < 9 || (ch > 13 && ch < 32 && ch != 9)) { okc = 0; break; }
-                }
-                if (!okc) continue;
-                int has = 0;
-                for (int k = 0; k + 8 < nlen; k++) {
-                    if (cs[k]=='k' && cs[k+1]=='e' && cs[k+2]=='y' && cs[k+3]=='b') { has = 1; break; }
-                    if (cs[k]=='p' && cs[k+1]=='l' && cs[k+2]=='a' && cs[k+3]=='c' && cs[k+4]=='e') { has = 1; break; }
-                    if (cs[k]=='h' && cs[k+1]=='s' && cs[k+2]=='p' && cs[k+3]=='e') { has = 1; break; }
-                    if (cs[k]=='v' && cs[k+1]=='s' && cs[k+2]=='p' && cs[k+3]=='e') { has = 1; break; }
-                    if (cs[k]=='i' && cs[k+1]=='n' && cs[k+2]=='s' && cs[k+3]=='t') { has = 1; break; }
-                }
-                if (!has) continue;
-                gm82_decoded_event *target = &o->events[0];
-                for (int ei = 0; ei < o->event_count; ei++) {
-                    if (o->events[ei].main_type == 3) { target = &o->events[ei]; break; }
-                }
-                if (!target->code_snippet || (int)strlen(target->code_snippet) < 20) {
-                    free(target->code_snippet);
-                    target->code_snippet = (char *)malloc((size_t)nlen + 1);
-                    if (target->code_snippet) {
-                        memcpy(target->code_snippet, cs, (size_t)nlen);
-                        target->code_snippet[nlen] = 0;
-                    }
+                    if (ev) ev->action_count = stored;
+                    if (parse_err) break;
                 }
             }
         }
@@ -233,7 +253,6 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
     }
     out->count = n;
     if (n > 0) {
-        for (int ri = 0; ri < n; ri++) gm82_reclass_step_like_events(&tmp[ri]);
         out->items = (gm82_decoded_object *)malloc((size_t)n * sizeof(*out->items));
         if (out->items) memcpy(out->items, tmp, (size_t)n * sizeof(*tmp));
         else out->count = 0;

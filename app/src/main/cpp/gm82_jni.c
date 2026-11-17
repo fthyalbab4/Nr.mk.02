@@ -22,7 +22,18 @@
 #include "gm82_script.h"
 #include "gm82_sound_runtime.h"
 #include "gm82_sound_decode.h"
-#include "gm82_font_decode.h"
+#include "gm82_gl_textures.h"
+#include "gm82_opensles.h"
+#include "gm82_diagnostics.h"
+#include "gm82_ged_extensions.h"
+#include "gm82_gmk_stream.h"
+#include "gm82_text_reader.h"
+#include "gm82_text_materialize.h"
+#include "gm82_text_runtime_bridge.h"
+#include "gm82_path.h"
+#include "gm82_timeline.h"
+#include "gm82_gml_eval.h"
+#include <GLES2/gl2.h>
 
 #define LOG_TAG "NOR_NATIVE"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -55,13 +66,85 @@ static gm82_decoded_sprite_list g_engine_sprites;
 static gm82_decoded_background_list g_engine_bgs;
 static gm82_decoded_object_list g_engine_objs;
 static gm82_decoded_room_list g_engine_rooms;
-static gm82_decoded_sound_list g_engine_sounds;
-static gm82_decoded_font_list g_engine_fonts;
 static gm82_sprite_group_list g_engine_sprite_groups;
 static gm82_action_table g_engine_actions;
 static gm82_script_list g_engine_scripts;
+static gm82_decoded_sound_list g_engine_sounds;
+static gm82_sound_runtime g_engine_sound_rt;
 static gm82_input_state g_engine_input;
 static int g_engine_loaded = 0;
+static gm82_project_ir *g_engine_ir = NULL;
+static gm82_text_runtime_bundle g_engine_bundle;
+static int g_using_bundle = 0;
+static gm82_gl_atlas g_gl_atlas;
+static uint32_t g_gl_stale_tex[4096];
+static int g_gl_stale_count = 0;
+static uint8_t *g_gles_rgba = NULL;
+static size_t g_gles_rgba_cap = 0;
+
+static const gm82_decoded_sprite_list *active_sprites(void) {
+    return g_using_bundle ? &g_engine_bundle.sprites : &g_engine_sprites;
+}
+static const gm82_decoded_background_list *active_bgs(void) {
+    return g_using_bundle ? &g_engine_bundle.backgrounds : &g_engine_bgs;
+}
+static const gm82_decoded_object_list *active_objs(void) {
+    return g_using_bundle ? &g_engine_bundle.objects : &g_engine_objs;
+}
+static const gm82_decoded_room_list *active_rooms(void) {
+    return g_using_bundle ? &g_engine_bundle.rooms : &g_engine_rooms;
+}
+static const gm82_sprite_group_list *active_sprite_groups(void) {
+    return g_using_bundle ? &g_engine_bundle.sprite_groups : &g_engine_sprite_groups;
+}
+static const gm82_decoded_sound_list *active_sounds(void) {
+    return g_using_bundle ? &g_engine_bundle.sounds : &g_engine_sounds;
+}
+
+static void queue_gl_atlas_cleanup(void) {
+    if (g_gl_atlas.sprites) {
+        for (int i = 0; i < g_gl_atlas.sprite_count && g_gl_stale_count < 4096; i++) {
+            if (g_gl_atlas.sprites[i].tex_id != 0)
+                g_gl_stale_tex[g_gl_stale_count++] = g_gl_atlas.sprites[i].tex_id;
+        }
+    }
+    if (g_gl_atlas.backgrounds) {
+        for (int i = 0; i < g_gl_atlas.background_count && g_gl_stale_count < 4096; i++) {
+            if (g_gl_atlas.backgrounds[i].tex_id != 0)
+                g_gl_stale_tex[g_gl_stale_count++] = g_gl_atlas.backgrounds[i].tex_id;
+        }
+    }
+    gm82_gl_invalidate_handles(&g_gl_atlas);
+}
+
+static void unload_engine_project(void) {
+    queue_gl_atlas_cleanup();
+    if (g_engine_loaded) {
+        gm82_runtime_cleanup(&g_engine_rt);
+    }
+    gm82_events_clear_gml_bindings();
+    gm82_path_bind(NULL);
+    gm82_timeline_bind(NULL);
+    gm82_scripts_bind(NULL);
+    if (g_using_bundle) {
+        gm82_text_runtime_bundle_free(&g_engine_bundle);
+        memset(&g_engine_bundle, 0, sizeof(g_engine_bundle));
+        g_using_bundle = 0;
+    }
+    if (g_engine_ir) {
+        gm82_project_ir_free(g_engine_ir);
+        g_engine_ir = NULL;
+    }
+    gm82_decoded_sprite_list_free(&g_engine_sprites);
+    gm82_decoded_background_list_free(&g_engine_bgs);
+    gm82_decoded_sound_list_free(&g_engine_sounds);
+    gm82_decoded_object_list_free(&g_engine_objs);
+    gm82_decoded_room_list_free(&g_engine_rooms);
+    gm82_sprite_group_list_free(&g_engine_sprite_groups);
+    gm82_action_table_free(&g_engine_actions);
+    gm82_script_list_free(&g_engine_scripts);
+    g_engine_loaded = 0;
+}
 
 /* --- Instance Representation --- */
 typedef struct {
@@ -113,7 +196,6 @@ typedef struct {
 
 /* --- Global Native State --- */
 static int g_runtime_active = 0;
-static int g_runtime_initialized = 0;
 static int g_current_room = 0;
 static int g_room_w = 640;
 static int g_room_h = 480;
@@ -226,53 +308,55 @@ static char *g_token_ctx = NULL;
 /* --- Native Runtime Lifecycle --- */
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeCreate(JNIEnv *env, jclass clazz, jint width, jint height) {
-    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
-    g_runtime_initialized = 0;
+    (void)env; (void)clazz;
+    if (g_runtime_active || g_engine_loaded) {
+        unload_engine_project();
+        if (!g_engine_loaded) gm82_runtime_cleanup(&g_engine_rt);
+    }
     g_runtime_active = 1;
     g_room_w = width > 0 ? width : 640;
     g_room_h = height > 0 ? height : 480;
     g_instance_count = 0;
+    gm82_diag_reset();
+    gm82_diag_set_error("create", "");
+    gm82_ui_event_clear();
+    gm82_ged_reset();
+    gm82_gl_atlas_init(&g_gl_atlas);
     gm82_runtime_init(&g_engine_rt);
-    g_runtime_initialized = 1;
     g_engine_rt.room_width = g_room_w;
     g_engine_rt.room_height = g_room_h;
     g_engine_rt.running = 1;
+    gm82_sound_runtime_init(&g_engine_sound_rt);
+    gm82_sound_set_global(&g_engine_sound_rt);
     gm82_input_init(&g_engine_input);
     gm82_input_bind_global(&g_engine_input);
-    LOGI("Runtime created: %dx%d", g_room_w, g_room_h);
+    gm82_opensles_init(22050, 1);
+    LOGI("Runtime created: %dx%d (OpenSLES=%d)", g_room_w, g_room_h, gm82_opensles_is_active() ? 1 : 0);
     return JNI_TRUE;
 }
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeDestroy(JNIEnv *env, jclass clazz) {
-    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
-    g_runtime_initialized = 0;
+    (void)env; (void)clazz;
     free_native_bitmaps(); free_native_scripts();
+    free(g_gles_rgba);
+    g_gles_rgba = NULL;
+    g_gles_rgba_cap = 0;
+    gm82_opensles_shutdown();
+    gm82_gl_reset_program();
+    g_gl_stale_count = 0;
+    gm82_gl_invalidate_handles(&g_gl_atlas);
+    unload_engine_project();
+    gm82_runtime_cleanup(&g_engine_rt);
     g_runtime_active = 0;
     g_instance_count = 0;
-    if (g_engine_loaded) {
-        gm82_decoded_sprite_list_free(&g_engine_sprites);
-        gm82_decoded_background_list_free(&g_engine_bgs);
-        gm82_decoded_sound_list_free(&g_engine_sounds);
-        gm82_decoded_font_list_free(&g_engine_fonts);
-        free(g_engine_objs.items);
-        for (int i = 0; i < g_engine_rooms.count; i++) {
-            free(g_engine_rooms.items[i].instances);
-            free(g_engine_rooms.items[i].tiles);
-        }
-        free(g_engine_rooms.items);
-        gm82_sprite_group_list_free(&g_engine_sprite_groups);
-        gm82_action_table_free(&g_engine_actions);
-        memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
-        g_engine_loaded = 0;
-    }
     LOGI("Runtime destroyed");
 }
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeStep(JNIEnv *env, jclass clazz, jfloat delta) {
     if (!g_runtime_active) return;
-    float dt = delta > 0.0f ? delta : 0.016667f;
+    float dt = delta > 0.0f ? delta : (1.0f / 90.0f);
     gm82_input_bind_global(&g_engine_input);
     if (g_engine_loaded && g_engine_rt.running) {
         gm82_runtime_step_dt(&g_engine_rt, (double)dt);
@@ -324,7 +408,13 @@ JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeMouse(JNIEnv *env, jclass clazz, jint x, jint y, jint button, jboolean down) {
     (void)env; (void)clazz;
     gm82_input_bind_global(&g_engine_input);
-    gm82_input_set_mouse(&g_engine_input, (int)x, (int)y);
+    int world_x = (int)x;
+    int world_y = (int)y;
+    if (g_engine_loaded && g_engine_rt.view_enabled) {
+        world_x += (int)floor(g_engine_rt.view_x);
+        world_y += (int)floor(g_engine_rt.view_y);
+    }
+    gm82_input_set_mouse(&g_engine_input, world_x, world_y);
     if (down) gm82_input_mouse_down(&g_engine_input, (int)button);
     else gm82_input_mouse_up(&g_engine_input, (int)button);
 }
@@ -339,7 +429,8 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetRoom(JNIEnv *env, jcla
     g_current_room = roomId;
     if (width > 0) g_room_w = width;
     if (height > 0) g_room_h = height;
-    if (g_engine_loaded && g_engine_rooms.count > 0 && roomId >= 0 && roomId < g_engine_rooms.count) {
+    const gm82_decoded_room_list *rooms = active_rooms();
+    if (g_engine_loaded && rooms && rooms->count > 0 && roomId >= 0 && roomId < rooms->count) {
         gm82_runtime_goto_room(&g_engine_rt, (int)roomId);
     }
     if (clearInstances) {
@@ -360,22 +451,6 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetRoom(JNIEnv *env, jcla
         return g_engine_rt.current_room;
     }
     return g_current_room;
-}
-
-JNIEXPORT jint JNICALL
-Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetViewWidth(JNIEnv *env, jclass clazz) {
-    (void)env; (void)clazz;
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.view_w > 0)
-        return (jint)(g_engine_rt.view_w + 0.5);
-    return (jint)(g_room_w > 0 ? g_room_w : 640);
-}
-
-JNIEXPORT jint JNICALL
-Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetViewHeight(JNIEnv *env, jclass clazz) {
-    (void)env; (void)clazz;
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.view_h > 0)
-        return (jint)(g_engine_rt.view_h + 0.5);
-    return (jint)(g_room_h > 0 ? g_room_h : 480);
 }
 
 JNIEXPORT jstring JNICALL
@@ -701,28 +776,16 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetSpriteBitmap(JNIEnv *e
     free(g_bitmaps[slot].rgba); g_bitmaps[slot]=(NativeBitmap){1,spriteId,frame,width,height,copy,need}; return JNI_TRUE;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env, jclass clazz, jobject target) {
-    if (!target) return JNI_FALSE;
-    AndroidBitmapInfo info;
-    if (AndroidBitmap_getInfo(env, target, &info) < 0) return JNI_FALSE;
-    if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) return JNI_FALSE;
-
-    void *pixels = NULL;
-    if (AndroidBitmap_lockPixels(env, target, &pixels) < 0 || !pixels) return JNI_FALSE;
-
-    int room_valid = (g_engine_loaded && g_engine_rooms.count > 0 &&
+static void render_active_frame_rgba(uint8_t *rgba, int width, int height) {
+    if (!rgba || width <= 0 || height <= 0) return;
+    const gm82_decoded_room_list *rooms = active_rooms();
+    int room_valid = (g_engine_loaded && rooms && rooms->count > 0 &&
                       g_engine_rt.current_room >= 0 &&
-                      g_engine_rt.current_room < g_engine_rooms.count);
+                      g_engine_rt.current_room < rooms->count);
 
-    /* Keep rendering the current room even when an action temporarily clears
-       running.  The old guard left the Android Bitmap untouched and made the
-       native player appear black after import or a stop/restart transition. */
-    if (g_engine_loaded && g_runtime_active && room_valid) {
-        if (!gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height)) {
-            /* Fallback background clear on draw error */
-            uint8_t *rgba = (uint8_t *)pixels;
-            size_t total = (size_t)info.width * (size_t)info.height;
+    if (g_engine_loaded && g_runtime_active && g_engine_rt.running && room_valid) {
+        if (!gm82_runtime_draw(&g_engine_rt, rgba, (int32_t)width, (int32_t)height)) {
+            size_t total = (size_t)width * (size_t)height;
             for (size_t i = 0; i < total; i++) {
                 rgba[i * 4 + 0] = 20;
                 rgba[i * 4 + 1] = 20;
@@ -731,8 +794,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
             }
         }
     } else {
-        uint8_t *rgba = (uint8_t *)pixels;
-        size_t total = (size_t)info.width * (size_t)info.height;
+        size_t total = (size_t)width * (size_t)height;
         for (size_t i = 0; i < total; i++) {
             rgba[i * 4 + 0] = 20;
             rgba[i * 4 + 1] = 20;
@@ -746,21 +808,48 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
             int spr_h = inst->spriteHeight > 0 ? inst->spriteHeight : 16;
             int ix = (int)inst->x;
             int iy = (int)inst->y;
+            const NativeBitmap *bm = NULL;
+            for (int bi = 0; bi < MAX_BITMAPS; bi++) {
+                if (g_bitmaps[bi].used && g_bitmaps[bi].spriteId == inst->spriteId && g_bitmaps[bi].frame == 0) {
+                    bm = &g_bitmaps[bi];
+                    break;
+                }
+            }
             for (int y = 0; y < spr_h; y++) {
                 int py = iy + y;
-                if (py < 0 || py >= (int)info.height) continue;
+                if (py < 0 || py >= height) continue;
                 for (int x = 0; x < spr_w; x++) {
                     int px = ix + x;
-                    if (px < 0 || px >= (int)info.width) continue;
-                    uint8_t *dst = rgba + (py * (int)info.width + px) * 4;
-                    const NativeBitmap *bm=NULL;
-                    for(int bi=0;bi<MAX_BITMAPS;bi++) if(g_bitmaps[bi].used&&g_bitmaps[bi].spriteId==inst->spriteId&&g_bitmaps[bi].frame==0){bm=&g_bitmaps[bi];break;}
-                    if(bm && x<bm->width && y<bm->height){const uint8_t *src=bm->rgba+((size_t)y*(size_t)bm->width+(size_t)x)*4u;dst[0]=src[0];dst[1]=src[1];dst[2]=src[2];dst[3]=src[3];}
-                    else { dst[0]=(uint8_t)((inst->objectId*67+100)%256); dst[1]=(uint8_t)((inst->objectId*131+150)%256); dst[2]=(uint8_t)((inst->objectId*193+200)%256); dst[3]=255; }
+                    if (px < 0 || px >= width) continue;
+                    uint8_t *dst = rgba + ((size_t)py * (size_t)width + (size_t)px) * 4u;
+                    if (bm && x < bm->width && y < bm->height) {
+                        const uint8_t *src = bm->rgba + ((size_t)y * (size_t)bm->width + (size_t)x) * 4u;
+                        if (src[3] == 0) continue;
+                        dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = 255;
+                    } else {
+                        dst[0] = (uint8_t)((inst->objectId * 67 + 100) % 256);
+                        dst[1] = (uint8_t)((inst->objectId * 131 + 150) % 256);
+                        dst[2] = (uint8_t)((inst->objectId * 193 + 200) % 256);
+                        dst[3] = 255;
+                    }
                 }
             }
         }
     }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env, jclass clazz, jobject target) {
+    (void)clazz;
+    if (!target) return JNI_FALSE;
+    AndroidBitmapInfo info;
+    if (AndroidBitmap_getInfo(env, target, &info) < 0) return JNI_FALSE;
+    if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) return JNI_FALSE;
+
+    void *pixels = NULL;
+    if (AndroidBitmap_lockPixels(env, target, &pixels) < 0 || !pixels) return JNI_FALSE;
+
+    render_active_frame_rgba((uint8_t *)pixels, (int)info.width, (int)info.height);
 
     AndroidBitmap_unlockPixels(env, target);
     return JNI_TRUE;
@@ -788,6 +877,19 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeExecuteGml(JNIEnv *env, j
     if (!source) return JNI_FALSE;
     const char *src = (*env)->GetStringUTFChars(env, source, NULL);
     if (!src) return JNI_FALSE;
+
+    if (g_engine_loaded && g_runtime_active) {
+        gm82_instance *rt_target = NULL;
+        for (int i = 0; i < g_engine_rt.instance_count; i++) {
+            if (g_engine_rt.instances[i].alive && (instanceId <= 0 || g_engine_rt.instances[i].id == instanceId)) {
+                rt_target = &g_engine_rt.instances[i];
+                break;
+            }
+        }
+        int executed = gm82_gml_eval_block(&g_engine_rt, rt_target, src);
+        (*env)->ReleaseStringUTFChars(env, source, src);
+        return executed >= 0 ? JNI_TRUE : JNI_FALSE;
+    }
 
     NativeInstance *target = NULL;
     for (int i = 0; i < g_instance_count; i++) {
@@ -1054,89 +1156,160 @@ Java_com_normaker_nativefull_MainActivity_nativeGmkResourceManifest(JNIEnv *env,
     return res;
 }
 
+static void finalize_loaded_engine_project(int stream_parsed, int *out_spr, int *out_bg, int *out_snd, int *out_obj, int *out_rm) {
+    const gm82_decoded_sprite_list *sprites = active_sprites();
+    const gm82_decoded_background_list *bgs = active_bgs();
+    const gm82_decoded_object_list *objs = active_objs();
+    const gm82_decoded_room_list *rooms = active_rooms();
+    const gm82_sprite_group_list *groups = active_sprite_groups();
+    const gm82_decoded_sound_list *snds = active_sounds();
+
+    register_decoded_assets(sprites, bgs, objs);
+
+    gm82_runtime_init(&g_engine_rt);
+    gm82_runtime_bind_assets(&g_engine_rt,
+        objs,
+        sprites,
+        bgs,
+        rooms,
+        g_using_bundle ? NULL : &g_engine_actions);
+    gm82_runtime_bind_sprite_groups(&g_engine_rt, groups);
+    gm82_runtime_bind_scripts(&g_engine_rt,
+        g_using_bundle ? &g_engine_bundle.scripts : &g_engine_scripts);
+
+    if (g_using_bundle && g_engine_ir) {
+        gm82_path_bind(&g_engine_ir->decoded_paths);
+        gm82_timeline_bind(&g_engine_ir->decoded_timelines);
+    }
+
+    gm82_sound_runtime_init(&g_engine_sound_rt);
+    gm82_sound_runtime_bind(&g_engine_sound_rt, snds);
+    gm82_sound_set_global(&g_engine_sound_rt);
+    if (!gm82_opensles_is_active()) {
+        gm82_opensles_init(22050, 1);
+    }
+    gm82_input_init(&g_engine_input);
+    gm82_input_bind_global(&g_engine_input);
+
+    int n_rm = rooms ? rooms->count : 0;
+    if (n_rm > 0) {
+        gm82_runtime_goto_room(&g_engine_rt, 0);
+        g_room_w = g_engine_rt.room_width > 0 ? g_engine_rt.room_width : 640;
+        g_room_h = g_engine_rt.room_height > 0 ? g_engine_rt.room_height : 480;
+    } else {
+        gm82_diag_set_error("import_gmk", "No rooms decoded from project");
+    }
+
+    g_runtime_active = 1;
+    g_engine_loaded = 1;
+    (void)stream_parsed;
+
+    if (out_spr) *out_spr = sprites ? sprites->count : 0;
+    if (out_bg)  *out_bg  = bgs ? bgs->count : 0;
+    if (out_snd) *out_snd = snds ? snds->count : 0;
+    if (out_obj) *out_obj = objs ? objs->count : 0;
+    if (out_rm)  *out_rm  = n_rm;
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, jclass clazz, jbyteArray bytes, jstring outputDir) {
+    (void)clazz; (void)outputDir;
     if (!bytes) return (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"null_buffer\"}");
     jsize len = (*env)->GetArrayLength(env, bytes);
     if (len < 12) return (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"too_small\"}");
     jbyte *data = (*env)->GetByteArrayElements(env, bytes, NULL);
     if (!data) return (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"memory_error\"}");
 
-    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
-    g_runtime_initialized = 0;
+    unload_engine_project();
+    gm82_diag_clear_unmapped();
+    gm82_diag_set_error("import_gmk", "");
 
-    if (g_engine_loaded) {
-        gm82_decoded_sprite_list_free(&g_engine_sprites);
-        gm82_decoded_background_list_free(&g_engine_bgs);
-        gm82_decoded_sound_list_free(&g_engine_sounds);
-        gm82_decoded_font_list_free(&g_engine_fonts);
-        free(g_engine_objs.items);
-        for (int i = 0; i < g_engine_rooms.count; i++) {
-            free(g_engine_rooms.items[i].instances);
-            free(g_engine_rooms.items[i].tiles);
-        }
-        free(g_engine_rooms.items);
-        gm82_sprite_group_list_free(&g_engine_sprite_groups);
-        gm82_action_table_free(&g_engine_actions);
-        memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
-        g_engine_loaded = 0;
+    int stream_parsed = 0;
+    gm82_project_ir *ir = gm82_project_ir_create();
+    if (ir && gm82_gmk_stream_parse((const uint8_t *)data, (size_t)len, ir) &&
+        ir->room_count > 0 && gm82_text_build_runtime_bundle(ir, &g_engine_bundle)) {
+        g_engine_ir = ir;
+        g_using_bundle = 1;
+        stream_parsed = 1;
+    } else {
+        if (ir) gm82_project_ir_free(ir);
+        gm82_decoded_sprite_list_init(&g_engine_sprites);
+        gm82_decoded_background_list_init(&g_engine_bgs);
+        gm82_decoded_sound_list_init(&g_engine_sounds);
+        gm82_decoded_object_list_init(&g_engine_objs);
+        gm82_decoded_room_list_init(&g_engine_rooms);
+        memset(&g_engine_sprite_groups, 0, sizeof(g_engine_sprite_groups));
+        memset(&g_engine_actions, 0, sizeof(g_engine_actions));
+        gm82_script_list_init(&g_engine_scripts);
+
+        gm82_decode_sprites_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_sprites);
+        gm82_decode_backgrounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_bgs);
+        gm82_decode_sounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_sounds);
+        gm82_decode_objects_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_objs);
+        gm82_decode_rooms_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_rooms);
+        gm82_actions_scan_gmk((const uint8_t *)data, (size_t)len, &g_engine_actions);
+        gm82_decode_scripts_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_scripts);
+        gm82_events_autobind_gml_from_gmk((const uint8_t *)data, (size_t)len);
+        gm82_sprite_groups_build(&g_engine_sprites, &g_engine_sprite_groups);
     }
-
-    gm82_decoded_sprite_list_init(&g_engine_sprites);
-    gm82_decoded_background_list_init(&g_engine_bgs);
-    memset(&g_engine_sounds, 0, sizeof(g_engine_sounds));
-    memset(&g_engine_fonts, 0, sizeof(g_engine_fonts));
-    memset(&g_engine_objs, 0, sizeof(g_engine_objs));
-    memset(&g_engine_rooms, 0, sizeof(g_engine_rooms));
-    memset(&g_engine_actions, 0, sizeof(g_engine_actions));
-    memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
-
-    int n_spr = gm82_decode_sprites_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_sprites);
-    int n_bg = gm82_decode_backgrounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_bgs);
-    int n_obj = gm82_decode_objects_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_objs);
-    int n_rm = gm82_decode_rooms_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_rooms);
-    gm82_decode_sounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_sounds);
-    gm82_decode_fonts_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_fonts);
-    register_decoded_assets(&g_engine_sprites, &g_engine_bgs, &g_engine_objs);
-    gm82_actions_scan_gmk((const uint8_t *)data, (size_t)len, &g_engine_actions);
-    memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
-    gm82_decode_scripts_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_scripts);
-    gm82_events_autobind_gml_from_gmk((const uint8_t *)data, (size_t)len);
-
-    gm82_sprite_groups_build(&g_engine_sprites, &g_engine_sprite_groups);
 
     (*env)->ReleaseByteArrayElements(env, bytes, data, JNI_ABORT);
 
-    gm82_runtime_init(&g_engine_rt);
-    g_runtime_initialized = 1;
-    gm82_runtime_bind_assets(&g_engine_rt,
-        &g_engine_objs,
-        &g_engine_sprites,
-        &g_engine_bgs,
-        &g_engine_rooms,
-        &g_engine_actions);
-    gm82_runtime_bind_resources(&g_engine_rt, &g_engine_sounds, &g_engine_fonts);
-    gm82_runtime_bind_sprite_groups(&g_engine_rt, &g_engine_sprite_groups);
-    gm82_runtime_bind_scripts(&g_engine_rt, &g_engine_scripts);
-    gm82_input_init(&g_engine_input);
-    gm82_input_bind_global(&g_engine_input);
+    int n_spr = 0, n_bg = 0, n_snd = 0, n_obj = 0, n_rm = 0;
+    finalize_loaded_engine_project(stream_parsed, &n_spr, &n_bg, &n_snd, &n_obj, &n_rm);
 
-    if (n_rm > 0) {
-        gm82_runtime_goto_room(&g_engine_rt, 0);
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+        "{\"ok\":true,\"status\":\"ok\",\"streamParsed\":%s,\"sprites\":%d,\"backgrounds\":%d,\"sounds\":%d,\"objects\":%d,\"rooms\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
+        stream_parsed ? "true" : "false",
+        n_spr, n_bg, n_snd, n_obj, n_rm, g_resource_count, g_object_count,
+        (n_rm > 0) ? "true" : "false");
+
+    return (*env)->NewStringUTF(env, buf);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeImportGm82Project(JNIEnv *env, jclass clazz, jstring dirPath) {
+    (void)clazz;
+    char *path = jni_dup_string(env, dirPath);
+    if (!path || !path[0]) {
+        free(path);
+        return (*env)->NewStringUTF(env, "{\"ok\":false,\"complete\":false,\"error\":\"empty_path\"}");
     }
 
-    g_runtime_active = 1;
-    g_engine_loaded = 1;
+    unload_engine_project();
+    gm82_diag_clear_unmapped();
+    gm82_diag_set_error("import_gm82", "");
 
-    int first_room_instances = n_rm > 0 ? g_engine_rooms.items[0].instance_count : 0;
-    int first_room_width = n_rm > 0 ? g_engine_rooms.items[0].width : 0;
-    int first_room_height = n_rm > 0 ? g_engine_rooms.items[0].height : 0;
-    char buf[768];
+    gm82_text_load_result load_res = gm82_text_load_project(path);
+    free(path);
+    if (!load_res.ok || !load_res.ir) {
+        if (load_res.ir) gm82_project_ir_free(load_res.ir);
+        gm82_diag_set_error("import_gm82", load_res.error[0] ? load_res.error : "gm82 load failed");
+        char errbuf[384];
+        snprintf(errbuf, sizeof(errbuf), "{\"ok\":false,\"complete\":false,\"error\":\"%s\"}",
+                 load_res.error[0] ? load_res.error : "gm82 load failed");
+        return (*env)->NewStringUTF(env, errbuf);
+    }
+
+    (void)gm82_text_materialize_assets(load_res.ir);
+    if (!gm82_text_build_runtime_bundle(load_res.ir, &g_engine_bundle)) {
+        gm82_project_ir_free(load_res.ir);
+        gm82_diag_set_error("import_gm82", "failed to build runtime bundle");
+        return (*env)->NewStringUTF(env, "{\"ok\":false,\"complete\":false,\"error\":\"bundle_failed\"}");
+    }
+
+    g_engine_ir = load_res.ir;
+    g_using_bundle = 1;
+
+    int n_spr = 0, n_bg = 0, n_snd = 0, n_obj = 0, n_rm = 0;
+    finalize_loaded_engine_project(1, &n_spr, &n_bg, &n_snd, &n_obj, &n_rm);
+
+    char buf[512];
     snprintf(buf, sizeof(buf),
-        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"firstRoomWidth\":%d,\"firstRoomHeight\":%d,\"firstRoomInstances\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
-        n_spr, n_bg, n_obj, n_rm, first_room_width, first_room_height, first_room_instances,
-        g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
-
+        "{\"ok\":true,\"status\":\"ok\",\"gm82Text\":true,\"sprites\":%d,\"backgrounds\":%d,\"sounds\":%d,\"objects\":%d,\"rooms\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
+        n_spr, n_bg, n_snd, n_obj, n_rm, g_resource_count, g_object_count,
+        (n_rm > 0) ? "true" : "false");
     return (*env)->NewStringUTF(env, buf);
 }
 
@@ -1338,6 +1511,421 @@ Java_com_normaker_nativefull_MainActivity_nativeGm82TokenNext(JNIEnv *env, jclas
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeGm82TokenReset(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
     g_token_ctx = NULL;
     memset(g_token_buf, 0, sizeof(g_token_buf));
+}
+
+JNIEXPORT void JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeInitGles(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    gm82_gl_reset_program();
+    g_gl_stale_count = 0;
+    gm82_gl_invalidate_handles(&g_gl_atlas);
+}
+
+typedef struct {
+    int     kind; /* 0 = instance, 1 = tile */
+    int32_t depth;
+    int32_t tie_id;
+    int32_t index;
+} jni_gl_draw_item;
+
+static int cmp_jni_gl_draw_item(const void *a, const void *b) {
+    const jni_gl_draw_item *da = (const jni_gl_draw_item *)a;
+    const jni_gl_draw_item *db = (const jni_gl_draw_item *)b;
+    if (da->depth > db->depth) return -1;
+    if (da->depth < db->depth) return 1;
+    if (da->kind != db->kind) return (da->kind == 1) ? -1 : 1;
+    return (da->tie_id < db->tie_id) ? -1 : (da->tie_id > db->tie_id ? 1 : 0);
+}
+
+static void draw_gl_background_layer(const gm82_runtime *rt, const gm82_decoded_room *room,
+                                     const gm82_gl_atlas *atlas,
+                                     float vx, float vy, float vw, float vh, int foreground_pass) {
+    if (!rt || !room || !atlas || !atlas->backgrounds) return;
+    for (int bi = 0; bi < 8; bi++) {
+        const gm82_decoded_room_bg *rbg = &room->backgrounds[bi];
+        if (!rbg->visible || (rbg->foreground ? 1 : 0) != foreground_pass) continue;
+        if (rbg->bg_index < 0 || rbg->bg_index >= atlas->background_count) continue;
+        const gm82_gl_texture *tex = &atlas->backgrounds[rbg->bg_index];
+        if (tex->tex_id == 0 || tex->width <= 0 || tex->height <= 0) continue;
+
+        if (rbg->stretch) {
+            gm82_gl_draw_region_quad(tex->tex_id, vx, vy, vw, vh, 0.0f, 0.0f, 1.0f, 1.0f, 0xFFFFFFu, 1.0f);
+            continue;
+        }
+
+        float tw = (float)tex->width;
+        float th = (float)tex->height;
+        float bx = (float)(rbg->x + rt->bg_offset_x[bi]);
+        float by = (float)(rbg->y + rt->bg_offset_y[bi]);
+
+        float start_x = bx, end_x = bx + tw * 0.5f;
+        float start_y = by, end_y = by + th * 0.5f;
+        if (rbg->htiled) {
+            float off = fmodf(bx - vx, tw);
+            if (off > 0.0f) off -= tw;
+            start_x = vx + off;
+            end_x = vx + vw;
+        }
+        if (rbg->vtiled) {
+            float off = fmodf(by - vy, th);
+            if (off > 0.0f) off -= th;
+            start_y = vy + off;
+            end_y = vy + vh;
+        }
+
+        int iy_count = 0;
+        for (float ty = start_y; ty < end_y && iy_count < 256; ty += (rbg->vtiled ? th : vh + th), iy_count++) {
+            int ix_count = 0;
+            for (float tx = start_x; tx < end_x && ix_count < 256; tx += (rbg->htiled ? tw : vw + tw), ix_count++) {
+                gm82_gl_draw_region_quad(tex->tex_id, tx, ty, tw, th, 0.0f, 0.0f, 1.0f, 1.0f, 0xFFFFFFu, 1.0f);
+            }
+        }
+    }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeDrawGles(JNIEnv *env, jclass clazz, jint viewW, jint viewH) {
+    (void)env; (void)clazz;
+    if (viewW <= 0 || viewH <= 0) return JNI_FALSE;
+
+    if (g_gl_stale_count > 0) {
+        glDeleteTextures((GLsizei)g_gl_stale_count, (const GLuint *)g_gl_stale_tex);
+        g_gl_stale_count = 0;
+    }
+
+    const gm82_decoded_room_list *rooms = active_rooms();
+    const gm82_decoded_sprite_list *sprites = active_sprites();
+    const gm82_decoded_background_list *bgs = active_bgs();
+    const gm82_sprite_group_list *groups = active_sprite_groups();
+
+    int engine_room_ok = (g_engine_loaded && g_runtime_active && rooms && rooms->count > 0 &&
+                          g_engine_rt.current_room >= 0 && g_engine_rt.current_room < rooms->count);
+
+    if (!engine_room_ok) {
+        int fw = (g_engine_loaded && g_engine_rt.room_width > 0) ? g_engine_rt.room_width : (g_room_w > 0 ? g_room_w : 640);
+        int fh = (g_engine_loaded && g_engine_rt.room_height > 0) ? g_engine_rt.room_height : (g_room_h > 0 ? g_room_h : 480);
+        if (fw > 2048) fw = 2048;
+        if (fh > 2048) fh = 2048;
+        size_t need = (size_t)fw * (size_t)fh * 4u;
+        if (need > g_gles_rgba_cap) {
+            uint8_t *buf = (uint8_t *)realloc(g_gles_rgba, need);
+            if (!buf) return JNI_FALSE;
+            g_gles_rgba = buf;
+            g_gles_rgba_cap = need;
+        }
+        render_active_frame_rgba(g_gles_rgba, fw, fh);
+
+        glDisable(GL_SCISSOR_TEST);
+        glViewport(0, 0, (GLsizei)viewW, (GLsizei)viewH);
+        glClearColor(20.0f / 255.0f, 20.0f / 255.0f, 40.0f / 255.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        double sx = (double)viewW / (double)fw;
+        double sy = (double)viewH / (double)fh;
+        double scale = sx < sy ? sx : sy;
+        int dw = (int)(fw * scale);
+        int dh = (int)(fh * scale);
+        int vx = ((int)viewW - dw) / 2;
+        int vy = ((int)viewH - dh) / 2;
+        if (dw > 0 && dh > 0) {
+            glViewport((GLint)vx, (GLint)vy, (GLsizei)dw, (GLsizei)dh);
+        }
+        jboolean ok = gm82_gl_draw_rgba_fullscreen(g_gles_rgba, fw, fh) ? JNI_TRUE : JNI_FALSE;
+        glViewport(0, 0, (GLsizei)viewW, (GLsizei)viewH);
+        return ok;
+    }
+
+    if (!g_gl_atlas.ready) {
+        if (sprites && sprites->count > 0) {
+            gm82_gl_upload_sprites(&g_gl_atlas, sprites);
+        } else {
+            g_gl_atlas.ready = 1;
+        }
+        if (bgs && bgs->count > 0) {
+            gm82_gl_upload_backgrounds(&g_gl_atlas, bgs);
+        }
+    }
+
+    const gm82_decoded_room *room = &rooms->items[g_engine_rt.current_room];
+    double alpha = g_engine_rt.render_alpha;
+    if (alpha < 0.0) alpha = 0.0;
+    if (alpha > 1.0) alpha = 1.0;
+
+    float vw = (g_engine_rt.view_enabled && g_engine_rt.view_w > 0.0)
+               ? (float)g_engine_rt.view_w
+               : (float)(g_engine_rt.room_width > 0 ? g_engine_rt.room_width : 640);
+    float vh = (g_engine_rt.view_enabled && g_engine_rt.view_h > 0.0)
+               ? (float)g_engine_rt.view_h
+               : (float)(g_engine_rt.room_height > 0 ? g_engine_rt.room_height : 480);
+
+    float ivx = 0.0f, ivy = 0.0f;
+    if (g_engine_rt.view_enabled) {
+        double dx = g_engine_rt.view_x - g_engine_rt.prev_view_x;
+        double dy = g_engine_rt.view_y - g_engine_rt.prev_view_y;
+        if (fabs(dx) < vw * 0.5 && fabs(dy) < vh * 0.5) {
+            ivx = (float)(g_engine_rt.prev_view_x + dx * alpha);
+            ivy = (float)(g_engine_rt.prev_view_y + dy * alpha);
+        } else {
+            ivx = (float)g_engine_rt.view_x;
+            ivy = (float)g_engine_rt.view_y;
+        }
+    }
+
+    glDisable(GL_SCISSOR_TEST);
+    glViewport(0, 0, (GLsizei)viewW, (GLsizei)viewH);
+    glClearColor(12.0f / 255.0f, 14.0f / 255.0f, 24.0f / 255.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    double sx = (double)viewW / (double)vw;
+    double sy = (double)viewH / (double)vh;
+    double scale = sx < sy ? sx : sy;
+    int dw = (int)(vw * scale);
+    int dh = (int)(vh * scale);
+    int vpx = ((int)viewW - dw) / 2;
+    int vpy = ((int)viewH - dh) / 2;
+    if (dw <= 0 || dh <= 0) return JNI_FALSE;
+
+    glViewport((GLint)vpx, (GLint)vpy, (GLsizei)dw, (GLsizei)dh);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor((GLint)vpx, (GLint)vpy, (GLsizei)dw, (GLsizei)dh);
+
+    if (room->draw_background_color) {
+        uint32_t col = (uint32_t)room->background_color;
+        float r = (float)(col & 0xFFu) / 255.0f;
+        float g = (float)((col >> 8) & 0xFFu) / 255.0f;
+        float b = (float)((col >> 16) & 0xFFu) / 255.0f;
+        glClearColor(r, g, b, 1.0f);
+    } else {
+        glClearColor(20.0f / 255.0f, 20.0f / 255.0f, 40.0f / 255.0f, 1.0f);
+    }
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+
+    gm82_gl_begin_ortho(ivx, ivy, ivx + vw, ivy + vh);
+
+    draw_gl_background_layer(&g_engine_rt, room, &g_gl_atlas, ivx, ivy, vw, vh, 0);
+
+    int max_items = g_engine_rt.instance_count + room->tile_count;
+    if (max_items > 0) {
+        jni_gl_draw_item *items = (jni_gl_draw_item *)malloc((size_t)max_items * sizeof(jni_gl_draw_item));
+        int item_n = 0;
+        if (items) {
+            for (int i = 0; i < g_engine_rt.instance_count; i++) {
+                const gm82_instance *inst = &g_engine_rt.instances[i];
+                if (!inst->alive || !inst->visible) continue;
+                items[item_n++] = (jni_gl_draw_item){ 0, inst->depth, inst->id, i };
+            }
+            if (room->tiles && bgs && g_gl_atlas.backgrounds) {
+                for (int t = 0; t < room->tile_count; t++) {
+                    items[item_n++] = (jni_gl_draw_item){ 1, room->tiles[t].depth, room->tiles[t].id, t };
+                }
+            }
+            if (item_n > 1) qsort(items, (size_t)item_n, sizeof(items[0]), cmp_jni_gl_draw_item);
+
+            int ov_w = (int)vw;
+            int ov_h = (int)vh;
+            if (ov_w < 64) ov_w = 64;
+            if (ov_h < 64) ov_h = 64;
+            if (ov_w > 1920) ov_w = 1920;
+            if (ov_h > 1080) ov_h = 1080;
+            size_t ov_bytes = (size_t)ov_w * (size_t)ov_h * 4u;
+            int overlay_inited = 0;
+            int overlay_dirty = 0;
+
+            for (int k = 0; k < item_n; k++) {
+                if (items[k].kind == 1) {
+                    if (overlay_dirty) {
+                        gm82_gl_draw_rgba_overlay(g_gles_rgba, ov_w, ov_h);
+                        memset(g_gles_rgba, 0, ov_bytes);
+                        overlay_dirty = 0;
+                    }
+                    const gm82_decoded_tile *tl = &room->tiles[items[k].index];
+                    if (tl->background_index < 0 || tl->background_index >= g_gl_atlas.background_count) continue;
+                    const gm82_gl_texture *bgtex = &g_gl_atlas.backgrounds[tl->background_index];
+                    if (bgtex->tex_id == 0 || bgtex->width <= 0 || bgtex->height <= 0) continue;
+                    float tw = (float)(tl->width > 0 ? tl->width : bgtex->width);
+                    float th = (float)(tl->height > 0 ? tl->height : bgtex->height);
+                    float sx_sc = tl->xscale != 0.0 ? (float)tl->xscale : 1.0f;
+                    float sy_sc = tl->yscale != 0.0 ? (float)tl->yscale : 1.0f;
+                    float u0 = (float)tl->xo / (float)bgtex->width;
+                    float v0 = (float)tl->yo / (float)bgtex->height;
+                    float u1 = (float)(tl->xo + tw) / (float)bgtex->width;
+                    float v1 = (float)(tl->yo + th) / (float)bgtex->height;
+                    uint32_t tcol = tl->blend ? (uint32_t)tl->blend : 0xFFFFFFu;
+                    gm82_gl_draw_region_quad(bgtex->tex_id, (float)tl->x, (float)tl->y,
+                                             tw * sx_sc, th * sy_sc,
+                                             u0, v0, u1, v1, tcol, 1.0f);
+                    continue;
+                }
+
+                gm82_instance *inst = &g_engine_rt.instances[items[k].index];
+                if (!inst->alive || !inst->visible) continue;
+                if (gm82_events_has_draw_event(&g_engine_rt, inst)) {
+                    if (!overlay_inited) {
+                        if (ov_bytes > g_gles_rgba_cap) {
+                            uint8_t *buf = (uint8_t *)realloc(g_gles_rgba, ov_bytes);
+                            if (buf) {
+                                g_gles_rgba = buf;
+                                g_gles_rgba_cap = ov_bytes;
+                            }
+                        }
+                        if (g_gles_rgba && g_gles_rgba_cap >= ov_bytes) {
+                            memset(g_gles_rgba, 0, ov_bytes);
+                            overlay_inited = 1;
+                        }
+                    }
+                    if (overlay_inited && g_gles_rgba) {
+                        double saved_vx = g_engine_rt.view_x;
+                        double saved_vy = g_engine_rt.view_y;
+                        g_engine_rt.view_x = ivx;
+                        g_engine_rt.view_y = ivy;
+                        gm82_draw_set_target(g_gles_rgba, (int32_t)ov_w, (int32_t)ov_h);
+                        gm82_events_fire_draw_single(&g_engine_rt, inst);
+                        gm82_draw_set_target(NULL, 0, 0);
+                        g_engine_rt.view_x = saved_vx;
+                        g_engine_rt.view_y = saved_vy;
+                        overlay_dirty = 1;
+                    }
+                    continue;
+                }
+
+                if (!sprites || inst->sprite_index < 0 || !g_gl_atlas.sprites) continue;
+                if (overlay_dirty) {
+                    gm82_gl_draw_rgba_overlay(g_gles_rgba, ov_w, ov_h);
+                    memset(g_gles_rgba, 0, ov_bytes);
+                    overlay_dirty = 0;
+                }
+                int frame_idx = inst->sprite_index;
+                if (groups) {
+                    int rfi = gm82_sprite_resolve_frame(groups, inst->sprite_index, inst->image_index);
+                    if (rfi >= 0) frame_idx = rfi;
+                }
+                if (frame_idx < 0 || frame_idx >= g_gl_atlas.sprite_count || frame_idx >= sprites->count) continue;
+                const gm82_gl_texture *stex = &g_gl_atlas.sprites[frame_idx];
+                if (stex->tex_id == 0 || stex->width <= 0 || stex->height <= 0) continue;
+                const gm82_decoded_frame *fr = &sprites->frames[frame_idx];
+
+                float draw_x = (float)(inst->xprevious + (inst->x - inst->xprevious) * alpha);
+                float draw_y = (float)(inst->yprevious + (inst->y - inst->yprevious) * alpha);
+                if (fabs(inst->x - inst->xprevious) > vw * 0.5 || fabs(inst->y - inst->yprevious) > vh * 0.5) {
+                    draw_x = (float)inst->x;
+                    draw_y = (float)inst->y;
+                }
+                float xs = inst->image_xscale != 0.0 ? (float)inst->image_xscale : 1.0f;
+                float ys = inst->image_yscale != 0.0 ? (float)inst->image_yscale : 1.0f;
+                float ia = inst->image_alpha > 0.0 ? (float)inst->image_alpha : 1.0f;
+                uint32_t col = inst->image_blend ? (uint32_t)inst->image_blend : 0xFFFFFFu;
+
+                gm82_gl_draw_sprite_quad(stex->tex_id, draw_x, draw_y,
+                                         (float)stex->width, (float)stex->height,
+                                         (float)fr->origin_x, (float)fr->origin_y,
+                                         xs, ys, (float)inst->image_angle, col, ia);
+            }
+            if (overlay_dirty && g_gles_rgba) {
+                gm82_gl_draw_rgba_overlay(g_gles_rgba, ov_w, ov_h);
+            }
+            free(items);
+        }
+    }
+
+    draw_gl_background_layer(&g_engine_rt, room, &g_gl_atlas, ivx, ivy, vw, vh, 1);
+
+    glDisable(GL_SCISSOR_TEST);
+    glViewport(0, 0, (GLsizei)viewW, (GLsizei)viewH);
+    return JNI_TRUE;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeDiagnosticsJson(
+        JNIEnv *env, jclass clazz, jstring backend, jint soundpoolCount, jint fps) {
+    (void)clazz;
+    char *bstr = jni_dup_string(env, backend);
+    int room_id = g_engine_loaded ? g_engine_rt.current_room : g_current_room;
+    int rw = (g_engine_loaded && g_engine_rt.room_width > 0) ? g_engine_rt.room_width : g_room_w;
+    int rh = (g_engine_loaded && g_engine_rt.room_height > 0) ? g_engine_rt.room_height : g_room_h;
+    int inst_n = g_engine_loaded ? g_engine_rt.instance_count : g_instance_count;
+    int spr_n = g_engine_loaded ? active_sprites()->count : g_resource_count;
+    int obj_n = g_engine_loaded ? active_objs()->count : g_object_count;
+    int bg_n = g_engine_loaded ? active_bgs()->count : 0;
+    int snd_n = g_engine_loaded ? active_sounds()->count : 0;
+    int frame_n = g_engine_loaded ? g_engine_rt.frame : 0;
+
+    char json[8192];
+    gm82_diag_build_json(
+        json, sizeof(json),
+        bstr ? bstr : "GLES2",
+        gm82_opensles_is_active() ? 1 : 0,
+        (int)soundpoolCount,
+        room_id, rw, rh,
+        inst_n, spr_n, obj_n, bg_n, snd_n,
+        frame_n, (int)fps);
+    free(bstr);
+    return (*env)->NewStringUTF(env, json);
+}
+
+JNIEXPORT void JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeClearDiagnostics(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    gm82_diag_clear_unmapped();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeIsOpenSlesActive(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    return gm82_opensles_is_active() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetRoomWidth(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    if (g_engine_loaded) {
+        if (g_engine_rt.view_enabled && g_engine_rt.view_w > 0.0) return (jint)g_engine_rt.view_w;
+        if (g_engine_rt.room_width > 0) return (jint)g_engine_rt.room_width;
+    }
+    return (jint)g_room_w;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetRoomHeight(JNIEnv *env, jclass clazz) {
+    (void)env; (void)clazz;
+    if (g_engine_loaded) {
+        if (g_engine_rt.view_enabled && g_engine_rt.view_h > 0.0) return (jint)g_engine_rt.view_h;
+        if (g_engine_rt.room_height > 0) return (jint)g_engine_rt.room_height;
+    }
+    return (jint)g_room_h;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeConsumeUiEvents(JNIEnv *env, jclass clazz) {
+    (void)clazz;
+    if (gm82_ui_event_pending_count() <= 0) {
+        return (*env)->NewStringUTF(env, "[]");
+    }
+    char out[4096];
+    int pos = snprintf(out, sizeof(out), "[");
+    int first = 1;
+    for (int i = 0; i < 8; i++) {
+        char item[1536];
+        int n = gm82_ui_event_pop_json(item, sizeof(item));
+        if (n <= 0) break;
+        if ((size_t)pos + (size_t)n + 8 >= sizeof(out)) break;
+        pos += snprintf(out + pos, sizeof(out) - (size_t)pos, "%s%s", first ? "" : ",", item);
+        first = 0;
+    }
+    snprintf(out + pos, sizeof(out) - (size_t)pos, "]");
+    return (*env)->NewStringUTF(env, out);
+}
+
+JNIEXPORT void JNICALL
+Java_com_normaker_nativefull_MainActivity_nativeRuntimeSetQuestionAnswer(JNIEnv *env, jclass clazz, jboolean yes) {
+    (void)env; (void)clazz;
+    gm82_ui_event_set_question_answer(yes ? 1 : 0);
 }

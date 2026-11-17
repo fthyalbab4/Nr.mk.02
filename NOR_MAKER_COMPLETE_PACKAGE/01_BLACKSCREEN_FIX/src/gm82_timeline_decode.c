@@ -1,12 +1,11 @@
 #define _POSIX_C_SOURCE 200809L
-#include "gm82_int_read.h"
 #include "gm82_timeline_decode.h"
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
 
 static int32_t rd_i32(const uint8_t *p) {
-    return gm82_read_i32le(p);
+    return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
 }
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol = 0;

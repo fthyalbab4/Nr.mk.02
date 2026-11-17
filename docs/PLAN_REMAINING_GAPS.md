@@ -3,20 +3,6 @@
 **قاعدة:** لا نسب مئوية مزيفة. الإغلاق = PASS صريح أو FAIL log يختفي.
 **المستودع:** https://github.com/fthyalbab4/Nr.mk.02  · فرع `main`
 
-## بنود أُغلقت بالدليل — 2026-11-06
-
-أُزيلت البنود التالية من قوائم العمل المفتوحة بعد تشغيل الاختبارات، وليس بمجرد مراجعة الكود:
-
-- **A5:** `bash tools/run_host_pipeline.sh` — `SUMMARY expected=4 ok=4 fail=0` مع تحميل ورسم وحفظ/تحميل عينات Mario وPlataformas وShooter وZelda.
-- **C1:** ترتيب Begin Step → Alarm → Input/Step → Motion/Collision → End Step → Draw، مع regression في `test_event_order`.
-- **C2:** إنشاء/حذف instances أثناء الدورة وDestroy المؤجل، مع regression ناجح.
-- **C3:** depth sorting قبل الرسم، مع regression ناجح.
-- **C4:** countdown للـalarms وتنفيذ الحدث، مع اختبارات GML/runtime ناجحة.
-- **C5:** collision dispatch و`self/other` وprecise alpha-mask، مع regression ناجح.
-- **Mirror gate:** `python3 tools/verify_core_mirrors.py` — تطابق 54 ملف C و49 ملف header في المرآتين.
-
-تبقى البنود التي تحتاج جهاز Android، أو صيغة GMK إضافية، أو مقارنة مباشرة مع GameMaker Portable في قسم العمل المفتوح أدناه.
-
 ---
 
 ## 0) ما اتقفل بالفعل (لا تعيد شغله من الصفر)
@@ -41,6 +27,7 @@
 | A2 | `python3 tools/gap_fill_20261013/APPLY_STRING_VM_CALLS.py` | eval | `keyboard_string` ينادي `gm82_gml_set_last_string` |
 | A3 | `bash tools/gap_fill_20261013/ASSEMBLE.sh` | patches | يطبع `ASSEMBLE_OK` بدون كسر الملفات |
 | A4 | بناء APK debug من `main` | Android app | APK يثبت ويفتح بدون crash فوري |
+| A5 | تشغيل host pipeline إن وُجد | `tools/run_host_pipeline.sh` | تسجيل ok/fail حقيقي في `docs/` |
 
 **مخرجات:** `docs/BUILD_<date>.md` + APK + لوج تجميع.
 
@@ -62,7 +49,23 @@
 
 ---
 
-## 3) المرحلة د — GML / builtins الناقصة (يوم 3–7، FAIL-driven)
+## 3) المرحلة ج — حلقة التنفيذ والحركة (يوم 2–4)
+
+**الهدف:** سلوك frame يطابق ترتيب GM8.2.
+
+| # | مهمة | معيار النجاح |
+|---|------|---------------|
+| C1 | ترتيب صارم: Begin Step → Step → End Step → Pre-Draw → Draw → Post-Draw | اختبار وحدة `test_event_order` يمر |
+| C2 | إنشاء/حذف instance أثناء Step بدون فساد iterator | لا crash عند `instance_destroy` وسط الحلقة |
+| C3 | depth sort قبل Draw | ترتيب رسم ثابت لعينات depth |
+| C4 | alarms / timelines | alarm يعدّ وينفّذ event |
+| C5 | collision basics المستخدمة في ألعاب السحابة | collision مع object معروف يفعّل event |
+
+**ملفات:** `gm82_runtime.c`, `gm82_events.c`, `gm82_instance*`.
+
+---
+
+## 4) المرحلة د — GML / builtins الناقصة (يوم 3–7، FAIL-driven)
 
 **قاعدة:** لا تضيف builtin إلا بعد ظهور اسمه في FAIL log من لعبة حقيقية.
 
@@ -70,9 +73,7 @@
 |---|------|---------------|
 | D1 | تجميع قائمة `missing_builtin` / `unimplemented` من الجهاز | ملف `docs/FAIL_BUILTINS_<date>.md` |
 | D2 | تنفيذ الدفعة الأعلى تكرارًا (غالبًا: surfaces, draw_*, string_*, ds_*, file_*, instance_*, room_*) | كل بند في الدفعة يختفي من اللوج |
-| D3 | `with()` scope صحيح | [مكتمل] AST/bytecode/evaluator يدعم nested scope و`self`/`other`/`all`/`noone`؛ regression `test_gml_with_nested` |
-| D6 | User/Outside/Boundary/Animation End | [مكتمل] dispatch واختبار `test_event_other_parity`؛ تم إصلاح كشف التفاف animation في runtime |
-| D7 | دفعة Action Lists — شروط الغرف | [مكتمل] `action_if_next_room` و`action_if_previous_room` يعتمدان على `current_room`؛ regression `test_gmk8_action_room_conditions` |
+| D3 | `with()` scope صحيح | اختبار: `with(obj) { x+=1 }` يلمس كل instances |
 | D4 | surfaces: create/free/set_target/reset/copy | رسم على surface يظهر في draw |
 | D5 | string producers في eval تربط `set_last_string` | `keyboard_string` و`string(...)` يملأوا last_string |
 
@@ -80,7 +81,7 @@
 
 ---
 
-## 4) المرحلة هـ — ألعاب السحابة كمعيار قبول (يوم 5–10+)
+## 5) المرحلة هـ — ألعاب السحابة كمعيار قبول (يوم 5–10+)
 
 **الهدف:** قائمة ألعاب محددة تشتغل — مش «كل GMK في العالم».
 
@@ -96,7 +97,7 @@
 
 ---
 
-## 5) المرحلة و — REA / GM82Core (اختياري، مش شرط يومي)
+## 6) المرحلة و — REA / GM82Core (اختياري، مش شرط يومي)
 
 | # | مهمة | شرط |
 |---|------|------|
@@ -109,22 +110,25 @@
 
 ---
 
-## 6) مرحلة ز — جودة وانحدار
+## 7) مرحلة ز — جودة وانحدار
 
 | # | مهمة | معيار |
 |---|------|--------|
+| G1 | تثبيت host suite + تسجيل النتائج | `docs/FINAL_SUITE_<date>.md` |
 | G2 | منع رجوع PLACEHOLDER في actions/eval | grep في CI |
 | G3 | تحديث `GAPS_HONEST.md` بعد كل مرحلة | بنود مغلقة فقط إن مرّت معاييرها |
 | G4 | عدم دمج تقارير نسب وهمية | مراجعة PR |
 
 ---
 
-## 7) ترتيب التنفيذ المقترح (متتابع)
+## 8) ترتيب التنفيذ المقترح (متتابع)
 
 ```
 A1→A2→A3→A4
     ↓
 B1→B2→B3→B4→B5
+    ↓
+C1→C2→C3→C4→C5
     ↓
 E1 (قائمة ألعاب) → E3 (أول log)
     ↓

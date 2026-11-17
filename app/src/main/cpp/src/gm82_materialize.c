@@ -1,38 +1,39 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_materialize.h"
+#include "gm82_gmk_stream.h"
 #include "gm82_sprite_decode.h"
 #include "gm82_background_decode.h"
 #include "gm82_object_room_decode.h"
 #include "gm82_sound_decode.h"
-#include "gm82_font_decode.h"
 #include "gm82_script.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-
-/* Code-track: retain last materialize decode lists for runtime bind (not freed mid-session) */
+static gm82_project_ir *g_last_ir = NULL;
 static gm82_decoded_object_list g_mat_objects;
 static gm82_script_list g_mat_scripts;
-static gm82_decoded_sound_list g_mat_sounds;
-static gm82_decoded_font_list g_mat_fonts;
 static int g_mat_objects_valid = 0;
 static int g_mat_scripts_valid = 0;
-static int g_mat_sounds_valid = 0;
-static int g_mat_fonts_valid = 0;
 
 const gm82_decoded_object_list *gm82_materialize_get_objects(void) {
+    if (g_last_ir && g_last_ir->decoded_objects.count > 0) return &g_last_ir->decoded_objects;
     return g_mat_objects_valid ? &g_mat_objects : NULL;
 }
 const gm82_script_list *gm82_materialize_get_scripts(void) {
+    if (g_last_ir && g_last_ir->decoded_scripts.count > 0) return &g_last_ir->decoded_scripts;
     return g_mat_scripts_valid ? &g_mat_scripts : NULL;
 }
+const gm82_decoded_sprite_list *gm82_materialize_get_frames(void) {
+    return (g_last_ir && g_last_ir->decoded_frames.count > 0) ? &g_last_ir->decoded_frames : NULL;
+}
+const gm82_sprite_group_list *gm82_materialize_get_sprite_groups(void) {
+    return (g_last_ir && g_last_ir->sprite_groups.count > 0) ? &g_last_ir->sprite_groups : NULL;
+}
 const gm82_decoded_sound_list *gm82_materialize_get_sounds(void) {
-    return g_mat_sounds_valid ? &g_mat_sounds : NULL;
+    return (g_last_ir && g_last_ir->decoded_sounds.count > 0) ? &g_last_ir->decoded_sounds : NULL;
 }
-const gm82_decoded_font_list *gm82_materialize_get_fonts(void) {
-    return g_mat_fonts_valid ? &g_mat_fonts : NULL;
-}
+
 gm82_materialize_options gm82_materialize_default_options(void) {
     gm82_materialize_options o = {0};
     o.cache_dir = NULL;
@@ -42,13 +43,12 @@ gm82_materialize_options gm82_materialize_default_options(void) {
     return o;
 }
 
-/*
- * Real path: if source_data or source_path is set, run sprite decoder
- * and populate ir->sprites with DECODED entries + RGBA.
- */
 bool gm82_materialize_sprites(gm82_project_ir *ir, const gm82_materialize_options *opts) {
     (void)opts;
     if (!ir) return false;
+    if (ir->decoded_frames.count > 0 || (ir->sprite_count == 0 && ir->decoded_objects.count > 0)) {
+        return true;
+    }
 
     gm82_decoded_sprite_list L;
     gm82_decoded_sprite_list_init(&L);
@@ -61,14 +61,12 @@ bool gm82_materialize_sprites(gm82_project_ir *ir, const gm82_materialize_option
 
     if (n <= 0) {
         gm82_decoded_sprite_list_free(&L);
-        /* keep existing sprites as partial */
         for (int32_t i = 0; i < ir->sprite_count; i++)
             if (ir->sprites[i].status != GM82_RES_DECODED)
                 ir->sprites[i].status = GM82_RES_PARTIAL;
         return false;
     }
 
-    /* Build groups so multi-frame sprites get correct subimage_count */
     gm82_sprite_group_list groups;
     gm82_sprite_groups_build(&L, &groups);
 
@@ -90,8 +88,6 @@ bool gm82_materialize_sprites(gm82_project_ir *ir, const gm82_materialize_option
     }
 
     if (groups.count > 0) {
-        /* One IR sprite per named group. First frame pixels transferred.
-           Full multi-frame storage can be extended later. */
         for (int g = 0; g < groups.count; g++) {
             gm82_res_sprite *s = &ir->sprites[g];
             const gm82_sprite_group *grp = &groups.items[g];
@@ -101,34 +97,31 @@ bool gm82_materialize_sprites(gm82_project_ir *ir, const gm82_materialize_option
             s->width = grp->width;
             s->height = grp->height;
             s->subimage_count = grp->frame_count;
-            s->rgba_size = L.frames[frame_idx].rgba_size;
-            s->rgba = L.frames[frame_idx].rgba;
-            L.frames[frame_idx].rgba = NULL;
-            s->status = GM82_RES_DECODED;
-        }
-    } else {
-        for (int i = 0; i < n; i++) {
-            gm82_res_sprite *s = &ir->sprites[i];
-            s->id = i;
-            s->name = strdup(L.frames[i].name);
-            s->width = L.frames[i].width;
-            s->height = L.frames[i].height;
-            s->subimage_count = 1;
-            s->rgba_size = L.frames[i].rgba_size;
-            s->rgba = L.frames[i].rgba;
-            L.frames[i].rgba = NULL;
+            if (L.frames[frame_idx].rgba && L.frames[frame_idx].rgba_size > 0) {
+                s->rgba_size = L.frames[frame_idx].rgba_size;
+                s->rgba = (uint8_t *)malloc(s->rgba_size);
+                if (s->rgba) memcpy(s->rgba, L.frames[frame_idx].rgba, s->rgba_size);
+            }
             s->status = GM82_RES_DECODED;
         }
     }
-
-    gm82_decoded_sprite_list_free(&L);
-    gm82_sprite_group_list_free(&groups);
+    gm82_decoded_sprite_list_free(&ir->decoded_frames);
+    ir->decoded_frames = L;
+    gm82_sprite_group_list_free(&ir->sprite_groups);
+    ir->sprite_groups = groups;
     return true;
 }
 
 bool gm82_materialize_backgrounds(gm82_project_ir *ir, const gm82_materialize_options *opts) {
     (void)opts;
     if (!ir) return false;
+    if (ir->decoded_objects.count > 0 && ir->background_count >= 0) {
+        bool all_ok = true;
+        for (int32_t i = 0; i < ir->background_count; i++) {
+            if (ir->backgrounds && ir->backgrounds[i].status != GM82_RES_DECODED) all_ok = false;
+        }
+        if (all_ok) return true;
+    }
 
     gm82_decoded_background_list L;
     gm82_decoded_background_list_init(&L);
@@ -143,7 +136,7 @@ bool gm82_materialize_backgrounds(gm82_project_ir *ir, const gm82_materialize_op
         for (int32_t i = 0; i < ir->background_count; i++)
             if (ir->backgrounds[i].status != GM82_RES_DECODED)
                 ir->backgrounds[i].status = GM82_RES_PARTIAL;
-        return ir->background_count == 0; /* OK if game has none */
+        return ir->background_count == 0;
     }
 
     for (int32_t i = 0; i < ir->background_count; i++) {
@@ -176,6 +169,9 @@ bool gm82_materialize_backgrounds(gm82_project_ir *ir, const gm82_materialize_op
 bool gm82_materialize_rooms(gm82_project_ir *ir, const gm82_materialize_options *opts) {
     (void)opts;
     if (!ir) return false;
+    if (ir->decoded_objects.count > 0 && ir->room_count > 0) {
+        return true;
+    }
 
     gm82_decoded_room_list L;
     memset(&L, 0, sizeof(L));
@@ -215,25 +211,6 @@ bool gm82_materialize_rooms(gm82_project_ir *ir, const gm82_materialize_options 
                         r->instance_count = 0;
                     }
                 }
-                r->tile_count = L.items[i].tile_count;
-                if (r->tile_count > 0 && L.items[i].tiles) {
-                    r->tiles = (gm82_room_tile *)calloc((size_t)r->tile_count, sizeof(gm82_room_tile));
-                    if (r->tiles) {
-                        for (int j = 0; j < r->tile_count; j++) {
-                            r->tiles[j].id = L.items[i].tiles[j].id;
-                            r->tiles[j].background_id = L.items[i].tiles[j].background_index;
-                            r->tiles[j].x = L.items[i].tiles[j].x;
-                            r->tiles[j].y = L.items[i].tiles[j].y;
-                            r->tiles[j].src_x = L.items[i].tiles[j].xo;
-                            r->tiles[j].src_y = L.items[i].tiles[j].yo;
-                            r->tiles[j].width = L.items[i].tiles[j].width;
-                            r->tiles[j].height = L.items[i].tiles[j].height;
-                            r->tiles[j].depth = L.items[i].tiles[j].depth;
-                        }
-                    } else {
-                        r->tile_count = 0;
-                    }
-                }
                 r->status = GM82_RES_DECODED;
             }
             gm82_decoded_room_list_free(&L);
@@ -257,26 +234,23 @@ bool gm82_materialize_rooms(gm82_project_ir *ir, const gm82_materialize_options 
 
 bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *opts) {
     if (!ir) return false;
+    g_last_ir = ir;
     gm82_materialize_options local = opts ? *opts : gm82_materialize_default_options();
 
-    bool ok = true;
-    ok = gm82_materialize_sprites(ir, &local) && ok;
-    ok = gm82_materialize_backgrounds(ir, &local) && ok;
-    ok = gm82_materialize_rooms(ir, &local) && ok;
+    /* If source_data is present and decoded_objects wasn't already parsed by stream reader, parse now */
+    if (ir->decoded_objects.count == 0 && ir->source_data && ir->source_data_size > 0) {
+        gm82_gmk_stream_parse(ir->source_data, ir->source_data_size, ir);
+    }
 
-    /* Decode objects/sounds/scripts and RETAIN object+script lists for runtime */
-    if (ir->source_data && ir->source_data_size > 0) {
+    gm82_materialize_sprites(ir, &local);
+    gm82_materialize_backgrounds(ir, &local);
+    gm82_materialize_rooms(ir, &local);
+
+    /* Fallback if stream parser could not run (legacy GM4/GM6) */
+    if (ir->decoded_objects.count == 0 && ir->source_data && ir->source_data_size > 0) {
         if (g_mat_objects_valid) {
             gm82_decoded_object_list_free(&g_mat_objects);
             g_mat_objects_valid = 0;
-        }
-        if (g_mat_sounds_valid) {
-            gm82_decoded_sound_list_free(&g_mat_sounds);
-            g_mat_sounds_valid = 0;
-        }
-        if (g_mat_fonts_valid) {
-            gm82_decoded_font_list_free(&g_mat_fonts);
-            g_mat_fonts_valid = 0;
         }
         gm82_decoded_object_list_init(&g_mat_objects);
         int nobj = gm82_decode_objects_from_gmk(ir->source_data, ir->source_data_size, &g_mat_objects);
@@ -287,24 +261,13 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
             gm82_decoded_object_list_free(&g_mat_objects);
         }
 
-        memset(&g_mat_sounds, 0, sizeof(g_mat_sounds));
-        int nsnd = gm82_decode_sounds_from_gmk(ir->source_data, ir->source_data_size, &g_mat_sounds);
-        if (nsnd > 0) {
-            ir->sound_count = nsnd;
-            g_mat_sounds_valid = 1;
-        } else {
-            gm82_decoded_sound_list_free(&g_mat_sounds);
+        if (ir->decoded_sounds.count == 0) {
+            gm82_decoded_sound_list_init(&ir->decoded_sounds);
+            int nsnd = gm82_decode_sounds_from_gmk(ir->source_data, ir->source_data_size, &ir->decoded_sounds);
+            if (nsnd > 0) ir->sound_count = nsnd;
         }
 
-        memset(&g_mat_fonts, 0, sizeof(g_mat_fonts));
-        int nfnt = gm82_decode_fonts_from_gmk(ir->source_data, ir->source_data_size, &g_mat_fonts);
-        if (nfnt > 0) {
-            g_mat_fonts_valid = 1;
-        } else {
-            gm82_decoded_font_list_free(&g_mat_fonts);
-        }
-
-        gm82_script_list_init(&g_mat_scripts);
+        gm82_script_list_free(&g_mat_scripts);
         g_mat_scripts_valid = 0;
         int nscr = gm82_decode_scripts_from_gmk(ir->source_data, ir->source_data_size, &g_mat_scripts);
         if (nscr > 0) {
@@ -312,10 +275,6 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
             g_mat_scripts_valid = 1;
         }
     }
-
-    /* If we have decoded sprites but backgrounds list is empty, clear background requirement */
-    if (ir->sprite_count > 0 && ir->background_count == 0)
-        ok = (ir->sprites[0].status == GM82_RES_DECODED);
 
     gm82_project_ir_recompute_complete(ir);
 
@@ -326,19 +285,6 @@ bool gm82_materialize_all(gm82_project_ir *ir, const gm82_materialize_options *o
                  "Materialization incomplete (sprites=%d decoded_partial=%d rooms=%d)",
                  ir->sprite_count, ir->partial_count, ir->room_count);
         ir->error_message = strdup(buf);
-    }
-    {
-        int oc = 0, sc = 0, inst = 0;
-        const gm82_decoded_object_list *mo = gm82_materialize_get_objects();
-        const gm82_script_list *ms = gm82_materialize_get_scripts();
-        if (mo) oc = mo->count;
-        if (ms) sc = ms->count;
-        for (int32_t ri = 0; ri < ir->room_count; ri++)
-            inst += ir->rooms[ri].instance_count;
-        fprintf(stderr,
-            "GM82_MATERIALIZE_STATS sprites=%d bgs=%d rooms=%d objects=%d scripts=%d instances=%d complete=%d\n",
-            ir->sprite_count, ir->background_count, ir->room_count, oc, sc, inst,
-            ir->complete ? 1 : 0);
     }
     return ir->complete;
 }

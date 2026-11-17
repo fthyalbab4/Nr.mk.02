@@ -26,15 +26,19 @@ extern "C" {
 typedef struct gm82_text_runtime_bundle {
     gm82_decoded_object_list     objects;
     gm82_decoded_sprite_list     sprites;
+    gm82_sprite_group_list       sprite_groups;
     gm82_decoded_background_list backgrounds;
     gm82_decoded_room_list       rooms;
     gm82_script_list             scripts;
+    gm82_decoded_sound_list      sounds;
     int object_name_count;
     char **object_names;      /* object_index -> name, for GML name lookups */
     int sprite_name_count;
     char **sprite_names;
     int background_name_count;
     char **background_names;
+    int sound_name_count;
+    char **sound_names;
     bool valid;
 } gm82_text_runtime_bundle;
 

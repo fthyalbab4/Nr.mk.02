@@ -55,6 +55,10 @@ int gm82_dequeue_sound_command(int *out_kind, int *out_sound_id, int *out_loop, 
     return 1;
 }
 
+extern double gml_sound_play(double sound_index);
+extern double gml_sound_loop(double sound_index);
+extern double gml_sound_stop_all(void);
+
 int gm82_sound_play(gm82_sound_runtime *sr, int sound_index, int loop) {
     if (!sr) return 0;
     sr->play_count++;
@@ -65,6 +69,10 @@ int gm82_sound_play(gm82_sound_runtime *sr, int sound_index, int loop) {
         sr->queue[sr->queue_len].volume = vol;
         sr->queue[sr->queue_len].loop = loop;
         sr->queue_len++;
+    }
+    if (gm82_opensles_is_active()) {
+        if (loop) gml_sound_loop((double)sound_index);
+        else gml_sound_play((double)sound_index);
     }
     gm82_enqueue_sound_command(1, sound_index, loop, 0, (float)vol);
     return 1;
@@ -81,6 +89,7 @@ int gm82_sound_play_by_name(gm82_sound_runtime *sr, const char *name, int loop) 
 
 void gm82_sound_stop_all(gm82_sound_runtime *sr) {
     if (sr) sr->queue_len = 0;
+    gml_sound_stop_all();
     gm82_opensles_stop_all();
 }
 

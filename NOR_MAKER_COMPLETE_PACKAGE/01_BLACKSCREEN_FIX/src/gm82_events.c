@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
-#include "gm82_int_read.h"
 #include "gm82_events.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_input.h"
@@ -151,25 +150,17 @@ static const char *find_gml(gm82_gml_bind *arr, int n, gm82_runtime *rt, int32_t
 static void fire_object_create_actions(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
-    int depth = 0;
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        const gm82_decoded_object *obj = &rt->objects->items[oi];
-        bool fired = false;
-        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-            const gm82_decoded_event *ev = &obj->events[e];
-            if (ev->main_type != GM82_EV_CREATE) continue;
-            fired = true;
-            if (ev->action_name0[0])
-                gm82_action_execute_named(rt, inst, ev->action_name0);
-            if (ev->code_snippet && ev->code_snippet[0]) {
-                gm82_gml_set_self(inst);
-                gm82_gml_eval_block(rt, inst, ev->code_snippet);
-            }
+    if (oi < 0 || oi >= rt->objects->count) return;
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type != GM82_EV_CREATE) continue;
+        if (ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
-        if (fired) break;
-        int parent_i = obj->parent_index;
-        if (parent_i < 0 || parent_i == oi) break;
-        oi = parent_i;
     }
 }
 
@@ -209,28 +200,20 @@ void gm82_events_fire_create_all(gm82_runtime *rt) {
 void gm82_events_fire_destroy(gm82_runtime *rt, gm82_instance *inst) {
     if (!rt || !inst || !rt->objects) return;
     int32_t oi = inst->object_index;
-    int depth = 0;
+    if (oi < 0 || oi >= rt->objects->count) return;
     gm82_gml_set_runtime(rt);
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        const gm82_decoded_object *obj = &rt->objects->items[oi];
-        bool fired = false;
-        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-            const gm82_decoded_event *ev = &obj->events[e];
-            if (ev->main_type == GM82_EV_DESTROY) {
-                fired = true;
-                if (ev->action_name0[0]) {
-                    gm82_action_execute_named(rt, inst, ev->action_name0);
-                }
-                if (ev->code_snippet && ev->code_snippet[0]) {
-                    gm82_gml_set_self(inst);
-                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                }
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == GM82_EV_DESTROY) {
+            if (ev->action_name0[0]) {
+                gm82_action_execute_named(rt, inst, ev->action_name0);
+            }
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, ev->code_snippet);
             }
         }
-        if (fired) break;
-        int parent_i = obj->parent_index;
-        if (parent_i < 0 || parent_i == oi) break;
-        oi = parent_i;
     }
 }
 
@@ -239,14 +222,11 @@ void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_ind
     if (!rt || !inst || !inst->alive || alarm_index < 0 || alarm_index >= 12) return;
     gm82_gml_set_runtime(rt);
     int32_t oi = inst->object_index;
-    int depth = 0;
-    while (oi >= 0 && rt->objects && oi < rt->objects->count && depth++ < 32) {
+    if (oi >= 0 && rt->objects && oi < rt->objects->count) {
         const gm82_decoded_object *obj = &rt->objects->items[oi];
-        bool fired = false;
         for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
             const gm82_decoded_event *ev = &obj->events[e];
             if (ev->main_type == GM82_EV_ALARM && ev->event_numb == alarm_index) {
-                fired = true;
                 if (ev->action_name0[0]) {
                     gm82_action_execute_named(rt, inst, ev->action_name0);
                 }
@@ -256,10 +236,6 @@ void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_ind
                 }
             }
         }
-        if (fired) break;
-        int parent_i = obj->parent_index;
-        if (parent_i < 0 || parent_i == oi) break;
-        oi = parent_i;
     }
     gm82_alarm_fire_scripts(rt, inst, alarm_index);
 }
@@ -267,40 +243,23 @@ void gm82_events_fire_alarm(gm82_runtime *rt, gm82_instance *inst, int alarm_ind
 /* GM82_EV_COLLISION = 4 */
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other) {
     if (!rt || !inst || !rt->objects) return;
-    gm82_instance *previous_self = gm82_gml_get_self();
-    gm82_instance *previous_other = gm82_gml_get_other();
-    gm82_gml_set_self(inst);
-    gm82_gml_set_other(other);
     int32_t oi = inst->object_index;
-    int depth = 0;
+    if (oi < 0 || oi >= rt->objects->count) return;
     gm82_gml_set_runtime(rt);
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        const gm82_decoded_object *obj = &rt->objects->items[oi];
-        bool fired = false;
-        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-            const gm82_decoded_event *ev = &obj->events[e];
-            if (ev->main_type != GM82_EV_COLLISION) continue;
-            if (other && ev->event_numb >= 0 && !gm82_instance_matches_object(rt, other, ev->event_numb))
-                continue;
-            fired = true;
-            if (ev->action_name0[0]) {
-                gm82_gml_set_self(inst);
-                gm82_gml_set_other(other);
-                gm82_action_execute_named(rt, inst, ev->action_name0);
-            }
-            if (ev->code_snippet && ev->code_snippet[0]) {
-                gm82_gml_set_self(inst);
-                gm82_gml_set_other(other);
-                gm82_gml_eval_block(rt, inst, ev->code_snippet);
-            }
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type != GM82_EV_COLLISION) continue;
+        if (other && ev->event_numb >= 0 && ev->event_numb != other->object_index)
+            continue;
+        if (ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, ev->code_snippet);
         }
-        if (fired) break;
-        int parent_i = obj->parent_index;
-        if (parent_i < 0 || parent_i == oi) break;
-        oi = parent_i;
     }
-    if (rt->actions) gm82_actions_fire_collision(rt, inst, other, rt->actions);
-    if (other && other->alive && rt->objects && !rt->actions) {
+    if (other && other->alive && rt->objects) {
         int32_t oj = other->object_index;
         if (oj >= 0 && oj < rt->objects->count) {
             const gm82_decoded_object *o2 = &rt->objects->items[oj];
@@ -316,47 +275,36 @@ void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_inst
             }
         }
     }
-    gm82_gml_set_self(previous_self);
-    gm82_gml_set_other(previous_other);
 }
 
 /* Helper to fire object event for a specific main_type and event_numb */
 static void fire_object_ev(gm82_runtime *rt, gm82_instance *inst,
                            int main_type, int event_numb) {
     if (!rt || !inst || !inst->alive || !rt->objects) return;
-    int oi = inst->object_index;
-    int depth = 0;
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        const gm82_decoded_object *obj = &rt->objects->items[oi];
-        bool fired = false;
-        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-            const gm82_decoded_event *ev = &obj->events[e];
-            if (ev->main_type != main_type) continue;
-            if (event_numb >= 0) {
-                if (main_type == GM82_EV_STEP && event_numb == GM82_STEP_NORMAL) {
-                    if (ev->event_numb != 0 && ev->event_numb != -1) continue;
-                } else if (main_type == GM82_EV_DRAW && event_numb == 0) {
-                    if (ev->event_numb != 0 && ev->event_numb != -1) continue;
-                } else if (main_type == GM82_EV_DRAW && event_numb == 1) {
-                    if (ev->event_numb != 1 && ev->event_numb != 72) continue;
-                } else if (main_type == GM82_EV_DRAW && event_numb == 2) {
-                    if (ev->event_numb != 2 && ev->event_numb != 73 && ev->event_numb != 64) continue;
-                } else {
-                    if (ev->event_numb != event_numb) continue;
-                }
-            }
-            fired = true;
-            if (ev->action_name0[0])
-                gm82_action_execute_named(rt, inst, ev->action_name0);
-            if (ev->code_snippet && ev->code_snippet[0]) {
-                gm82_gml_set_self(inst);
-                gm82_gml_eval_block(rt, inst, ev->code_snippet);
+    if (inst->object_index < 0 || inst->object_index >= rt->objects->count) return;
+    const gm82_decoded_object *obj = &rt->objects->items[inst->object_index];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type != main_type) continue;
+        if (event_numb >= 0) {
+            if (main_type == GM82_EV_STEP && event_numb == GM82_STEP_NORMAL) {
+                if (ev->event_numb != 0 && ev->event_numb != -1) continue;
+            } else if (main_type == GM82_EV_DRAW && event_numb == 0) {
+                if (ev->event_numb != 0 && ev->event_numb != -1) continue;
+            } else if (main_type == GM82_EV_DRAW && event_numb == 1) {
+                if (ev->event_numb != 1 && ev->event_numb != 72) continue;
+            } else if (main_type == GM82_EV_DRAW && event_numb == 2) {
+                if (ev->event_numb != 2 && ev->event_numb != 73 && ev->event_numb != 64) continue;
+            } else {
+                if (ev->event_numb != event_numb) continue;
             }
         }
-        if (fired) break;
-        int parent_i = obj->parent_index;
-        if (parent_i < 0 || parent_i == oi) break;
-        oi = parent_i;
+        if (ev->action_name0[0])
+            gm82_action_execute_named(rt, inst, ev->action_name0);
+        if (ev->code_snippet && ev->code_snippet[0]) {
+            gm82_gml_set_self(inst);
+            gm82_gml_eval_block(rt, inst, ev->code_snippet);
+        }
     }
 }
 
@@ -420,28 +368,38 @@ void gm82_events_fire_keyboard_all(gm82_runtime *rt) {
         gm82_instance *inst = snapshot[i];
         if (!inst || !inst->alive) continue;
         int32_t oi = inst->object_index;
-        int depth = 0;
-        while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-            const gm82_decoded_object *obj = &rt->objects->items[oi];
-            bool fired = false;
-            for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-                const gm82_decoded_event *ev = &obj->events[e];
-                if (ev->main_type == GM82_EV_KEYBOARD) { /* Keyboard held */
-                    if (ev->event_numb > 0 && gml_keyboard_check((double)ev->event_numb)) {
-                        fired = true;
-                        if (ev->action_name0[0])
-                            gm82_action_execute_named(rt, inst, ev->action_name0);
-                        if (ev->code_snippet && ev->code_snippet[0]) {
-                            gm82_gml_set_self(inst);
-                            gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                        }
+        if (oi < 0 || oi >= rt->objects->count) continue;
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == GM82_EV_KEYBOARD) { /* Keyboard held */
+                if (ev->event_numb > 0 && gml_keyboard_check((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            } else if (ev->main_type == GM82_EV_KEYPRESS) { /* Key press */
+                if (ev->event_numb > 0 && gml_keyboard_check_pressed((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
+                    }
+                }
+            } else if (ev->main_type == GM82_EV_KEYRELEASE) { /* Key release */
+                if (ev->event_numb > 0 && gml_keyboard_check_released((double)ev->event_numb)) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
                     }
                 }
             }
-            if (fired) break;
-            int parent_i = obj->parent_index;
-            if (parent_i < 0 || parent_i == oi) break;
-            oi = parent_i;
         }
     }
 }
@@ -458,51 +416,43 @@ void gm82_events_fire_mouse_all(gm82_runtime *rt) {
         gm82_instance *inst = snapshot[i];
         if (!inst || !inst->alive) continue;
         int32_t oi = inst->object_index;
-        int depth = 0;
+        if (oi < 0 || oi >= rt->objects->count) continue;
         int32_t sw = 16, sh = 16;
         if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
             sw = rt->sprites->frames[inst->sprite_index].width;
             sh = rt->sprites->frames[inst->sprite_index].height;
         }
         bool inside = (mx >= inst->x && mx < inst->x + sw && my >= inst->y && my < inst->y + sh);
-        while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-            const gm82_decoded_object *obj = &rt->objects->items[oi];
-            bool fired = false;
-            for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-                const gm82_decoded_event *ev = &obj->events[e];
-                if (ev->main_type == GM82_EV_MOUSE) {
-                    int ev_num = ev->event_numb;
-                    bool fire = false;
+        const gm82_decoded_object *obj = &rt->objects->items[oi];
+        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+            const gm82_decoded_event *ev = &obj->events[e];
+            if (ev->main_type == GM82_EV_MOUSE) {
+                int ev_num = ev->event_numb;
+                bool fire = false;
 
-                    if (ev_num >= 0 && ev_num <= 2) { /* Local Held Down */
-                        fire = inside && gml_mouse_check_button((double)ev_num);
-                    } else if (ev_num >= 4 && ev_num <= 6) { /* Local Pressed */
-                        fire = inside && gml_mouse_check_button_pressed((double)(ev_num - 4));
-                    } else if (ev_num >= 7 && ev_num <= 9) { /* Local Released */
-                        fire = inside && gml_mouse_check_button_released((double)(ev_num - 7));
-                    } else if (ev_num >= 50 && ev_num <= 52) { /* Global Held Down */
-                        fire = gml_mouse_check_button((double)(ev_num - 50));
-                    } else if (ev_num >= 53 && ev_num <= 55) { /* Global Pressed */
-                        fire = gml_mouse_check_button_pressed((double)(ev_num - 53));
-                    } else if (ev_num >= 56 && ev_num <= 58) { /* Global Released */
-                        fire = gml_mouse_check_button_released((double)(ev_num - 56));
-                    }
+                if (ev_num >= 0 && ev_num <= 2) { /* Local Held Down */
+                    fire = inside && gml_mouse_check_button((double)ev_num);
+                } else if (ev_num >= 4 && ev_num <= 6) { /* Local Pressed */
+                    fire = inside && gml_mouse_check_button_pressed((double)(ev_num - 4));
+                } else if (ev_num >= 7 && ev_num <= 9) { /* Local Released */
+                    fire = inside && gml_mouse_check_button_released((double)(ev_num - 7));
+                } else if (ev_num >= 50 && ev_num <= 52) { /* Global Held Down */
+                    fire = gml_mouse_check_button((double)(ev_num - 50));
+                } else if (ev_num >= 53 && ev_num <= 55) { /* Global Pressed */
+                    fire = gml_mouse_check_button_pressed((double)(ev_num - 53));
+                } else if (ev_num >= 56 && ev_num <= 58) { /* Global Released */
+                    fire = gml_mouse_check_button_released((double)(ev_num - 56));
+                }
 
-                    if (fire) {
-                        fired = true;
-                        if (ev->action_name0[0])
-                            gm82_action_execute_named(rt, inst, ev->action_name0);
-                        if (ev->code_snippet && ev->code_snippet[0]) {
-                            gm82_gml_set_self(inst);
-                            gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                        }
+                if (fire) {
+                    if (ev->action_name0[0])
+                        gm82_action_execute_named(rt, inst, ev->action_name0);
+                    if (ev->code_snippet && ev->code_snippet[0]) {
+                        gm82_gml_set_self(inst);
+                        gm82_gml_eval_block(rt, inst, ev->code_snippet);
                     }
                 }
             }
-            if (fired) break;
-            int parent_i = obj->parent_index;
-            if (parent_i < 0 || parent_i == oi) break;
-            oi = parent_i;
         }
     }
 }
@@ -511,34 +461,21 @@ void gm82_events_fire_mouse_all(gm82_runtime *rt) {
 void gm82_events_fire_other(gm82_runtime *rt, gm82_instance *inst, int other_index) {
     if (!rt || !inst || !inst->alive || !rt->objects) return;
     int32_t oi = inst->object_index;
-    int depth = 0;
+    if (oi < 0 || oi >= rt->objects->count) return;
     gm82_gml_set_runtime(rt);
-    while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-        const gm82_decoded_object *obj = &rt->objects->items[oi];
-        bool fired = false;
-        for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-            const gm82_decoded_event *ev = &obj->events[e];
-            if (ev->main_type == GM82_EV_OTHER) {
-                if (other_index >= 0) {
-                    bool match = (ev->event_numb == other_index);
-                    if (other_index >= GM82_OTHER_USER0 && other_index <= GM82_OTHER_USER15)
-                        match = match || (ev->event_numb == other_index - GM82_OTHER_USER0);
-                    if (!match) continue;
-                }
-                fired = true;
-                if (ev->action_name0[0]) {
-                    gm82_action_execute_named(rt, inst, ev->action_name0);
-                }
-                if (ev->code_snippet && ev->code_snippet[0]) {
-                    gm82_gml_set_self(inst);
-                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                }
+    const gm82_decoded_object *obj = &rt->objects->items[oi];
+    for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
+        const gm82_decoded_event *ev = &obj->events[e];
+        if (ev->main_type == GM82_EV_OTHER) {
+            if (other_index >= 0 && ev->event_numb != other_index) continue;
+            if (ev->action_name0[0]) {
+                gm82_action_execute_named(rt, inst, ev->action_name0);
+            }
+            if (ev->code_snippet && ev->code_snippet[0]) {
+                gm82_gml_set_self(inst);
+                gm82_gml_eval_block(rt, inst, ev->code_snippet);
             }
         }
-        if (fired) break;
-        int parent_i = obj->parent_index;
-        if (parent_i < 0 || parent_i == oi) break;
-        oi = parent_i;
     }
 }
 
@@ -603,7 +540,7 @@ void gm82_events_fire_post_draw_all(gm82_runtime *rt) {
 }
 
 static int32_t ev_rd_i32(const uint8_t *p) {
-    return gm82_read_i32le(p);
+    return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
 }
 
 static uint8_t *ev_inflate(const uint8_t *src, size_t n, size_t *ol) {
@@ -685,93 +622,4 @@ int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size) {
         free(d);
     }
     return bound;
-}
-
-/* Compatibility entry points retained for gm82_runtime.c.  The parity
- * dispatcher above owns the event traversal; these wrappers only select the
- * relevant transition or synthetic event. */
-static void fire_key_transition_all(gm82_runtime *rt, int main_type, int transition) {
-    if (!rt || !rt->objects) return;
-    gm82_instance *snapshot[GM82_MAX_INSTANCES];
-    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
-    gm82_gml_set_runtime(rt);
-    for (int i = 0; i < count; i++) {
-        gm82_instance *inst = snapshot[i];
-        if (!inst || !inst->alive) continue;
-        int32_t oi = inst->object_index;
-        int depth = 0;
-        while (oi >= 0 && oi < rt->objects->count && depth++ < 32) {
-            const gm82_decoded_object *obj = &rt->objects->items[oi];
-            bool fired = false;
-            for (int e = 0; e < obj->event_count && e < GM82_OBJ_EVENT_MAX; e++) {
-                const gm82_decoded_event *ev = &obj->events[e];
-                if (ev->main_type != main_type || ev->event_numb < 0) continue;
-                bool hit = transition > 0
-                    ? gml_keyboard_check_pressed((double)ev->event_numb)
-                    : gml_keyboard_check_released((double)ev->event_numb);
-                if (!hit) continue;
-                fired = true;
-                if (ev->action_name0[0]) gm82_action_execute_named(rt, inst, ev->action_name0);
-                if (ev->code_snippet && ev->code_snippet[0]) {
-                    gm82_gml_set_self(inst);
-                    gm82_gml_eval_block(rt, inst, ev->code_snippet);
-                }
-            }
-            if (fired) break;
-            int parent_i = obj->parent_index;
-            if (parent_i < 0 || parent_i == oi) break;
-            oi = parent_i;
-        }
-    }
-}
-
-void gm82_events_fire_keypress_all(gm82_runtime *rt) {
-    fire_key_transition_all(rt, GM82_EV_KEYPRESS, 1);
-}
-
-void gm82_events_fire_keyrelease_all(gm82_runtime *rt) {
-    fire_key_transition_all(rt, GM82_EV_KEYRELEASE, 0);
-}
-
-void gm82_events_fire_user(gm82_runtime *rt, gm82_instance *inst, int user_index) {
-    if (user_index < 0 || user_index > 15) return;
-    gm82_events_fire_other(rt, inst, GM82_OTHER_USER0 + user_index);
-}
-
-void gm82_events_fire_outside_all(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_instance *snapshot[GM82_MAX_INSTANCES];
-    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
-    for (int i = 0; i < count; i++) {
-        gm82_instance *inst = snapshot[i];
-        if (!inst || !inst->alive) continue;
-        if (inst->x < 0 || inst->y < 0 || inst->x > rt->room_width || inst->y > rt->room_height)
-            gm82_events_fire_other(rt, inst, GM82_OTHER_OUTSIDE);
-    }
-}
-
-void gm82_events_fire_boundary_all(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_instance *snapshot[GM82_MAX_INSTANCES];
-    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
-    for (int i = 0; i < count; i++) {
-        gm82_instance *inst = snapshot[i];
-        if (!inst || !inst->alive) continue;
-        if (inst->x < 0 || inst->y < 0 || inst->x > rt->room_width || inst->y > rt->room_height)
-            gm82_events_fire_other(rt, inst, GM82_OTHER_BOUNDARY);
-    }
-}
-
-void gm82_events_fire_animation_end_all(gm82_runtime *rt) {
-    if (!rt) return;
-    gm82_instance *snapshot[GM82_MAX_INSTANCES];
-    int count = gm82_runtime_get_active_snapshot(rt, snapshot);
-    for (int i = 0; i < count; i++) {
-        gm82_instance *inst = snapshot[i];
-        if (!inst || !inst->alive || inst->image_speed == 0.0) continue;
-        double prev = inst->image_index;
-        double next = prev + inst->image_speed;
-        if ((int)next != (int)prev && (int)next < (int)prev)
-            gm82_events_fire_other(rt, inst, GM82_OTHER_ANIMATION_END);
-    }
 }

@@ -21,8 +21,6 @@
 #include "gm82_actions.h"
 #include "gm82_script.h"
 #include "gm82_sound_runtime.h"
-#include "gm82_sound_decode.h"
-#include "gm82_font_decode.h"
 
 #define LOG_TAG "NOR_NATIVE"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -55,8 +53,6 @@ static gm82_decoded_sprite_list g_engine_sprites;
 static gm82_decoded_background_list g_engine_bgs;
 static gm82_decoded_object_list g_engine_objs;
 static gm82_decoded_room_list g_engine_rooms;
-static gm82_decoded_sound_list g_engine_sounds;
-static gm82_decoded_font_list g_engine_fonts;
 static gm82_sprite_group_list g_engine_sprite_groups;
 static gm82_action_table g_engine_actions;
 static gm82_script_list g_engine_scripts;
@@ -113,7 +109,6 @@ typedef struct {
 
 /* --- Global Native State --- */
 static int g_runtime_active = 0;
-static int g_runtime_initialized = 0;
 static int g_current_room = 0;
 static int g_room_w = 640;
 static int g_room_h = 480;
@@ -226,14 +221,11 @@ static char *g_token_ctx = NULL;
 /* --- Native Runtime Lifecycle --- */
 JNIEXPORT jboolean JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeCreate(JNIEnv *env, jclass clazz, jint width, jint height) {
-    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
-    g_runtime_initialized = 0;
     g_runtime_active = 1;
     g_room_w = width > 0 ? width : 640;
     g_room_h = height > 0 ? height : 480;
     g_instance_count = 0;
     gm82_runtime_init(&g_engine_rt);
-    g_runtime_initialized = 1;
     g_engine_rt.room_width = g_room_w;
     g_engine_rt.room_height = g_room_h;
     g_engine_rt.running = 1;
@@ -245,16 +237,12 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeCreate(JNIEnv *env, jclas
 
 JNIEXPORT void JNICALL
 Java_com_normaker_nativefull_MainActivity_nativeRuntimeDestroy(JNIEnv *env, jclass clazz) {
-    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
-    g_runtime_initialized = 0;
     free_native_bitmaps(); free_native_scripts();
     g_runtime_active = 0;
     g_instance_count = 0;
     if (g_engine_loaded) {
         gm82_decoded_sprite_list_free(&g_engine_sprites);
         gm82_decoded_background_list_free(&g_engine_bgs);
-        gm82_decoded_sound_list_free(&g_engine_sounds);
-        gm82_decoded_font_list_free(&g_engine_fonts);
         free(g_engine_objs.items);
         for (int i = 0; i < g_engine_rooms.count; i++) {
             free(g_engine_rooms.items[i].instances);
@@ -360,22 +348,6 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetRoom(JNIEnv *env, jcla
         return g_engine_rt.current_room;
     }
     return g_current_room;
-}
-
-JNIEXPORT jint JNICALL
-Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetViewWidth(JNIEnv *env, jclass clazz) {
-    (void)env; (void)clazz;
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.view_w > 0)
-        return (jint)(g_engine_rt.view_w + 0.5);
-    return (jint)(g_room_w > 0 ? g_room_w : 640);
-}
-
-JNIEXPORT jint JNICALL
-Java_com_normaker_nativefull_MainActivity_nativeRuntimeGetViewHeight(JNIEnv *env, jclass clazz) {
-    (void)env; (void)clazz;
-    if (g_engine_loaded && g_runtime_active && g_engine_rt.view_h > 0)
-        return (jint)(g_engine_rt.view_h + 0.5);
-    return (jint)(g_room_h > 0 ? g_room_h : 480);
 }
 
 JNIEXPORT jstring JNICALL
@@ -715,10 +687,7 @@ Java_com_normaker_nativefull_MainActivity_nativeRuntimeRenderBitmap(JNIEnv *env,
                       g_engine_rt.current_room >= 0 &&
                       g_engine_rt.current_room < g_engine_rooms.count);
 
-    /* Keep rendering the current room even when an action temporarily clears
-       running.  The old guard left the Android Bitmap untouched and made the
-       native player appear black after import or a stop/restart transition. */
-    if (g_engine_loaded && g_runtime_active && room_valid) {
+    if (g_engine_loaded && g_runtime_active && g_engine_rt.running && room_valid) {
         if (!gm82_runtime_draw(&g_engine_rt, (uint8_t *)pixels, (int32_t)info.width, (int32_t)info.height)) {
             /* Fallback background clear on draw error */
             uint8_t *rgba = (uint8_t *)pixels;
@@ -1062,14 +1031,9 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     jbyte *data = (*env)->GetByteArrayElements(env, bytes, NULL);
     if (!data) return (*env)->NewStringUTF(env, "{\"ok\":false,\"error\":\"memory_error\"}");
 
-    if (g_runtime_initialized) gm82_runtime_cleanup(&g_engine_rt);
-    g_runtime_initialized = 0;
-
     if (g_engine_loaded) {
         gm82_decoded_sprite_list_free(&g_engine_sprites);
         gm82_decoded_background_list_free(&g_engine_bgs);
-        gm82_decoded_sound_list_free(&g_engine_sounds);
-        gm82_decoded_font_list_free(&g_engine_fonts);
         free(g_engine_objs.items);
         for (int i = 0; i < g_engine_rooms.count; i++) {
             free(g_engine_rooms.items[i].instances);
@@ -1084,8 +1048,6 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
 
     gm82_decoded_sprite_list_init(&g_engine_sprites);
     gm82_decoded_background_list_init(&g_engine_bgs);
-    memset(&g_engine_sounds, 0, sizeof(g_engine_sounds));
-    memset(&g_engine_fonts, 0, sizeof(g_engine_fonts));
     memset(&g_engine_objs, 0, sizeof(g_engine_objs));
     memset(&g_engine_rooms, 0, sizeof(g_engine_rooms));
     memset(&g_engine_actions, 0, sizeof(g_engine_actions));
@@ -1095,8 +1057,6 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     int n_bg = gm82_decode_backgrounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_bgs);
     int n_obj = gm82_decode_objects_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_objs);
     int n_rm = gm82_decode_rooms_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_rooms);
-    gm82_decode_sounds_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_sounds);
-    gm82_decode_fonts_from_gmk((const uint8_t *)data, (size_t)len, &g_engine_fonts);
     register_decoded_assets(&g_engine_sprites, &g_engine_bgs, &g_engine_objs);
     gm82_actions_scan_gmk((const uint8_t *)data, (size_t)len, &g_engine_actions);
     memset(&g_engine_scripts, 0, sizeof(g_engine_scripts));
@@ -1108,14 +1068,12 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     (*env)->ReleaseByteArrayElements(env, bytes, data, JNI_ABORT);
 
     gm82_runtime_init(&g_engine_rt);
-    g_runtime_initialized = 1;
     gm82_runtime_bind_assets(&g_engine_rt,
         &g_engine_objs,
         &g_engine_sprites,
         &g_engine_bgs,
         &g_engine_rooms,
         &g_engine_actions);
-    gm82_runtime_bind_resources(&g_engine_rt, &g_engine_sounds, &g_engine_fonts);
     gm82_runtime_bind_sprite_groups(&g_engine_rt, &g_engine_sprite_groups);
     gm82_runtime_bind_scripts(&g_engine_rt, &g_engine_scripts);
     gm82_input_init(&g_engine_input);
@@ -1128,14 +1086,10 @@ Java_com_normaker_nativefull_MainActivity_nativeImportGmkSnapshot(JNIEnv *env, j
     g_runtime_active = 1;
     g_engine_loaded = 1;
 
-    int first_room_instances = n_rm > 0 ? g_engine_rooms.items[0].instance_count : 0;
-    int first_room_width = n_rm > 0 ? g_engine_rooms.items[0].width : 0;
-    int first_room_height = n_rm > 0 ? g_engine_rooms.items[0].height : 0;
-    char buf[768];
+    char buf[512];
     snprintf(buf, sizeof(buf),
-        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"firstRoomWidth\":%d,\"firstRoomHeight\":%d,\"firstRoomInstances\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
-        n_spr, n_bg, n_obj, n_rm, first_room_width, first_room_height, first_room_instances,
-        g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
+        "{\"ok\":true,\"status\":\"ok\",\"sprites\":%d,\"backgrounds\":%d,\"objects\":%d,\"rooms\":%d,\"registeredResources\":%d,\"registeredObjects\":%d,\"complete\":%s}",
+        n_spr, n_bg, n_obj, n_rm, g_resource_count, g_object_count, (n_spr > 0 && n_rm > 0) ? "true" : "false");
 
     return (*env)->NewStringUTF(env, buf);
 }

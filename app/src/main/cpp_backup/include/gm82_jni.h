@@ -25,7 +25,6 @@ bool gm82_native_load_game(const char *path, char *err, int err_len);
 /* Frame */
 void gm82_native_resize(int w, int h);
 void gm82_native_step(void);          /* one game frame */
-void gm82_native_step_dt(double dt);  /* fixed-dt / high-FPS host step */
 void gm82_native_draw(void);          /* render to current GL context – STUB until GL wired */
 /* Software frame as tightly packed RGBA8888; valid until the next frame call or shutdown. */
 const uint8_t *gm82_native_frame_rgba(int *w, int *h);

@@ -1,7 +1,6 @@
 #ifndef GM82_EVENTS_H
 #define GM82_EVENTS_H
 
-#include "gm82_gml_builtins.h"
 #include "gm82_runtime.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -92,6 +91,7 @@ void gm82_events_fire_draw_single(gm82_runtime *rt, gm82_instance *inst);
 bool gm82_events_has_draw_event(gm82_runtime *rt, gm82_instance *inst);
 void gm82_events_fire_post_draw_all(gm82_runtime *rt);
 void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other);
+void gm82_events_fire_inherited(gm82_runtime *rt, gm82_instance *inst);
 const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index);
 void gm82_events_clear_gml_bindings(void);
 bool gm82_events_bind_gml_step(const char *object_name_prefix, const char *code);

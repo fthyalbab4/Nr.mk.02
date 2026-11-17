@@ -41,19 +41,3 @@
 ## 2026-10-26 - Drag-and-Drop Container Keyboard Accessibility & Focus Parity
 **Learning:** File drop zones acting as click-and-drag file upload triggers often omit `tabindex="0"`, `role="button"`, `:focus-visible` outlines, and keyboard keydown listeners (`Enter`/`Space`), making file selection completely inaccessible to keyboard-only and screen reader users. Furthermore, internal trigger buttons inside the container must carry `tabindex="-1"` to prevent redundant focus stops.
 **Action:** Provide `tabindex="0"`, `role="button"`, explicit `:focus-visible` styling, and `Enter`/`Space` keydown handlers on interactive drop containers while eliminating duplicate focus stops on nested child buttons.
-
-## 2026-10-28 - Editor Toolbar Button ARIA State & Keyboard Focus Ring Parity
-**Learning:** In editor toolbars (such as image, room, or tile editors), icon-only tool buttons using title attributes omit `aria-label`, active state `aria-pressed`, and `focus-visible` rings, rendering tool names and toggle statuses unannounced to screen readers and invisible during keyboard tabbing.
-**Action:** Always bind `aria-label={title}`, `aria-pressed={active !== undefined ? (active ? "true" : "false") : undefined}`, and `focus-visible:ring-1` to reusable icon tool button components.
-
-## 2026-10-29 - Home & End Boundary Keyboard Navigation for Card Grids
-**Learning:** In extensive interactive card grids (such as catalog overlays containing dozens or hundreds of items), directional arrow keys alone require numerous keypresses to navigate between distant items. Adding `Home` (jump to first card) and `End` (jump to last card) key listeners on grid card elements enables instant boundary jumping for keyboard and screen-reader users.
-**Action:** Always bind `Home` and `End` key listeners on interactive grid card focus targets to shift focus directly to the grid's first (`querySelector('.card')`) or last (`querySelectorAll('.card')`) child element.
-
-## 2026-11-02 - PageUp & PageDown Chunked Keyboard Navigation for Catalog Grids
-**Learning:** While single-step arrow keys and boundary `Home`/`End` keys allow stepping and jump-to-ends in large catalog grids, traversing multi-dozen item collections without intermediate chunk jumping forces users to hold arrow keys or tab extensively. Adding standard `PageDown` (+10 cards) and `PageUp` (-10 cards) key listeners clamped to grid boundaries allows keyboard users to paginate smoothly through dense catalogs.
-**Action:** Always bind `PageDown` and `PageUp` key listeners on interactive catalog card elements to jump forward or backward by a logical batch size (e.g., 10 cards) while preventing default document scrolling.
-
-## 2026-11-04 - Bidirectional Keyboard Return Flow for Modal Catalog Filters
-**Learning:** In interactive catalog modals where users navigate down into dense result grids, keyboard users have no direct way to return focus to upper search and filtering inputs without repeated `Shift+Tab` cycles or scrolling back up. Binding `Escape` on focused grid cards to return focus to the search bar (with `stopPropagation` to avoid prematurely closing the modal) and binding `ArrowUp` on the search input to jump to the category select creates an intuitive, bidirectional loop across filter controls and catalog items.
-**Action:** Intercept `Escape` on interactive catalog card items to safely refocus the search input, and bind `ArrowUp` on the search input to step focus back into prior filter dropdown controls.

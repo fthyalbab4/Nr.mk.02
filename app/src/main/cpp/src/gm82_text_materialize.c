@@ -104,37 +104,71 @@ static void read_background_txt(const char *path, gm82_res_background *b) {
     fclose(f);
 }
 
-static bool materialize_one_sprite(const char *root, const char *name, gm82_res_sprite *s) {
+static bool push_text_frame(gm82_decoded_sprite_list *L, const char *name, const gm82_png_image *img, int32_t ox, int32_t oy) {
+    if (!L || !img || !img->rgba) return false;
+    if (L->count >= L->capacity) {
+        int nc = L->capacity ? L->capacity * 2 : 32;
+        gm82_decoded_frame *nf = (gm82_decoded_frame *)realloc(L->frames, (size_t)nc * sizeof(*nf));
+        if (!nf) return false;
+        L->frames = nf;
+        L->capacity = nc;
+    }
+    gm82_decoded_frame *f = &L->frames[L->count++];
+    memset(f, 0, sizeof(*f));
+    snprintf(f->name, sizeof(f->name), "%s", name ? name : "");
+    f->width = img->width;
+    f->height = img->height;
+    f->origin_x = ox;
+    f->origin_y = oy;
+    f->rgba_size = img->rgba_size;
+    f->rgba = img->rgba;
+    gm82_frame_build_bitmask(f, 16);
+    return true;
+}
+
+static bool materialize_one_sprite(const char *root, const char *name, gm82_res_sprite *s,
+                                   gm82_decoded_sprite_list *frames, gm82_sprite_group *grp) {
     char dir[1200], meta[1400], frame_path[1500];
     snprintf(dir, sizeof(dir), "%s/sprites/%s", root, name);
     snprintf(meta, sizeof(meta), "%s/sprite.txt", dir);
     read_sprite_txt(meta, s);
 
-    int frames = s->subimage_count > 0 ? s->subimage_count : 1;
-    /* Prefer frame 0; fall back to the first available frame index. */
-    gm82_png_image img = {0};
-    bool loaded = false;
-    for (int i = 0; i < frames && !loaded; ++i) {
+    int frames_n = s->subimage_count > 0 ? s->subimage_count : 1;
+    int32_t start = frames->count;
+    int32_t loaded_cnt = 0;
+    for (int i = 0; i < frames_n; ++i) {
         snprintf(frame_path, sizeof(frame_path), "%s/%d.png", dir, i);
         if (!file_exists(frame_path)) continue;
-        if (gm82_png_decode_file(frame_path, &img)) loaded = true;
+        gm82_png_image img = {0};
+        if (gm82_png_decode_file(frame_path, &img)) {
+            if (loaded_cnt == 0) {
+                s->width = img.width;
+                s->height = img.height;
+                s->rgba_size = img.rgba_size;
+                s->rgba = (uint8_t *)malloc(img.rgba_size);
+                if (s->rgba) memcpy(s->rgba, img.rgba, img.rgba_size);
+                if (s->bbox_right == 0 && s->bbox_bottom == 0) {
+                    s->bbox_right = img.width - 1;
+                    s->bbox_bottom = img.height - 1;
+                }
+            }
+            push_text_frame(frames, name, &img, s->origin_x, s->origin_y);
+            loaded_cnt++;
+        }
     }
-    if (!loaded) {
-        /* Some projects only keep a single unnamed frame. */
-        snprintf(frame_path, sizeof(frame_path), "%s/0.png", dir);
-        loaded = gm82_png_decode_file(frame_path, &img);
+    if (grp) {
+        memset(grp, 0, sizeof(*grp));
+        snprintf(grp->name, sizeof(grp->name), "%s", name ? name : "");
+        grp->frame_start = start;
+        grp->frame_count = loaded_cnt;
+        grp->width = s->width;
+        grp->height = s->height;
     }
-    if (!loaded) return false;
-
-    s->width = img.width;
-    s->height = img.height;
-    s->rgba = img.rgba;
-    s->rgba_size = img.rgba_size;
-    if (s->subimage_count <= 0) s->subimage_count = 1;
-    if (s->bbox_right == 0 && s->bbox_bottom == 0) {
-        s->bbox_right = img.width - 1;
-        s->bbox_bottom = img.height - 1;
+    if (loaded_cnt == 0) {
+        /* Keep index parity with an empty slot if sprite has 0 frames */
+        return s->subimage_count == 0;
     }
+    if (s->subimage_count <= 0) s->subimage_count = loaded_cnt;
     s->status = GM82_RES_DECODED;
     return true;
 }
@@ -172,7 +206,11 @@ gm82_text_materialize_result gm82_text_materialize_assets(gm82_project_ir *ir) {
             free(ir->sprites[i].gl_textures);
         }
         free(ir->sprites);
+        gm82_decoded_sprite_list_free(&ir->decoded_frames);
+        gm82_sprite_group_list_free(&ir->sprite_groups);
         ir->sprites = (gm82_res_sprite *)calloc((size_t)sprite_n, sizeof(gm82_res_sprite));
+        ir->sprite_groups.items = (gm82_sprite_group *)calloc((size_t)sprite_n, sizeof(gm82_sprite_group));
+        ir->sprite_groups.count = ir->sprite_groups.items ? sprite_n : 0;
         if (!ir->sprites) {
             ir->sprite_count = 0;
             r.sprites_failed = sprite_n;
@@ -183,8 +221,11 @@ gm82_text_materialize_result gm82_text_materialize_assets(gm82_project_ir *ir) {
                 s->id = i;
                 s->name = strdup(sprite_names[i]);
                 s->subimage_count = 1;
-                if (materialize_one_sprite(root, sprite_names[i], s)) r.sprites_decoded++;
-                else {
+                gm82_sprite_group *grp = (ir->sprite_groups.items && i < ir->sprite_groups.count) ? &ir->sprite_groups.items[i] : NULL;
+                if (materialize_one_sprite(root, sprite_names[i], s, &ir->decoded_frames, grp)) {
+                    s->status = GM82_RES_DECODED;
+                    r.sprites_decoded++;
+                } else {
                     s->status = GM82_RES_PARTIAL;
                     r.sprites_failed++;
                 }

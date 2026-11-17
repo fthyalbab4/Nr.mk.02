@@ -2,7 +2,8 @@
 #include "gm82_native_bridge.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_sound_runtime.h"
-#include "gm82_gml_eval.h"
+#include "gm82_actions.h"
+#include "gm82_ged_extensions.h"
 #include "gml_vm.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,6 +59,26 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
 
     #define ARG_R(idx) ((idx < count && (args[idx].kind == GML_V_REAL || args[idx].kind == GML_V_BOOL)) ? args[idx].real : 0.0)
     #define ARG_S(idx) ((idx < count && args[idx].kind == GML_V_STRING && args[idx].string) ? args[idx].string : "")
+
+    if (strncmp(name, "action_", 7) == 0) {
+        gm82_action_arg aargs[GM82_ACTION_MAX_ARGS];
+        memset(aargs, 0, sizeof(aargs));
+        int ac = (int)(count > GM82_ACTION_MAX_ARGS ? GM82_ACTION_MAX_ARGS : count);
+        for (int i = 0; i < ac; i++) {
+            if (args[i].kind == GML_V_STRING && args[i].string) {
+                aargs[i].is_string = 1;
+                snprintf(aargs[i].str, sizeof(aargs[i].str), "%s", args[i].string);
+                aargs[i].num = atof(args[i].string);
+            } else {
+                aargs[i].num = (args[i].kind == GML_V_REAL || args[i].kind == GML_V_BOOL) ? args[i].real : 0.0;
+            }
+        }
+        double res = 0.0;
+        if (gm82_action_call_args(gm82_gml_get_runtime(), gm82_gml_get_self(), name, aargs, ac, &res)) {
+            *out = gml_value_real(res);
+            return 1;
+        }
+    }
 
     /* Math built-ins */
     if (strcmp(name, "point_distance") == 0 && count >= 4) {
@@ -121,12 +142,6 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     if (strcmp(name, "date_year_span") == 0 && count == 2) { *out = gml_value_real(gml_date_year_span(ARG_R(0), ARG_R(1))); return 1; }
 
     /* String built-ins */
-    if (strcmp(name, "filename_name") == 0 && count >= 1) { gml_filename_name(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_path") == 0 && count >= 1) { gml_filename_path(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_dir") == 0 && count >= 1) { gml_filename_dir(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_drive") == 0 && count >= 1) { gml_filename_drive(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_ext") == 0 && count >= 1) { gml_filename_ext(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_change_ext") == 0 && count >= 2) { gml_filename_change_ext(ARG_S(0), ARG_S(1)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
     if (strcmp(name, "string_length") == 0 && count >= 1) {
         *out = gml_value_real((double)strlen(ARG_S(0)));
         return 1;
@@ -611,58 +626,6 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
         *out = gml_value_real(gml_instance_number(ARG_R(0)));
         return 1;
     }
-    if (strcmp(name, "instance_place") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_place(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_place_list") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_place_list(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_position") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_position(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_position_list") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_position_list(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_x") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_x(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_y") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_y(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_speed") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_speed(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_closed") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_closed(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_length") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_length(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_width") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_width(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_height") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_height(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_add_point") == 0 && count >= 3) {
-        *out = gml_value_real(gml_path_add_point_ext(ARG_R(0), ARG_R(1), ARG_R(2), count >= 4 ? ARG_R(3) : 100.0));
-        return 1;
-    }
-    if (strcmp(name, "path_clear_points") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_clear_points(ARG_R(0)));
-        return 1;
-    }
     if (strcmp(name, "room_goto") == 0 && count >= 1) {
         *out = gml_value_real(gml_room_goto(ARG_R(0)));
         return 1;
@@ -699,6 +662,10 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "event_user") == 0 && count >= 1) {
         *out = gml_value_real(gml_event_user(ARG_R(0)));
+        return 1;
+    }
+
+    if (gm82_ged_call(name, args, count, out)) {
         return 1;
     }
 

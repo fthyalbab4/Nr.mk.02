@@ -2,6 +2,13 @@
 #define GM82_PROJECT_IR_H
 
 #include "gm82_gmk_format.h"
+#include "gm82_object_room_decode.h"
+#include "gm82_sprite_decode.h"
+#include "gm82_sound_decode.h"
+#include "gm82_script.h"
+#include "gm82_path.h"
+#include "gm82_timeline.h"
+#include "gm82_font_decode.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -10,7 +17,7 @@
 extern "C" {
 #endif
 
-#define GM82_IR_VERSION 5
+#define GM82_IR_VERSION 6
 
 typedef struct gm82_res_sprite {
     int32_t id;
@@ -23,7 +30,7 @@ typedef struct gm82_res_sprite {
     int32_t smooth, preload;
     int32_t subimage_count;
     uint32_t *gl_textures;
-    /* CPU pixel data after materialize (RGBA, width*height*4 per frame concatenated or first frame) */
+    /* CPU pixel data after materialize (frame 0; full subimages stored in decoded_frames) */
     uint8_t  *rgba;
     size_t    rgba_size;
     gm82_resource_status status;
@@ -84,11 +91,18 @@ typedef struct gm82_res_room {
     bool    persistent;
     int32_t snap_x, snap_y;
     bool    isometric;
+    int32_t background_color;
+    bool    draw_background_color;
+    char   *creation_code;
     int32_t background_count;
     int32_t *background_ids;
     bool    *background_visible;
     bool    *background_foreground;
     int32_t *background_x, *background_y;
+    bool    *background_htiled, *background_vtiled;
+    int32_t *background_hspeed, *background_vspeed;
+    bool    *background_stretch;
+    bool    views_enabled;
     int32_t view_count;
     gm82_room_view *views;
     int32_t instance_count;
@@ -177,12 +191,15 @@ typedef struct gm82_project_ir {
     int32_t room_count;
     gm82_res_room *rooms;
     int32_t object_count;
-    /* Resource names in declaration order (index.yyd), owned by the IR.
-     * Needed because instances/tiles reference resources by name. */
+    /* Resource names in declaration order (index.yyd), owned by the IR. */
     int32_t object_name_count;
     char  **object_names;
     int32_t background_name_count;
     char  **background_names;
+    int32_t sprite_name_count;
+    char  **sprite_names;
+    int32_t sound_name_count;
+    char  **sound_names;
     int32_t sound_count;
     int32_t script_count;
     gm82_project_settings settings;
@@ -192,6 +209,21 @@ typedef struct gm82_project_ir {
     gm82_res_included_file *included_files;
     int32_t trigger_count;
     gm82_res_trigger *triggers;
+
+    /* Owned complete runtime decode data (populated by stream & text loaders) */
+    gm82_decoded_sprite_list  decoded_frames;
+    gm82_sprite_group_list    sprite_groups;
+    gm82_decoded_object_list  decoded_objects;
+    gm82_script_list          decoded_scripts;
+    gm82_decoded_sound_list   decoded_sounds;
+    gm82_path_list            decoded_paths;
+    gm82_timeline_list        decoded_timelines;
+    gm82_decoded_font_list    decoded_fonts;
+    int32_t extension_count;
+    char  **extension_names;
+    int32_t dll_count;
+    char  **dll_names;
+
     char   *error_message;
     int32_t partial_count;
 } gm82_project_ir;

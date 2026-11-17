@@ -135,7 +135,6 @@ typedef struct gml_vm {
 } gml_vm;
 
 void gml_vm_init(gml_vm *vm);
-void gml_vm_cleanup(gml_vm *vm);
 void gml_vm_set_native_call(gml_vm *vm, gml_native_call callback, void *userdata);
 void gml_vm_set_name_resolver(gml_vm *vm, gml_name_resolve callback, void *userdata);
 void gml_vm_set_with_callback(gml_vm *vm, gml_with_call callback, void *userdata);
@@ -148,8 +147,6 @@ int  gml_vm_set(gml_vm *vm, const char *name, gml_value val);
 gml_value gml_vm_get(gml_vm *vm, const char *name);
 
 int gml_vm_execute(gml_vm *vm, const gml_ast *root);
-/* Execute an AST fragment in the current frame without resetting control/error state. */
-int gml_vm_execute_fragment(gml_vm *vm, const gml_ast *root);
 int gml_vm_invoke(gml_vm *vm, const gml_ast *root, const gml_value *args, size_t count, gml_value *out);
 
 gml_value gml_value_real(double n);

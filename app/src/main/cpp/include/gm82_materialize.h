@@ -4,8 +4,6 @@
 #include "gm82_project_ir.h"
 #include "gm82_object_room_decode.h"
 #include "gm82_script.h"
-#include "gm82_sound_decode.h"
-#include "gm82_font_decode.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -46,9 +44,9 @@ bool gm82_materialize_rooms(gm82_project_ir *ir, const gm82_materialize_options 
 /* Retained after materialize_all for runtime bind */
 const gm82_decoded_object_list *gm82_materialize_get_objects(void);
 const gm82_script_list *gm82_materialize_get_scripts(void);
+const gm82_decoded_sprite_list *gm82_materialize_get_frames(void);
+const gm82_sprite_group_list *gm82_materialize_get_sprite_groups(void);
 const gm82_decoded_sound_list *gm82_materialize_get_sounds(void);
-const gm82_decoded_font_list *gm82_materialize_get_fonts(void);
-
 
 #ifdef __cplusplus
 }

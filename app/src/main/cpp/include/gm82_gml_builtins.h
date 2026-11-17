@@ -31,7 +31,6 @@ void gm82_gml_set_self(gm82_instance *self);
 void gm82_gml_set_other(gm82_instance *o);
 gm82_instance *gm82_gml_get_other(void);
 gm82_instance *gm82_gml_get_self(void);
-/* Save/restore nested instance execution context; push returns 0 at capacity. */
 int gm82_gml_context_push(void);
 void gm82_gml_context_pop(void);
 
@@ -70,8 +69,6 @@ double gml_string_digits(const char *src, char *dst, size_t max_len);
 double gml_place_meeting(double x, double y, double object_index);
 double gml_position_meeting(double x, double y, double object_index);
 double gml_instance_place(double x, double y, double object_index); /* returns id or -4 */
-double gml_instance_place_list(double x, double y, double object_index);
-double gml_instance_position_list(double x, double y, double object_index);
 
 /* ---- Drawing (records to soft framebuffer if set) ---- */
 void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h);
@@ -137,6 +134,7 @@ double gml_surface_get_width(double id);
 double gml_surface_get_height(double id);
 double gml_surface_set_target(double id);
 double gml_surface_reset_target(void);
+int32_t gml_draw_is_surface_active(void);
 double gml_draw_surface(double id, double x, double y);
 double gml_surface_copy(double dest, double src);
 double gml_surface_getpixel(double id, double x, double y);
@@ -169,18 +167,11 @@ double gml_ds_list_find_last(double id, double value);
 double gml_ds_list_pop(double id);
 double gml_ds_list_reverse(double id);
 double gml_ds_list_unique(double id);
-double gml_ds_list_filter(double id, double script_index);
-double gml_ds_list_foreach(double id, double script_index);
-double gml_ds_list_map(double id, double script_index);
-
-/* Invoke a loaded GMK/GML script with argument0..argumentN. */
-double gm82_gml_call_script(double script_index, const double *args, int count, int *ok);
 
 /* ds_map (numeric keys only) */
 double gml_ds_map_create(void);
 double gml_ds_map_destroy(double id);
 double gml_ds_map_add(double id, double key, double value);
-double gml_ds_map_set_many(double id, const double *args, int count);
 double gml_ds_map_find_value(double id, double key);
 double gml_ds_map_exists(double id, double key);
 double gml_ds_map_size(double id);
@@ -365,15 +356,6 @@ void gm82_path_bind(gm82_path_list *paths);
 double gml_path_start(double path_index, double speed, double end_action, double absolute);
 double gml_path_end(void);
 double gml_path_get_number(double ind);
-double gml_path_get_point_x(double ind, double n);
-double gml_path_get_point_y(double ind, double n);
-double gml_path_get_point_speed(double ind, double n);
-double gml_path_get_closed(double ind);
-double gml_path_get_length(double ind);
-double gml_path_get_width(double ind);
-double gml_path_get_height(double ind);
-double gml_path_add_point_ext(double ind, double x, double y, double speed);
-double gml_path_clear_points(double ind);
 void gm82_path_step_instance(gm82_instance *inst);
 void gm82_timeline_bind(gm82_timeline_list *tls);
 double gml_timeline_start(double timeline_index, double position, double step, double direction);
@@ -479,11 +461,6 @@ void gml_draw_triangle(double x1, double y1, double x2, double y2, double x3, do
 double gml_draw_background(double bg, double x, double y);
 double gml_draw_background_tiled(double bg, double x, double y);
 double gml_draw_background_ext(double bg, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
-double gml_draw_background_tiled_extra(double bg, double x, double y, double xscale, double yscale, double rot, double color, double alpha, double hrepeats, double vrepeats);
-double gml_draw_sprite_tiled_extra(double sprite, double image, double x, double y, double xscale, double yscale, double rot, double color, double alpha, double hrepeats, double vrepeats);
-double gml_draw_sprite_part_extra(double sprite, double image, double left, double top, double width, double height, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
-double gml_draw_sprite_part_centered(double sprite, double image, double left, double top, double width, double height, double x, double y);
-double gml_draw_spotlight(double sprite, double image, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 double gml_draw_surface_ext(double id, double x, double y, double xscale, double yscale, double rot, double color, double alpha);
 double gml_string_pos(const char *sub, const char *str);
 double gml_string_char_at(const char *str, double index);
@@ -503,10 +480,11 @@ double gml_string_repeat(const char *str, double count, char *out, size_t out_sz
 double gml_array_length_1d(double array_id);
 double gml_array_length_2d(double array_id, double row);
 double gml_array_height_2d(double array_id);
-double gml_array_create_2d(double rows, double cols);
 double gml_array_create_1d(double length);
+double gml_array_create_2d(double rows, double cols);
 double gml_array_get(double array_id, double row, double col, int has_col);
 double gml_array_set(double array_id, double row, double col, int has_col, double value);
+void   gm82_arrays_reset(void);
 double gml_instance_position(double x, double y, double object_index);
 double gml_sprite_find(const char *name);
 double gml_instance_deactivate_object(double object_index);
@@ -547,18 +525,7 @@ double gml_place_meeting_precise(double x, double y, double object_index);
 double gml_angle_abs(double angle);
 double gml_angle_mean(double ang1, double ang2);
 double gml_approach_angle(double ang1, double ang2, double step);
-double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
-double gml_roundto(double val, double to);
-double gml_roundto_unbiased(double val, double to);
-double gml_floorto(double val, double to);
-double gml_ceilto(double val, double to);
 double gml_box_distance(double length, double dir);
-double gml_in_range(double val, double vmin, double vmax);
-double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment);
-double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0);
-double gml_unpack_bool(double pbool, double which);
-double gml_pivot_pos_x(double px, double py, double dir);
-double gml_pivot_pos_y(double px, double py, double dir);
 double gml_circle_in_circle(double ax, double ay, double radiusa, double bx, double by, double radiusb);
 double gml_clerp2(double fromA, double fromB, double toA, double toB, double value);
 double gml_lerp2(double fromA, double fromB, double toA, double toB, double value);
@@ -601,8 +568,6 @@ double gml_make_color_hsv(double h, double s, double v);
 double gml_draw_set_blend_mode_ext(double src, double dest);
 double gml_draw_set_circle_precision(double prec);
 double gml_ds_grid_set_region_compat(double id, double x1, double y1, double x2, double y2, double val);
-double gml_ds_grid_set_many(double id, const double *args, int count);
-double gml_ds_priority_add_many(double id, const double *args, int count);
 int gml_script_find(const char *name);
 
 /* Missing geometry & utility declarations */
@@ -663,11 +628,6 @@ double gml_move_contact_solid_hv(double hspd, double vspd);
 double gml_modwrap(double val, double minv, double maxv);
 double gml_direction_to_object(double object_index);
 double gml_move_towards_fixed(double tx, double ty, double sp);
-double gml_move_towards_gravity(double xto, double yto, double grav);
-double gml_move_towards_jump(double xto, double yto, double hspeed_limit, double vsp, double grav);
-double gml_instance_create_depth_moving_ext(double x, double y, double depth, double obj,
-                                           double sp, double dir, double addh, double addv,
-                                           double grav, double gravdir);
 double gml_esign(double val, double defv);
 double gml_round_unbiased(double val);
 double gml_point_line_distance(double px, double py, double x1, double y1, double x2, double y2, double segment);
@@ -705,12 +665,6 @@ double gml_object_other_is_child_of(double parent);
 double gml_instance_create_moving_ext(double x,double y,double obj,double sp,double dir,double grav,double gdir);
 double gml_instance_some(double obj);
 double gml_filename_remove_ext(const char *s);
-double gml_filename_name(const char *s);
-double gml_filename_path(const char *s);
-double gml_filename_dir(const char *s);
-double gml_filename_drive(const char *s);
-double gml_filename_ext(const char *s);
-double gml_filename_change_ext(const char *s, const char *ext);
 double gml_string_ord_at(const char *s, double idx);
 double gml_string_hexdigits(const char *s);
 double gml_string_number(const char *s);
@@ -725,6 +679,51 @@ double gml_directory_previous(const char *path);
 double gml_pick(double x);
 double gml_unpick(double x);
 double gml_date_get_timestamp(void);
+
+/* Promoted GM82Core & extended runtime builtins */
+double gml_bigchoose_clear(void);
+double gml_bigchoose(const double *vals, int count);
+double gml_bigchoose_get(void);
+double gml_bigchoose_weighted(const double *pairs, int count);
+double gml_bigchoose_weighted_get(void);
+double gml_choose_weighted(const double *pairs, int count);
+double gml_dss_list_create(void);
+double gml_dss_map_create(void);
+double gml_dss_grid_create(double w, double h);
+double gml_dss_stack_create(void);
+double gml_dss_queue_create(void);
+double gml_dss_priority_create(void);
+double gml_dss_get_type(double id);
+double gml_dss_destroy(double id);
+double gml_ds_map_set_many(double id, const double *pairs, int count);
+double gml_ds_list_contains_ext(double id, const double *vals, int count);
+double gml_ds_list_equal(double a, double b);
+double gml_ds_list_union(double dst, double src);
+double gml_ds_grid_set_many(double id, double x, double y, const double *vals, int count);
+double gml_ds_priority_add_many(double id, const double *pairs, int count);
+double gml_ds_bag_create(void);
+double gml_ds_bag_destroy(double id);
+double gml_ds_bag_clear(double id);
+double gml_ds_bag_add(double id, double val);
+double gml_ds_bag_remove(double id, double val);
+double gml_ds_bag_grab(double id);
+double gml_ds_bag_quick(const double *vals, int count);
+double gml_ds_bag_empty(double id);
+double gml_ds_bag_size(double id);
+double gml_move_and_collide(double dx, double dy, double obj);
+double gml_move_towards_gravity(double dir, double spd, double grav);
+double gml_move_towards_jump(double tx, double ty, double grav);
+double gml_match_any(double v, const double *vals, int count);
+double gml_match_exact(double v, const double *vals, int count);
+double gml_match_not_any(double v, const double *vals, int count);
+double gml_string_wrap(const char *s, double max_width, char *out, size_t out_cap);
+double gml_string_replace_many(const char *s, const char *from_csv, const char *to_csv, char *out, size_t out_cap);
+double gml_string_justify(const char *s, double width, char *out, size_t out_cap);
+double gml_draw_setb(double blend);
+double gml_draw_setf(double font);
+double gml_draw_spotlight(double x, double y, double radius, double color, double alpha);
+
+/* Phase 2 GM82 Core Math, Filename & Background Part Additions */
 double gml_unlerp(double a, double b, double val);
 double gml_unclerp(double a, double b, double val);
 double gml_saturate(double val);
@@ -739,87 +738,22 @@ double gml_lines_intersect(double x1, double y1, double x2, double y2,
 double gml_pack_bools(double b7, double b6, double b5, double b4,
                       double b3, double b2, double b1, double b0);
 double gml_unpack_bool(double pbool, double which);
-double gml_point_direction_pitch(double x1, double y1, double z1,
-                                 double x2, double y2, double z2);
-double gml_angle_difference_3d(double x1, double y1, double z1,
-                               double x2, double y2, double z2);
 double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
-
-void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
-
-/* GM82 Core Math Additions */
-double gml_in_range(double val, double vmin, double vmax);
-double gml_saturate(double val);
-double gml_unlerp(double a, double b, double val);
-double gml_unclerp(double a, double b, double val);
-double gml_floorto(double val, double to);
-double gml_ceilto(double val, double to);
-double gml_roundto(double val, double to);
 double gml_secant(double ang);
-double gml_lines_intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, double segment);
 double gml_point_line_lerp(double px, double py, double x1, double y1, double x2, double y2, double segment);
 double gml_point_direction_pitch(double x1, double y1, double z1, double x2, double y2, double z2);
 double gml_angle_difference_3d(double x1, double y1, double z1, double x2, double y2, double z2);
-double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
 double gml_lengthdir_zx(double len, double dir, double dirz);
 double gml_lengthdir_zy(double len, double dir, double dirz);
 double gml_lengthdir_zz(double len, double dir, double dirz);
+double gml_filename_name(const char *s);
+double gml_filename_path(const char *s);
+double gml_filename_dir(const char *s);
+double gml_filename_drive(const char *s);
+double gml_filename_ext(const char *s);
+double gml_filename_change_ext(const char *s, const char *ext);
+void   gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
 
-void gml_draw_background_part(double bg, double left, double top, double width, double height, double x, double y);
-
-/* gm82core math builtins */
-double gml_unlerp(double a, double b, double val);
-double gml_unclerp(double a, double b, double val);
-double gml_roundto(double val, double to);
-double gml_roundto_unbiased(double val, double to);
-double gml_floorto(double val, double to);
-double gml_ceilto(double val, double to);
-double gml_pack_bools(double b7, double b6, double b5, double b4, double b3, double b2, double b1, double b0);
-double gml_unpack_bool(double pbool, double which);
-
-double gml_floorto(double val, double to);
-double gml_ceilto(double val, double to);
-double gml_roundto(double val, double to);
-double gml_roundto_unbiased(double val, double to);
-double gml_approach_angle_biased(double ang1, double ang2, double step, double bias);
-
-double gml_move_and_collide(double dx, double dy, double obj);
-double gml_string_wrap(const char *s, double width);
-double gml_distance_to_path(double path_index);
-
-double gml_code_compile(const char *src);
-double gml_code_exists(double id);
-double gml_code_get_argcount(double id);
-double gml_code_execute(double id);
-double gml_code_destroy(double id);
-double gml_code_return(double val);
-double gml_event_inherit_object(void);
-double gml_keyboard_get_keyname(double vk);
-double gml_path_get_width(double path_index);
-double gml_path_get_height(double path_index);
-double gml_path_get_approximate_pos(double path_index, double x, double y);
-double gml_string_justify(const char *s, double width);
-double gml_string_replace_many(const char *s, const char *old, const char *rep);
-double gml_match_any(double a, double b);
-double gml_match_exact(double a, double b);
-double gml_match_clear(void);
-double gml_match_found(void);
-double gml_match_not_any(double a, double b);
-double gml_match_not_exact(double a, double b);
-double gml_match_some(double a, double b);
-double gml_match_not_some(double a, double b);
-double gml_mouse_in_window(void);
-double gml_extension_detect(void);
-double gml_get_frametime_usage(void);
-
-double gml_draw_setb(double color, double alpha);
-double gml_draw_setf(double font, double halign, double valign, double color, double alpha);
-double gml_date_get_moon_phase(double date, int has_arg);
-double gml_date_is_easter(double date, int has_arg);
-double gml_datetime_current_filename(void);
-double gml_mouse_back_button(void);
-double gml_mouse_forward_button(void);
-double gml_mouse_check_direct(double button);
 #ifdef __cplusplus
 }
 #endif

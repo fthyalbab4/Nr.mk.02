@@ -19,14 +19,26 @@ static SLAndroidSimpleBufferQueueItf g_playerBufferQueue = NULL;
 static SLVolumeItf g_playerVolume = NULL;
 static bool g_sles_initialized = false;
 
+extern void gm82_audio_host_mix(int16_t *out, size_t frames);
+
+#define SLES_BUF_FRAMES 512
+static int16_t g_sles_mix_bufs[2][SLES_BUF_FRAMES];
+static int g_sles_buf_idx = 0;
+
 static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
-    (void)bq;
     (void)context;
+    if (!g_sles_initialized || !bq) return;
+    int idx = g_sles_buf_idx;
+    g_sles_buf_idx = (g_sles_buf_idx + 1) & 1;
+    gm82_audio_host_mix(g_sles_mix_bufs[idx], SLES_BUF_FRAMES);
+    (*bq)->Enqueue(bq, g_sles_mix_bufs[idx], (SLuint32)(SLES_BUF_FRAMES * sizeof(int16_t)));
 }
 
 bool gm82_opensles_init(int sample_rate, int channels) {
     if (g_sles_initialized) return true;
 
+    int rate = sample_rate > 0 ? sample_rate : 22050;
+    int ch = channels > 1 ? 2 : 1;
     SLresult res;
     res = slCreateEngine(&g_engineObject, 0, NULL, 0, NULL, NULL);
     if (res != SL_RESULT_SUCCESS) return false;
@@ -39,13 +51,13 @@ bool gm82_opensles_init(int sample_rate, int channels) {
     }
 
     res = (*g_engineObject)->GetInterface(g_engineObject, SL_IID_ENGINE, &g_engineEngine);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_engineEngine)->CreateOutputMix(g_engineEngine, &g_outputMixObject, 0, NULL, NULL);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_outputMixObject)->Realize(g_outputMixObject, SL_BOOLEAN_FALSE);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {
         SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
@@ -54,11 +66,11 @@ bool gm82_opensles_init(int sample_rate, int channels) {
 
     SLDataFormat_PCM format_pcm = {
         SL_DATAFORMAT_PCM,
-        (SLuint32)(channels > 1 ? 2 : 1),
-        (SLuint32)(sample_rate > 0 ? sample_rate * 1000 : SL_SAMPLINGRATE_44_1),
+        (SLuint32)ch,
+        (SLuint32)(rate * 1000),
         SL_PCMSAMPLEFORMAT_FIXED_16,
         SL_PCMSAMPLEFORMAT_FIXED_16,
-        (SLuint32)(channels > 1 ? (SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT) : SL_SPEAKER_FRONT_CENTER),
+        (SLuint32)(ch > 1 ? (SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT) : SL_SPEAKER_FRONT_CENTER),
         SL_BYTEORDER_LITTLEENDIAN
     };
 
@@ -71,27 +83,33 @@ bool gm82_opensles_init(int sample_rate, int channels) {
     const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
 
     res = (*g_engineEngine)->CreateAudioPlayer(g_engineEngine, &g_playerObject, &audioSrc, &audioSnk, 3, ids, req);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_playerObject)->Realize(g_playerObject, SL_BOOLEAN_FALSE);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_playerObject)->GetInterface(g_playerObject, SL_IID_PLAY, &g_playerPlay);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_playerObject)->GetInterface(g_playerObject, SL_IID_BUFFERQUEUE, &g_playerBufferQueue);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_playerObject)->GetInterface(g_playerObject, SL_IID_VOLUME, &g_playerVolume);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_playerBufferQueue)->RegisterCallback(g_playerBufferQueue, bqPlayerCallback, NULL);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     res = (*g_playerPlay)->SetPlayState(g_playerPlay, SL_PLAYSTATE_PLAYING);
-    if (res != SL_RESULT_SUCCESS) return false;
+    if (res != SL_RESULT_SUCCESS) { gm82_opensles_shutdown(); return false; }
 
     g_sles_initialized = true;
+    /* Prime both buffer slots so the mixer callback runs immediately */
+    memset(g_sles_mix_bufs, 0, sizeof(g_sles_mix_bufs));
+    g_sles_buf_idx = 0;
+    (*g_playerBufferQueue)->Enqueue(g_playerBufferQueue, g_sles_mix_bufs[0], (SLuint32)(SLES_BUF_FRAMES * sizeof(int16_t)));
+    (*g_playerBufferQueue)->Enqueue(g_playerBufferQueue, g_sles_mix_bufs[1], (SLuint32)(SLES_BUF_FRAMES * sizeof(int16_t)));
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "OpenSLES active (%d Hz, %d ch)", rate, ch);
     return true;
 }
 
@@ -114,10 +132,16 @@ bool gm82_opensles_play_pcm(const int16_t *pcm_data, size_t sample_count, int lo
 void gm82_opensles_stop_all(void) {
     if (g_sles_initialized && g_playerBufferQueue) {
         (*g_playerBufferQueue)->Clear(g_playerBufferQueue);
+        memset(g_sles_mix_bufs, 0, sizeof(g_sles_mix_bufs));
+        (*g_playerBufferQueue)->Enqueue(g_playerBufferQueue, g_sles_mix_bufs[0], (SLuint32)(SLES_BUF_FRAMES * sizeof(int16_t)));
     }
 }
 
 void gm82_opensles_shutdown(void) {
+    g_sles_initialized = false;
+    if (g_playerPlay) {
+        (*g_playerPlay)->SetPlayState(g_playerPlay, SL_PLAYSTATE_STOPPED);
+    }
     if (g_playerObject) {
         (*g_playerObject)->Destroy(g_playerObject);
         g_playerObject = NULL;
@@ -134,7 +158,6 @@ void gm82_opensles_shutdown(void) {
         g_engineObject = NULL;
         g_engineEngine = NULL;
     }
-    g_sles_initialized = false;
 }
 
 bool gm82_opensles_is_active(void) {

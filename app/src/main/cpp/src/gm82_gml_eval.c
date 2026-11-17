@@ -1,10 +1,15 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_gml_eval.h"
+#include "gm82_gml_parser.h"
 #include "gm82_portable_compat.h"
 #include "gm82_gml_builtins.h"
-#include "gm82_external.h"
 #include "gm82_sound_runtime.h"
 #include "gm82_input.h"
+#include "gm82_diagnostics.h"
+#include "gm82_actions.h"
+#include "gm82_events.h"
+#include "gm82_ged_extensions.h"
+#include "gm82_native_bridge.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,31 +23,17 @@ typedef struct {
     gm82_runtime *rt;
     gm82_instance *self;
     char err[128];
-    char str_args[16][256];
+    char str_args[8][256];
     int str_mask;
 } gml_parser;
 
-typedef struct {
-    char name[64];
-    double value;
-} gml_global_var;
-#define GM82_NATIVE_ARRAY_CAP 8
-#define GM82_NATIVE_ARRAY_SLOTS 256
-typedef struct {
-    gm82_instance *owner;
-    bool global;
-    char name[64];
-    double values[GM82_NATIVE_ARRAY_CAP];
-    uint32_t mask;
-} native_array_slot;
+typedef struct { char name[64]; double value; } gml_global_var;
 static gml_global_var g_global_vars[128];
 static int g_global_var_count;
 static gm82_runtime *g_global_runtime;
-static native_array_slot g_native_arrays[GM82_NATIVE_ARRAY_SLOTS];
 
 void gm82_gml_reset_globals(gm82_runtime *rt) {
     memset(g_global_vars, 0, sizeof(g_global_vars));
-    memset(g_native_arrays, 0, sizeof(g_native_arrays));
     g_global_var_count = 0;
     g_global_runtime = rt;
 }
@@ -158,7 +149,7 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
     if (strcmp(name, "direction") == 0) { *out = s ? s->direction : 0; return true; }
-    if (strcmp(name, "image_index") == 0) { *out = s ? s->image_index : 0; return true; }
+    if (strcmp(name, "image_index") == 0) { *out = s ? (double)s->image_index : 0; return true; }
     if (strcmp(name, "image_speed") == 0) { *out = s ? s->image_speed : 0; return true; }
     if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
     if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
@@ -259,10 +250,6 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "depth") == 0) { *out = s ? (double)s->depth : 0; return true; }
     if (strcmp(name, "visible") == 0) { *out = s ? (double)s->visible : 1; return true; }
     if (strcmp(name, "persistent") == 0) { *out = s ? (double)s->persistent : 0; return true; }
-    if (strcmp(name, "on_ground") == 0 || strcmp(name, "grounded") == 0) { *out = s ? (double)s->on_ground : 0; return true; }
-    if (strcmp(name, "on_ceiling") == 0) { *out = s ? (double)s->on_ceiling : 0; return true; }
-    if (strcmp(name, "hit_left") == 0) { *out = s ? (double)s->hit_left : 0; return true; }
-    if (strcmp(name, "hit_right") == 0) { *out = s ? (double)s->hit_right : 0; return true; }
     if (strcmp(name, "view_xview") == 0) { *out = p->rt ? (double)p->rt->view_x : 0; return true; }
     if (strcmp(name, "view_yview") == 0) { *out = p->rt ? (double)p->rt->view_y : 0; return true; }
     if (strcmp(name, "view_wview") == 0) { *out = p->rt ? (double)p->rt->view_w : 640; return true; }
@@ -348,6 +335,21 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
         }
     }
 
+    /* GM82 GED/GEJ Extension Constants */
+    {
+        double cnum = 0.0;
+        char cstr[256] = {0};
+        int ckind = gm82_ged_lookup_constant(name, &cnum, cstr, sizeof(cstr));
+        if (ckind == 1) {
+            *out = cnum;
+            return true;
+        } else if (ckind == 2) {
+            gm82_gml_set_last_string(cstr);
+            *out = 0.0;
+            return true;
+        }
+    }
+
     /* unknown identifier: default 0 */
     *out = 0;
     return true;
@@ -376,7 +378,7 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "vspeed") == 0) { s->vspeed = v; return true; }
     if (strcmp(name, "speed") == 0) { s->speed = v; return true; }
     if (strcmp(name, "direction") == 0) { s->direction = v; return true; }
-    if (strcmp(name, "image_index") == 0) { s->image_index = v; return true; }
+    if (strcmp(name, "image_index") == 0) { s->image_index = (int32_t)v; return true; }
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
     if (strcmp(name, "image_xscale") == 0) { s->image_xscale = v; return true; }
     if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
@@ -490,33 +492,30 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
-    /* array indexing: alarm[0], 1D arrays, and 2D arrays. */
+    /* array indexing: alarm[0], etc. */
     if (match(p, '[')) {
-        double idx = 0, col = 0; int has_col = 0;
+        double idx = 0;
         if (!parse_expr(p, &idx)) return false;
-        if (match(p, ',')) { if (!parse_expr(p, &col)) return false; has_col = 1; }
         if (!match(p, ']')) return false;
         int i = (int)idx;
-        if (strcmp(id, "alarm") == 0 && !has_col) {
+        if (strcmp(id, "alarm") == 0) {
             gm82_instance *s = p->self;
             if (s && i >= 0 && i < 12) *out = (double)s->alarms[i];
             else *out = -1;
             return true;
         }
-        double array_id = 0;
-        get_var(p, id, &array_id);
-        *out = gml_array_get(array_id, idx, col, has_col);
+        *out = 0;
         return true;
     }
-    /* function call? collect up to 16 args */
+    /* function call? collect up to 8 args */
     if (match(p, '(')) {
-        double args[16] = {0};
+        double args[8] = {0,0,0,0,0,0,0,0};
         int nargs = 0;
         p->str_mask = 0;
         memset(p->str_args, 0, sizeof(p->str_args));
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 16) return false;
+                if (nargs >= 8) return false;
                 skip_ws(p);
                 if (peek(p) == '"' || peek(p) == '\'') {
                     char quote = (char)peek(p);
@@ -619,21 +618,6 @@ static bool parse_primary(gml_parser *p, double *out) {
             else *out = gml_modwrap(arg, 0.0, 1.0);
             return true;
         }
-                if (strcmp(id, "floorto") == 0) {
-            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "ceilto") == 0) {
-            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "roundto") == 0) {
-            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "roundto_unbiased") == 0) {
-            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "approach_angle_biased") == 0) {
-            *out = gml_approach_angle_biased(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0, nargs >= 4 ? args[3] : 0.0); return true;
-        }
         if (strcmp(id, "round_unbiased") == 0) {
             *out = gml_round_unbiased(arg); return true;
         }
@@ -651,40 +635,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "lerproach") == 0) {
             *out = gml_lerproach(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
-        }
-        if (strcmp(id, "unlerp") == 0) {
-            *out = gml_unlerp(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
-        }
-        if (strcmp(id, "unclerp") == 0) {
-            *out = gml_unclerp(args[0], nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
-        }
-        if (strcmp(id, "roundto") == 0) {
-            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "roundto_unbiased") == 0) {
-            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "floorto") == 0) {
-            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "ceilto") == 0) {
-            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "pack_bools") == 0) {
-            *out = gml_pack_bools(
-                nargs >= 1 ? args[0] : 0.0,
-                nargs >= 2 ? args[1] : 0.0,
-                nargs >= 3 ? args[2] : 0.0,
-                nargs >= 4 ? args[3] : 0.0,
-                nargs >= 5 ? args[4] : 0.0,
-                nargs >= 6 ? args[5] : 0.0,
-                nargs >= 7 ? args[6] : 0.0,
-                nargs >= 8 ? args[7] : 0.0
-            );
-            return true;
-        }
-        if (strcmp(id, "unpack_bool") == 0) {
-            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0.0); return true;
         }
 
         if (strcmp(id, "hypot") == 0) {
@@ -717,94 +667,8 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "approach_angle") == 0) {
             *out = gml_approach_angle(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
-        if (strcmp(id, "approach_angle_biased") == 0) {
-            *out = gml_approach_angle_biased(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0); return true;
-        }
-        if (strcmp(id, "in_range") == 0) {
-            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "saturate") == 0) {
-            *out = gml_saturate(arg); return true;
-        }
-        if (strcmp(id, "unlerp") == 0) {
-            *out = gml_unlerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "unclerp") == 0) {
-            *out = gml_unclerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "floorto") == 0) {
-            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 0); return true;
-        }
-        if (strcmp(id, "ceilto") == 0) {
-            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 0); return true;
-        }
-        if (strcmp(id, "roundto") == 0) {
-            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 0); return true;
-        }
-        if (strcmp(id, "secant") == 0) {
-            *out = gml_secant(arg); return true;
-        }
-        if (strcmp(id, "lines_intersect") == 0) {
-            *out = gml_lines_intersect(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
-                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0,
-                                       nargs >= 8 ? args[7] : 0, nargs >= 9 ? args[8] : 0); return true;
-        }
-        if (strcmp(id, "point_line_lerp") == 0) {
-            *out = gml_point_line_lerp(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
-                                      nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0); return true;
-        }
-        if (strcmp(id, "point_direction_pitch") == 0) {
-            *out = gml_point_direction_pitch(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
-                                            nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
-        }
-        if (strcmp(id, "angle_difference_3d") == 0) {
-            *out = gml_angle_difference_3d(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0,
-                                          nargs >= 4 ? args[3] : 0, nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0); return true;
-        }
-        if (strcmp(id, "lengthdir_zx") == 0) {
-            *out = gml_lengthdir_zx(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "lengthdir_zy") == 0) {
-            *out = gml_lengthdir_zy(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "lengthdir_zz") == 0) {
-            *out = gml_lengthdir_zz(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "roundto") == 0) {
-            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1); return true;
-        }
-        if (strcmp(id, "roundto_unbiased") == 0) {
-            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1); return true;
-        }
-        if (strcmp(id, "floorto") == 0) {
-            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1); return true;
-        }
-        if (strcmp(id, "ceilto") == 0) {
-            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1); return true;
-        }
         if (strcmp(id, "box_distance") == 0) {
             *out = gml_box_distance(arg, nargs >= 2 ? args[1] : 0); return true;
-        }
-        if (strcmp(id, "in_range") == 0) {
-            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "lines_intersect") == 0) {
-            *out = gml_lines_intersect(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
-                                       nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0,
-                                       nargs >= 8 ? args[7] : 0, nargs >= 9 ? args[8] : 1); return true;
-        }
-        if (strcmp(id, "pack_bools") == 0) {
-            *out = gml_pack_bools(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
-                                  nargs >= 5 ? args[4] : 0, nargs >= 6 ? args[5] : 0, nargs >= 7 ? args[6] : 0, nargs >= 8 ? args[7] : 0); return true;
-        }
-        if (strcmp(id, "unpack_bool") == 0) {
-            *out = gml_unpack_bool(args[0], nargs >= 2 ? args[1] : 0); return true;
-        }
-        if (strcmp(id, "pivot_pos_x") == 0) {
-            *out = gml_pivot_pos_x(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "pivot_pos_y") == 0) {
-            *out = gml_pivot_pos_y(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
         if (strcmp(id, "circle_in_circle") == 0) {
             *out = gml_circle_in_circle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
@@ -891,15 +755,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "ds_list_add_many") == 0) {
             *out = gml_ds_list_add_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
-        }
-        if (strcmp(id, "ds_list_filter") == 0 && nargs >= 2) {
-            *out = gml_ds_list_filter(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "ds_list_foreach") == 0 && nargs >= 2) {
-            *out = gml_ds_list_foreach(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "ds_list_map") == 0 && nargs >= 2) {
-            *out = gml_ds_list_map(args[0], args[1]); return true;
         }
         if (strcmp(id, "ds_list_contains") == 0 && nargs >= 2) {
             *out = gml_ds_list_contains(arg, args[1]); return true;
@@ -999,9 +854,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_grid_set") == 0) {
             *out = gml_ds_grid_set(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0, (nargs >= 4) ? args[3] : 0); return true;
         }
-        if (strcmp(id, "ds_grid_set_many") == 0) {
-            *out = gml_ds_grid_set_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
-        }
         if (strcmp(id, "ds_grid_get") == 0) {
             *out = gml_ds_grid_get(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
@@ -1041,9 +893,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "ds_map_add") == 0) {
             *out = gml_ds_map_add(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
-        if (strcmp(id, "ds_map_set_many") == 0) {
-            *out = gml_ds_map_set_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
-        }
         if (strcmp(id, "ds_map_replace") == 0) {
             *out = gml_ds_map_replace(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
         }
@@ -1067,9 +916,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (strcmp(id, "ds_priority_add") == 0) {
             *out = gml_ds_priority_add(arg, (nargs >= 2) ? args[1] : 0, (nargs >= 3) ? args[2] : 0); return true;
-        }
-        if (strcmp(id, "ds_priority_add_many") == 0) {
-            *out = gml_ds_priority_add_many(arg, nargs > 1 ? &args[1] : NULL, nargs > 1 ? nargs - 1 : 0); return true;
         }
         if (strcmp(id, "ds_priority_find_max") == 0) {
             *out = gml_ds_priority_find_max(arg); return true;
@@ -1315,89 +1161,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "invlerp") == 0) {
             *out = gml_invlerp(arg, nargs >= 2 ? args[1] : 1, nargs >= 3 ? args[2] : 0); return true;
         }
-        if (strcmp(id, "unlerp") == 0) {
-            *out = gml_unlerp(arg, nargs >= 2 ? args[1] : 1.0, nargs >= 3 ? args[2] : 0.0); return true;
-        }
-        if (strcmp(id, "unclerp") == 0) {
-            *out = gml_unclerp(arg, nargs >= 2 ? args[1] : 1.0, nargs >= 3 ? args[2] : 0.0); return true;
-        }
-        if (strcmp(id, "saturate") == 0) {
-            *out = gml_saturate(arg); return true;
-        }
-        if (strcmp(id, "roundto") == 0) {
-            *out = gml_roundto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "roundto_unbiased") == 0) {
-            *out = gml_roundto_unbiased(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "floorto") == 0) {
-            *out = gml_floorto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "ceilto") == 0) {
-            *out = gml_ceilto(arg, nargs >= 2 ? args[1] : 1.0); return true;
-        }
-        if (strcmp(id, "in_range") == 0) {
-            *out = gml_in_range(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0); return true;
-        }
-        if (strcmp(id, "range_collision") == 0) {
-            *out = gml_range_collision(arg, nargs >= 2 ? args[1] : 0.0, nargs >= 3 ? args[2] : 0.0, nargs >= 4 ? args[3] : 0.0); return true;
-        }
-        if (strcmp(id, "lines_intersect") == 0) {
-            *out = gml_lines_intersect(
-                nargs >= 1 ? args[0] : 0.0,
-                nargs >= 2 ? args[1] : 0.0,
-                nargs >= 3 ? args[2] : 0.0,
-                nargs >= 4 ? args[3] : 0.0,
-                nargs >= 5 ? args[4] : 0.0,
-                nargs >= 6 ? args[5] : 0.0,
-                nargs >= 7 ? args[6] : 0.0,
-                nargs >= 8 ? args[7] : 0.0,
-                nargs >= 9 ? args[8] : 1.0
-            ); return true;
-        }
-        if (strcmp(id, "pack_bools") == 0) {
-            *out = gml_pack_bools(
-                nargs >= 1 ? args[0] : 0.0,
-                nargs >= 2 ? args[1] : 0.0,
-                nargs >= 3 ? args[2] : 0.0,
-                nargs >= 4 ? args[3] : 0.0,
-                nargs >= 5 ? args[4] : 0.0,
-                nargs >= 6 ? args[5] : 0.0,
-                nargs >= 7 ? args[6] : 0.0,
-                nargs >= 8 ? args[7] : 0.0
-            ); return true;
-        }
-        if (strcmp(id, "unpack_bool") == 0) {
-            *out = gml_unpack_bool(arg, nargs >= 2 ? args[1] : 0.0); return true;
-        }
-        if (strcmp(id, "point_direction_pitch") == 0) {
-            *out = gml_point_direction_pitch(
-                nargs >= 1 ? args[0] : 0.0,
-                nargs >= 2 ? args[1] : 0.0,
-                nargs >= 3 ? args[2] : 0.0,
-                nargs >= 4 ? args[3] : 0.0,
-                nargs >= 5 ? args[4] : 0.0,
-                nargs >= 6 ? args[5] : 0.0
-            ); return true;
-        }
-        if (strcmp(id, "angle_difference_3d") == 0) {
-            *out = gml_angle_difference_3d(
-                nargs >= 1 ? args[0] : 0.0,
-                nargs >= 2 ? args[1] : 0.0,
-                nargs >= 3 ? args[2] : 0.0,
-                nargs >= 4 ? args[3] : 0.0,
-                nargs >= 5 ? args[4] : 0.0,
-                nargs >= 6 ? args[5] : 0.0
-            ); return true;
-        }
-        if (strcmp(id, "approach_angle_biased") == 0) {
-            *out = gml_approach_angle_biased(
-                nargs >= 1 ? args[0] : 0.0,
-                nargs >= 2 ? args[1] : 0.0,
-                nargs >= 3 ? args[2] : 0.0,
-                nargs >= 4 ? args[3] : 0.0
-            ); return true;
-        }
         if (strcmp(id, "gauss") == 0) {
             *out = gml_gauss(arg, nargs >= 2 ? args[1] : 1); return true;
         }
@@ -1447,6 +1210,50 @@ static bool parse_primary(gml_parser *p, double *out) {
             const char *s = (p->str_mask & 1) ? p->str_args[0] : "";
             *out = gml_string_trim(s); return true;
         }
+
+        if (strcmp(id, "bigchoose_clear") == 0) { *out = gml_bigchoose_clear(); return true; }
+        if (strcmp(id, "bigchoose") == 0) { *out = gml_bigchoose(args, nargs); return true; }
+        if (strcmp(id, "bigchoose_get") == 0) { *out = gml_bigchoose_get(); return true; }
+        if (strcmp(id, "bigchoose_weighted") == 0) { *out = gml_bigchoose_weighted(args, nargs); return true; }
+        if (strcmp(id, "bigchoose_weighted_get") == 0) { *out = gml_bigchoose_weighted_get(); return true; }
+        if (strcmp(id, "choose_weighted") == 0) { *out = gml_choose_weighted(args, nargs); return true; }
+        if (strcmp(id, "dss_list_create") == 0) { *out = gml_dss_list_create(); return true; }
+        if (strcmp(id, "dss_map_create") == 0) { *out = gml_dss_map_create(); return true; }
+        if (strcmp(id, "dss_grid_create") == 0) { *out = gml_dss_grid_create(arg, nargs >= 2 ? args[1] : 1); return true; }
+        if (strcmp(id, "dss_stack_create") == 0) { *out = gml_dss_stack_create(); return true; }
+        if (strcmp(id, "dss_queue_create") == 0) { *out = gml_dss_queue_create(); return true; }
+        if (strcmp(id, "dss_priority_create") == 0) { *out = gml_dss_priority_create(); return true; }
+        if (strcmp(id, "dss_get_type") == 0) { *out = gml_dss_get_type(arg); return true; }
+        if (strcmp(id, "dss_destroy") == 0) { *out = gml_dss_destroy(arg); return true; }
+        if (strcmp(id, "ds_map_set_many") == 0) { *out = gml_ds_map_set_many(arg, args + 1, nargs > 1 ? nargs - 1 : 0); return true; }
+        if (strcmp(id, "ds_list_contains_ext") == 0) { *out = gml_ds_list_contains_ext(arg, args + 1, nargs > 1 ? nargs - 1 : 0); return true; }
+        if (strcmp(id, "ds_list_equal") == 0) { *out = gml_ds_list_equal(arg, nargs >= 2 ? args[1] : -1); return true; }
+        if (strcmp(id, "ds_list_union") == 0) { *out = gml_ds_list_union(arg, nargs >= 2 ? args[1] : -1); return true; }
+        if (strcmp(id, "ds_grid_set_many") == 0) { *out = gml_ds_grid_set_many(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, args + 3, nargs > 3 ? nargs - 3 : 0); return true; }
+        if (strcmp(id, "ds_priority_add_many") == 0) { *out = gml_ds_priority_add_many(arg, args + 1, nargs > 1 ? nargs - 1 : 0); return true; }
+        if (strcmp(id, "ds_bag_create") == 0) { *out = gml_ds_bag_create(); return true; }
+        if (strcmp(id, "ds_bag_destroy") == 0) { *out = gml_ds_bag_destroy(arg); return true; }
+        if (strcmp(id, "ds_bag_clear") == 0) { *out = gml_ds_bag_clear(arg); return true; }
+        if (strcmp(id, "ds_bag_add") == 0) { *out = gml_ds_bag_add(arg, nargs >= 2 ? args[1] : 0); return true; }
+        if (strcmp(id, "ds_bag_remove") == 0) { *out = gml_ds_bag_remove(arg, nargs >= 2 ? args[1] : 0); return true; }
+        if (strcmp(id, "ds_bag_grab") == 0) { *out = gml_ds_bag_grab(arg); return true; }
+        if (strcmp(id, "ds_bag_quick") == 0) { *out = gml_ds_bag_quick(args, nargs); return true; }
+        if (strcmp(id, "ds_bag_empty") == 0) { *out = gml_ds_bag_empty(arg); return true; }
+        if (strcmp(id, "ds_bag_size") == 0) { *out = gml_ds_bag_size(arg); return true; }
+        if (strcmp(id, "move_and_collide") == 0) { *out = gml_move_and_collide(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : -1); return true; }
+        if (strcmp(id, "move_towards_gravity") == 0) { *out = gml_move_towards_gravity(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0.4); return true; }
+        if (strcmp(id, "move_towards_jump") == 0) { *out = gml_move_towards_jump(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0.4); return true; }
+        if (strcmp(id, "match_any") == 0 || strcmp(id, "match_found") == 0 || strcmp(id, "match_some") == 0) { *out = gml_match_any(arg, args + 1, nargs > 1 ? nargs - 1 : 0); return true; }
+        if (strcmp(id, "match_exact") == 0) { *out = gml_match_exact(arg, args + 1, nargs > 1 ? nargs - 1 : 0); return true; }
+        if (strcmp(id, "match_not_any") == 0 || strcmp(id, "match_not_exact") == 0 || strcmp(id, "match_not_some") == 0) { *out = gml_match_not_any(arg, args + 1, nargs > 1 ? nargs - 1 : 0); return true; }
+        if (strcmp(id, "string_wrap") == 0) { char tmp[256]; gml_string_wrap((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 200, tmp, sizeof(tmp)); snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp); p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true; }
+        if (strcmp(id, "string_replace_many") == 0) { char tmp[256]; gml_string_replace_many((p->str_mask & 1) ? p->str_args[0] : "", (p->str_mask & 2) ? p->str_args[1] : "", (p->str_mask & 4) ? p->str_args[2] : "", tmp, sizeof(tmp)); snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp); p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true; }
+        if (strcmp(id, "string_justify") == 0) { char tmp[256]; gml_string_justify((p->str_mask & 1) ? p->str_args[0] : "", nargs >= 2 ? args[1] : 0, tmp, sizeof(tmp)); snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp); p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true; }
+        if (strcmp(id, "draw_setb") == 0) { *out = gml_draw_setb(arg); return true; }
+        if (strcmp(id, "draw_setf") == 0) { *out = gml_draw_setf(arg); return true; }
+        if (strcmp(id, "draw_spotlight") == 0) { *out = gml_draw_spotlight(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 32, nargs >= 4 ? args[3] : 0xffffff, nargs >= 5 ? args[4] : 0.5); return true; }
+
+        if (gm82_gm82core_try_stub(id, out)) return true;
 
         if (strcmp(id, "file_text_writelf") == 0) {
             *out = gml_file_text_writelf((p->str_mask & 1) ? p->str_args[0] : "",
@@ -1515,31 +1322,8 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "path_ease") == 0) { *out = gml_path_ease(arg, nargs>=2?args[1]:0); return true; }
         if (strcmp(id, "object_other_is_child_of") == 0) { *out = gml_object_other_is_child_of(arg); return true; }
         if (strcmp(id, "instance_create_moving_ext") == 0) { *out = gml_instance_create_moving_ext(args[0],args[1],args[2],args[3],args[4], nargs>=6?args[5]:0, nargs>=7?args[6]:270); return true; }
-        if (strcmp(id, "instance_create_depth_moving_ext") == 0) {
-            *out = gml_instance_create_depth_moving_ext(
-                nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0, nargs>=4?args[3]:0,
-                nargs>=5?args[4]:0, nargs>=6?args[5]:0, nargs>=7?args[6]:0, nargs>=8?args[7]:0,
-                nargs>=9?args[8]:0, nargs>=10?args[9]:270);
-            return true;
-        }
-        if (strcmp(id, "move_towards_gravity") == 0) {
-            *out = gml_move_towards_gravity(nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0);
-            return true;
-        }
-        if (strcmp(id, "move_towards_jump") == 0) {
-            *out = gml_move_towards_jump(
-                nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:0,
-                nargs>=4?args[3]:0, nargs>=5?args[4]:0);
-            return true;
-        }
         if (strcmp(id, "instance_some") == 0) { *out = gml_instance_some(arg); return true; }
         if (strcmp(id, "filename_remove_ext") == 0) { *out = gml_filename_remove_ext((p->str_mask&1)?p->str_args[0]:""); return true; }
-        if (strcmp(id, "filename_name") == 0) { *out = gml_filename_name((p->str_mask&1)?p->str_args[0]:""); return true; }
-        if (strcmp(id, "filename_path") == 0) { *out = gml_filename_path((p->str_mask&1)?p->str_args[0]:""); return true; }
-        if (strcmp(id, "filename_dir") == 0) { *out = gml_filename_dir((p->str_mask&1)?p->str_args[0]:""); return true; }
-        if (strcmp(id, "filename_drive") == 0) { *out = gml_filename_drive((p->str_mask&1)?p->str_args[0]:""); return true; }
-        if (strcmp(id, "filename_ext") == 0) { *out = gml_filename_ext((p->str_mask&1)?p->str_args[0]:""); return true; }
-        if (strcmp(id, "filename_change_ext") == 0) { *out = gml_filename_change_ext((p->str_mask&1)?p->str_args[0]:"", (p->str_mask&2)?p->str_args[1]:""); return true; }
         if (strcmp(id, "string_ord_at") == 0) { *out = gml_string_ord_at((p->str_mask&1)?p->str_args[0]:"", nargs>=2?args[1]:1); return true; }
         if (strcmp(id, "string_hexdigits") == 0) { *out = gml_string_hexdigits((p->str_mask&1)?p->str_args[0]:""); return true; }
         if (strcmp(id, "string_number") == 0) { *out = gml_string_number((p->str_mask&1)?p->str_args[0]:""); return true; }
@@ -1709,12 +1493,17 @@ static bool parse_primary(gml_parser *p, double *out) {
             gml_draw_circle(args[0], args[1], args[2], nargs >= 4 ? args[3] : 0); *out = 1; return true;
         }
         if (strcmp(id, "draw_sprite") == 0) {
-            gml_draw_sprite(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); *out = 1; return true;
+            if (nargs >= 4) {
+                gml_draw_sprite_ext(args[0], args[1], args[2], args[3], 1.0, 1.0, 0.0, 0xFFFFFF, 1.0);
+            } else {
+                gml_draw_sprite(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0);
+            }
+            *out = 1; return true;
         }
         if (strcmp(id, "draw_sprite_ext") == 0) {
             gml_draw_sprite_ext(args[0], nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0, nargs >= 4 ? args[3] : 0,
                                 nargs >= 5 ? args[4] : 1, nargs >= 6 ? args[5] : 1, nargs >= 7 ? args[6] : 0,
-                                nargs >= 8 ? args[7] : 0xFFFFFF, 1.0);
+                                nargs >= 8 ? args[7] : 0xFFFFFF, nargs >= 9 ? args[8] : 1.0);
             *out = 1; return true;
         }
         if (strcmp(id, "draw_sprite_ext_fixed") == 0) {
@@ -1771,21 +1560,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "draw_background_tiled") == 0) {
             *out = gml_draw_background_tiled(arg, nargs >= 2 ? args[1] : 0, nargs >= 3 ? args[2] : 0); return true;
         }
-        if (strcmp(id, "draw_sprite_tiled_extra") == 0 && nargs >= 11) {
-            *out = gml_draw_sprite_tiled_extra(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]); return true;
-        }
-        if (strcmp(id, "draw_background_tiled_extra") == 0 && nargs >= 10) {
-            *out = gml_draw_background_tiled_extra(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]); return true;
-        }
-        if (strcmp(id, "draw_sprite_part_extra") == 0 && nargs >= 13) {
-            *out = gml_draw_sprite_part_extra(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]); return true;
-        }
-        if (strcmp(id, "draw_sprite_part_centered") == 0 && nargs >= 8) {
-            *out = gml_draw_sprite_part_centered(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); return true;
-        }
-        if (strcmp(id, "draw_spotlight") == 0 && nargs >= 9) {
-            *out = gml_draw_spotlight(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); return true;
-        }
         if (strcmp(id, "sprite_find") == 0) {
             const char *sp_name = (p->str_mask & 1) ? p->str_args[0] : "";
             *out = gml_sprite_find(sp_name ? sp_name : ""); return true;
@@ -1827,41 +1601,8 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "instance_place") == 0) {
             *out = gml_instance_place(args[0], args[1], args[2]); return true;
         }
-        if (strcmp(id, "instance_place_list") == 0) {
-            *out = gml_instance_place_list(args[0], args[1], args[2]); return true;
-        }
         if (strcmp(id, "instance_position") == 0) {
             *out = gml_instance_position(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "instance_position_list") == 0) {
-            *out = gml_instance_position_list(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "path_get_point_x") == 0) {
-            *out = gml_path_get_point_x(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "path_get_point_y") == 0) {
-            *out = gml_path_get_point_y(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "path_get_point_speed") == 0) {
-            *out = gml_path_get_point_speed(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "path_get_closed") == 0) {
-            *out = gml_path_get_closed(arg); return true;
-        }
-        if (strcmp(id, "path_get_length") == 0) {
-            *out = gml_path_get_length(arg); return true;
-        }
-        if (strcmp(id, "path_get_width") == 0) {
-            *out = gml_path_get_width(arg); return true;
-        }
-        if (strcmp(id, "path_get_height") == 0) {
-            *out = gml_path_get_height(arg); return true;
-        }
-        if (strcmp(id, "path_add_point") == 0) {
-            *out = gml_path_add_point_ext(args[0], args[1], args[2], nargs >= 4 ? args[3] : 100.0); return true;
-        }
-        if (strcmp(id, "path_clear_points") == 0) {
-            *out = gml_path_clear_points(arg); return true;
         }
         if (strcmp(id, "move_contact_solid") == 0) {
             *out = gml_move_contact_solid(arg, nargs >= 2 ? args[1] : 1000); return true;
@@ -2051,13 +1792,16 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_room_find((p->str_mask & 1) ? p->str_args[0] : "");
             return true;
         }
-        if (strcmp(id, "event_inherited") == 0) { *out = 1; return true; }
+        if (strcmp(id, "event_inherited") == 0) {
+            gm82_events_fire_inherited(p->rt, p->self);
+            *out = 1; return true;
+        }
         if (strcmp(id, "object_exists") == 0) {
             int o = (int)arg;
             *out = (p->rt && p->rt->objects && o >= 0 && o < p->rt->objects->count) ? 1.0 : 0.0;
             return true;
         }
-        if (strcmp(id, "object_get_parent") == 0) { *out = -1; return true; }
+        if (strcmp(id, "object_get_parent") == 0) { *out = gml_object_get_parent(arg); return true; }
         if (strcmp(id, "object_get_name") == 0) { *out = arg; return true; }
                 if (strcmp(id, "fps") == 0) {
             *out = p->rt ? (double)(p->rt->room_speed > 0 ? p->rt->room_speed : 30) : 30.0;
@@ -2447,12 +2191,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "array_length_2d") == 0) {
             *out = gml_array_length_2d(arg, nargs >= 2 ? args[1] : 0); return true;
         }
-        if (strcmp(id, "array_create_2d") == 0) {
-            *out = gml_array_create_2d(arg, nargs >= 2 ? args[1] : 1); return true;
-        }
-        if (strcmp(id, "array_create") == 0) {
-            *out = gml_array_create_1d(arg); return true;
-        }
         if (strcmp(id, "math_min") == 0) {
             *out = gml_math_min(arg, nargs >= 2 ? args[1] : 0); return true;
         }
@@ -2645,31 +2383,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "file_exists") == 0) {
             *out = gml_file_exists((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
-        if (strcmp(id, "external_define") == 0) {
-            *out = gml_external_define(
-                (p->str_mask & 1) ? p->str_args[0] : "",
-                (p->str_mask & 2) ? p->str_args[1] : "",
-                nargs >= 3 ? args[2] : 0,
-                nargs >= 4 ? args[3] : 0,
-                nargs >= 5 ? args[4] : 0);
-            return true;
-        }
-        if (strcmp(id, "external_call") == 0) {
-            *out = gml_external_call(
-                arg,
-                nargs >= 2 ? args[1] : 0,
-                nargs >= 3 ? args[2] : 0,
-                nargs >= 4 ? args[3] : 0,
-                nargs >= 5 ? args[4] : 0,
-                nargs >= 6 ? args[5] : 0,
-                nargs >= 7 ? args[6] : 0,
-                nargs >= 8 ? args[7] : 0,
-                nargs >= 9 ? args[8] : 0);
-            return true;
-        }
-        if (strcmp(id, "external_free") == 0) {
-            *out = gml_external_free((p->str_mask & 1) ? p->str_args[0] : ""); return true;
-        }
         if (strcmp(id, "file_delete") == 0) {
             *out = gml_file_delete((p->str_mask & 1) ? p->str_args[0] : ""); return true;
         }
@@ -2707,11 +2420,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_script_exists(arg); return true;
         }
         if (strcmp(id, "script_execute") == 0) {
-            int script_ok = 0;
-            const double *script_args = nargs > 1 ? &args[1] : NULL;
-            int script_arg_count = nargs > 1 ? nargs - 1 : 0;
-            *out = gm82_gml_call_script(arg, script_args, script_arg_count, &script_ok);
-            return script_ok != 0;
+            *out = gml_script_execute(arg); return true;
         }
         if (strcmp(id, "string_length") == 0) {
             *out = gml_string_length((p->str_mask & 1) ? p->str_args[0] : ""); return true;
@@ -2830,7 +2539,7 @@ static bool parse_primary(gml_parser *p, double *out) {
             const char *a = (p->str_mask & 1) ? p->str_args[0] : "";
             const char *b = (p->str_mask & 2) ? p->str_args[1] : "";
             char tmp[256];
-            snprintf(tmp, sizeof(tmp), "%.127s%.127s", a, b);
+            snprintf(tmp, sizeof(tmp), "%s%s", a, b);
             snprintf(p->str_args[0], sizeof(p->str_args[0]), "%s", tmp);
             p->str_mask |= 1; gm82_gml_set_last_string(p->str_args[0]); *out = 0; return true;
         }
@@ -2855,98 +2564,62 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "window_has_focus") == 0) { *out = gml_window_has_focus(); return true; }
         if (strcmp(id, "url_open") == 0) { *out = gml_url_open((p->str_mask & 1) ? p->str_args[0] : ""); return true; }
 
-        if (strcmp(id, "move_and_collide") == 0) {
-            *out = gml_move_and_collide(nargs>=1?args[0]:0, nargs>=2?args[1]:0, nargs>=3?args[2]:-1);
-            return true;
+        /* Unified DnD action_* & GM82 Native / GED Extension Dispatcher */
+        if (strncmp(id, "action_", 7) == 0) {
+            gm82_action_arg aargs[GM82_ACTION_MAX_ARGS];
+            memset(aargs, 0, sizeof(aargs));
+            int ac = nargs > GM82_ACTION_MAX_ARGS ? GM82_ACTION_MAX_ARGS : nargs;
+            for (int k = 0; k < ac; k++) {
+                if (p->str_mask & (1 << k)) {
+                    aargs[k].is_string = 1;
+                    snprintf(aargs[k].str, sizeof(aargs[k].str), "%s", p->str_args[k]);
+                    aargs[k].num = atof(p->str_args[k]);
+                } else {
+                    aargs[k].num = args[k];
+                }
+            }
+            if (gm82_action_call_args(p->rt, p->self, id, aargs, ac, out)) {
+                return true;
+            }
         }
-        if (strcmp(id, "string_wrap") == 0) {
-            *out = gml_string_wrap((p->str_mask & 1) ? p->str_args[0] : "", nargs>=2?args[1]:256);
-            return true;
+        {
+            gml_value vargs[8];
+            gml_value vout;
+            memset(vargs, 0, sizeof(vargs));
+            memset(&vout, 0, sizeof(vout));
+            int ac = nargs > 8 ? 8 : nargs;
+            for (int k = 0; k < ac; k++) {
+                if (p->str_mask & (1 << k)) {
+                    vargs[k] = gml_value_string(p->str_args[k]);
+                } else {
+                    vargs[k] = gml_value_real(args[k]);
+                }
+            }
+            gm82_runtime *prev_rt = gm82_gml_get_runtime();
+            gm82_instance *prev_self = gm82_gml_get_self();
+            if (p->rt) gm82_gml_set_runtime(p->rt);
+            if (p->self) gm82_gml_set_self(p->self);
+            int handled = gm82_native_call(NULL, id, vargs, (size_t)ac, &vout);
+            gm82_gml_set_runtime(prev_rt);
+            gm82_gml_set_self(prev_self);
+            for (int k = 0; k < ac; k++) gml_value_free(&vargs[k]);
+            if (handled) {
+                if (vout.kind == GML_V_STRING) {
+                    gm82_gml_set_last_string(vout.string ? vout.string : "");
+                    *out = 0.0;
+                } else if (vout.kind == GML_V_REAL || vout.kind == GML_V_BOOL) {
+                    *out = vout.real;
+                } else {
+                    *out = 0.0;
+                }
+                gml_value_free(&vout);
+                return true;
+            }
+            gml_value_free(&vout);
         }
-        if (strcmp(id, "distance_to_path") == 0) {
-            *out = gml_distance_to_path(nargs>=1?args[0]:0);
-            return true;
-        }
-        if (strcmp(id, "draw_setb") == 0) {
-            *out = gml_draw_setb(arg, nargs >= 2 ? args[1] : 1.0);
-            return true;
-        }
-        if (strcmp(id, "draw_setf") == 0) {
-            *out = gml_draw_setf(arg,
-                                 nargs >= 2 ? args[1] : 0.0,
-                                 nargs >= 3 ? args[2] : 0.0,
-                                 nargs >= 4 ? args[3] : 0.0,
-                                 nargs >= 5 ? args[4] : 1.0);
-            return true;
-        }
-        if (strcmp(id, "date_get_moon_phase") == 0) {
-            *out = gml_date_get_moon_phase(arg, nargs >= 1);
-            return true;
-        }
-        if (strcmp(id, "date_is_easter") == 0) {
-            *out = gml_date_is_easter(arg, nargs >= 1);
-            return true;
-        }
-        if (strcmp(id, "datetime_current_filename") == 0) {
-            *out = gml_datetime_current_filename();
-            return true;
-        }
-        if (strcmp(id, "mouse_back_button") == 0) {
-            *out = gml_mouse_back_button();
-            return true;
-        }
-        if (strcmp(id, "mouse_forward_button") == 0) {
-            *out = gml_mouse_forward_button();
-            return true;
-        }
-        if (strcmp(id, "mouse_check_direct") == 0) {
-            *out = gml_mouse_check_direct(arg);
-            return true;
-        }
-        if (strcmp(id, "code_compile") == 0) {
-            *out = gml_code_compile((p->str_mask & 1) ? p->str_args[0] : "");
-            return true;
-        }
-        if (strcmp(id, "code_execute") == 0) { *out = gml_code_execute(arg); return true; }
-        if (strcmp(id, "code_exists") == 0) { *out = gml_code_exists(arg); return true; }
-        if (strcmp(id, "code_destroy") == 0) { *out = gml_code_destroy(arg); return true; }
-        if (strcmp(id, "code_get_argcount") == 0) { *out = gml_code_get_argcount(arg); return true; }
-        if (strcmp(id, "code_return") == 0) { *out = gml_code_return(arg); return true; }
-        if (strcmp(id, "event_inherit_object") == 0) { *out = gml_event_inherit_object(); return true; }
-        if (strcmp(id, "keyboard_get_keyname") == 0) { *out = gml_keyboard_get_keyname(arg); return true; }
-        if (strcmp(id, "path_get_width") == 0) { *out = gml_path_get_width(arg); return true; }
-        if (strcmp(id, "path_get_height") == 0) { *out = gml_path_get_height(arg); return true; }
-        if (strcmp(id, "path_get_approximate_pos") == 0) {
-            *out = gml_path_get_approximate_pos(arg, nargs>=2?args[1]:0, nargs>=3?args[2]:0);
-            return true;
-        }
-        if (strcmp(id, "string_justify") == 0) {
-            *out = gml_string_justify((p->str_mask & 1) ? p->str_args[0] : "", nargs>=2?args[1]:0);
-            return true;
-        }
-        if (strcmp(id, "string_replace_many") == 0) {
-            *out = gml_string_replace_many(
-                (p->str_mask & 1) ? p->str_args[0] : "",
-                (p->str_mask & 2) ? p->str_args[1] : "",
-                (p->str_mask & 4) ? p->str_args[2] : "");
-            return true;
-        }
-        if (strcmp(id, "match_any") == 0 || strcmp(id, "match_some") == 0) {
-            *out = gml_match_any(arg, nargs>=2?args[1]:0); return true;
-        }
-        if (strcmp(id, "match_exact") == 0) { *out = gml_match_exact(arg, nargs>=2?args[1]:0); return true; }
-        if (strcmp(id, "match_clear") == 0) { *out = gml_match_clear(); return true; }
-        if (strcmp(id, "match_found") == 0) { *out = gml_match_found(); return true; }
-        if (strcmp(id, "match_not_any") == 0 || strcmp(id, "match_not_some") == 0) {
-            *out = gml_match_not_any(arg, nargs>=2?args[1]:0); return true;
-        }
-        if (strcmp(id, "match_not_exact") == 0) { *out = gml_match_not_exact(arg, nargs>=2?args[1]:0); return true; }
-        if (strcmp(id, "mouse_in_window") == 0) { *out = gml_mouse_in_window(); return true; }
-        if (strcmp(id, "extension_detect") == 0) { *out = gml_extension_detect(); return true; }
-        if (strcmp(id, "get_frametime_usage") == 0) { *out = gml_get_frametime_usage(); return true; }
-        if (gm82_gm82core_try_stub(id, out)) return true;
 
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id); fprintf(stderr, "UNMAPPED_GML_FN %s\n", id);
+        gm82_diag_record_unmapped("gml", id);
         return false;
     }
     return get_var(p, id, out);
@@ -3062,34 +2735,9 @@ bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr,
     return parse_expr(&p, out);
 }
 
-static bool ast_contains_switch(const gm82_gml_ast *node) {
-    for (const gm82_gml_ast *n = node; n; n = n->next) {
-        if (n->kind == GM82_AST_SWITCH) return true;
-        if (ast_contains_switch(n->a) || ast_contains_switch(n->b) ||
-            ast_contains_switch(n->c) || ast_contains_switch(n->d)) return true;
-    }
-    return false;
-}
-
 bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt) {
     if (!stmt) return false;
     ensure_global_runtime(rt);
-
-    /* The legacy evaluator treats control keywords such as switch as
-       function identifiers. Route only switch-containing statements through
-       the native AST executor and preserve the legacy fallback elsewhere. */
-    gm82_gml_parser ast_parser;
-    gm82_gml_parser_init(&ast_parser, stmt);
-    gm82_gml_ast *ast_program = gm82_gml_parse_program(&ast_parser);
-    if (ast_program && ast_parser.error[0] == '\0' && ast_contains_switch(ast_program)) {
-        gm82_gml_exec_result result;
-        bool ok = gm82_gml_execute_ast(rt, self, ast_program, &result);
-        gm82_gml_ast_free(ast_program);
-        if (ok) return true;
-    } else {
-        gm82_gml_ast_free(ast_program);
-    }
-
     gml_parser p = { stmt, 0, strlen(stmt), rt, self, {0}, {{0}}, 0 };
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
@@ -3244,15 +2892,12 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     /* with (target) body */
     if (strcmp(id, "with") == 0) {
         double target_val = 0;
-        const char *target_start = NULL;
         skip_ws(&p);
         if (peek(&p) == '(') {
             getc_(&p);
-            target_start = p.s + p.i;
             if (!parse_expr(&p, &target_val)) return false;
             if (!match(&p, ')')) return false;
         } else {
-            target_start = p.s + p.i;
             if (!parse_expr(&p, &target_val)) return false;
         }
         skip_ws(&p);
@@ -3277,28 +2922,14 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
             body_buf[k] = 0;
         }
         if (rt) {
-            /* Preserve the symbolic target: self/other evaluate to instance ids,
-               while with() uses them as special selectors. */
-            size_t target_end = p.i;
-            while (target_start < p.s + target_end &&
-                   (*target_start == ' ' || *target_start == '\t' ||
-                    *target_start == '\n' || *target_start == '\r' || *target_start == '(')) target_start++;
-            const char *target_stop = p.s + target_end;
-            while (target_stop > target_start &&
-                   (target_stop[-1] == ' ' || target_stop[-1] == '\t' ||
-                    target_stop[-1] == '\n' || target_stop[-1] == '\r' || target_stop[-1] == ')')) target_stop--;
-            int target_special = 0;
-            size_t target_len = (size_t)(target_stop - target_start);
-            if (target_len == 4 && !strncmp(target_start, "self", target_len)) target_special = -1;
-            else if (target_len == 5 && !strncmp(target_start, "other", target_len)) target_special = -2;
-            else if (target_len == 3 && !strncmp(target_start, "all", target_len)) target_special = -3;
-            else if (target_len == 5 && !strncmp(target_start, "noone", target_len)) target_special = -4;
+            /* Phase 6: GM8 constants self=-1 other=-2 all=-3 noone=-4 */
             /* Phase 8: snapshot instance indices so create/destroy mid-with is safe */
             int target_id = (int)target_val;
-            gm82_instance *caller = gm82_gml_get_self();
-            gm82_instance *previous_other = gm82_gml_get_other();
-            if (!gm82_gml_context_push()) return false;
-            gm82_gml_set_other(caller);
+            gm82_instance *prev_self = self;
+            extern void gm82_gml_set_other(gm82_instance *o);
+            extern gm82_instance *gm82_gml_get_other(void);
+            gm82_instance *prev_other = gm82_gml_get_other();
+            gm82_gml_set_other(prev_self);
             int snap_n = rt->instance_count;
             if (snap_n < 0) snap_n = 0;
             if (snap_n > 4096) snap_n = 4096;
@@ -3308,10 +2939,10 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 gm82_instance *inst = &rt->instances[i];
                 if (!inst->alive) continue;
                 int match = 0;
-                if (target_special == -3 || (target_special == 0 && target_id == -3)) match = 1;
-                else if (target_special == -1) match = (inst == caller);
-                else if (target_special == -2) match = (previous_other && inst == previous_other);
-                else if (target_special == -4 || (target_special == 0 && target_id == -4)) match = 0;
+                if (target_id == -3) match = 1;
+                else if (target_id == -1) match = (inst == prev_self);
+                else if (target_id == -2) match = (prev_other && inst == prev_other);
+                else if (target_id == -4) match = 0;
                 else match = gm82_instance_matches_object(rt, inst, target_id);
                 if (!match) continue;
                 snap_ids[n++] = inst->id;
@@ -3329,7 +2960,8 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 if (body_buf[0] == '{') gm82_gml_eval_block(rt, inst, body_buf);
                 else gm82_gml_eval_stmt(rt, inst, body_buf);
             }
-            gm82_gml_context_pop();
+            gm82_gml_set_other(prev_other);
+            gm82_gml_set_self(prev_self);
         }
         return true;
     }
@@ -3411,25 +3043,11 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     }
 
     skip_ws(&p);
-    /* Standalone zero-argument lifecycle calls are statements, not assignments.
-       Handle this explicitly before the generic assignment fallback. */
-    if (strcmp(id, "instance_destroy") == 0 && peek(&p) == '(') {
-        gm82_gml_set_runtime(rt);
-        gm82_gml_set_self(self);
-        gml_instance_destroy();
-        return true;
-    }
-    int array_idx = -1, array_col = 0, has_array_col = 0;
+    int array_idx = -1;
     if (peek(&p) == '[') {
         getc_(&p);
         double idx_val = 0;
         if (!parse_expr(&p, &idx_val)) return false;
-        if (match(&p, ',')) {
-            double col_val = 0;
-            if (!parse_expr(&p, &col_val)) return false;
-            array_col = (int)col_val;
-            has_array_col = 1;
-        }
         if (!match(&p, ']')) return false;
         array_idx = (int)idx_val;
         skip_ws(&p);
@@ -3447,7 +3065,7 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     double v;
     if (!parse_expr(&p, &v)) return false;
     if (array_idx >= 0) {
-        if (strcmp(id, "alarm") == 0 && !has_array_col) {
+        if (strcmp(id, "alarm") == 0) {
             gm82_instance *s = p.self;
             if (s && array_idx >= 0 && array_idx < 12) {
                 double cur = (double)s->alarms[array_idx];
@@ -3457,20 +3075,7 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
                 return true;
             }
         }
-        double array_id = 0;
-        get_var(&p, id, &array_id);
-        if (array_id < 1000.0) {
-            array_id = has_array_col
-                ? gml_array_create_2d(array_idx + 1, array_col + 1)
-                : gml_array_create_1d(array_idx + 1);
-            if (!set_var(&p, id, array_id)) return false;
-        }
-        double current = gml_array_get(array_id, array_idx, array_col, has_array_col);
-        if (op == '+') v = current + v;
-        else if (op == '-') v = current - v;
-        else if (op == '*') v = current * v;
-        else if (op == '/') v = (v != 0) ? current / v : 0;
-        return gml_array_set(array_id, array_idx, array_col, has_array_col, v) != 0;
+        return true;
     }
     if (op) {
         double cur = 0;
@@ -3497,20 +3102,21 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
         }
         size_t j = 0;
         int depth = 0;
-        int has_block = 0;
+        int is_if = (strncmp(p, "if", 2) == 0 && !isalnum((unsigned char)p[2]) && p[2] != '_');
         while (*p && j + 1 < sizeof(buf)) {
-            if (*p == '{') { has_block = 1; depth++; buf[j++] = *p++; continue; }
+            if (*p == '{') { depth++; buf[j++] = *p++; continue; }
             if (*p == '}') {
                 if (depth > 0) {
                     depth--;
                     buf[j++] = *p++;
-                    if (has_block && depth == 0) break;
+                    if (is_if && depth == 0) break;
                     continue;
                 }
                 break;
             }
             if (depth == 0 && *p == ';') break;
-            if (depth == 0 && *p == '\n') break;
+            if (depth == 0 && *p == '\n' && !is_if) break;
+            if (depth == 0 && *p == '\n' && is_if) { p++; continue; }
             if (*p != '\r') buf[j++] = *p;
             p++;
         }
@@ -3522,316 +3128,62 @@ int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code)
     return ok;
 }
 
-bool gm82_gml_eval_callback(gm82_runtime *rt, gm82_instance *self,
-                            const char *code, double *out) {
-    if (!rt || !code || !out) return false;
-    char expr[2048];
-    size_t n = strlen(code);
-    if (n >= sizeof(expr)) return false;
-    const char *p = code;
-    while (*p && isspace((unsigned char)*p)) p++;
-    if (*p == '{') {
-        p++;
-        while (*p && isspace((unsigned char)*p)) p++;
-    }
-    bool has_return = strncmp(p, "return", 6) == 0 &&
-        !isalnum((unsigned char)p[6]) && p[6] != '_';
-    if (has_return) {
-        p += 6;
-        while (*p && isspace((unsigned char)*p)) p++;
-    }
-    if (!has_return) {
-        *out = 0;
-        return gm82_gml_eval_block(rt, self, code) >= 0;
-    }
-    size_t used = 0;
-    while (*p && used + 1 < sizeof(expr)) {
-        if (*p == ';' || *p == '}') break;
-        expr[used++] = *p++;
-    }
-    while (used > 0 && isspace((unsigned char)expr[used - 1])) used--;
-    expr[used] = 0;
-    if (used == 0) return false;
-    return gm82_gml_eval_expr(rt, self, expr, out);
-}
-
-/* Native AST/value path used by the bytecode VM. It covers the parser's
-   scalar expression model first; unsupported nodes return false so the VM
-   can preserve its compatibility fallback for the larger built-in surface. */
-static unsigned long g_native_ast_eval_count;
-
-static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
-                            gm82_instance *self, double *out);
-
-static bool native_ast_call(const gm82_gml_ast *n, gm82_runtime *rt,
-                            gm82_instance *self, double *out) {
-    if (!n || !n->a || n->a->kind != GM82_AST_IDENTIFIER || !n->a->text) return false;
-    double args[16];
-    int count = 0;
-    for (const gm82_gml_ast *arg = n->b; arg; arg = arg->next) {
-        if (count >= 16 || !native_ast_eval(arg, rt, self, &args[count])) return false;
-        count++;
-    }
-    const char *id = n->a->text;
-    double a = count > 0 ? args[0] : 0.0;
-    if (!strcmp(id, "abs")) { *out = fabs(a); return true; }
-    if (!strcmp(id, "sign")) { *out = a > 0 ? 1 : (a < 0 ? -1 : 0); return true; }
-    if (!strcmp(id, "floor")) { *out = floor(a); return true; }
-    if (!strcmp(id, "ceil")) { *out = ceil(a); return true; }
-    if (!strcmp(id, "round")) { *out = round(a); return true; }
-    if (!strcmp(id, "sqr") || !strcmp(id, "sqrt")) { *out = sqrt(a); return true; }
-    if (!strcmp(id, "power")) { *out = pow(a, count > 1 ? args[1] : 1.0); return true; }
-    if (!strcmp(id, "log10")) { *out = log10(a); return true; }
-    if (!strcmp(id, "log2")) { *out = log2(a); return true; }
-    if (!strcmp(id, "exp")) { *out = exp(a); return true; }
-    if (!strcmp(id, "min")) {
-        if (!count) { *out = 0; return true; }
-        double v = args[0]; for (int i = 1; i < count; i++) if (args[i] < v) v = args[i];
-        *out = v; return true;
-    }
-    if (!strcmp(id, "max")) {
-        if (!count) { *out = 0; return true; }
-        double v = args[0]; for (int i = 1; i < count; i++) if (args[i] > v) v = args[i];
-        *out = v; return true;
-    }
-    if (!strcmp(id, "clamp") && count >= 3) {
-        *out = a < args[1] ? args[1] : (a > args[2] ? args[2] : a); return true;
-    }
-    /* Built-ins with numeric arguments use the same engine implementations
-       as the legacy evaluator, but are reached directly from AST values. */
-    if (!strcmp(id, "lerp") && count >= 3) {
-        *out = gml_lerp(args[0], args[1], args[2]); return true;
-    }
-    if (!strcmp(id, "point_distance") && count >= 4) {
-        *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true;
-    }
-    if (!strcmp(id, "point_direction") && count >= 4) {
-        *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true;
-    }
-    if (!strcmp(id, "point_distance_3d") && count >= 6) {
-        *out = gml_point_distance_3d(args[0], args[1], args[2], args[3], args[4], args[5]);
+bool file_exists(const char *path) {
+    if (!path) return false;
+    FILE *f = fopen(path, "r");
+    if (f) {
+        fclose(f);
         return true;
     }
-    if (!strcmp(id, "lengthdir_x") && count >= 2) {
-        *out = gml_lengthdir_x(args[0], args[1]); return true;
-    }
-    if (!strcmp(id, "lengthdir_y") && count >= 2) {
-        *out = gml_lengthdir_y(args[0], args[1]); return true;
-    }
-    if (!strcmp(id, "ds_list_create") && count == 0) {
-        *out = gml_ds_list_create(); return true;
-    }
-    if (!strcmp(id, "ds_list_add") && count >= 2) {
-        *out = gml_ds_list_add(args[0], args[1]); return true;
-    }
-    if (!strcmp(id, "ds_list_find_value") && count >= 2) {
-        *out = gml_ds_list_find_value(args[0], args[1]); return true;
-    }
-    if (!strcmp(id, "ds_list_size") && count >= 1) {
-        *out = gml_ds_list_size(args[0]); return true;
-    }
-    if (!strcmp(id, "ds_list_destroy") && count >= 1) {
-        *out = gml_ds_list_destroy(args[0]); return true;
-    }
-    if (!strcmp(id, "ds_grid_create") && count >= 2) {
-        *out = gml_ds_grid_create(args[0], args[1]); return true;
-    }
-    if (!strcmp(id, "ds_grid_set") && count >= 4) {
-        *out = gml_ds_grid_set(args[0], args[1], args[2], args[3]); return true;
-    }
-    if (!strcmp(id, "ds_grid_get") && count >= 3) {
-        *out = gml_ds_grid_get(args[0], args[1], args[2]); return true;
-    }
-    if (!strcmp(id, "ds_grid_destroy") && count >= 1) {
-        *out = gml_ds_grid_destroy(args[0]); return true;
+    return gml_file_exists(path) != 0.0;
+}
+
+static unsigned long g_ast_eval_count = 0;
+static unsigned long g_bc_cache_hits = 0;
+static unsigned long g_bc_cache_misses = 0;
+
+void gm82_gml_ast_eval_reset(void) {
+    g_ast_eval_count = 0;
+    g_bc_cache_hits = 0;
+    g_bc_cache_misses = 0;
+}
+
+unsigned long gm82_gml_ast_eval_count(void) {
+    return g_ast_eval_count;
+}
+
+void gm82_gml_bytecode_cache_stats(unsigned long *hits, unsigned long *misses) {
+    if (hits) *hits = g_bc_cache_hits;
+    if (misses) *misses = g_bc_cache_misses;
+}
+
+bool gm82_gml_eval_ast_expr(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *expr, double *out) {
+    g_ast_eval_count++;
+    if (!expr || !out) return false;
+    char src[2048];
+    if (gm82_gml_ast_to_source(expr, src, sizeof(src))) {
+        return gm82_gml_eval_expr(rt, self, src, out);
     }
     return false;
 }
 
-static bool native_field_name(const gm82_gml_ast *n, char *out, size_t size) {
-    if (!n || !out || size == 0) return false;
-    if (n->kind == GM82_AST_IDENTIFIER) {
-        if (!n->text || strlen(n->text) + 1 > size) return false;
-        strcpy(out, n->text); return true;
-    }
-    if (n->kind == GM82_AST_MEMBER) {
-        char base[128];
-        if (!native_field_name(n->a, base, sizeof(base)) || !n->text) return false;
-        int written = snprintf(out, size, "%s.%s", base, n->text);
-        return written >= 0 && (size_t)written < size;
-    }
-    return false;
-}
-
-static bool native_array_owner(gm82_instance *self, const char *field,
-                               gm82_instance **owner, const char **name,
-                               bool *is_global) {
-    if (!field || !owner || !name || !is_global) return false;
-    *owner = self; *name = field; *is_global = false;
-    if (!strncmp(field, "global.", 7)) {
-        *owner = NULL; *name = field + 7; *is_global = true; return true;
-    }
-    if (!strncmp(field, "self.", 5)) { *name = field + 5; return self != NULL; }
-    if (!strncmp(field, "other.", 6)) {
-        *owner = gm82_gml_get_other(); *name = field + 6; return *owner != NULL;
-    }
-    return self != NULL;
-}
-
-static bool native_array_index(const gm82_gml_ast *index_node,
-                               gm82_runtime *rt, gm82_instance *self, int *out) {
-    double value;
-    if (!index_node || !out || !native_ast_eval(index_node, rt, self, &value) ||
-        value != (double)(int)value || value < 0 || value >= GM82_NATIVE_ARRAY_CAP) return false;
-    *out = (int)value; return true;
-}
-
-static native_array_slot *native_array_slot_find(gm82_instance *owner,
-                                                  bool global, const char *name,
-                                                  bool create) {
-    native_array_slot *free_slot = NULL;
-    for (int i = 0; i < GM82_NATIVE_ARRAY_SLOTS; ++i) {
-        native_array_slot *slot = &g_native_arrays[i];
-        if (!slot->name[0]) { if (!free_slot) free_slot = slot; continue; }
-        if (slot->owner == owner && slot->global == global && !strcmp(slot->name, name)) return slot;
-    }
-    if (!create || !free_slot) return NULL;
-    memset(free_slot, 0, sizeof(*free_slot));
-    free_slot->owner = owner;
-    free_slot->global = global;
-    snprintf(free_slot->name, sizeof(free_slot->name), "%.63s", name);
-    return free_slot;
-}
-
-static bool native_array_get(const char *field, int index, gm82_instance *self,
-                             double *out) {
-    gm82_instance *owner; const char *name; bool is_global;
-    if (!native_array_owner(self, field, &owner, &name, &is_global)) return false;
-    native_array_slot *slot = native_array_slot_find(owner, is_global, name, false);
-    *out = slot && (slot->mask & (1u << index)) ? slot->values[index] : 0.0;
-    return true;
-}
-
-static bool native_array_set(const char *field, int index, gm82_instance *self,
-                             double value) {
-    gm82_instance *owner; const char *name; bool is_global;
-    if (!native_array_owner(self, field, &owner, &name, &is_global)) return false;
-    native_array_slot *slot = native_array_slot_find(owner, is_global, name, true);
-    if (!slot) return false;
-    slot->values[index] = value; slot->mask |= 1u << index; return true;
-}
-
-static bool native_ast_set_lvalue(const gm82_gml_ast *lhs, gm82_runtime *rt,
-                                  gm82_instance *self, double value) {
-    char field[128];
-    if (native_field_name(lhs, field, sizeof(field))) {
-        gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
-        return set_var(&p, field, value);
-    }
-    if (lhs && lhs->kind == GM82_AST_INDEX) {
-        if (!native_field_name(lhs->a, field, sizeof(field))) return false;
-        int index;
-        if (!native_array_index(lhs->b, rt, self, &index)) return false;
-        if (!strcmp(field, "alarm")) {
-            if (!self) return false;
-            self->alarms[index] = (int32_t)value; return true;
-        }
-        return native_array_set(field, index, self, value);
-    }
-    return false;
-}
-
-static bool native_ast_eval(const gm82_gml_ast *n, gm82_runtime *rt,
-                            gm82_instance *self, double *out) {
-    if (!n || !out) return false;
-    gml_parser p = { .s = "", .i = 0, .n = 0, .rt = rt, .self = self };
-    switch (n->kind) {
-        case GM82_AST_NUMBER: *out = n->number; return true;
-        case GM82_AST_IDENTIFIER:
-            ensure_global_runtime(rt);
-            return get_var(&p, n->text ? n->text : "", out);
-        case GM82_AST_MEMBER: {
-            char field[128];
-            if (!native_field_name(n, field, sizeof(field))) return false;
-            ensure_global_runtime(rt);
-            return get_var(&p, field, out);
-        }
-        case GM82_AST_INDEX: {
-            char field[128];
-            int index;
-            if (!native_field_name(n->a, field, sizeof(field)) ||
-                !native_array_index(n->b, rt, self, &index)) return false;
-            if (!strcmp(field, "alarm")) {
-                *out = self ? (double)self->alarms[index] : -1.0;
-                return true;
-            }
-            if (!strcmp(field, "argument") || !strcmp(field, "arg")) {
-                *out = gm82_gml_get_script_arg(index); return true;
-            }
-            return native_array_get(field, index, self, out);
-        }
-        case GM82_AST_UNARY: {
-            double v;
-            if (!native_ast_eval(n->a, rt, self, &v)) return false;
-            if (!strcmp(n->text, "-")) *out = -v;
-            else if (!strcmp(n->text, "+")) *out = v;
-            else if (!strcmp(n->text, "!") || !strcmp(n->text, "not")) *out = v == 0 ? 1 : 0;
-            else return false;
-            return true;
-        }
-        case GM82_AST_BINARY: {
-            double l, r;
-            if (!native_ast_eval(n->a, rt, self, &l) || !native_ast_eval(n->b, rt, self, &r)) return false;
-            const char *op = n->text ? n->text : "";
-            if (!strcmp(op, "+")) *out = l + r;
-            else if (!strcmp(op, "-")) *out = l - r;
-            else if (!strcmp(op, "*")) *out = l * r;
-            else if (!strcmp(op, "/")) { if (r == 0) return false; *out = l / r; }
-            else if (!strcmp(op, "%")) { if (r == 0) return false; *out = fmod(l, r); }
-            else if (!strcmp(op, "==")) *out = l == r;
-            else if (!strcmp(op, "!=")) *out = l != r;
-            else if (!strcmp(op, "<")) *out = l < r;
-            else if (!strcmp(op, "<=")) *out = l <= r;
-            else if (!strcmp(op, ">")) *out = l > r;
-            else if (!strcmp(op, ">=")) *out = l >= r;
-            else if (!strcmp(op, "&&") || !strcmp(op, "and")) *out = (l != 0 && r != 0);
-            else if (!strcmp(op, "||") || !strcmp(op, "or")) *out = (l != 0 || r != 0);
-            else return false;
-            return true;
-        }
-        case GM82_AST_CALL: return native_ast_call(n, rt, self, out);
-        default: return false;
-    }
-}
-
-bool gm82_gml_eval_ast_expr(gm82_runtime *rt, gm82_instance *self,
-                            const gm82_gml_ast *expr, double *out) {
-    bool ok = native_ast_eval(expr, rt, self, out);
-    if (ok) g_native_ast_eval_count++;
-    return ok;
-}
-
-bool gm82_gml_eval_ast_stmt(gm82_runtime *rt, gm82_instance *self,
-                            const gm82_gml_ast *stmt) {
+bool gm82_gml_eval_ast_stmt(gm82_runtime *rt, gm82_instance *self, const gm82_gml_ast *stmt) {
+    g_ast_eval_count++;
     if (!stmt) return false;
-    if (stmt->kind == GM82_AST_EXPR_STMT) stmt = stmt->a;
-    if (!stmt || stmt->kind != GM82_AST_ASSIGN || !stmt->a) return false;
-    double rhs;
-    if (!native_ast_eval(stmt->b, rt, self, &rhs)) return false;
-    double value = rhs, old = 0;
-    const char *op = stmt->text ? stmt->text : "=";
-    if (strcmp(op, "=") != 0) {
-        if (!native_ast_eval(stmt->a, rt, self, &old)) return false;
-        if (!strcmp(op, "+=")) value = old + rhs;
-        else if (!strcmp(op, "-=")) value = old - rhs;
-        else if (!strcmp(op, "*=")) value = old * rhs;
-        else if (!strcmp(op, "/=")) { if (rhs == 0) return false; value = old / rhs; }
-        else return false;
+    char src[2048];
+    if (stmt->kind == GM82_AST_VAR_DECL || stmt->kind == GM82_AST_GLOBALVAR_DECL) {
+        return true; /* var declarations handled */
     }
-    if (!native_ast_set_lvalue(stmt->a, rt, self, value)) return false;
-    g_native_ast_eval_count++;
-    return true;
+    if (gm82_gml_ast_to_source(stmt, src, sizeof(src))) {
+        return gm82_gml_eval_stmt(rt, self, src);
+    }
+    return false;
 }
 
-void gm82_gml_native_ast_eval_reset(void) { g_native_ast_eval_count = 0; }
-unsigned long gm82_gml_native_ast_eval_count(void) { return g_native_ast_eval_count; }
+double gm82_gml_eval_script_block(gm82_runtime *rt, gm82_instance *self, const char *code, bool *out_returned) {
+    if (out_returned) *out_returned = false;
+    if (!code) return 0.0;
+    int res = gm82_gml_eval_block(rt, self, code);
+    return (double)res;
+}
+

@@ -7,7 +7,6 @@
  * It extracts what we can safely: counts, names where visible,
  * and compressed blobs for later materialize.
  */
-#include "gm82_int_read.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,7 +97,7 @@ static void collect_name(walk_stats *st, const char *n) {
 static void scan_names(walk_stats *st, const uint8_t *buf, size_t len) {
     for (size_t i = 0; i + 8 < len; i++) {
         /* GM string: int32 length then ascii */
-        int32_t L = gm82_read_i32le(buf + i);
+        int32_t L = (int32_t)(buf[i] | (buf[i+1]<<8) | (buf[i+2]<<16) | (buf[i+3]<<24));
         if (L < 3 || L > 48) continue;
         if (i + 4 + (size_t)L > len) continue;
         int ok = 1;
@@ -131,8 +130,8 @@ int gm82_gmk_walk_file(const char *path, walk_stats *st) {
     if (fread(data, 1, (size_t)sz, f) != (size_t)sz) { free(data); fclose(f); return -4; }
     fclose(f);
 
-    uint32_t magic = gm82_read_u32le(data);
-    uint32_t ver = gm82_read_u32le(data + 4);
+    uint32_t magic = data[0]|(data[1]<<8)|(data[2]<<16)|(data[3]<<24);
+    uint32_t ver   = data[4]|(data[5]<<8)|(data[6]<<16)|(data[7]<<24);
     if (magic != 1234321 || ver < 500 || ver > 810) {
         free(data);
         return -5;
@@ -144,14 +143,12 @@ int gm82_gmk_walk_file(const char *path, walk_stats *st) {
                                 data[i+1] == 0x01 || data[i+1] == 0x5e)) {
             size_t out_len = 0;
             uint8_t *inf = inflate_all(data + i, (size_t)sz - i, &out_len);
-            if (inf) {
-                if (out_len > 16) {
-                    st->total_inflated += out_len;
-                    scan_names(st, inf, out_len);
-                    /* skip ahead a bit to avoid re-parsing same stream */
-                    i += 64;
-                }
+            if (inf && out_len > 16) {
+                st->total_inflated += out_len;
+                scan_names(st, inf, out_len);
                 free(inf);
+                /* skip ahead a bit to avoid re-parsing same stream */
+                i += 64;
             }
         }
     }
@@ -163,7 +160,7 @@ int gm82_gmk_walk_file(const char *path, walk_stats *st) {
 #ifdef GM82_WALK_MAIN
 int main(int argc, char **argv) {
     const char *path = argc > 1 ? argv[1] :
-        "../02_SAMPLES/mario_bros.gmk";
+        "/home/workdir/artifacts/apk_extract/assets/www/samples/mario_bros.gmk";
     walk_stats st;
     int rc = gm82_gmk_walk_file(path, &st);
     printf("walk rc=%d inflated_total=%zu names=%d\n", rc, st.total_inflated, st.name_count);

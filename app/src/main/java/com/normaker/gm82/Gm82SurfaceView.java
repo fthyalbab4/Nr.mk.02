@@ -2,9 +2,12 @@ package com.normaker.gm82;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -15,7 +18,17 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class Gm82SurfaceView extends GLSurfaceView implements GLSurfaceView.Renderer {
 
+    public interface HostRenderer {
+        void onHostSurfaceCreated();
+        void onHostSurfaceChanged(int width, int height);
+        void onHostDrawFrame(int width, int height);
+    }
+
     private boolean initialized = false;
+    private HostRenderer hostRenderer = null;
+    private OnTouchListener hostTouchListener = null;
+    private volatile int surfaceWidth = 640;
+    private volatile int surfaceHeight = 480;
 
     public Gm82SurfaceView(Context context) {
         super(context);
@@ -25,6 +38,22 @@ public class Gm82SurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
     public Gm82SurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
+    }
+
+    public void setHostRenderer(HostRenderer renderer) {
+        this.hostRenderer = renderer;
+    }
+
+    public void setHostTouchListener(OnTouchListener listener) {
+        this.hostTouchListener = listener;
+    }
+
+    public int getSurfaceWidth() {
+        return surfaceWidth;
+    }
+
+    public int getSurfaceHeight() {
+        return surfaceHeight;
     }
 
     private void init() {
@@ -38,20 +67,48 @@ public class Gm82SurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
     }
 
     @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        super.surfaceCreated(holder);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && holder != null) {
+            try {
+                holder.getSurface().setFrameRate(90.0f, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         int w = getWidth() > 0 ? getWidth() : 640;
         int h = getHeight() > 0 ? getHeight() : 480;
+        surfaceWidth = w;
+        surfaceHeight = h;
+        if (hostRenderer != null) {
+            hostRenderer.onHostSurfaceCreated();
+            initialized = true;
+            return;
+        }
         Gm82Native.nativeInit(w, h);
         initialized = true;
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        surfaceWidth = width > 0 ? width : 640;
+        surfaceHeight = height > 0 ? height : 480;
+        if (hostRenderer != null) {
+            if (!initialized) {
+                hostRenderer.onHostSurfaceCreated();
+                initialized = true;
+            }
+            hostRenderer.onHostSurfaceChanged(surfaceWidth, surfaceHeight);
+            return;
+        }
         if (!initialized) {
-            Gm82Native.nativeInit(width, height);
+            Gm82Native.nativeInit(surfaceWidth, surfaceHeight);
             initialized = true;
         }
-        Gm82Native.nativeResize(width, height);
+        Gm82Native.nativeResize(surfaceWidth, surfaceHeight);
     }
 
     private final int[] mAudioParams = new int[4];
@@ -60,9 +117,13 @@ public class Gm82SurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        if (hostRenderer != null) {
+            hostRenderer.onHostDrawFrame(surfaceWidth, surfaceHeight);
+            return;
+        }
         if (Gm82Native.nativeIsRunning()) {
             long now = System.nanoTime();
-            double dt = (lastFrameTimeNanos > 0) ? (now - lastFrameTimeNanos) / 1e9 : 1.0 / 60.0;
+            double dt = (lastFrameTimeNanos > 0) ? (now - lastFrameTimeNanos) / 1e9 : (1.0 / 90.0);
             lastFrameTimeNanos = now;
             // Clamp dt between 1ms and 100ms to ensure stability during pause/resume or lag spikes
             double clampedDt = Math.min(Math.max(dt, 0.001), 0.1);
@@ -93,6 +154,9 @@ public class Gm82SurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (hostTouchListener != null) {
+            return hostTouchListener.onTouch(this, event);
+        }
         int action = event.getActionMasked();
         int index = event.getActionIndex();
         int sw = getWidth() > 0 ? getWidth() : 640;

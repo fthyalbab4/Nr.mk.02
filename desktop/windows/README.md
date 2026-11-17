@@ -10,7 +10,7 @@ The first milestone provides a native Windows window, `.gmk`/`.gm81`/`.gm6` file
 
 1. **Native host shell (done):** engine-level Win32 host and file selection; input forwarding; bounded frame pacing; software framebuffer; headless verification mode. This is `NorMakerNativePC.exe` and it is a diagnostic/engine host, not the editor.
 2. **Nor Maker PC application (done):** `NorMakerStudio.exe` shows the real Nor Maker interface on Windows by serving the bundled editor UI and providing the same `window.NorNative` bridge the Android WebView injects — see "Nor Maker PC application" below.
-3. **Platform parity (audio started):** the native Windows host now has an additive `winmm/waveOut` device backend fed by the existing NOR mixer; focus/pause/resume, display scaling, and Unicode path handling remain follow-up checks.
+3. **Platform parity:** add a Windows audio device backend and route existing sound commands to it; test focus/pause/resume and display scaling; improve Unicode path handling.
 4. **Runtime parity:** expand PC smoke tests across bundled GMK samples; audit incomplete GMK resources/GML builtins and document the supported subset rather than silently claiming full GameMaker compatibility.
 5. **Release:** add reproducible Windows CI, package the EXE with its runtime dependencies, and publish versioned artifacts only after test and license review.
 
@@ -69,7 +69,7 @@ The interface itself was opened through its public URL in a real Chromium browse
 ## Current milestone limits
 
 - The project loader/bridge currently follows the repository's GMK decoding path; this shell filters for `.gmk`, `.gm81`, and `.gm6`. Text `.gm82` projects are not claimed as playable here.
-- The native Windows host now streams the existing mixer output through `winmm/waveOut`; full embedded GMK asset decoding and physical-device verification remain required for complete sound parity. Android audio sources and behavior are untouched.
+- This initial shell has no Windows audio backend yet; existing Android audio sources and behavior are untouched. Sound parity is milestone 2.
 - A Windows EXE is a native host for the current engine, not a guarantee that every GameMaker 8.2 game/API works.
 - GDI software presentation favors compatibility over GPU performance. The Android GLES renderer remains independent.
 - Verification is now executed, not just cross-compiled: the checked-in EXE runs under Wine on an offscreen X server and loads/renders the bundled samples (see "Verified execution under Wine" below). Wine is not Windows, so real-hardware driver, audio and multi-monitor behavior still need a physical Windows machine.
@@ -139,6 +139,4 @@ The cross-build prefers static zlib and the EXE currently imports only standard 
 
 ## Checked-in Windows binary
 
-Two x64 builds are included: [`dist/NorMakerStudio.exe`](dist/NorMakerStudio.exe) (the Nor Maker application, 1,202,093 bytes, SHA-256 `c31330718730565392ffcb0ce64e864369ed38d4576fd0c81fe547c73d1b2c10`) and [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe) (engine host and headless verifier, 1,189,849 bytes, SHA-256 `591542216092dd04daf6d31c8bf614ddf785367063f43272514f8c7507ee2a86`). Both are built from the same engine sources as the Android app; rebuild them after any engine change so the checked-in binaries never drift. They contain the bridge and view fixes described below, the headless verification mode and the command-line project argument.
-
-Rebuilt on 2026-11-05 after correcting GML string-plus-number conversion. Wine 9.0 verification passed for Mario, Plataformas, Shooter and Zelda at 300 frames each; the missing-project path returned the expected exit code 4.
+Two x64 builds are included: [`dist/NorMakerStudio.exe`](dist/NorMakerStudio.exe) (the Nor Maker application, 1,057,592 bytes, SHA-256 `3773e5b11f9da16771f66a309bd192be33ddf5d86f1a75111210d1cecdc40e8a`) and [`dist/NorMakerNativePC.exe`](dist/NorMakerNativePC.exe) (engine host and headless verifier, 1,047,396 bytes, SHA-256 `46179de815f9749ae8d96400c5264d8b5bfd1dbcad94cbf3ff4101e046268bab`). Both are built from the same engine sources as the Android app; rebuild them after any engine change so the checked-in binaries never drift. They contain the bridge and view fixes described below, the headless verification mode and the command-line project argument.

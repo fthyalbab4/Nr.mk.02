@@ -1,20 +1,34 @@
-# TODO
+# TODO — خطة عمل صادقة
 
-## Done
-- [x] Event system / actions / collision other
-- [x] Bitmask via precise_mask_overlap
-- [x] with() edge test
-- [x] Rare DnD gapfill **on main**
-- [x] DnD room conditions (`action_if_next_room` / `action_if_previous_room`) with regression contract
-- [x] keyDown bridge **on main**
+## تم (مُقاس)
 
-## Remaining parity work
-- [ ] Continue Action Lists expansion with one behavioral contract per action group
-- [x] Optional runtime performance instrumentation and 100/500/1000-instance benchmark
-- [x] Optimize motion/collision stage with per-frame AABB cache (`docs/PERFORMANCE_AABB_CACHE_2026-11-13.md`)
-- [ ] Reduce collision candidate count or improve spatial-grid locality
+- [x] Sprite decoder + multi-frame storage
+- [x] Room/object decode + أسماء `r001`
+- [x] Host pipeline 4/4
+- [x] Host SO symbols + smoke mario/zelda
+- [x] Behaviors Create/Step scaffolding + fire_create_one
+- [x] إزالة ادعاءات 100% من التقارير الأساسية
 
-## Device-only
-- [ ] playtest + logcat (`docs/DEVICE_BLOCKED.md`)
-- [ ] OpenSLES hardware
-- [ ] NDK instrumentation on device
+## التالي (مرتّب بالأولوية)
+
+### Android حقيقي
+- [ ] NDK build `libgm82_android.so` (arm64)
+- [ ] دمج SO في APK + `addJavascriptInterface(..., "NorNative")`
+- [ ] حقن `assets/www` scripts في `index.html`
+- [ ] تشغيل mario على جهاز وتسجيل لوج/فيديو
+
+### Runtime
+- [ ] ترتيب events أقرب لـ GM
+- [ ] Action lists من GMK أوسع من الـ subset الحالي
+- [ ] Alarms → event حقيقي
+
+### GML
+- [ ] توسيع eval + builtins الناقصة
+- [ ] `with` / `other` / scopes
+
+### جودة
+- [ ] Precise collision
+- [ ] Audio playback
+- [ ] Corpus مقارنة مع ويندوز
+
+لا تُعلَّم أي خانة [x] من غير أمر اختبار أو لوج جهاز.

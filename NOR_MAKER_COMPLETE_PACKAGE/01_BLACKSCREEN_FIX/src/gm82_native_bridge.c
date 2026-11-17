@@ -2,7 +2,6 @@
 #include "gm82_native_bridge.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_sound_runtime.h"
-#include "gm82_gml_eval.h"
 #include "gml_vm.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,12 +9,6 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#ifdef _WIN32
-#include <direct.h>
-#define GM82_MKDIR(path) _mkdir(path)
-#else
-#define GM82_MKDIR(path) mkdir((path), 0755)
-#endif
 
 static void mkdir_p(const char *dir) {
     char tmp[512];
@@ -27,19 +20,16 @@ static void mkdir_p(const char *dir) {
     if (len == 0) return;
     if (tmp[len - 1] == '/') tmp[len - 1] = 0;
     for (p = tmp + 1; *p; p++) {
-        if (*p == '/' || *p == '\\') {
-#ifdef _WIN32
-            if (p == tmp + 2 && tmp[1] == ':') continue;
-#endif
+        if (*p == '/') {
             *p = 0;
-            GM82_MKDIR(tmp);
+            mkdir(tmp, 0755);
             *p = '/';
         }
     }
-    GM82_MKDIR(tmp);
+    mkdir(tmp, 0755);
 }
 
-static void __attribute__((unused)) ensure_parent_dir(const char *path) {
+static void ensure_parent_dir(const char *path) {
     if (!path) return;
     char tmp[512];
     strncpy(tmp, path, sizeof(tmp) - 1);
@@ -121,12 +111,6 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     if (strcmp(name, "date_year_span") == 0 && count == 2) { *out = gml_value_real(gml_date_year_span(ARG_R(0), ARG_R(1))); return 1; }
 
     /* String built-ins */
-    if (strcmp(name, "filename_name") == 0 && count >= 1) { gml_filename_name(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_path") == 0 && count >= 1) { gml_filename_path(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_dir") == 0 && count >= 1) { gml_filename_dir(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_drive") == 0 && count >= 1) { gml_filename_drive(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_ext") == 0 && count >= 1) { gml_filename_ext(ARG_S(0)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
-    if (strcmp(name, "filename_change_ext") == 0 && count >= 2) { gml_filename_change_ext(ARG_S(0), ARG_S(1)); *out = gml_value_string(gm82_gml_last_string()); return 1; }
     if (strcmp(name, "string_length") == 0 && count >= 1) {
         *out = gml_value_real((double)strlen(ARG_S(0)));
         return 1;
@@ -609,58 +593,6 @@ int gm82_native_call(void *userdata, const char *name, const gml_value *args, si
     }
     if (strcmp(name, "instance_number") == 0 && count >= 1) {
         *out = gml_value_real(gml_instance_number(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "instance_place") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_place(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_place_list") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_place_list(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_position") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_position(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "instance_position_list") == 0 && count >= 3) {
-        *out = gml_value_real(gml_instance_position_list(ARG_R(0), ARG_R(1), ARG_R(2)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_x") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_x(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_y") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_y(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_point_speed") == 0 && count >= 2) {
-        *out = gml_value_real(gml_path_get_point_speed(ARG_R(0), ARG_R(1)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_closed") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_closed(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_length") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_length(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_width") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_width(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_get_height") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_get_height(ARG_R(0)));
-        return 1;
-    }
-    if (strcmp(name, "path_add_point") == 0 && count >= 3) {
-        *out = gml_value_real(gml_path_add_point_ext(ARG_R(0), ARG_R(1), ARG_R(2), count >= 4 ? ARG_R(3) : 100.0));
-        return 1;
-    }
-    if (strcmp(name, "path_clear_points") == 0 && count >= 1) {
-        *out = gml_value_real(gml_path_clear_points(ARG_R(0)));
         return 1;
     }
     if (strcmp(name, "room_goto") == 0 && count >= 1) {

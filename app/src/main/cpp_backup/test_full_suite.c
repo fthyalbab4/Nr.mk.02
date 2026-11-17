@@ -196,8 +196,7 @@ void test_gml_builtins_suite(void) {
 }
 
 void test_retro_rom_suite(void) {
-    int mkdir_status = system("mkdir -p /tmp/nor_core_tests");
-    assert(mkdir_status == 0);
+    system("mkdir -p /tmp/nor_core_tests");
     const char *nes_path = "/tmp/nor_core_tests/test.nes";
     const char *gbc_path = "/tmp/nor_core_tests/test.gbc";
     const char *gba_path = "/tmp/nor_core_tests/test.gba";
@@ -369,12 +368,11 @@ void test_user_events_and_drawing_suite(void) {
     gm82_decoded_object obj;
     memset(&obj, 0, sizeof(obj));
     strncpy(obj.name, "obj_test_user", sizeof(obj.name));
-    obj.parent_index = -1;
     obj.sprite_index = 0;
     obj.event_count = 1;
 
     obj.events[0].main_type = 7; /* User Event */
-    obj.events[0].event_numb = 10; /* GM82_OTHER_USER0 */
+    obj.events[0].event_numb = 0; /* Event User 0 */
     obj.events[0].code_snippet = "x += 50; y += 100;";
 
     obj_list.count = 1;

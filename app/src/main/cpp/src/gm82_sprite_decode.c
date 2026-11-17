@@ -238,7 +238,7 @@ int gm82_decode_sprites_from_file(const char *path, gm82_decoded_sprite_list *ou
 #ifdef GM82_SPRITE_MAIN
 int main(int argc, char **argv) {
     const char *path = argc > 1 ? argv[1] :
-        "../02_SAMPLES/mario_bros.gmk";
+        "/home/workdir/artifacts/apk_extract/assets/www/samples/mario_bros.gmk";
     gm82_decoded_sprite_list L;
     int n = gm82_decode_sprites_from_file(path, &L);
     printf("decoded_frames=%d\n", n);
@@ -278,15 +278,19 @@ void gm82_sprite_group_list_free(gm82_sprite_group_list *G) {
 void gm82_sprite_groups_build(const gm82_decoded_sprite_list *frames, gm82_sprite_group_list *out) {
     memset(out, 0, sizeof(*out));
     if (!frames || frames->count <= 0) return;
-    gm82_sprite_group tmp[512];
+    gm82_sprite_group *tmp = (gm82_sprite_group *)calloc((size_t)frames->count, sizeof(gm82_sprite_group));
+    if (!tmp) return;
     int n = 0;
     int i = 0;
-    while (i < frames->count && n < 512) {
+    while (i < frames->count) {
         const char *name = frames->frames[i].name;
         int start = i;
-        while (i < frames->count && strcmp(frames->frames[i].name, name) == 0) i++;
+        if (!name[0]) {
+            i++; /* keep each deleted/empty slot isolated to preserve sprite_index mapping */
+        } else {
+            while (i < frames->count && strcmp(frames->frames[i].name, name) == 0) i++;
+        }
         gm82_sprite_group *g = &tmp[n++];
-        memset(g, 0, sizeof(*g));
         snprintf(g->name, sizeof(g->name), "%s", name);
         g->frame_start = start;
         g->frame_count = i - start;
@@ -299,6 +303,7 @@ void gm82_sprite_groups_build(const gm82_decoded_sprite_list *frames, gm82_sprit
         if (out->items) memcpy(out->items, tmp, (size_t)n * sizeof(*tmp));
         else out->count = 0;
     }
+    free(tmp);
 }
 
 int gm82_sprite_group_index_for_frame(const gm82_sprite_group_list *G, int frame_index) {
@@ -312,12 +317,9 @@ int gm82_sprite_group_index_for_frame(const gm82_sprite_group_list *G, int frame
 }
 
 int gm82_sprite_resolve_frame(const gm82_sprite_group_list *G, int sprite_index, int image_index) {
-    if (!G || sprite_index < 0) return sprite_index;
-    /* If sprite_index is a frame index, find its group and apply image_index */
-    int gi = gm82_sprite_group_index_for_frame(G, sprite_index);
-    if (gi < 0) return sprite_index;
-    const gm82_sprite_group *g = &G->items[gi];
-    if (g->frame_count <= 0) return sprite_index;
+    if (!G || sprite_index < 0 || sprite_index >= G->count) return sprite_index;
+    const gm82_sprite_group *g = &G->items[sprite_index];
+    if (g->frame_count <= 0) return -1;
     int idx = image_index % g->frame_count;
     if (idx < 0) idx += g->frame_count;
     return g->frame_start + idx;
