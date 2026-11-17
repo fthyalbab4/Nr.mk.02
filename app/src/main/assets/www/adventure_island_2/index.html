@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Adventure Island II - محرك نور</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 8px;
+            overflow-x: hidden;
+        }
+        #top-bar {
+            width: 100%;
+            max-width: 540px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .back-btn {
+            min-height: 48px;
+            min-width: 48px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: #f8fafc;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .stage-badge {
+            font-size: 12px;
+            color: #93c5fd;
+            font-weight: 700;
+            padding: 6px 10px;
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        #game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 540px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            background: #020617;
+            padding: 10px;
+            border: 1px solid #1e293b;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: 100%;
+            max-width: 512px;
+            aspect-ratio: 256 / 240;
+            height: auto;
+            background-color: #000;
+            border: 2px solid #334155;
+            border-radius: 4px;
+        }
+        #touch-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 512px;
+            margin-top: 14px;
+            touch-action: none;
+            direction: ltr;
+        }
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 3px;
+        }
+        .btn-touch {
+            background: #1e293b;
+            color: #fff;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            touch-action: none;
+            min-width: 48px;
+            min-height: 48px;
+        }
+        .btn-touch:active, .btn-touch.active {
+            background: #2563eb;
+            border-color: #93c5fd;
+        }
+        .action-btns {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .btn-round {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #dc2626;
+            border: 3px solid #991b1b;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .btn-round:active, .btn-round.active {
+            background: #ef4444;
+            border-color: #fecaca;
+        }
+        .meta-btns {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            direction: ltr;
+        }
+        .btn-rect {
+            padding: 0 18px;
+            min-height: 48px;
+            background: #334155;
+            border-radius: 12px;
+            font-size: 12px;
+            border: 1px solid #64748b;
+        }
+    </style>
+</head>
+<body>
+
+<div id="top-bar">
+    <button type="button" class="back-btn" id="btn-back-studio">العودة للاستوديو</button>
+    <div class="stage-badge" id="stage-badge">Adventure Island II</div>
+</div>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="256" height="240"></canvas>
+
+    <div id="touch-controls">
+        <div class="dpad">
+            <div></div>
+            <button type="button" class="btn-touch" id="btn-up" aria-label="أعلى">▲</button>
+            <div></div>
+            <button type="button" class="btn-touch" id="btn-left" aria-label="يسار">◀</button>
+            <div class="btn-touch" id="btn-center" aria-hidden="true"></div>
+            <button type="button" class="btn-touch" id="btn-right" aria-label="يمين">▶</button>
+            <div></div>
+            <button type="button" class="btn-touch" id="btn-down" aria-label="أسفل">▼</button>
+            <div></div>
+        </div>
+
+        <div class="action-btns">
+            <button type="button" class="btn-touch btn-round" id="btn-b" aria-label="هجوم B">B</button>
+            <button type="button" class="btn-touch btn-round" id="btn-a" aria-label="قفز A">A</button>
+        </div>
+    </div>
+
+    <div class="meta-btns">
+        <button type="button" class="btn-touch btn-rect" id="btn-select">SELECT</button>
+        <button type="button" class="btn-touch btn-rect" id="btn-start">START</button>
+    </div>
+</div>
+
+<script src="rom_data.js"></script>
+<script src="engine.js"></script>
+<script src="gameplay.js"></script>
+<script src="stages_and_audio.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const engine = new NESGraphicsEngine('gameCanvas');
+        const game = new AdventureIslandGame(engine);
+        const stageMgr = new AdventureIslandStageManager(game, engine);
+        const stageBadge = document.getElementById('stage-badge');
+        const backBtn = document.getElementById('btn-back-studio');
+
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                window.location.href = '../index.html';
+            });
+        }
+
+        if (window.ROM_DATA && window.ROM_DATA.rom_b64) {
+            const romBytes = Uint8Array.from(atob(window.ROM_DATA.rom_b64), c => c.charCodeAt(0));
+            const chrBytes = romBytes.subarray(16 + 131072, 16 + 131072 + 131072);
+            engine.setCHRData(chrBytes);
+        } else {
+            const dummyCHR = new Uint8Array(8192 * 16);
+            for (let i = 0; i < dummyCHR.length; i += 16) {
+                for (let row = 0; row < 8; row++) {
+                    dummyCHR[i + row] = 0xFF;
+                    dummyCHR[i + row + 8] = 0xAA;
+                }
+            }
+            engine.setCHRData(dummyCHR);
+        }
+
+        stageMgr.loadStage(0, 0);
+
+        const updateBadge = () => {
+            if (!stageBadge) return;
+            const isl = stageMgr.islands[stageMgr.currentIsland];
+            stageBadge.textContent = isl
+                ? `${isl.name} - Stage ${stageMgr.currentStage + 1}/${isl.stages}`
+                : 'Adventure Island II';
+        };
+        updateBadge();
+
+        function ensureAudioReady() {
+            try { stageMgr.audio.init(); } catch (_) {}
+        }
+
+        function bindControl(id, keyName, onPress) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const press = (e) => {
+                if (e && e.cancelable) e.preventDefault();
+                ensureAudioReady();
+                el.classList.add('active');
+                if (keyName) game.input[keyName] = true;
+                if (typeof onPress === 'function') onPress();
+            };
+            const release = (e) => {
+                if (e && e.cancelable) e.preventDefault();
+                el.classList.remove('active');
+                if (keyName) game.input[keyName] = false;
+            };
+            el.addEventListener('touchstart', press, { passive: false });
+            el.addEventListener('touchend', release, { passive: false });
+            el.addEventListener('touchcancel', release, { passive: false });
+            el.addEventListener('mousedown', press);
+            el.addEventListener('mouseup', release);
+            el.addEventListener('mouseleave', release);
+        }
+
+        bindControl('btn-left', 'left');
+        bindControl('btn-right', 'right');
+        bindControl('btn-up', 'up');
+        bindControl('btn-down', 'down');
+        bindControl('btn-a', 'jump', () => {
+            if (game.player.onGround) stageMgr.audio.playJump();
+        });
+        bindControl('btn-b', 'attack', () => {
+            stageMgr.audio.playThrow();
+        });
+        bindControl('btn-start', null, () => {
+            stageMgr.loadStage(stageMgr.currentIsland, stageMgr.currentStage);
+            updateBadge();
+        });
+        bindControl('btn-select', null, () => {
+            const nextIsland = (stageMgr.currentIsland + 1) % stageMgr.islands.length;
+            stageMgr.loadStage(nextIsland, 0);
+            updateBadge();
+        });
+
+        let lastStageShown = -1;
+        let lastIslandShown = -1;
+        function gameLoop() {
+            game.update();
+            if (stageMgr.boss) stageMgr.updateBoss();
+            stageMgr.renderGame();
+            if (lastStageShown !== stageMgr.currentStage || lastIslandShown !== stageMgr.currentIsland) {
+                lastStageShown = stageMgr.currentStage;
+                lastIslandShown = stageMgr.currentIsland;
+                updateBadge();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        window.addEventListener('keydown', e => {
+            ensureAudioReady();
+            if (e.key === 'ArrowLeft') game.input.left = true;
+            if (e.key === 'ArrowRight') game.input.right = true;
+            if (e.key === 'ArrowUp') game.input.up = true;
+            if (e.key === 'ArrowDown') game.input.down = true;
+            if (e.key === 'z' || e.key === 'Z' || e.key === 'a' || e.key === 'A' || e.key === ' ') {
+                if (!game.input.jump && game.player.onGround) stageMgr.audio.playJump();
+                game.input.jump = true;
+            }
+            if (e.key === 'x' || e.key === 'X' || e.key === 's' || e.key === 'S') {
+                if (!game.input.attack) stageMgr.audio.playThrow();
+                game.input.attack = true;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft') game.input.left = false;
+            if (e.key === 'ArrowRight') game.input.right = false;
+            if (e.key === 'ArrowUp') game.input.up = false;
+            if (e.key === 'ArrowDown') game.input.down = false;
+            if (e.key === 'z' || e.key === 'Z' || e.key === 'a' || e.key === 'A' || e.key === ' ') game.input.jump = false;
+            if (e.key === 'x' || e.key === 'X' || e.key === 's' || e.key === 'S') game.input.attack = false;
+        });
+    });
+</script>
+
+</body>
+</html>
